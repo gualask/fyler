@@ -1,12 +1,11 @@
-import {ActionIcon, Center, Group, Loader, Paper, Text} from '@mantine/core';
-import {IconChevronLeft, IconChevronRight} from '@tabler/icons-react';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
-export function PdfPreview(props: {url: string; onStatus?: (status: string) => void}) {
+export function PdfPreview(props: { url: string; onStatus?: (status: string) => void }) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const renderTaskRef = useRef<any>(null);
     const renderSeqRef = useRef(0);
@@ -22,9 +21,6 @@ export function PdfPreview(props: {url: string; onStatus?: (status: string) => v
 
     const setStatus = (s: string) => {
         props.onStatus?.(s);
-        // Useful when running `wails dev` with devtools.
-        // eslint-disable-next-line no-console
-        console.debug(`[preview] ${s}`);
     };
 
     useEffect(() => {
@@ -47,13 +43,12 @@ export function PdfPreview(props: {url: string; onStatus?: (status: string) => v
 
         (async () => {
             setStatus('Download/lettura…');
-            const task = pdfjsLib.getDocument({url: props.url} as any);
+            const task = pdfjsLib.getDocument({ url: props.url } as any);
             const loaded = await task.promise;
             if (cancelled) {
                 await loaded.destroy();
                 return;
             }
-
             setDoc(loaded);
             setPageCount(loaded.numPages);
             setStatus(`PDF caricato (${loaded.numPages} pagine)`);
@@ -69,22 +64,16 @@ export function PdfPreview(props: {url: string; onStatus?: (status: string) => v
                 setLoading(false);
             });
 
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
     }, [props.url]);
 
     const canPrev = pageNum > 1;
     const canNext = pageNum < pageCount;
-
     const renderKey = useMemo(() => `${pageNum}:${viewportWidth}`, [pageNum, viewportWidth]);
 
     useEffect(() => {
-        if (!doc) return;
-        if (!canvasRef.current) return;
-
-        if (!viewportWidth) {
-            setStatus('In attesa dimensioni area anteprima…');
+        if (!doc || !canvasRef.current || !viewportWidth) {
+            if (!viewportWidth) setStatus('In attesa dimensioni area anteprima…');
             return;
         }
 
@@ -93,22 +82,17 @@ export function PdfPreview(props: {url: string; onStatus?: (status: string) => v
 
         (async () => {
             if (renderTaskRef.current) {
-                try {
-                    renderTaskRef.current.cancel?.();
-                } catch {
-                    // Ignore cancellation errors.
-                } finally {
-                    renderTaskRef.current = null;
-                }
+                try { renderTaskRef.current.cancel?.(); } catch { /* ignore */ }
+                renderTaskRef.current = null;
             }
 
             setStatus(`Render pagina ${pageNum}/${pageCount || '?'}…`);
             const page = await doc.getPage(pageNum);
             if (cancelled) return;
 
-            const viewportAtScale1 = page.getViewport({scale: 1});
+            const viewportAtScale1 = page.getViewport({ scale: 1 });
             const scale = Math.max(0.25, (viewportWidth - 8) / viewportAtScale1.width);
-            const viewport = page.getViewport({scale});
+            const viewport = page.getViewport({ scale });
 
             const canvas = canvasRef.current!;
             const context = canvas.getContext('2d');
@@ -116,16 +100,14 @@ export function PdfPreview(props: {url: string; onStatus?: (status: string) => v
 
             canvas.width = Math.floor(viewport.width);
             canvas.height = Math.floor(viewport.height);
-
             context.setTransform(1, 0, 0, 1, 0, 0);
             context.fillStyle = '#ffffff';
             context.fillRect(0, 0, canvas.width, canvas.height);
 
-            const renderTask = page.render({canvasContext: context, viewport, canvas});
+            const renderTask = page.render({ canvasContext: context, viewport, canvas });
             renderTaskRef.current = renderTask;
             await renderTask.promise;
-            if (cancelled) return;
-            if (renderSeqRef.current !== seq) return;
+            if (cancelled || renderSeqRef.current !== seq) return;
 
             setStatus(`Render completato (pagina ${pageNum})`);
         })()
@@ -137,77 +119,71 @@ export function PdfPreview(props: {url: string; onStatus?: (status: string) => v
                 setStatus(`Errore render: ${msg}`);
             })
             .finally(() => {
-                if (renderSeqRef.current === seq) {
-                    renderTaskRef.current = null;
-                }
+                if (renderSeqRef.current === seq) renderTaskRef.current = null;
             });
 
         return () => {
             cancelled = true;
             if (renderTaskRef.current) {
-                try {
-                    renderTaskRef.current.cancel?.();
-                } catch {
-                    // Ignore cancellation errors.
-                }
+                try { renderTaskRef.current.cancel?.(); } catch { /* ignore */ }
             }
         };
     }, [doc, pageNum, pageCount, renderKey, viewportWidth]);
 
     useEffect(() => {
-        return () => {
-            if (doc) void doc.destroy();
-        };
+        return () => { if (doc) void doc.destroy(); };
     }, [doc]);
 
     return (
-        <Paper withBorder radius="md" p="sm" style={{height: '100%', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
-            <Group justify="space-between" mb="sm">
-                <Group gap="xs">
-                    <ActionIcon variant="light" disabled={!canPrev} onClick={() => setPageNum(n => Math.max(1, n - 1))}>
-                        <IconChevronLeft size={16}/>
-                    </ActionIcon>
-                    <ActionIcon
-                        variant="light"
-                        disabled={!canNext}
-                        onClick={() => setPageNum(n => Math.min(pageCount, n + 1))}
+        <div className="flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white p-3">
+            {/* Toolbar navigazione */}
+            <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                    <button
+                        disabled={!canPrev}
+                        onClick={() => setPageNum((n) => Math.max(1, n - 1))}
+                        className="rounded p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30"
                     >
-                        <IconChevronRight size={16}/>
-                    </ActionIcon>
-                    <Text size="sm">
+                        <IconChevronLeft size={16} />
+                    </button>
+                    <button
+                        disabled={!canNext}
+                        onClick={() => setPageNum((n) => Math.min(pageCount, n + 1))}
+                        className="rounded p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30"
+                    >
+                        <IconChevronRight size={16} />
+                    </button>
+                    <span className="ml-1 text-sm text-gray-600">
                         Pagina {pageNum} / {pageCount || '—'}
-                    </Text>
-                </Group>
-                <Text size="xs" c="dimmed">
+                    </span>
+                </div>
+                <span className="text-xs text-gray-400">
                     {viewportWidth ? `${viewportWidth}px` : ''}
-                </Text>
-            </Group>
+                </span>
+            </div>
 
+            {/* Area canvas */}
             <div
                 ref={setViewportEl}
-                style={{
-                    flex: 1,
-                    minHeight: 0,
-                    overflow: 'auto',
-                    overscrollBehavior: 'contain',
-                }}
+                className="min-h-0 flex-1 overflow-auto overscroll-contain"
             >
                 {loading ? (
-                    <Center style={{height: '100%'}}>
-                        <Loader/>
-                    </Center>
+                    <div className="flex h-full items-center justify-center">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                    </div>
                 ) : error ? (
-                    <Center style={{height: '100%'}}>
-                        <Text c="red" size="sm">
-                            {error}
-                        </Text>
-                    </Center>
+                    <div className="flex h-full items-center justify-center">
+                        <p className="text-sm text-red-500">{error}</p>
+                    </div>
                 ) : (
-                    <Center p="xs" style={{minHeight: '100%'}}>
-                        <canvas ref={canvasRef} style={{maxWidth: '100%', background: 'white', display: 'block'}}/>
-                    </Center>
+                    <div className="flex min-h-full items-center justify-center p-2">
+                        <canvas
+                            ref={canvasRef}
+                            className="block max-w-full bg-white"
+                        />
+                    </div>
                 )}
             </div>
-        </Paper>
+        </div>
     );
 }

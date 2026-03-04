@@ -15,4 +15,3 @@ export type MergeRequest = {
     inputs: MergeInput[];
     outputPath: string;
 };
-
