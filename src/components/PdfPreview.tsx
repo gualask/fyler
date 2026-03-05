@@ -1,149 +1,33 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { useElementWidth } from '../hooks/useElementWidth';
+import { usePdfDocument } from '../hooks/usePdfDocument';
+import { usePdfRenderer } from '../hooks/usePdfRenderer';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
-export function PdfPreview({ url, onStatus }: { url: string; onStatus?: (status: string) => void }) {
+/** Props for the PDF preview canvas component. */
+interface Props {
+    url: string;
+    onStatus?: (status: string) => void;
+}
+
+/**
+ * Renders a PDF document in a canvas with page navigation.
+ * Delegates document loading to {@link usePdfDocument} and page rendering to {@link usePdfRenderer}.
+ */
+export function PdfPreview({ url, onStatus }: Props) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const renderTaskRef = useRef<{ cancel?: () => void } | null>(null);
-    const renderSeqRef = useRef(0);
-
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [pageCount, setPageCount] = useState(0);
+    const [viewportRef, viewportWidth] = useElementWidth();
+    const { doc, pageCount, loading, error } = usePdfDocument(url, onStatus);
     const [pageNum, setPageNum] = useState(1);
-    const [doc, setDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
 
-    const [viewportEl, setViewportEl] = useState<HTMLDivElement | null>(null);
-    const [viewportWidth, setViewportWidth] = useState(0);
-
-
-
-    useEffect(() => {
-        if (!viewportEl) return;
-        const update = () => setViewportWidth(viewportEl.clientWidth);
-        update();
-        const ro = new ResizeObserver(update);
-        ro.observe(viewportEl);
-        return () => ro.disconnect();
-    }, [viewportEl]);
-
-    useEffect(() => {
-        let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLoading(true);
-        setError(null);
-        setDoc(null);
-        setPageNum(1);
-        setPageCount(0);
-        onStatus?.('Caricamento PDF…');
-
-        (async () => {
-            onStatus?.('Download/lettura…');
-            const task = pdfjsLib.getDocument({ url });
-            const loaded = await task.promise;
-            if (cancelled) {
-                await loaded.destroy();
-                return;
-            }
-            setDoc(loaded);
-            setPageCount(loaded.numPages);
-            onStatus?.(`PDF caricato (${loaded.numPages} pagine)`);
-        })()
-            .catch((e: unknown) => {
-                if (cancelled) return;
-                const msg = e instanceof Error ? e.message : String(e);
-                setError(msg);
-                onStatus?.(`Errore: ${msg}`);
-            })
-            .finally(() => {
-                if (cancelled) return;
-                setLoading(false);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [url, onStatus]);
+    usePdfRenderer(doc, pageNum, pageCount, viewportWidth, canvasRef, onStatus);
 
     const canPrev = pageNum > 1;
     const canNext = pageNum < pageCount;
-    const renderKey = useMemo(() => `${pageNum}:${viewportWidth}`, [pageNum, viewportWidth]);
-
-    useEffect(() => {
-        if (!doc || !canvasRef.current || !viewportWidth) {
-            if (!viewportWidth) onStatus?.('In attesa dimensioni area anteprima…');
-            return;
-        }
-
-        let cancelled = false;
-        const seq = ++renderSeqRef.current;
-
-        (async () => {
-            if (renderTaskRef.current) {
-                try {
-                    renderTaskRef.current.cancel?.();
-                } catch {
-                    /* ignore */
-                }
-                renderTaskRef.current = null;
-            }
-
-            onStatus?.(`Render pagina ${pageNum}/${pageCount || '?'}…`);
-            const page = await doc.getPage(pageNum);
-            if (cancelled) return;
-
-            const viewportAtScale1 = page.getViewport({ scale: 1 });
-            const scale = Math.max(0.25, (viewportWidth - 8) / viewportAtScale1.width);
-            const viewport = page.getViewport({ scale });
-
-            const canvas = canvasRef.current!;
-            const context = canvas.getContext('2d');
-            if (!context) throw new Error('Impossibile ottenere il contesto canvas 2D');
-
-            canvas.width = Math.floor(viewport.width);
-            canvas.height = Math.floor(viewport.height);
-            context.setTransform(1, 0, 0, 1, 0, 0);
-            context.fillStyle = '#ffffff';
-            context.fillRect(0, 0, canvas.width, canvas.height);
-
-            const renderTask = page.render({ canvasContext: context, viewport, canvas });
-            renderTaskRef.current = renderTask;
-            await renderTask.promise;
-            if (cancelled || renderSeqRef.current !== seq) return;
-
-            onStatus?.(`Render completato (pagina ${pageNum})`);
-        })()
-            .catch((e: unknown) => {
-                if (cancelled) return;
-                if (e instanceof Error && e.name === 'RenderingCancelledException') return;
-                const msg = e instanceof Error ? e.message : String(e);
-                setError(msg);
-                onStatus?.(`Errore render: ${msg}`);
-            })
-            .finally(() => {
-                if (renderSeqRef.current === seq) renderTaskRef.current = null;
-            });
-
-        return () => {
-            cancelled = true;
-            if (renderTaskRef.current) {
-                try {
-                    renderTaskRef.current.cancel?.();
-                } catch {
-                    /* ignore */
-                }
-            }
-        };
-    }, [doc, pageNum, pageCount, renderKey, viewportWidth, onStatus]);
-
-    useEffect(() => {
-        return () => {
-            if (doc) void doc.destroy();
-        };
-    }, [doc]);
 
     return (
         <div className="flex h-full flex-col overflow-hidden rounded-lg border border-ui-border bg-ui-surface p-3">
@@ -174,10 +58,7 @@ export function PdfPreview({ url, onStatus }: { url: string; onStatus?: (status:
             </div>
 
             {/* Area canvas */}
-            <div
-                ref={setViewportEl}
-                className="min-h-0 flex-1 overflow-auto overscroll-contain"
-            >
+            <div ref={viewportRef} className="min-h-0 flex-1 overflow-auto overscroll-contain">
                 {loading ? (
                     <div className="flex h-full items-center justify-center">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-ui-accent-muted border-t-transparent" />

@@ -1,7 +1,8 @@
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import type { Doc } from '../domain';
 
-export function DocumentRow(props: {
+/** Props for a single document row in the document list. */
+interface Props {
     doc: Doc;
     selected: boolean;
     onSelect: () => void;
@@ -9,7 +10,9 @@ export function DocumentRow(props: {
     onDragStart: (id: string) => void;
     onDragOver: (e: React.DragEvent) => void;
     onDrop: (id: string) => void;
-}) {
+}
+
+export function DocumentRow(props: Props) {
     return (
         <div
             draggable
