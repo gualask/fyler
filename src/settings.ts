@@ -10,7 +10,7 @@ let storePromise: Promise<Store> | null = null;
 
 function getStore() {
     if (!storePromise) {
-        storePromise = load('settings.json', { defaults: { isDark: false } });
+        storePromise = load('settings.json', { autoSave: false, defaults: { isDark: false } });
     }
     return storePromise;
 }
