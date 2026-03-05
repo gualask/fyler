@@ -12,7 +12,7 @@ export default tseslint.config(
     js.configs.recommended,
 
     // TypeScript senza type-info (copre tutti i file incluso config/script)
-    ...tseslint.configs.recommended,
+    tseslint.configs.recommended,
 
     // Typed lint solo su sorgenti app
     {
