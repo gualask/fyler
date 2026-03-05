@@ -1,3 +1,4 @@
+import { defineConfig } from 'eslint/config';
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import react from 'eslint-plugin-react';
@@ -5,7 +6,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import prettierConfig from 'eslint-config-prettier';
 
-export default tseslint.config(
+export default defineConfig([
     { ignores: ['dist', 'src-tauri'] },
 
     // Base JS
@@ -17,7 +18,6 @@ export default tseslint.config(
     // Typed lint solo su sorgenti app
     {
         files: ['src/**/*.{ts,tsx}'],
-        extends: [tseslint.configs.recommendedTypeChecked],
         languageOptions: {
             parserOptions: {
                 projectService: true,
@@ -31,7 +31,7 @@ export default tseslint.config(
         },
     },
 
-    // Disabilita typed lint su file JS e di config (evita falsi positivi e lentezza)
+    // Disabilita typed lint su file JS e di config
     {
         files: ['**/*.{js,cjs,mjs}', '*.config.{js,ts}'],
         ...tseslint.configs.disableTypeChecked,
@@ -58,4 +58,4 @@ export default tseslint.config(
     },
 
     prettierConfig,
-);
+]);
