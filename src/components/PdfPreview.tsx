@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -12,13 +12,14 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 interface Props {
     url: string;
     onStatus?: (status: string) => void;
+    onRotate?: (pageNum: number, angle: number) => void;
 }
 
 /**
  * Renders a PDF document in a canvas with page navigation.
  * Delegates document loading to {@link usePdfDocument} and page rendering to {@link usePdfRenderer}.
  */
-export function PdfPreview({ url, onStatus }: Props) {
+export function PdfPreview({ url, onStatus, onRotate }: Props) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [viewportRef, viewportWidth] = useElementWidth();
     const { doc, pageCount, loading, error } = usePdfDocument(url, onStatus);
@@ -52,9 +53,29 @@ export function PdfPreview({ url, onStatus }: Props) {
                         Pagina {pageNum} / {pageCount || '—'}
                     </span>
                 </div>
-                <span className="text-xs text-ui-text-muted">
-                    {viewportWidth ? `${viewportWidth}px` : ''}
-                </span>
+                <div className="flex items-center gap-1">
+                    {onRotate && (
+                        <>
+                            <button
+                                onClick={() => onRotate(pageNum, -90)}
+                                title="Ruota 90° antiorario"
+                                className="rounded p-1 text-ui-text-dim hover:bg-ui-surface-hover"
+                            >
+                                <ArrowUturnLeftIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => onRotate(pageNum, 90)}
+                                title="Ruota 90° orario"
+                                className="rounded p-1 text-ui-text-dim hover:bg-ui-surface-hover"
+                            >
+                                <ArrowUturnRightIcon className="h-4 w-4" />
+                            </button>
+                        </>
+                    )}
+                    <span className="text-xs text-ui-text-muted">
+                        {viewportWidth ? `${viewportWidth}px` : ''}
+                    </span>
+                </div>
             </div>
 
             {/* Area canvas */}

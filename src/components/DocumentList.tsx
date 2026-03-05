@@ -1,4 +1,5 @@
 import type { Doc } from '../domain';
+import type { DragHandlers } from '../hooks/useDragDrop';
 import { DocumentRow } from './DocumentRow';
 
 /** Props for the left panel showing the loaded document list. */
@@ -7,16 +8,14 @@ interface Props {
     selectedId: string | null;
     onSelect: (id: string) => void;
     onPageSpecChange: (id: string, value: string) => void;
-    onDragStart: (id: string) => void;
-    onDragOver: (e: React.DragEvent) => void;
-    onDrop: (id: string) => void;
+    dragHandlers: DragHandlers;
 }
 
 /**
  * Left panel: header with document count, optional error banner,
  * and a scrollable list of {@link DocumentRow} with drag-and-drop support.
  */
-export function DocumentList({ docs, selectedId, onSelect, onPageSpecChange, onDragStart, onDragOver, onDrop }: Props) {
+export function DocumentList({ docs, selectedId, onSelect, onPageSpecChange, dragHandlers }: Props) {
     return (
         <div className="flex w-[420px] shrink-0 flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -36,9 +35,7 @@ export function DocumentList({ docs, selectedId, onSelect, onPageSpecChange, onD
                                 selected={d.id === selectedId}
                                 onSelect={() => onSelect(d.id)}
                                 onPageSpecChange={(v) => onPageSpecChange(d.id, v)}
-                                onDragStart={onDragStart}
-                                onDragOver={onDragOver}
-                                onDrop={onDrop}
+                                dragHandlers={dragHandlers}
                             />
                         ))}
                     </div>

@@ -22,6 +22,7 @@ pub fn run() {
             commands::open_pdfs_dialog,
             commands::save_pdf_dialog,
             commands::merge_pdfs,
+            commands::rotate_pdf_page,
             settings::load_settings,
             settings::save_settings,
         ])

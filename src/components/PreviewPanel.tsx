@@ -6,13 +6,14 @@ interface Props {
     selectedDoc: Doc | null;
     previewUrl: string | null;
     onStatus: (status: string) => void;
+    onRotate?: (pageNum: number, angle: number) => void;
 }
 
 /**
  * Right panel: renders the selected document via {@link PdfPreview},
  * or a placeholder when no document is selected.
  */
-export function PreviewPanel({ selectedDoc, previewUrl, onStatus }: Props) {
+export function PreviewPanel({ selectedDoc, previewUrl, onStatus, onRotate }: Props) {
     return (
         <div className="flex min-w-0 flex-1 flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -28,6 +29,7 @@ export function PreviewPanel({ selectedDoc, previewUrl, onStatus }: Props) {
                         key={selectedDoc.id}
                         url={previewUrl!}
                         onStatus={onStatus}
+                        onRotate={onRotate}
                     />
                 ) : (
                     <p className="text-sm text-ui-text-muted">

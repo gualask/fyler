@@ -1,15 +1,17 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import type { Doc } from '../domain';
-import { getPDFPreviewUrl, openPDFsDialog } from '../platform';
+import { useCallback, useMemo, useState } from 'react';
+import { getPDFPreviewUrl, openPDFsDialog, rotatePdfPage } from '../platform';
+import { useDocList } from './useDocList';
+import { useDragDrop, type DragHandlers } from './useDragDrop';
+
+export type { DragHandlers };
 
 /**
- * Manages the document list state: selection, add, remove,
- * pageSpec update and drag-and-drop reordering.
+ * Composes useDocList + useDragDrop, adds selection and preview URL.
+ * Exposes the full API consumed by App.
  */
 export function useDocs() {
-    const [docs, setDocs] = useState<Doc[]>([]);
+    const { docs, addDocs, removeDoc, updatePageSpec, updateDocPath, reorderDocs } = useDocList();
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const draggedId = useRef<string | null>(null);
 
     const selectedDoc = useMemo(
         () => docs.find((d) => d.id === selectedId) ?? null,
@@ -25,44 +27,27 @@ export function useDocs() {
     const addPDFs = useCallback(async () => {
         const newDocs = await openPDFsDialog();
         if (newDocs.length === 0) return;
-        setDocs((prev) => [...prev, ...newDocs]);
+        addDocs(newDocs);
         setSelectedId((prev) => prev ?? newDocs[0].id);
-    }, []);
+    }, [addDocs]);
 
     const removeSelected = useCallback(() => {
-        setDocs((prev) => {
-            const next = prev.filter((d) => d.id !== selectedId);
-            setSelectedId(next.length ? next[0].id : null);
-            return next;
-        });
-    }, [selectedId]);
+        if (!selectedId) return;
+        const remaining = docs.filter((d) => d.id !== selectedId);
+        setSelectedId(remaining.length ? remaining[0].id : null);
+        removeDoc(selectedId);
+    }, [selectedId, docs, removeDoc]);
 
-    const updatePageSpec = useCallback((id: string, pageSpec: string) => {
-        setDocs((prev) => prev.map((d) => (d.id === id ? { ...d, pageSpec } : d)));
-    }, []);
+    const rotatePage = useCallback(
+        async (pageNum: number, angle: number) => {
+            if (!selectedDoc) return;
+            const newPath = await rotatePdfPage(selectedDoc.path, pageNum, angle);
+            updateDocPath(selectedDoc.id, newPath);
+        },
+        [selectedDoc, updateDocPath],
+    );
 
-    const handleDragStart = useCallback((id: string) => {
-        draggedId.current = id;
-    }, []);
-
-    const handleDragOver = useCallback(() => {
-        // preventDefault già fatto in DocumentRow
-    }, []);
-
-    const handleDrop = useCallback((targetId: string) => {
-        const fromId = draggedId.current;
-        if (!fromId || fromId === targetId) return;
-        setDocs((prev) => {
-            const fromIdx = prev.findIndex((d) => d.id === fromId);
-            const toIdx = prev.findIndex((d) => d.id === targetId);
-            if (fromIdx === -1 || toIdx === -1) return prev;
-            const next = [...prev];
-            const [item] = next.splice(fromIdx, 1);
-            next.splice(toIdx, 0, item);
-            return next;
-        });
-        draggedId.current = null;
-    }, []);
+    const dragHandlers = useDragDrop(reorderDocs);
 
     return {
         docs,
@@ -73,8 +58,7 @@ export function useDocs() {
         addPDFs,
         removeSelected,
         updatePageSpec,
-        handleDragStart,
-        handleDragOver,
-        handleDrop,
+        dragHandlers,
+        rotatePage,
     };
 }

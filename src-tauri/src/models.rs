@@ -7,6 +7,7 @@ pub struct Document {
     pub page_count: u32,
     #[serde(rename = "pageSpec")]
     pub page_spec: String,
+    pub kind: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

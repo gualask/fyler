@@ -38,7 +38,7 @@ export function AppHeader({ isDark, onToggleTheme, onAddPDFs, onRemove, canRemov
                     className="flex items-center gap-1.5 rounded-md border border-ui-border px-3 py-1.5 text-sm font-medium text-ui-text-secondary hover:bg-ui-surface-hover"
                 >
                     <DocumentPlusIcon className="h-4 w-4" />
-                    Aggiungi PDF
+                    Aggiungi file
                 </button>
                 <button
                     disabled={!canRemove}

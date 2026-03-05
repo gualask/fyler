@@ -1,14 +1,16 @@
 use tauri_plugin_dialog::DialogExt;
 
 use crate::models::{Document, MergeRequest};
-use crate::pdf::{count_pages, extract_pages_to_temp, merge_pdf_documents, parse_page_spec};
+use crate::pdf::{
+    count_pages, extract_pages_to_temp, image_to_pdf_temp, merge_pdf_documents, parse_page_spec,
+};
 
 #[tauri::command]
 pub async fn open_pdfs_dialog(app: tauri::AppHandle) -> Result<Vec<Document>, String> {
     let files = app
         .dialog()
         .file()
-        .add_filter("PDF", &["pdf"])
+        .add_filter("PDF e immagini", &["pdf", "png", "jpg", "jpeg", "gif", "tiff", "tif", "webp", "bmp", "ico", "tga", "qoi"])
         .blocking_pick_files()
         .unwrap_or_default();
 
@@ -16,19 +18,34 @@ pub async fn open_pdfs_dialog(app: tauri::AppHandle) -> Result<Vec<Document>, St
         .into_iter()
         .map(|f| {
             let path_buf = f.into_path().map_err(|e| e.to_string())?;
-            let path = path_buf.to_string_lossy().to_string();
+            let original_path = path_buf.to_string_lossy().to_string();
             let name = path_buf
                 .file_name()
                 .unwrap_or_default()
                 .to_string_lossy()
                 .to_string();
-            let page_count = count_pages(&path)?;
+
+            let ext = path_buf
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("")
+                .to_lowercase();
+
+            let (path, page_count, kind) = if ext == "pdf" {
+                let count = count_pages(&original_path)?;
+                (original_path, count, "pdf")
+            } else {
+                let temp_pdf = image_to_pdf_temp(&original_path)?;
+                (temp_pdf.to_string_lossy().to_string(), 1, "image")
+            };
+
             Ok(Document {
                 id: uuid::Uuid::new_v4().to_string(),
                 path,
                 name,
                 page_count,
                 page_spec: String::new(),
+                kind: kind.to_string(),
             })
         })
         .collect()
@@ -48,6 +65,12 @@ pub async fn save_pdf_dialog(
         .and_then(|f| f.into_path().ok())
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default())
+}
+
+#[tauri::command]
+pub fn rotate_pdf_page(path: String, page_num: u32, angle: i32) -> Result<String, String> {
+    let tmp = crate::pdf::rotate_pdf_page(&path, page_num, angle)?;
+    Ok(tmp.to_string_lossy().to_string())
 }
 
 #[tauri::command]

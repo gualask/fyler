@@ -9,7 +9,7 @@ import { DocumentList } from './components/DocumentList';
 import { PreviewPanel } from './components/PreviewPanel';
 
 function App() {
-    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addPDFs, removeSelected, updatePageSpec, handleDragStart, handleDragOver, handleDrop } = useDocs();
+    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addPDFs, removeSelected, updatePageSpec, dragHandlers, rotatePage } = useDocs();
     const { isDark, toggleTheme } = useTheme();
     const [status, setStatus] = useState('');
 
@@ -61,14 +61,13 @@ function App() {
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     onPageSpecChange={updatePageSpec}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
+                    dragHandlers={dragHandlers}
                 />
                 <PreviewPanel
                     selectedDoc={selectedDoc}
                     previewUrl={selectedPreviewUrl}
                     onStatus={setStatus}
+                    onRotate={(pageNum, angle) => void rotatePage(pageNum, angle)}
                 />
             </main>
             <footer className="flex h-8 shrink-0 items-center border-t border-ui-border bg-ui-surface px-4">

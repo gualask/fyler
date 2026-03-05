@@ -1,6 +1,91 @@
 use lopdf::{Document as PdfDoc, Object};
 use uuid::Uuid;
 
+fn temp_pdf(prefix: &str) -> std::path::PathBuf {
+    std::env::temp_dir().join(format!("fyler_{}_{}.pdf", prefix, Uuid::new_v4()))
+}
+
+pub fn image_to_pdf_temp(path: &str) -> Result<std::path::PathBuf, String> {
+    use lopdf::{Dictionary, Stream};
+
+    let img = image::open(path).map_err(|e| format!("Errore apertura immagine: {e}"))?;
+
+    // Converti in RGB8 (rimuove trasparenza PNG)
+    let rgb = img.to_rgb8();
+    let (width_px, height_px) = rgb.dimensions();
+    let img_data = rgb.into_raw();
+
+    // Dimensioni pagina in punti tipografici a 96 DPI (1pt = 1/72", 1px@96dpi = 0.75pt)
+    let w_pt = (width_px as f64 * 72.0 / 96.0).ceil() as i64;
+    let h_pt = (height_px as f64 * 72.0 / 96.0).ceil() as i64;
+
+    let mut doc = PdfDoc::with_version("1.4");
+
+    // Image XObject (dati RGB grezzi non compressi)
+    let mut img_dict = Dictionary::new();
+    img_dict.set("Type", Object::Name(b"XObject".to_vec()));
+    img_dict.set("Subtype", Object::Name(b"Image".to_vec()));
+    img_dict.set("Width", Object::Integer(width_px as i64));
+    img_dict.set("Height", Object::Integer(height_px as i64));
+    img_dict.set("ColorSpace", Object::Name(b"DeviceRGB".to_vec()));
+    img_dict.set("BitsPerComponent", Object::Integer(8));
+    let img_id = doc.add_object(Stream::new(img_dict, img_data));
+
+    // Content stream: trasforma la matrice per scalare l'immagine a tutta la pagina
+    let content = format!("q {w_pt} 0 0 {h_pt} 0 0 cm /Im0 Do Q\n");
+    let content_id = doc.add_object(Stream::new(Dictionary::new(), content.into_bytes()));
+
+    // Resources
+    let mut xobject = Dictionary::new();
+    xobject.set("Im0", Object::Reference(img_id));
+    let mut resources = Dictionary::new();
+    resources.set("XObject", Object::Dictionary(xobject));
+
+    // Pages (Kids vuoto, aggiornato dopo)
+    let mut pages_dict = Dictionary::new();
+    pages_dict.set("Type", Object::Name(b"Pages".to_vec()));
+    pages_dict.set("Kids", Object::Array(vec![]));
+    pages_dict.set("Count", Object::Integer(1));
+    let pages_id = doc.add_object(Object::Dictionary(pages_dict));
+
+    // Page
+    let mut page_dict = Dictionary::new();
+    page_dict.set("Type", Object::Name(b"Page".to_vec()));
+    page_dict.set("Parent", Object::Reference(pages_id));
+    page_dict.set(
+        "MediaBox",
+        Object::Array(vec![
+            Object::Integer(0),
+            Object::Integer(0),
+            Object::Integer(w_pt),
+            Object::Integer(h_pt),
+        ]),
+    );
+    page_dict.set("Resources", Object::Dictionary(resources));
+    page_dict.set("Contents", Object::Reference(content_id));
+    let page_id = doc.add_object(Object::Dictionary(page_dict));
+
+    // Aggiorna Pages.Kids
+    if let Ok(pages) = doc.get_dictionary_mut(pages_id) {
+        if let Ok(Object::Array(kids)) = pages.get_mut(b"Kids") {
+            kids.push(Object::Reference(page_id));
+        }
+    }
+
+    // Catalog
+    let mut catalog = Dictionary::new();
+    catalog.set("Type", Object::Name(b"Catalog".to_vec()));
+    catalog.set("Pages", Object::Reference(pages_id));
+    let catalog_id = doc.add_object(Object::Dictionary(catalog));
+
+    doc.trailer.set("Root", Object::Reference(catalog_id));
+
+    let tmp = temp_pdf("img");
+    doc.save(&tmp).map_err(|e| e.to_string())?;
+
+    Ok(tmp)
+}
+
 /// Parsa "1-3,5,8" → Vec<u32> pagine 1-indexed
 pub fn parse_page_spec(spec: &str) -> Result<Vec<u32>, String> {
     if spec.trim().is_empty() {
@@ -33,6 +118,25 @@ pub fn parse_page_spec(spec: &str) -> Result<Vec<u32>, String> {
     Ok(pages)
 }
 
+pub fn rotate_pdf_page(path: &str, page_num: u32, angle: i32) -> Result<std::path::PathBuf, String> {
+    let mut doc = PdfDoc::load(path).map_err(|e| e.to_string())?;
+
+    let page_obj_id = {
+        let pages = doc.get_pages();
+        pages.get(&page_num).copied()
+            .ok_or_else(|| format!("Pagina {page_num} non trovata"))?
+    };
+
+    let page_dict = doc.get_dictionary_mut(page_obj_id).map_err(|e| e.to_string())?;
+    let current = page_dict.get(b"Rotate").and_then(|o| o.as_i64()).unwrap_or(0) as i32;
+    let new_rotate = (current + angle).rem_euclid(360);
+    page_dict.set("Rotate", Object::Integer(new_rotate as i64));
+
+    let tmp = temp_pdf("rot");
+    doc.save(&tmp).map_err(|e| e.to_string())?;
+    Ok(tmp)
+}
+
 pub fn count_pages(path: &str) -> Result<u32, String> {
     PdfDoc::load(path)
         .map(|doc| doc.get_pages().len() as u32)
@@ -46,7 +150,7 @@ pub fn extract_pages_to_temp(path: &str, pages: &[u32]) -> Result<std::path::Pat
     if !to_delete.is_empty() {
         doc.delete_pages(&to_delete);
     }
-    let tmp = std::env::temp_dir().join(format!("fyler_{}.pdf", Uuid::new_v4()));
+    let tmp = temp_pdf("extract");
     doc.save(&tmp).map_err(|e| e.to_string())?;
     Ok(tmp)
 }
