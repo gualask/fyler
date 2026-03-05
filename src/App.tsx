@@ -9,8 +9,10 @@ import { PreviewPanel } from './components/PreviewPanel';
 
 function App() {
     const { docs, selectedId, selectedDoc, selectedPreviewUrl, error, setSelectedId, addPDFs, removeSelected, updatePageSpec, handleDragStart, handleDragOver, handleDrop } = useDocs();
-    const { isDark, toggleTheme } = useTheme();
     const [status, setStatus] = useState('');
+    // eslint-disable-next-line no-console
+    const log = (msg: string) => { console.log(msg); setStatus(msg); };
+    const { isDark, toggleTheme } = useTheme(log);
 
     const exportMerged = useCallback(async () => {
         if (docs.length === 0) return;
