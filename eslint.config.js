@@ -9,6 +9,20 @@ export default tseslint.config(
     { ignores: ['dist', 'src-tauri'] },
     js.configs.recommended,
     ...tseslint.configs.recommended,
+    // Regole che richiedono type information
+    {
+        languageOptions: {
+            parserOptions: {
+                projectService: {
+                    allowDefaultProject: ['*.js'],
+                },
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+        rules: {
+            '@typescript-eslint/no-floating-promises': 'error',
+        },
+    },
     {
         plugins: {
             react: reactPlugin,
@@ -21,6 +35,9 @@ export default tseslint.config(
             ...reactHooks.configs.recommended.rules,
             'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
             'react/react-in-jsx-scope': 'off',
+            'react/self-closing-comp': 'error',
+            '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+            'no-console': 'error',
         },
     },
     prettierConfig,
