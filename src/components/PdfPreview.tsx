@@ -146,29 +146,29 @@ export function PdfPreview({ url, onStatus }: { url: string; onStatus?: (status:
     }, [doc]);
 
     return (
-        <div className="flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white p-3">
+        <div className="flex h-full flex-col overflow-hidden rounded-lg border border-ui-border bg-ui-surface p-3">
             {/* Toolbar navigazione */}
             <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-1">
                     <button
                         disabled={!canPrev}
                         onClick={() => setPageNum((n) => Math.max(1, n - 1))}
-                        className="rounded p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30"
+                        className="rounded p-1 text-ui-text-dim hover:bg-ui-surface-hover disabled:opacity-30"
                     >
                         <ChevronLeftIcon className="h-4 w-4" />
                     </button>
                     <button
                         disabled={!canNext}
                         onClick={() => setPageNum((n) => Math.min(pageCount, n + 1))}
-                        className="rounded p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30"
+                        className="rounded p-1 text-ui-text-dim hover:bg-ui-surface-hover disabled:opacity-30"
                     >
                         <ChevronRightIcon className="h-4 w-4" />
                     </button>
-                    <span className="ml-1 text-sm text-gray-600">
+                    <span className="ml-1 text-sm text-ui-text-dim">
                         Pagina {pageNum} / {pageCount || '—'}
                     </span>
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-ui-text-muted">
                     {viewportWidth ? `${viewportWidth}px` : ''}
                 </span>
             </div>
@@ -180,7 +180,7 @@ export function PdfPreview({ url, onStatus }: { url: string; onStatus?: (status:
             >
                 {loading ? (
                     <div className="flex h-full items-center justify-center">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-ui-accent-muted border-t-transparent" />
                     </div>
                 ) : error ? (
                     <div className="flex h-full items-center justify-center">

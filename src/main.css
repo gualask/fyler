@@ -1,1 +1,66 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Semantic UI tokens ─────────────────────────────────────────────────────
+   Cambiare tema = modificare solo i valori qui.
+   I componenti non contengono mai colori hard-coded né classi dark:.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* superfici e testo */
+  --ui-bg:               var(--color-gray-50);
+  --ui-surface:          #ffffff;
+  --ui-surface-hover:    var(--color-gray-100);
+  --ui-border:           var(--color-gray-200);
+  --ui-text:             var(--color-gray-900);
+  --ui-text-secondary:   var(--color-gray-700);
+  --ui-text-dim:         var(--color-gray-600);
+  --ui-text-muted:       var(--color-gray-400);
+
+  /* accent — cambia solo questi per cambiare il colore brand */
+  --ui-accent:           var(--color-indigo-600);
+  --ui-accent-hover:     var(--color-indigo-700);
+  --ui-accent-muted:     var(--color-indigo-400);
+  --ui-accent-soft:      var(--color-indigo-50);
+  --ui-accent-soft-hover: var(--color-indigo-100);
+  --ui-accent-on-soft:   var(--color-indigo-700);
+}
+
+.dark {
+  /* superfici e testo */
+  --ui-bg:               var(--color-gray-900);
+  --ui-surface:          var(--color-gray-800);
+  --ui-surface-hover:    var(--color-gray-700);
+  --ui-border:           var(--color-gray-700);
+  --ui-text:             var(--color-gray-100);
+  --ui-text-secondary:   var(--color-gray-300);
+  --ui-text-dim:         var(--color-gray-400);
+  --ui-text-muted:       var(--color-gray-500);
+
+  /* accent in dark — soft diventa semi-trasparente */
+  --ui-accent-muted:     var(--color-indigo-400);
+  --ui-accent-soft:      color-mix(in srgb, var(--color-indigo-500) 18%, transparent);
+  --ui-accent-soft-hover: color-mix(in srgb, var(--color-indigo-500) 28%, transparent);
+  --ui-accent-on-soft:   var(--color-indigo-300);
+}
+
+/* ── Tailwind utilities ──────────────────────────────────────────────────── */
+@theme inline {
+  /* superfici */
+  --color-ui-bg:              var(--ui-bg);
+  --color-ui-surface:         var(--ui-surface);
+  --color-ui-surface-hover:   var(--ui-surface-hover);
+  --color-ui-border:          var(--ui-border);
+  /* testo */
+  --color-ui-text:            var(--ui-text);
+  --color-ui-text-secondary:  var(--ui-text-secondary);
+  --color-ui-text-dim:        var(--ui-text-dim);
+  --color-ui-text-muted:      var(--ui-text-muted);
+  /* accent */
+  --color-ui-accent:          var(--ui-accent);
+  --color-ui-accent-hover:    var(--ui-accent-hover);
+  --color-ui-accent-muted:    var(--ui-accent-muted);
+  --color-ui-accent-soft:     var(--ui-accent-soft);
+  --color-ui-accent-soft-hover: var(--ui-accent-soft-hover);
+  --color-ui-accent-on-soft:  var(--ui-accent-on-soft);
+}

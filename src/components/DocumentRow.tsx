@@ -20,24 +20,24 @@ export function DocumentRow(props: {
             className={[
                 'flex items-start gap-2 rounded-lg border p-3 cursor-pointer select-none',
                 props.selected
-                    ? 'border-blue-400 bg-blue-50'
-                    : 'border-gray-200 bg-white hover:bg-gray-50',
+                    ? 'border-ui-accent-muted bg-ui-accent-soft'
+                    : 'border-ui-border bg-ui-surface hover:bg-ui-surface-hover',
             ].join(' ')}
         >
             {/* Drag handle */}
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="mt-0.5 shrink-0 cursor-grab text-gray-400"
+                className="mt-0.5 shrink-0 cursor-grab text-ui-text-muted"
             >
                 <Bars3Icon className="h-4 w-4" />
             </div>
 
             <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-semibold text-gray-800">
+                    <span className="truncate text-sm font-semibold text-ui-text">
                         {props.doc.name}
                     </span>
-                    <span className="shrink-0 text-xs text-gray-400">
+                    <span className="shrink-0 text-xs text-ui-text-muted">
                         {props.doc.pageCount} pag
                     </span>
                 </div>
@@ -47,7 +47,7 @@ export function DocumentRow(props: {
                     value={props.doc.pageSpec}
                     onChange={(e) => props.onPageSpecChange(e.currentTarget.value)}
                     onClick={(e) => e.stopPropagation()}
-                    className="mt-1.5 w-full rounded border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none focus:border-blue-400 focus:bg-white"
+                    className="mt-1.5 w-full rounded border border-ui-border bg-ui-surface-hover px-2 py-1 text-xs text-ui-text-secondary outline-none focus:border-ui-accent-muted focus:bg-ui-surface"
                 />
             </div>
         </div>

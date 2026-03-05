@@ -1,12 +1,15 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ArrowDownTrayIcon,
     DocumentPlusIcon,
     DocumentIcon,
+    MoonIcon,
+    SunIcon,
     TrashIcon,
 } from '@heroicons/react/24/outline';
 import type { Doc, MergeRequest } from './domain';
 import { getPDFPreviewUrl, mergePDFs, openPDFsDialog, savePDFDialog } from './platform';
+import { loadSettings, saveSettings } from './settings';
 import { DocumentRow } from './components/DocumentRow';
 import { PdfPreview } from './components/PdfPreview';
 
@@ -15,6 +18,16 @@ function App() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<string>('');
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+        loadSettings().then((s) => setIsDark(s.isDark));
+    }, []);
+
+    useEffect(() => {
+        document.documentElement.classList.toggle('dark', isDark);
+        void saveSettings({ isDark });
+    }, [isDark]);
 
     const draggedId = useRef<string | null>(null);
 
@@ -93,17 +106,23 @@ function App() {
     }, [docs]);
 
     return (
-        <div className="flex h-screen flex-col overflow-hidden bg-gray-50 text-gray-900">
+        <div className="flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text">
             {/* Header */}
-            <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm">
+            <header className="flex h-14 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-4 shadow-sm">
                 <div className="flex items-center gap-2">
                     <DocumentIcon className="h-5 w-5 text-red-500" />
                     <span className="text-base font-semibold">Fyler</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
+                        onClick={() => setIsDark((d) => !d)}
+                        className="rounded-md p-1.5 text-ui-text-dim hover:bg-ui-surface-hover"
+                    >
+                        {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+                    </button>
+                    <button
                         onClick={() => void addPDFs()}
-                        className="flex items-center gap-1.5 rounded-md bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                        className="flex items-center gap-1.5 rounded-md bg-ui-accent-soft px-3 py-1.5 text-sm font-medium text-ui-accent-on-soft hover:bg-ui-accent-soft-hover"
                     >
                         <DocumentPlusIcon className="h-4 w-4" />
                         Aggiungi PDF
@@ -111,7 +130,7 @@ function App() {
                     <button
                         disabled={!selectedId}
                         onClick={removeSelected}
-                        className="flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-40"
+                        className="flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-40 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800/40"
                     >
                         <TrashIcon className="h-4 w-4" />
                         Rimuovi
@@ -119,7 +138,7 @@ function App() {
                     <button
                         disabled={docs.length === 0}
                         onClick={() => void exportMerged()}
-                        className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                        className="flex items-center gap-1.5 rounded-md bg-ui-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-accent-hover disabled:opacity-40"
                     >
                         <ArrowDownTrayIcon className="h-4 w-4" />
                         Esporta PDF
@@ -133,16 +152,16 @@ function App() {
                 <div className="flex w-[420px] shrink-0 flex-col gap-2">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold">Documenti</span>
-                        <span className="text-xs text-gray-400">{docs.length} file</span>
+                        <span className="text-xs text-ui-text-muted">{docs.length} file</span>
                     </div>
 
                     {error && (
-                        <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-600">{error}</p>
+                        <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-600 dark:bg-red-900/30 dark:text-red-400">{error}</p>
                     )}
 
                     <div className="min-h-0 flex-1 overflow-y-auto">
                         {docs.length === 0 ? (
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm text-ui-text-muted">
                                 Aggiungi uno o più PDF per iniziare.
                             </p>
                         ) : (
@@ -168,7 +187,7 @@ function App() {
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold">Anteprima</span>
-                        <span className="max-w-xs truncate text-xs text-gray-400">
+                        <span className="max-w-xs truncate text-xs text-ui-text-muted">
                             {selectedDoc ? selectedDoc.name : 'Nessun documento selezionato'}
                         </span>
                     </div>
@@ -181,7 +200,7 @@ function App() {
                                 onStatus={setStatus}
                             />
                         ) : (
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm text-ui-text-muted">
                                 {"Seleziona un documento per visualizzare l'anteprima."}
                             </p>
                         )}
@@ -190,8 +209,8 @@ function App() {
             </main>
 
             {/* Footer */}
-            <footer className="flex h-8 shrink-0 items-center border-t border-gray-200 bg-white px-4">
-                <span className="truncate text-xs text-gray-400">{status || 'Pronto'}</span>
+            <footer className="flex h-8 shrink-0 items-center border-t border-ui-border bg-ui-surface px-4">
+                <span className="truncate text-xs text-ui-text-muted">{status || 'Pronto'}</span>
             </footer>
         </div>
     );

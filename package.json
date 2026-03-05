@@ -16,6 +16,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/plugin-store": "^2.4.2",
     "pdfjs-dist": "^5.5.207",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
