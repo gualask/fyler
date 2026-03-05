@@ -5,9 +5,9 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
-export function PdfPreview(props: { url: string; onStatus?: (status: string) => void }) {
+export function PdfPreview({ url, onStatus }: { url: string; onStatus?: (status: string) => void }) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const renderTaskRef = useRef<any>(null);
+    const renderTaskRef = useRef<{ cancel?: () => void } | null>(null);
     const renderSeqRef = useRef(0);
 
     const [loading, setLoading] = useState(true);
@@ -19,9 +19,7 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
     const [viewportEl, setViewportEl] = useState<HTMLDivElement | null>(null);
     const [viewportWidth, setViewportWidth] = useState(0);
 
-    const setStatus = (s: string) => {
-        props.onStatus?.(s);
-    };
+
 
     useEffect(() => {
         if (!viewportEl) return;
@@ -34,16 +32,17 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
 
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true);
         setError(null);
         setDoc(null);
         setPageNum(1);
         setPageCount(0);
-        setStatus('Caricamento PDF…');
+        onStatus?.('Caricamento PDF…');
 
         (async () => {
-            setStatus('Download/lettura…');
-            const task = pdfjsLib.getDocument({ url: props.url } as any);
+            onStatus?.('Download/lettura…');
+            const task = pdfjsLib.getDocument({ url });
             const loaded = await task.promise;
             if (cancelled) {
                 await loaded.destroy();
@@ -51,21 +50,23 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
             }
             setDoc(loaded);
             setPageCount(loaded.numPages);
-            setStatus(`PDF caricato (${loaded.numPages} pagine)`);
+            onStatus?.(`PDF caricato (${loaded.numPages} pagine)`);
         })()
-            .catch((e: any) => {
+            .catch((e: unknown) => {
                 if (cancelled) return;
-                const msg = e?.message ?? String(e);
+                const msg = e instanceof Error ? e.message : String(e);
                 setError(msg);
-                setStatus(`Errore: ${msg}`);
+                onStatus?.(`Errore: ${msg}`);
             })
             .finally(() => {
                 if (cancelled) return;
                 setLoading(false);
             });
 
-        return () => { cancelled = true; };
-    }, [props.url]);
+        return () => {
+            cancelled = true;
+        };
+    }, [url, onStatus]);
 
     const canPrev = pageNum > 1;
     const canNext = pageNum < pageCount;
@@ -73,7 +74,7 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
 
     useEffect(() => {
         if (!doc || !canvasRef.current || !viewportWidth) {
-            if (!viewportWidth) setStatus('In attesa dimensioni area anteprima…');
+            if (!viewportWidth) onStatus?.('In attesa dimensioni area anteprima…');
             return;
         }
 
@@ -82,11 +83,15 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
 
         (async () => {
             if (renderTaskRef.current) {
-                try { renderTaskRef.current.cancel?.(); } catch { /* ignore */ }
+                try {
+                    renderTaskRef.current.cancel?.();
+                } catch {
+                    /* ignore */
+                }
                 renderTaskRef.current = null;
             }
 
-            setStatus(`Render pagina ${pageNum}/${pageCount || '?'}…`);
+            onStatus?.(`Render pagina ${pageNum}/${pageCount || '?'}…`);
             const page = await doc.getPage(pageNum);
             if (cancelled) return;
 
@@ -109,14 +114,14 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
             await renderTask.promise;
             if (cancelled || renderSeqRef.current !== seq) return;
 
-            setStatus(`Render completato (pagina ${pageNum})`);
+            onStatus?.(`Render completato (pagina ${pageNum})`);
         })()
-            .catch((e: any) => {
+            .catch((e: unknown) => {
                 if (cancelled) return;
-                if (e?.name === 'RenderingCancelledException') return;
-                const msg = e?.message ?? String(e);
+                if (e instanceof Error && e.name === 'RenderingCancelledException') return;
+                const msg = e instanceof Error ? e.message : String(e);
                 setError(msg);
-                setStatus(`Errore render: ${msg}`);
+                onStatus?.(`Errore render: ${msg}`);
             })
             .finally(() => {
                 if (renderSeqRef.current === seq) renderTaskRef.current = null;
@@ -125,13 +130,19 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
         return () => {
             cancelled = true;
             if (renderTaskRef.current) {
-                try { renderTaskRef.current.cancel?.(); } catch { /* ignore */ }
+                try {
+                    renderTaskRef.current.cancel?.();
+                } catch {
+                    /* ignore */
+                }
             }
         };
-    }, [doc, pageNum, pageCount, renderKey, viewportWidth]);
+    }, [doc, pageNum, pageCount, renderKey, viewportWidth, onStatus]);
 
     useEffect(() => {
-        return () => { if (doc) void doc.destroy(); };
+        return () => {
+            if (doc) void doc.destroy();
+        };
     }, [doc]);
 
     return (
@@ -177,10 +188,7 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
                     </div>
                 ) : (
                     <div className="flex min-h-full items-center justify-center p-2">
-                        <canvas
-                            ref={canvasRef}
-                            className="block max-w-full bg-white"
-                        />
+                        <canvas ref={canvasRef} className="block max-w-full bg-white" />
                     </div>
                 )}
             </div>

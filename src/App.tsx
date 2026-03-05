@@ -35,8 +35,8 @@ function App() {
             if (newDocs.length === 0) return;
             setDocs((prev) => [...prev, ...newDocs]);
             setSelectedId((prev) => prev ?? newDocs[0].id);
-        } catch (e: any) {
-            setError(e?.message ?? String(e));
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : String(e));
         }
     }, []);
 
@@ -56,7 +56,7 @@ function App() {
         draggedId.current = id;
     }, []);
 
-    const handleDragOver = useCallback((_e: React.DragEvent) => {
+    const handleDragOver = useCallback(() => {
         // preventDefault già fatto in DocumentRow
     }, []);
 
@@ -87,8 +87,8 @@ function App() {
             };
             await mergePDFs(req);
             setStatus('Esportazione completata.');
-        } catch (e: any) {
-            setError(e?.message ?? String(e));
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : String(e));
         }
     }, [docs]);
 
@@ -182,7 +182,7 @@ function App() {
                             />
                         ) : (
                             <p className="text-sm text-gray-400">
-                                Seleziona un documento per visualizzare l'anteprima.
+                                {"Seleziona un documento per visualizzare l'anteprima."}
                             </p>
                         )}
                     </div>
