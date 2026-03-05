@@ -26,4 +26,5 @@ export async function saveSettings(patch: Partial<AppSettings>): Promise<void> {
     for (const [key, value] of Object.entries(patch)) {
         await store.set(key, value);
     }
+    await store.save();
 }
