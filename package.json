@@ -9,7 +9,6 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dev": "vite",
     "build": "pnpm typecheck && vite build",
-    "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
@@ -17,7 +16,6 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@tauri-apps/api": "^2.10.1",
-    "@tauri-apps/plugin-opener": "^2",
     "pdfjs-dist": "^5.5.207",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
