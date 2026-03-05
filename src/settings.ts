@@ -1,30 +1,16 @@
-import { load, type Store } from '@tauri-apps/plugin-store';
+import { invoke } from '@tauri-apps/api/core';
 
 interface AppSettings {
     isDark: boolean;
 }
 
-const DEFAULTS: AppSettings = { isDark: false };
-
-let storePromise: Promise<Store> | null = null;
-
-function getStore() {
-    if (!storePromise) {
-        storePromise = load('settings.json', { autoSave: false, defaults: { isDark: false } });
-    }
-    return storePromise;
-}
-
 export async function loadSettings(): Promise<AppSettings> {
-    const store = await getStore();
-    const isDark = await store.get<boolean>('isDark');
-    return { isDark: isDark ?? DEFAULTS.isDark };
+    const isDark = await invoke<boolean>('load_settings');
+    return { isDark };
 }
 
 export async function saveSettings(patch: Partial<AppSettings>): Promise<void> {
-    const store = await getStore();
-    for (const [key, value] of Object.entries(patch)) {
-        await store.set(key, value);
+    if (patch.isDark !== undefined) {
+        await invoke('save_settings', { isDark: patch.isDark });
     }
-    await store.save();
 }

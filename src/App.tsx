@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import type { MergeRequest } from './domain';
 import { mergePDFs, savePDFDialog } from './platform';
 import { useDocs } from './hooks/useDocs';
@@ -8,26 +9,39 @@ import { DocumentList } from './components/DocumentList';
 import { PreviewPanel } from './components/PreviewPanel';
 
 function App() {
-    const { docs, selectedId, selectedDoc, selectedPreviewUrl, error, setSelectedId, addPDFs, removeSelected, updatePageSpec, handleDragStart, handleDragOver, handleDrop } = useDocs();
+    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addPDFs, removeSelected, updatePageSpec, handleDragStart, handleDragOver, handleDrop } = useDocs();
+    const { isDark, toggleTheme } = useTheme();
     const [status, setStatus] = useState('');
-    // eslint-disable-next-line no-console
-    const log = (msg: string) => { console.log(msg); setStatus(msg); };
-    const { isDark, toggleTheme } = useTheme(log);
+
+    // Global error handler: unhandled promise rejections (invoke errors, plugin errors)
+    useEffect(() => {
+        const handleRejection = (e: PromiseRejectionEvent) => {
+            e.preventDefault();
+            const msg = e.reason instanceof Error ? e.reason.message : String(e.reason);
+            setStatus(`Errore: ${msg}`);
+        };
+        window.addEventListener('unhandledrejection', handleRejection);
+        return () => window.removeEventListener('unhandledrejection', handleRejection);
+    }, []);
+
+    // Global error handler: backend panics emitted via "app-error" event
+    useEffect(() => {
+        let unlisten: (() => void) | undefined;
+        void listen<string>('app-error', (e) => setStatus(`Errore: ${e.payload}`))
+            .then((fn) => { unlisten = fn; });
+        return () => unlisten?.();
+    }, []);
 
     const exportMerged = useCallback(async () => {
         if (docs.length === 0) return;
-        try {
-            const outputPath = await savePDFDialog('merged.pdf');
-            if (!outputPath) return;
-            const req: MergeRequest = {
-                inputs: docs.map((d) => ({ path: d.path, pageSpec: d.pageSpec })),
-                outputPath,
-            };
-            await mergePDFs(req);
-            setStatus('Esportazione completata.');
-        } catch (e: unknown) {
-            setStatus(e instanceof Error ? e.message : String(e));
-        }
+        const outputPath = await savePDFDialog('merged.pdf');
+        if (!outputPath) return;
+        const req: MergeRequest = {
+            inputs: docs.map((d) => ({ path: d.path, pageSpec: d.pageSpec })),
+            outputPath,
+        };
+        await mergePDFs(req);
+        setStatus('Esportazione completata.');
     }, [docs]);
 
     return (
@@ -45,7 +59,6 @@ function App() {
                 <DocumentList
                     docs={docs}
                     selectedId={selectedId}
-                    error={error}
                     onSelect={setSelectedId}
                     onPageSpecChange={updatePageSpec}
                     onDragStart={handleDragStart}

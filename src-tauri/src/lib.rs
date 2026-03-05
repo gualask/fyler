@@ -1,4 +1,5 @@
 use lopdf::{Document as PdfDoc, Object};
+use tauri::Emitter;
 use uuid::Uuid;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -231,16 +232,40 @@ fn merge_pdfs(req: MergeRequest) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn load_settings(app: tauri::AppHandle) -> Result<bool, String> {
+    use tauri_plugin_store::StoreExt;
+    let store = app.store("settings.json").map_err(|e| e.to_string())?;
+    Ok(store.get("isDark").and_then(|v| v.as_bool()).unwrap_or(false))
+}
+
+#[tauri::command]
+async fn save_settings(app: tauri::AppHandle, is_dark: bool) -> Result<(), String> {
+    use tauri_plugin_store::StoreExt;
+    let store = app.store("settings.json").map_err(|e| e.to_string())?;
+    store.set("isDark", is_dark);
+    store.save().map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .setup(|app| {
+            let handle = app.handle().clone();
+            std::panic::set_hook(Box::new(move |info| {
+                let _ = handle.emit("app-error", info.to_string());
+            }));
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             open_pdfs_dialog,
             save_pdf_dialog,
             merge_pdfs,
+            load_settings,
+            save_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

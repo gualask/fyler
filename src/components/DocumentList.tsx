@@ -5,7 +5,6 @@ import { DocumentRow } from './DocumentRow';
 interface Props {
     docs: Doc[];
     selectedId: string | null;
-    error: string | null;
     onSelect: (id: string) => void;
     onPageSpecChange: (id: string, value: string) => void;
     onDragStart: (id: string) => void;
@@ -17,19 +16,13 @@ interface Props {
  * Left panel: header with document count, optional error banner,
  * and a scrollable list of {@link DocumentRow} with drag-and-drop support.
  */
-export function DocumentList({ docs, selectedId, error, onSelect, onPageSpecChange, onDragStart, onDragOver, onDrop }: Props) {
+export function DocumentList({ docs, selectedId, onSelect, onPageSpecChange, onDragStart, onDragOver, onDrop }: Props) {
     return (
         <div className="flex w-[420px] shrink-0 flex-col gap-2">
             <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">Documenti</span>
                 <span className="text-xs text-ui-text-muted">{docs.length} file</span>
             </div>
-
-            {error && (
-                <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                    {error}
-                </p>
-            )}
 
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {docs.length === 0 ? (

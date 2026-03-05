@@ -9,7 +9,6 @@ import { getPDFPreviewUrl, openPDFsDialog } from '../platform';
 export function useDocs() {
     const [docs, setDocs] = useState<Doc[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const draggedId = useRef<string | null>(null);
 
     const selectedDoc = useMemo(
@@ -24,15 +23,10 @@ export function useDocs() {
     );
 
     const addPDFs = useCallback(async () => {
-        try {
-            setError(null);
-            const newDocs = await openPDFsDialog();
-            if (newDocs.length === 0) return;
-            setDocs((prev) => [...prev, ...newDocs]);
-            setSelectedId((prev) => prev ?? newDocs[0].id);
-        } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : String(e));
-        }
+        const newDocs = await openPDFsDialog();
+        if (newDocs.length === 0) return;
+        setDocs((prev) => [...prev, ...newDocs]);
+        setSelectedId((prev) => prev ?? newDocs[0].id);
     }, []);
 
     const removeSelected = useCallback(() => {
@@ -75,7 +69,6 @@ export function useDocs() {
         selectedId,
         selectedDoc,
         selectedPreviewUrl,
-        error,
         setSelectedId,
         addPDFs,
         removeSelected,
