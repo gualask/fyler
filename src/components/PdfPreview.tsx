@@ -1,4 +1,4 @@
-import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -144,14 +144,14 @@ export function PdfPreview(props: { url: string; onStatus?: (status: string) => 
                         onClick={() => setPageNum((n) => Math.max(1, n - 1))}
                         className="rounded p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30"
                     >
-                        <IconChevronLeft size={16} />
+                        <ChevronLeftIcon className="h-4 w-4" />
                     </button>
                     <button
                         disabled={!canNext}
                         onClick={() => setPageNum((n) => Math.min(pageCount, n + 1))}
                         className="rounded p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30"
                     >
-                        <IconChevronRight size={16} />
+                        <ChevronRightIcon className="h-4 w-4" />
                     </button>
                     <span className="ml-1 text-sm text-gray-600">
                         Pagina {pageNum} / {pageCount || '—'}

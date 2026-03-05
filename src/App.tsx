@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-    IconDownload,
-    IconFilePlus,
-    IconFileTypePdf,
-    IconTrash,
-} from '@tabler/icons-react';
+    ArrowDownTrayIcon,
+    DocumentPlusIcon,
+    DocumentIcon,
+    TrashIcon,
+} from '@heroicons/react/24/outline';
 import type { Doc, MergeRequest } from './domain';
 import { getPDFPreviewUrl, mergePDFs, openPDFsDialog, savePDFDialog } from './platform';
 import { DocumentRow } from './components/DocumentRow';
@@ -97,7 +97,7 @@ function App() {
             {/* Header */}
             <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm">
                 <div className="flex items-center gap-2">
-                    <IconFileTypePdf size={20} className="text-red-500" />
+                    <DocumentIcon className="h-5 w-5 text-red-500" />
                     <span className="text-base font-semibold">Fyler</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -105,7 +105,7 @@ function App() {
                         onClick={addPDFs}
                         className="flex items-center gap-1.5 rounded-md bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
                     >
-                        <IconFilePlus size={15} />
+                        <DocumentPlusIcon className="h-4 w-4" />
                         Aggiungi PDF
                     </button>
                     <button
@@ -113,7 +113,7 @@ function App() {
                         onClick={removeSelected}
                         className="flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-40"
                     >
-                        <IconTrash size={15} />
+                        <TrashIcon className="h-4 w-4" />
                         Rimuovi
                     </button>
                     <button
@@ -121,7 +121,7 @@ function App() {
                         onClick={exportMerged}
                         className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
                     >
-                        <IconDownload size={15} />
+                        <ArrowDownTrayIcon className="h-4 w-4" />
                         Esporta PDF
                     </button>
                 </div>

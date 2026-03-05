@@ -1,4 +1,4 @@
-import { IconGripVertical } from '@tabler/icons-react';
+import { Bars3Icon } from '@heroicons/react/24/outline';
 import type { Doc } from '../domain';
 
 export function DocumentRow(props: {
@@ -29,7 +29,7 @@ export function DocumentRow(props: {
                 onClick={(e) => e.stopPropagation()}
                 className="mt-0.5 shrink-0 cursor-grab text-gray-400"
             >
-                <IconGripVertical size={16} />
+                <Bars3Icon className="h-4 w-4" />
             </div>
 
             <div className="min-w-0 flex-1">
