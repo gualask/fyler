@@ -6,7 +6,11 @@ export function useDocList() {
     const [docs, setDocs] = useState<Doc[]>([]);
 
     const addDocs = useCallback((newDocs: Doc[]) => {
-        setDocs((prev) => [...prev, ...newDocs]);
+        setDocs((prev) => {
+            const existingPaths = new Set(prev.map((d) => d.path));
+            const unique = newDocs.filter((d) => !existingPaths.has(d.path));
+            return unique.length ? [...prev, ...unique] : prev;
+        });
     }, []);
 
     const removeDoc = useCallback((id: string) => {

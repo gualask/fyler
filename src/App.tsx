@@ -11,7 +11,7 @@ import { PreviewPanel } from './components/PreviewPanel';
 import { OptimizePopover } from './components/OptimizePopover';
 
 function App() {
-    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addPDFs, removeSelected, updatePageSpec, dragHandlers, rotatePage, isDragOver } = useDocs();
+    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addFiles, removeSelected, updatePageSpec, dragHandlers, rotatePage, isDragOver } = useDocs();
     const { isDark, toggleTheme } = useTheme();
     const { optimizeOptions, popoverProps } = useOptimize();
     const [status, setStatus] = useState('');
@@ -53,7 +53,7 @@ function App() {
             <AppHeader
                 isDark={isDark}
                 onToggleTheme={toggleTheme}
-                onAddPDFs={() => void addPDFs()}
+                onAddFiles={() => void addFiles()}
                 onRemove={removeSelected}
                 canRemove={!!selectedId}
                 onExport={() => void exportMerged()}

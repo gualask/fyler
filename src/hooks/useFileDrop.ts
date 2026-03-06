@@ -14,29 +14,35 @@ export function useFileDrop(
     const [isDragOver, setIsDragOver] = useState(false);
 
     useEffect(() => {
+        let active = true;
         const unlisteners: Array<() => void> = [];
 
-        void listen('tauri://drag-enter', () => setIsDragOver(true)).then((fn) =>
-            unlisteners.push(fn),
-        );
-        void listen('tauri://drag-over', () => setIsDragOver(true)).then((fn) =>
-            unlisteners.push(fn),
-        );
-        void listen('tauri://drag-leave', () => setIsDragOver(false)).then((fn) =>
-            unlisteners.push(fn),
-        );
-        void listen<DragDropPayload>('tauri://drag-drop', (e) => {
-            setIsDragOver(false);
-            const paths = e.payload.paths;
-            if (!paths?.length) return;
-            void openDocsFromPaths(paths).then((docs) => {
-                if (!docs.length) return;
-                addDocs(docs);
-                setSelectedId(docs[0].id);
-            });
-        }).then((fn) => unlisteners.push(fn));
+        Promise.all([
+            listen('tauri://drag-enter', () => setIsDragOver(true)),
+            listen('tauri://drag-over', () => setIsDragOver(true)),
+            listen('tauri://drag-leave', () => setIsDragOver(false)),
+            listen<DragDropPayload>('tauri://drag-drop', (e) => {
+                setIsDragOver(false);
+                const paths = e.payload.paths;
+                if (!paths?.length) return;
+                void openDocsFromPaths(paths).then((docs) => {
+                    if (!docs.length) return;
+                    addDocs(docs);
+                    setSelectedId(docs[0].id);
+                });
+            }),
+        ]).then((fns) => {
+            if (active) {
+                unlisteners.push(...fns);
+            } else {
+                fns.forEach((fn) => fn());
+            }
+        });
 
-        return () => unlisteners.forEach((fn) => fn());
+        return () => {
+            active = false;
+            unlisteners.forEach((fn) => fn());
+        };
     }, [addDocs, setSelectedId]);
 
     return { isDragOver };

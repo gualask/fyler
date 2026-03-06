@@ -39,7 +39,7 @@ fn path_to_document(path: String) -> Result<Option<Document>, String> {
 }
 
 #[tauri::command]
-pub async fn open_pdfs_dialog(app: tauri::AppHandle) -> Result<Vec<Document>, String> {
+pub async fn open_files_dialog(app: tauri::AppHandle) -> Result<Vec<Document>, String> {
     let mut filter_exts = vec!["pdf"];
     filter_exts.extend_from_slice(IMAGE_EXTENSIONS);
 

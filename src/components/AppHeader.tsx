@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 interface Props {
     isDark: boolean;
     onToggleTheme: () => void;
-    onAddPDFs: () => void;
+    onAddFiles: () => void;
     onRemove: () => void;
     canRemove: boolean;
     onExport: () => void;
@@ -12,7 +12,7 @@ interface Props {
     optimizeSlot: ReactNode;
 }
 
-export function AppHeader({ isDark, onToggleTheme, onAddPDFs, onRemove, canRemove, onExport, canExport, optimizeSlot }: Props) {
+export function AppHeader({ isDark, onToggleTheme, onAddFiles, onRemove, canRemove, onExport, canExport, optimizeSlot }: Props) {
     return (
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-4">
             <div className="flex items-center gap-2">
@@ -31,7 +31,7 @@ export function AppHeader({ isDark, onToggleTheme, onAddPDFs, onRemove, canRemov
                 </button>
                 <div className="h-4 w-px bg-ui-border" />
                 <button
-                    onClick={onAddPDFs}
+                    onClick={onAddFiles}
                     className="flex items-center gap-1.5 rounded-md border border-ui-border px-3 py-1.5 text-sm font-medium text-ui-text-secondary hover:bg-ui-surface-hover"
                 >
                     <DocumentPlusIcon className="h-4 w-4" />

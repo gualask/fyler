@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { getPDFPreviewUrl, openPDFsDialog, rotatePdfPage } from '../platform';
+import { getPreviewUrl, openFilesDialog, rotatePdfPage } from '../platform';
 import { useDocList } from './useDocList';
 import { useDragDrop, type DragHandlers } from './useDragDrop';
 import { useFileDrop } from './useFileDrop';
@@ -20,13 +20,13 @@ export function useDocs() {
     );
 
     const selectedPreviewUrl = useMemo(
-        () => (selectedDoc ? getPDFPreviewUrl(selectedDoc.path) : null),
+        () => (selectedDoc ? getPreviewUrl(selectedDoc.path) : null),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [selectedDoc?.path],
     );
 
-    const addPDFs = useCallback(async () => {
-        const newDocs = await openPDFsDialog();
+    const addFiles = useCallback(async () => {
+        const newDocs = await openFilesDialog();
         if (newDocs.length === 0) return;
         addDocs(newDocs);
         setSelectedId((prev) => prev ?? newDocs[0].id);
@@ -62,7 +62,7 @@ export function useDocs() {
         selectedDoc,
         selectedPreviewUrl,
         setSelectedId,
-        addPDFs,
+        addFiles,
         removeSelected,
         updatePageSpec,
         dragHandlers,
