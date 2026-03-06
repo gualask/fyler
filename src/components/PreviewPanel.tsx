@@ -1,7 +1,6 @@
 import type { Doc } from '../domain';
 import { PdfPreview } from './PdfPreview';
 
-/** Props for the right-side PDF preview panel. */
 interface Props {
     selectedDoc: Doc | null;
     previewUrl: string | null;
@@ -9,10 +8,6 @@ interface Props {
     onRotate?: (pageNum: number, angle: number) => void;
 }
 
-/**
- * Right panel: renders the selected document via {@link PdfPreview},
- * or a placeholder when no document is selected.
- */
 export function PreviewPanel({ selectedDoc, previewUrl, onStatus, onRotate }: Props) {
     return (
         <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -24,17 +19,25 @@ export function PreviewPanel({ selectedDoc, previewUrl, onStatus, onRotate }: Pr
             </div>
 
             <div className="min-h-0 flex-1">
-                {selectedDoc ? (
+                {!selectedDoc ? (
+                    <p className="text-sm text-ui-text-muted">
+                        {"Seleziona un documento per visualizzare l'anteprima."}
+                    </p>
+                ) : selectedDoc.kind === 'image' ? (
+                    <div className="flex h-full items-center justify-center overflow-auto rounded-lg border border-ui-border bg-ui-surface p-3">
+                        <img
+                            src={previewUrl!}
+                            alt={selectedDoc.name}
+                            className="max-h-full max-w-full object-contain"
+                        />
+                    </div>
+                ) : (
                     <PdfPreview
                         key={selectedDoc.id}
                         url={previewUrl!}
                         onStatus={onStatus}
                         onRotate={onRotate}
                     />
-                ) : (
-                    <p className="text-sm text-ui-text-muted">
-                        {"Seleziona un documento per visualizzare l'anteprima."}
-                    </p>
                 )}
             </div>
         </div>

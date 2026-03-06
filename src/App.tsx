@@ -4,13 +4,16 @@ import type { MergeRequest } from './domain';
 import { mergePDFs, savePDFDialog } from './platform';
 import { useDocs } from './hooks/useDocs';
 import { useTheme } from './hooks/useTheme';
+import { useOptimize } from './hooks/useOptimize';
 import { AppHeader } from './components/AppHeader';
 import { DocumentList } from './components/DocumentList';
 import { PreviewPanel } from './components/PreviewPanel';
+import { OptimizePopover } from './components/OptimizePopover';
 
 function App() {
-    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addPDFs, removeSelected, updatePageSpec, dragHandlers, rotatePage } = useDocs();
+    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addPDFs, removeSelected, updatePageSpec, dragHandlers, rotatePage, isDragOver } = useDocs();
     const { isDark, toggleTheme } = useTheme();
+    const { optimizeOptions, popoverProps } = useOptimize();
     const [status, setStatus] = useState('');
 
     // Global error handler: unhandled promise rejections (invoke errors, plugin errors)
@@ -39,10 +42,11 @@ function App() {
         const req: MergeRequest = {
             inputs: docs.map((d) => ({ path: d.path, pageSpec: d.pageSpec })),
             outputPath,
+            optimize: optimizeOptions,
         };
         await mergePDFs(req);
         setStatus('Esportazione completata.');
-    }, [docs]);
+    }, [docs, optimizeOptions]);
 
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text">
@@ -54,22 +58,30 @@ function App() {
                 canRemove={!!selectedId}
                 onExport={() => void exportMerged()}
                 canExport={docs.length > 0}
+                optimizeSlot={<OptimizePopover {...popoverProps} />}
             />
-            <main className="flex min-h-0 flex-1 gap-4 overflow-hidden p-4">
-                <DocumentList
-                    docs={docs}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                    onPageSpecChange={updatePageSpec}
-                    dragHandlers={dragHandlers}
-                />
-                <PreviewPanel
-                    selectedDoc={selectedDoc}
-                    previewUrl={selectedPreviewUrl}
-                    onStatus={setStatus}
-                    onRotate={(pageNum, angle) => void rotatePage(pageNum, angle)}
-                />
-            </main>
+            <div className="relative flex min-h-0 flex-1 overflow-hidden">
+                {isDragOver && (
+                    <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed border-ui-accent bg-ui-accent/10">
+                        <span className="text-sm font-medium text-ui-accent">Rilascia i file qui</span>
+                    </div>
+                )}
+                <main className="flex min-h-0 flex-1 gap-4 overflow-hidden p-4">
+                    <DocumentList
+                        docs={docs}
+                        selectedId={selectedId}
+                        onSelect={setSelectedId}
+                        onPageSpecChange={updatePageSpec}
+                        dragHandlers={dragHandlers}
+                    />
+                    <PreviewPanel
+                        selectedDoc={selectedDoc}
+                        previewUrl={selectedPreviewUrl}
+                        onStatus={setStatus}
+                        onRotate={(pageNum, angle) => void rotatePage(pageNum, angle)}
+                    />
+                </main>
+            </div>
             <footer className="flex h-8 shrink-0 items-center border-t border-ui-border bg-ui-surface px-4">
                 <span className="truncate text-xs text-ui-text-muted">{status || 'Pronto'}</span>
             </footer>

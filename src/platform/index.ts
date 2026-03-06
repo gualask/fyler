@@ -13,6 +13,9 @@ export const mergePDFs = (req: MergeRequest): Promise<void> =>
 export const rotatePdfPage = (path: string, pageNum: number, angle: number): Promise<string> =>
     invoke('rotate_pdf_page', { path, pageNum, angle });
 
+export const openDocsFromPaths = (paths: string[]): Promise<Doc[]> =>
+    invoke('open_docs_from_paths', { paths });
+
 // asset:// protocol: il webview Tauri carica il file locale direttamente
 export const getPDFPreviewUrl = (path: string): string =>
     convertFileSrc(path);

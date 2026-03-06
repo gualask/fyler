@@ -2,6 +2,7 @@ use tauri::Emitter;
 
 mod commands;
 mod models;
+mod optimize;
 mod pdf;
 mod settings;
 
@@ -20,6 +21,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::open_pdfs_dialog,
+            commands::open_docs_from_paths,
             commands::save_pdf_dialog,
             commands::merge_pdfs,
             commands::rotate_pdf_page,

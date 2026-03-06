@@ -14,7 +14,15 @@ export type MergeInput = {
     pageSpec: string;
 };
 
+export type JpegQuality = 'high' | 'medium' | 'low';
+
+export type OptimizeOptions = {
+    jpegQuality?: JpegQuality;
+    maxPx?: number;
+};
+
 export type MergeRequest = {
     inputs: MergeInput[];
     outputPath: string;
+    optimize?: OptimizeOptions;
 };

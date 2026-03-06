@@ -19,13 +19,12 @@ export function usePdfDocument(url: string, onStatus?: (s: string) => void) {
         setPageCount(0);
         onStatus?.('Caricamento PDF…');
 
+        const task = pdfjsLib.getDocument({ url });
+
         (async () => {
             onStatus?.('Download/lettura…');
-            const loaded = await pdfjsLib.getDocument({ url }).promise;
-            if (cancelled) {
-                await loaded.destroy();
-                return;
-            }
+            const loaded = await task.promise;
+            if (cancelled) return;
             setDoc(loaded);
             setPageCount(loaded.numPages);
             onStatus?.(`PDF caricato (${loaded.numPages} pagine)`);
@@ -42,6 +41,7 @@ export function usePdfDocument(url: string, onStatus?: (s: string) => void) {
 
         return () => {
             cancelled = true;
+            void task.destroy();
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [url]);

@@ -1,6 +1,6 @@
 import { ArrowDownTrayIcon, DocumentIcon, DocumentPlusIcon, MoonIcon, SunIcon, TrashIcon } from '@heroicons/react/24/outline';
+import type { ReactNode } from 'react';
 
-/** Props for the main application toolbar. */
 interface Props {
     isDark: boolean;
     onToggleTheme: () => void;
@@ -9,13 +9,10 @@ interface Props {
     canRemove: boolean;
     onExport: () => void;
     canExport: boolean;
+    optimizeSlot: ReactNode;
 }
 
-/**
- * Fixed top toolbar: brand with version, theme toggle,
- * and action buttons with visual hierarchy (ghost / ghost-destructive / solid).
- */
-export function AppHeader({ isDark, onToggleTheme, onAddPDFs, onRemove, canRemove, onExport, canExport }: Props) {
+export function AppHeader({ isDark, onToggleTheme, onAddPDFs, onRemove, canRemove, onExport, canExport, optimizeSlot }: Props) {
     return (
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-4">
             <div className="flex items-center gap-2">
@@ -48,6 +45,7 @@ export function AppHeader({ isDark, onToggleTheme, onAddPDFs, onRemove, canRemov
                     <TrashIcon className="h-4 w-4" />
                     Rimuovi
                 </button>
+                {optimizeSlot}
                 <button
                     disabled={!canExport}
                     onClick={onExport}

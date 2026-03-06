@@ -3,14 +3,16 @@
 ![version](https://img.shields.io/github/package-json/v/gualask/fyler)
 ![build](https://img.shields.io/github/actions/workflow/status/gualask/fyler/build.yml)
 
-Desktop app for merging and rearranging PDF files, built with Tauri 2.
+Desktop app for merging and rearranging PDF files and images, built with Tauri 2.
 
 ## Features
 
-- Add multiple PDF files and reorder them via drag & drop
+- Add PDF files and images (JPG, PNG, and more), reorder via drag & drop
 - Select specific page ranges per document (e.g. `1-3,5,8`)
+- Rotate individual pages directly from the preview
 - Preview any document before exporting
 - Export a single merged PDF
+- Optimize output: JPEG image compression (high / medium / low) and max-dimension resize
 - Light / dark mode with persistent preference
 
 ## Tech stack
@@ -44,12 +46,15 @@ pnpm tauri build
 ```
 src/                   React frontend
 ├── components/        UI components
+├── hooks/             Custom React hooks
 ├── platform/          Tauri invoke wrappers
 ├── domain.ts          Shared types
 ├── settings.ts        Persistent settings (store)
 └── main.css           Design tokens & Tailwind config
 src-tauri/             Rust backend
-├── src/lib.rs         Tauri commands (dialog, merge, PDF parsing)
+├── src/commands.rs    Tauri commands (dialog, merge, rotate)
+├── src/pdf.rs         PDF/image processing
+├── src/optimize.rs    Output optimization (JPEG, resize)
 └── Cargo.toml
 docs/                  Project documentation
 ```

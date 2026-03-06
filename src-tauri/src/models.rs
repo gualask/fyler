@@ -18,8 +18,17 @@ pub struct MergeInput {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
+pub struct OptimizeOptions {
+    #[serde(rename = "jpegQuality")]
+    pub jpeg_quality: Option<String>, // "high" | "medium" | "low"
+    #[serde(rename = "maxPx")]
+    pub max_px: Option<u32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct MergeRequest {
     pub inputs: Vec<MergeInput>,
     #[serde(rename = "outputPath")]
     pub output_path: String,
+    pub optimize: Option<OptimizeOptions>,
 }

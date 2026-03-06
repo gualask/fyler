@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { getPDFPreviewUrl, openPDFsDialog, rotatePdfPage } from '../platform';
 import { useDocList } from './useDocList';
 import { useDragDrop, type DragHandlers } from './useDragDrop';
+import { useFileDrop } from './useFileDrop';
 
 export type { DragHandlers };
 
@@ -47,7 +48,13 @@ export function useDocs() {
         [selectedDoc, updateDocPath],
     );
 
+    const selectIfNone = useCallback(
+        (id: string) => setSelectedId((prev) => prev ?? id),
+        [],
+    );
+
     const dragHandlers = useDragDrop(reorderDocs);
+    const { isDragOver } = useFileDrop(addDocs, selectIfNone);
 
     return {
         docs,
@@ -60,5 +67,6 @@ export function useDocs() {
         updatePageSpec,
         dragHandlers,
         rotatePage,
+        isDragOver,
     };
 }
