@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const ZOOM_STEP = 1.25;
 const ZOOM_MIN = 0.5;
@@ -12,7 +12,7 @@ export function useZoomPan() {
     const dragOrigin = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
     // refs stabili per l'handler wheel (evita re-attach a ogni render)
     const stateRef = useRef({ scale: 1, offset: { x: 0, y: 0 } });
-    stateRef.current = { scale, offset };
+    useLayoutEffect(() => { stateRef.current = { scale, offset }; });
 
     const reset = useCallback(() => {
         setScale(1);

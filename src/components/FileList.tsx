@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ArrowUpTrayIcon, DocumentPlusIcon } from '@heroicons/react/24/outline';
 import type { SourceFile, FinalPage } from '../domain';
 import { FileRow } from './FileRow';
@@ -12,6 +13,14 @@ interface Props {
 }
 
 export function FileList({ files, finalPages, selectedId, onSelect, onRemove, onAddFiles }: Props) {
+    const pageCountByFile = useMemo(() => {
+        const map = new Map<string, number>();
+        for (const fp of finalPages) {
+            map.set(fp.fileId, (map.get(fp.fileId) ?? 0) + 1);
+        }
+        return map;
+    }, [finalPages]);
+
     return (
         <div className="flex h-full flex-col overflow-hidden">
             <div className="flex shrink-0 items-center justify-between border-b border-ui-border px-4 py-3">
@@ -36,19 +45,16 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">
-                        {files.map((f) => {
-                            const usedPages = finalPages.filter((fp) => fp.fileId === f.id).length;
-                            return (
-                                <FileRow
-                                    key={f.id}
-                                    file={f}
-                                    usedPages={usedPages}
-                                    selected={f.id === selectedId}
-                                    onSelect={() => onSelect(f.id)}
-                                    onRemove={() => onRemove(f.id)}
-                                />
-                            );
-                        })}
+                        {files.map((f) => (
+                            <FileRow
+                                key={f.id}
+                                file={f}
+                                usedPages={pageCountByFile.get(f.id) ?? 0}
+                                selected={f.id === selectedId}
+                                onSelect={() => onSelect(f.id)}
+                                onRemove={() => onRemove(f.id)}
+                            />
+                        ))}
                     </div>
                 )}
             </div>

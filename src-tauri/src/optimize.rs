@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use image::{imageops, imageops::FilterType, RgbImage};
 use lopdf::{Dictionary, Document as PdfDoc, Object};
+use rayon::prelude::*;
 
 use crate::models::OptimizeOptions;
 
@@ -41,25 +42,24 @@ pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> Result<()> {
 
     doc.decompress();
 
-    let image_ids: Vec<lopdf::ObjectId> = doc
+    let entries: Vec<&mut Object> = doc
         .objects
-        .iter()
-        .filter_map(|(&id, obj)| is_rgb_image_stream(obj).then_some(id))
+        .iter_mut()
+        .filter_map(|(_, obj)| is_rgb_image_stream(obj).then_some(obj))
         .collect();
 
-    for id in image_ids {
-        let obj = doc.objects.get_mut(&id).context("oggetto non trovato")?;
+    entries.into_par_iter().try_for_each(|obj| -> Result<()> {
         let stream = obj.as_stream_mut()?;
 
         let w = dict_u32(&stream.dict, b"Width");
         let h = dict_u32(&stream.dict, b"Height");
         if w == 0 || h == 0 {
-            continue;
+            return Ok(());
         }
 
         let raw = stream.content.clone();
         if raw.len() != (w * h * 3) as usize {
-            continue; // skip se già compressi o dimensioni incoerenti
+            return Ok(()); // skip se già compressi o dimensioni incoerenti
         }
 
         let mut img = RgbImage::from_raw(w, h, raw)
@@ -83,7 +83,7 @@ pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> Result<()> {
 
         // Se né resize né jpeg si applicano a questa immagine, salta
         if !did_resize && opts.jpeg_quality.is_none() {
-            continue;
+            return Ok(());
         }
 
         let (nw, nh) = (img.width(), img.height());
@@ -102,7 +102,9 @@ pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> Result<()> {
 
         stream.dict.set("Width", Object::Integer(nw as i64));
         stream.dict.set("Height", Object::Integer(nh as i64));
-    }
+
+        Ok(())
+    })?;
 
     Ok(())
 }

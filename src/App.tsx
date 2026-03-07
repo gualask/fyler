@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { finalPagesToMergeInputs, type MergeRequest } from './domain';
 import { mergePDFs, savePDFDialog } from './platform';
-import { ThumbnailCacheProvider } from './hooks/useThumbnailCache';
+import { ThumbnailCacheProvider } from './hooks/ThumbnailCacheProvider';
 import { useFiles } from './hooks/useFiles';
 import { useTheme } from './hooks/useTheme';
 import { useOptimize } from './hooks/useOptimize';
@@ -10,7 +10,7 @@ import { AppHeader } from './components/AppHeader';
 import { FileList } from './components/FileList';
 import { PagePicker } from './components/PagePicker';
 import { FinalDocument } from './components/FinalDocument';
-import { FinalPreviewModal } from './components/FinalPreviewModal';
+import { PreviewModal } from './components/PreviewModal';
 import { OutputPanel } from './components/OutputPanel';
 
 function AppContent() {
@@ -104,6 +104,7 @@ function AppContent() {
 
                 <section className="w-[320px] shrink-0 overflow-hidden border-r border-ui-border bg-ui-source">
                     <PagePicker
+                        key={selectedFile?.id}
                         file={selectedFile}
                         finalPages={finalPages}
                         onTogglePage={togglePage}
@@ -143,7 +144,7 @@ function AppContent() {
             )}
 
             {showFinalPreview && (
-                <FinalPreviewModal
+                <PreviewModal
                     finalPages={finalPages}
                     files={files}
                     imageFit={imageFit}

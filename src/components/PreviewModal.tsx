@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ArrowPathIcon,
     MagnifyingGlassMinusIcon,
@@ -35,25 +35,28 @@ function PageSlot({ fp, file, index, scrollRoot, zoomLevel, imageFit, onVisible 
     const [src, setSrc] = useState<string | null>(null);
     const { renderPageLarge } = useThumbnailCache();
 
+    const filePath = file?.path ?? null;
+    const fileKind = file?.kind ?? null;
+
     // Lazy load: carica quando entra nel viewport (con 300px di anticipo)
     useEffect(() => {
         const el = slotRef.current;
-        if (!el || !file) return;
+        if (!el || !filePath || !fileKind) return;
         const io = new IntersectionObserver(
             ([e]) => {
                 if (!e.isIntersecting) return;
                 io.disconnect();
-                if (file.kind === 'image') {
-                    setSrc(getPreviewUrl(file.path));
+                if (fileKind === 'image') {
+                    setSrc(getPreviewUrl(filePath));
                 } else {
-                    void renderPageLarge(getPreviewUrl(file.path), fp.pageNum).then(setSrc);
+                    void renderPageLarge(getPreviewUrl(filePath), fp.pageNum).then(setSrc);
                 }
             },
             { rootMargin: '300px' },
         );
         io.observe(el);
         return () => io.disconnect();
-    }, [file?.id, fp.pageNum]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [filePath, fileKind, fp.pageNum, renderPageLarge]);
 
     // Tracking pagina corrente: notifica quando ≥30% visibile nello scroll area
     useEffect(() => {
@@ -109,11 +112,11 @@ function PageSlot({ fp, file, index, scrollRoot, zoomLevel, imageFit, onVisible 
     );
 }
 
-export function FinalPreviewModal({ finalPages, files, imageFit = 'fit', onClose }: Props) {
-    const fileMap = new Map(files.map((f) => [f.id, f]));
+export function PreviewModal({ finalPages, files, imageFit = 'fit', onClose }: Props) {
+    const fileMap = useMemo(() => new Map(files.map((f) => [f.id, f])), [files]);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
     const total = finalPages.length;
 
     // Escape chiude il modal
@@ -125,7 +128,7 @@ export function FinalPreviewModal({ finalPages, files, imageFit = 'fit', onClose
 
     // Ctrl+scroll → zoom, scroll normale → passa attraverso (nativo)
     useEffect(() => {
-        const el = scrollRef.current;
+        const el = scrollEl;
         if (!el) return;
         const handler = (e: WheelEvent) => {
             if (!e.ctrlKey) return;
@@ -135,7 +138,7 @@ export function FinalPreviewModal({ finalPages, files, imageFit = 'fit', onClose
         };
         el.addEventListener('wheel', handler, { passive: false });
         return () => el.removeEventListener('wheel', handler);
-    }, []);
+    }, [scrollEl]);
 
     const handleVisible = useCallback((index: number) => {
         setCurrentPage(index + 1);
@@ -197,7 +200,7 @@ export function FinalPreviewModal({ finalPages, files, imageFit = 'fit', onClose
 
                 {/* Area di scroll */}
                 <div
-                    ref={scrollRef}
+                    ref={setScrollEl}
                     className="flex-1 overflow-y-auto pt-14 pb-10 px-4"
                 >
                     <div className={total === 1 ? 'flex min-h-full items-center justify-center' : undefined}>
@@ -207,7 +210,7 @@ export function FinalPreviewModal({ finalPages, files, imageFit = 'fit', onClose
                                 fp={fp}
                                 file={fileMap.get(fp.fileId)}
                                 index={i}
-                                scrollRoot={scrollRef.current}
+                                scrollRoot={scrollEl}
                                 zoomLevel={zoomLevel}
                                 imageFit={imageFit}
                                 onVisible={handleVisible}

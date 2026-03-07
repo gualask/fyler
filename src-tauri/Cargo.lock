@@ -1347,6 +1347,7 @@ dependencies = [
  "anyhow",
  "image",
  "lopdf",
+ "rayon",
  "serde",
  "serde_json",
  "tauri",

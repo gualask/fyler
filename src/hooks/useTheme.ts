@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { loadSettings, saveSettings } from '../settings';
 
 /**
@@ -9,20 +9,20 @@ import { loadSettings, saveSettings } from '../settings';
  */
 export function useTheme() {
     const [isDark, setIsDark] = useState(false);
-    const hasLoaded = useRef(false);
+    const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         void loadSettings().then((s) => {
-            hasLoaded.current = true;
+            setLoaded(true);
             setIsDark(s.isDark);
         });
     }, []);
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', isDark);
-        if (!hasLoaded.current) return;
+        if (!loaded) return;
         void saveSettings({ isDark });
-    }, [isDark]);
+    }, [isDark, loaded]);
 
     const toggleTheme = () => setIsDark((d) => !d);
 

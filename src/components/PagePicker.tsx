@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     CheckIcon,
     MagnifyingGlassPlusIcon,
@@ -6,7 +6,7 @@ import {
 import type { SourceFile, FinalPage } from '../domain';
 import { useThumbnailCache } from '../hooks/useThumbnailCache';
 import { getPreviewUrl } from '../platform';
-import { FinalPreviewModal } from './FinalPreviewModal';
+import { PreviewModal } from './PreviewModal';
 
 interface Props {
     file: SourceFile | null;
@@ -112,13 +112,6 @@ export function PagePicker({
     const gridRef = useRef<HTMLDivElement>(null);
     useThumbnailCache(); // mantiene il context attivo per i figli
 
-    useEffect(() => {
-        lastClickedPage.current = null;
-        setSpecInput('');
-        setGotoInput('');
-        setPreviewPage(null);
-    }, [file?.id]);
-
     if (!file) {
         return (
             <div className="flex h-full items-center justify-center text-ui-text-muted">
@@ -198,7 +191,7 @@ export function PagePicker({
                 </div>
 
                 {previewPage === -1 && (
-                    <FinalPreviewModal
+                    <PreviewModal
                         finalPages={[{ id: 'preview', fileId: file.id, pageNum: 0 }]}
                         files={[file]}
                         onClose={() => setPreviewPage(null)}
@@ -278,7 +271,7 @@ export function PagePicker({
             </div>
 
             {previewPage !== null && previewPage > 0 && (
-                <FinalPreviewModal
+                <PreviewModal
                     finalPages={[{ id: 'preview', fileId: file.id, pageNum: previewPage }]}
                     files={[file]}
                     onClose={() => setPreviewPage(null)}

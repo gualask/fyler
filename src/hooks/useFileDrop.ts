@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { openFilesFromPaths } from '../platform';
 import type { SourceFile } from '../domain';
@@ -12,6 +12,12 @@ export function useFileDrop(
     setSelectedId: (id: string) => void,
 ): { isDragOver: boolean } {
     const [isDragOver, setIsDragOver] = useState(false);
+    const addFilesRef = useRef(addFiles);
+    const setSelectedIdRef = useRef(setSelectedId);
+    useLayoutEffect(() => {
+        addFilesRef.current = addFiles;
+        setSelectedIdRef.current = setSelectedId;
+    });
 
     useEffect(() => {
         let active = true;
@@ -27,8 +33,8 @@ export function useFileDrop(
                 if (!paths?.length) return;
                 void openFilesFromPaths(paths).then((files) => {
                     if (!files.length) return;
-                    addFiles(files);
-                    setSelectedId(files[0].id);
+                    addFilesRef.current(files);
+                    setSelectedIdRef.current(files[0].id);
                 });
             }),
         ]).then((fns) => {
@@ -43,7 +49,7 @@ export function useFileDrop(
             active = false;
             unlisteners.forEach((fn) => fn());
         };
-    }, [addFiles, setSelectedId]);
+    }, []); // listener registrati una sola volta al mount
 
     return { isDragOver };
 }

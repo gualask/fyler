@@ -1,4 +1,5 @@
 use anyhow::bail;
+use rayon::prelude::*;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
@@ -9,6 +10,8 @@ use crate::pdf::{count_pages, detect_kind_from_ext, merge_pdf_documents, prepare
 fn files_from_paths(paths: impl IntoIterator<Item = String>) -> anyhow::Result<Vec<SourceFile>> {
     paths
         .into_iter()
+        .collect::<Vec<_>>()
+        .into_par_iter()
         .filter_map(|path| match path_to_file(path) {
             Ok(Some(f)) => Some(Ok(f)),
             Ok(None) => None,
@@ -96,7 +99,7 @@ fn merge_pdfs_inner(req: MergeRequest) -> anyhow::Result<()> {
         .and_then(|o| o.image_fit.as_deref())
         .unwrap_or("fit");
 
-    let docs = req.inputs.iter()
+    let docs = req.inputs.par_iter()
         .map(|input| prepare_doc(&input.path, &input.page_spec, image_fit))
         .collect::<anyhow::Result<Vec<_>>>()?;
 

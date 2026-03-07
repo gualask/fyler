@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from 'react';
 import {
     DndContext,
     closestCenter,
@@ -21,18 +22,18 @@ interface Props {
     onRemove: (id: string) => void;
 }
 
-function FinalPageRow({
+const FinalPageRow = memo(function FinalPageRow({
     fp,
     file,
     index,
-    selectedFileId,
+    isHighlighted,
     onRemove,
 }: {
     fp: FinalPage;
     file: SourceFile | undefined;
     index: number;
-    selectedFileId: string | null;
-    onRemove: () => void;
+    isHighlighted: boolean;
+    onRemove: (id: string) => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: fp.id,
@@ -45,7 +46,6 @@ function FinalPageRow({
         zIndex: isDragging ? 10 : undefined,
     };
 
-    const isHighlighted = fp.fileId === selectedFileId;
     const thumbUrl =
         file?.kind === 'pdf' ? getThumbnail(getPreviewUrl(file.path), fp.pageNum) : null;
     const imageUrl = file?.kind === 'image' ? getPreviewUrl(file.path) : null;
@@ -108,7 +108,7 @@ function FinalPageRow({
 
                 {/* Delete hover-reveal */}
                 <button
-                    onClick={onRemove}
+                    onClick={() => onRemove(fp.id)}
                     className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-colors hover:bg-red-600 group-hover:flex"
                 >
                     <XMarkIcon className="h-3.5 w-3.5" />
@@ -116,20 +116,21 @@ function FinalPageRow({
             </div>
         </div>
     );
-}
+});
 
 export function FinalDocument({ finalPages, files, selectedFileId, onReorder, onRemove }: Props) {
-    const fileMap = new Map(files.map((f) => [f.id, f]));
+    const fileMap = useMemo(() => new Map(files.map((f) => [f.id, f])), [files]);
+    const sortableItems = useMemo(() => finalPages.map((fp) => fp.id), [finalPages]);
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     );
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;
         if (over && active.id !== over.id) {
             onReorder(String(active.id), String(over.id));
         }
-    };
+    }, [onReorder]);
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
@@ -157,7 +158,7 @@ export function FinalDocument({ finalPages, files, selectedFileId, onReorder, on
                         onDragEnd={handleDragEnd}
                     >
                         <SortableContext
-                            items={finalPages.map((fp) => fp.id)}
+                            items={sortableItems}
                             strategy={verticalListSortingStrategy}
                         >
                             <div className="flex flex-col gap-3">
@@ -167,8 +168,8 @@ export function FinalDocument({ finalPages, files, selectedFileId, onReorder, on
                                         fp={fp}
                                         file={fileMap.get(fp.fileId)}
                                         index={i}
-                                        selectedFileId={selectedFileId}
-                                        onRemove={() => onRemove(fp.id)}
+                                        isHighlighted={fp.fileId === selectedFileId}
+                                        onRemove={onRemove}
                                     />
                                 ))}
                             </div>

@@ -1,5 +1,6 @@
 use anyhow::{bail, Context, Result};
 use lopdf::{Document as PdfDoc, Object};
+use rayon::prelude::*;
 use uuid::Uuid;
 
 pub const IMAGE_EXTENSIONS: &[&str] = &[
@@ -233,9 +234,19 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
         .and_then(|o| o.as_reference())
         .context("Pages non trovato nel catalog")?;
 
-    for mut other in docs {
-        other.renumber_objects_with(base.max_id + 1);
+    // Pre-calcola gli offset cumulativi per rinumerare tutti i doc in parallelo
+    let mut offset = base.max_id + 1;
+    let offsets: Vec<u32> = docs.iter().map(|d| {
+        let o = offset;
+        offset += d.max_id + 1;
+        o
+    }).collect();
 
+    docs.par_iter_mut()
+        .zip(offsets.par_iter())
+        .for_each(|(doc, &off)| doc.renumber_objects_with(off));
+
+    for other in docs {
         let other_page_ids: Vec<lopdf::ObjectId> = other.page_iter().collect();
         let other_max = other.max_id;
 
