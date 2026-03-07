@@ -7,6 +7,25 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 const THUMB_WIDTH = 100;
 const LARGE_WIDTH = 900;
 
+async function renderPdfPage(
+    pdfDoc: pdfjsLib.PDFDocumentProxy,
+    pageNum: number,
+    width: number,
+    quality: number,
+): Promise<string> {
+    const page = await pdfDoc.getPage(pageNum);
+    const scale = width / page.getViewport({ scale: 1 }).width;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+    return canvas.toDataURL('image/jpeg', quality);
+}
+
 type ThumbnailCacheContextType = {
     requestThumbnails: (url: string, pageCount: number) => void;
     getThumbnail: (url: string, pageNum: number) => string | undefined;
@@ -26,29 +45,13 @@ export function ThumbnailCacheProvider({ children }: { children: ReactNode }) {
         requestedRef.current.add(url);
 
         void (async () => {
-            const task = pdfjsLib.getDocument({ url });
             let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
             try {
-                pdfDoc = await task.promise;
+                pdfDoc = await pdfjsLib.getDocument({ url }).promise;
                 const pageMap = new Map<number, string>();
                 cacheRef.current.set(url, pageMap);
-
                 for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-                    const page = await pdfDoc.getPage(pageNum);
-                    const vp0 = page.getViewport({ scale: 1 });
-                    const scale = THUMB_WIDTH / vp0.width;
-                    const viewport = page.getViewport({ scale });
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = Math.floor(viewport.width);
-                    canvas.height = Math.floor(viewport.height);
-                    const ctx = canvas.getContext('2d')!;
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-
-                    pageMap.set(pageNum, canvas.toDataURL('image/jpeg', 0.8));
+                    pageMap.set(pageNum, await renderPdfPage(pdfDoc, pageNum, THUMB_WIDTH, 0.8));
                     setCacheVersion((v) => v + 1);
                 }
             } catch {
@@ -72,26 +75,10 @@ export function ThumbnailCacheProvider({ children }: { children: ReactNode }) {
 
             let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
             try {
-                const task = pdfjsLib.getDocument({ url });
-                pdfDoc = await task.promise;
-                const page = await pdfDoc.getPage(pageNum);
-                const vp0 = page.getViewport({ scale: 1 });
-                const scale = LARGE_WIDTH / vp0.width;
-                const viewport = page.getViewport({ scale });
-
-                const canvas = document.createElement('canvas');
-                canvas.width = Math.floor(viewport.width);
-                canvas.height = Math.floor(viewport.height);
-                const ctx = canvas.getContext('2d')!;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                pdfDoc = await pdfjsLib.getDocument({ url }).promise;
+                const dataUrl = await renderPdfPage(pdfDoc, pageNum, LARGE_WIDTH, 0.92);
                 if (!largeCacheRef.current.has(url)) largeCacheRef.current.set(url, new Map());
                 largeCacheRef.current.get(url)!.set(pageNum, dataUrl);
-
                 return dataUrl;
             } catch {
                 return null;

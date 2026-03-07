@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { SourceFile, FinalPage } from '../domain';
+import { reorderById } from '../utils';
 
 export function useFinalPages() {
     const [finalPages, setFinalPages] = useState<FinalPage[]>([]);
@@ -22,6 +23,7 @@ export function useFinalPages() {
     const removePagesForFile = useCallback((fileId: string) => {
         setFinalPages((prev) => prev.filter((fp) => fp.fileId !== fileId));
     }, []);
+    const deselectAll = removePagesForFile;
 
     const togglePage = useCallback((fileId: string, pageNum: number) => {
         setFinalPages((prev) => {
@@ -82,15 +84,7 @@ export function useFinalPages() {
     }, []);
 
     const reorderFinalPages = useCallback((fromId: string, toId: string) => {
-        setFinalPages((prev) => {
-            const fromIdx = prev.findIndex((fp) => fp.id === fromId);
-            const toIdx = prev.findIndex((fp) => fp.id === toId);
-            if (fromIdx === -1 || toIdx === -1) return prev;
-            const next = [...prev];
-            const [item] = next.splice(fromIdx, 1);
-            next.splice(toIdx, 0, item);
-            return next;
-        });
+        setFinalPages((prev) => reorderById(prev, fromId, toId));
     }, []);
 
     const selectAll = useCallback((file: SourceFile) => {
@@ -110,10 +104,6 @@ export function useFinalPages() {
             }
             return toAdd.length ? [...prev, ...toAdd] : prev;
         });
-    }, []);
-
-    const deselectAll = useCallback((fileId: string) => {
-        setFinalPages((prev) => prev.filter((fp) => fp.fileId !== fileId));
     }, []);
 
     return {

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { SourceFile } from '../domain';
+import { reorderById } from '../utils';
 
 /** Manages the raw files array: add, remove, reorder. */
 export function useFileList() {
@@ -22,15 +23,7 @@ export function useFileList() {
     }, []);
 
     const reorderFiles = useCallback((fromId: string, toId: string) => {
-        setFiles((prev) => {
-            const fromIdx = prev.findIndex((f) => f.id === fromId);
-            const toIdx = prev.findIndex((f) => f.id === toId);
-            if (fromIdx === -1 || toIdx === -1) return prev;
-            const next = [...prev];
-            const [item] = next.splice(fromIdx, 1);
-            next.splice(toIdx, 0, item);
-            return next;
-        });
+        setFiles((prev) => reorderById(prev, fromId, toId));
     }, []);
 
     return { files, addFiles, removeFile, updateFilePath, reorderFiles };
