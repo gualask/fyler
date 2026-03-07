@@ -1,21 +1,21 @@
 use tauri_plugin_dialog::DialogExt;
 
-use crate::models::{Document, MergeRequest};
+use crate::models::{SourceFile, MergeRequest};
 use crate::optimize;
 use crate::pdf::{count_pages, detect_kind_from_ext, merge_pdf_documents, prepare_doc, IMAGE_EXTENSIONS};
 
-fn docs_from_paths(paths: impl IntoIterator<Item = String>) -> Result<Vec<Document>, String> {
+fn files_from_paths(paths: impl IntoIterator<Item = String>) -> Result<Vec<SourceFile>, String> {
     paths
         .into_iter()
-        .filter_map(|path| match path_to_document(path) {
-            Ok(Some(doc)) => Some(Ok(doc)),
+        .filter_map(|path| match path_to_file(path) {
+            Ok(Some(f)) => Some(Ok(f)),
             Ok(None) => None,
             Err(e) => Some(Err(e)),
         })
         .collect()
 }
 
-fn path_to_document(path: String) -> Result<Option<Document>, String> {
+fn path_to_file(path: String) -> Result<Option<SourceFile>, String> {
     let name = std::path::Path::new(&path)
         .file_name()
         .unwrap_or_default()
@@ -28,7 +28,7 @@ fn path_to_document(path: String) -> Result<Option<Document>, String> {
 
     let page_count = if kind == "pdf" { count_pages(&path)? } else { 1 };
 
-    Ok(Some(Document {
+    Ok(Some(SourceFile {
         id: uuid::Uuid::new_v4().to_string(),
         path,
         name,
@@ -39,7 +39,7 @@ fn path_to_document(path: String) -> Result<Option<Document>, String> {
 }
 
 #[tauri::command]
-pub async fn open_files_dialog(app: tauri::AppHandle) -> Result<Vec<Document>, String> {
+pub async fn open_files_dialog(app: tauri::AppHandle) -> Result<Vec<SourceFile>, String> {
     let mut filter_exts = vec!["pdf"];
     filter_exts.extend_from_slice(IMAGE_EXTENSIONS);
 
@@ -54,12 +54,12 @@ pub async fn open_files_dialog(app: tauri::AppHandle) -> Result<Vec<Document>, S
         .into_iter()
         .filter_map(|f| f.into_path().ok())
         .map(|p| p.to_string_lossy().to_string());
-    docs_from_paths(paths)
+    files_from_paths(paths)
 }
 
 #[tauri::command]
-pub fn open_docs_from_paths(paths: Vec<String>) -> Result<Vec<Document>, String> {
-    docs_from_paths(paths)
+pub fn open_files_from_paths(paths: Vec<String>) -> Result<Vec<SourceFile>, String> {
+    files_from_paths(paths)
 }
 
 #[tauri::command]
@@ -86,8 +86,12 @@ pub fn rotate_pdf_page(path: String, page_num: u32, angle: i32) -> Result<String
 
 #[tauri::command]
 pub fn merge_pdfs(req: MergeRequest) -> Result<(), String> {
+    let image_fit = req.optimize.as_ref()
+        .and_then(|o| o.image_fit.as_deref())
+        .unwrap_or("fit");
+
     let docs = req.inputs.iter()
-        .map(|input| prepare_doc(&input.path, &input.page_spec))
+        .map(|input| prepare_doc(&input.path, &input.page_spec, image_fit))
         .collect::<Result<Vec<_>, _>>()?;
 
     if docs.is_empty() {

@@ -21,7 +21,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::open_files_dialog,
-            commands::open_docs_from_paths,
+            commands::open_files_from_paths,
             commands::save_pdf_dialog,
             commands::merge_pdfs,
             commands::rotate_pdf_page,

@@ -8,48 +8,57 @@
 
 :root {
   /* superfici e testo */
-  --ui-bg:               var(--color-gray-100);
+  --ui-bg:               #F5F7FA;
   --ui-surface:          #ffffff;
-  --ui-surface-hover:    var(--color-gray-100);
-  --ui-border:           var(--color-gray-300);
-  --ui-border-hover:     var(--color-gray-400);
-  --ui-text:             var(--color-gray-900);
-  --ui-text-secondary:   var(--color-gray-700);
-  --ui-text-dim:         var(--color-gray-600);
-  --ui-text-muted:       var(--color-gray-500);
+  --ui-surface-hover:    #f1f5f9;
+  --ui-source:           #F5F7FA;
+  --ui-output:           #F0F2F5;
+  --ui-border:           #e2e8f0;
+  --ui-border-hover:     #cbd5e1;
+  --ui-text:             #0f172a;
+  --ui-text-secondary:   #334155;
+  --ui-text-dim:         #475569;
+  --ui-text-muted:       #64748b;
 
   /* accent — cambia solo questi per cambiare il colore brand */
-  --ui-accent:           var(--color-indigo-600);
-  --ui-accent-hover:     var(--color-indigo-700);
-  --ui-accent-muted:     var(--color-indigo-400);
-  --ui-accent-soft:      var(--color-indigo-50);
-  --ui-accent-soft-hover: var(--color-indigo-100);
-  --ui-accent-on-soft:   var(--color-indigo-700);
+  --ui-accent:           #6366f1;
+  --ui-accent-hover:     #4f46e5;
+  --ui-accent-muted:     #a5b4fc;
+  --ui-accent-soft:      #eef2ff;
+  --ui-accent-soft-hover: #e0e7ff;
+  --ui-accent-on-soft:   #4338ca;
 }
 
 .dark {
   /* superfici e testo */
-  --ui-bg:               var(--color-gray-800);
-  --ui-surface:          #374151;
-  --ui-surface-hover:    var(--color-gray-600);
-  --ui-border:           var(--color-gray-600);
-  --ui-border-hover:     var(--color-gray-500);
-  --ui-text:             var(--color-gray-100);
-  --ui-text-secondary:   var(--color-gray-300);
-  --ui-text-dim:         var(--color-gray-400);
-  --ui-text-muted:       var(--color-gray-400);
+  --ui-bg:               #1a1a1b;
+  --ui-surface:          #242526;
+  --ui-surface-hover:    #2d2e30;
+  --ui-source:           #202124;
+  --ui-output:           #121212;
+  --ui-border:           rgba(255,255,255,0.1);
+  --ui-border-hover:     rgba(255,255,255,0.18);
+  --ui-text:             #f1f5f9;
+  --ui-text-secondary:   #cbd5e1;
+  --ui-text-dim:         #94a3b8;
+  --ui-text-muted:       #64748b;
 
-  /* accent in dark — soft diventa semi-trasparente */
-  --ui-accent-muted:     var(--color-indigo-400);
-  --ui-accent-soft:      color-mix(in srgb, var(--color-indigo-500) 18%, transparent);
-  --ui-accent-soft-hover: color-mix(in srgb, var(--color-indigo-500) 28%, transparent);
-  --ui-accent-on-soft:   var(--color-indigo-300);
+  /* accent in dark */
+  --ui-accent-muted:     #818cf8;
+  --ui-accent-soft:      rgba(99,102,241,0.15);
+  --ui-accent-soft-hover: rgba(99,102,241,0.25);
+  --ui-accent-on-soft:   #a5b4fc;
+}
+
+/* ── Font ────────────────────────────────────────────────────────────────── */
+body {
+  font-family: 'Public Sans Variable', 'Public Sans', system-ui, sans-serif;
 }
 
 /* ── Placeholder ─────────────────────────────────────────────────────────── */
 ::placeholder {
   color: var(--ui-text-muted);
-  opacity: 1; /* annulla l'opacità ridotta applicata di default dal browser */
+  opacity: 1;
 }
 
 /* ── Tailwind utilities ──────────────────────────────────────────────────── */
@@ -58,6 +67,8 @@
   --color-ui-bg:              var(--ui-bg);
   --color-ui-surface:         var(--ui-surface);
   --color-ui-surface-hover:   var(--ui-surface-hover);
+  --color-ui-source:          var(--ui-source);
+  --color-ui-output:          var(--ui-output);
   --color-ui-border:          var(--ui-border);
   --color-ui-border-hover:    var(--ui-border-hover);
   /* testo */

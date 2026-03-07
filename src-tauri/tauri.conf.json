@@ -13,9 +13,9 @@
     "windows": [
       {
         "title": "Fyler",
-        "width": 800,
-        "height": 600,
-        "minWidth": 720,
+        "width": 1100,
+        "height": 700,
+        "minWidth": 960,
         "minHeight": 500
       }
     ],

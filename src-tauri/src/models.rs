@@ -1,5 +1,5 @@
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub struct Document {
+pub struct SourceFile {
     pub id: String,
     pub path: String,
     pub name: String,
@@ -23,6 +23,8 @@ pub struct OptimizeOptions {
     pub jpeg_quality: Option<String>, // "high" | "medium" | "low"
     #[serde(rename = "maxPx")]
     pub max_px: Option<u32>,
+    #[serde(rename = "imageFit")]
+    pub image_fit: Option<String>, // "fit" | "contain" | "cover"
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

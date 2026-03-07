@@ -1,7 +1,7 @@
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
-import type { Doc, MergeRequest } from '../domain';
+import type { SourceFile, MergeRequest } from '../domain';
 
-export const openFilesDialog = (): Promise<Doc[]> =>
+export const openFilesDialog = (): Promise<SourceFile[]> =>
     invoke('open_files_dialog');
 
 export const savePDFDialog = (defaultFilename: string): Promise<string> =>
@@ -13,8 +13,8 @@ export const mergePDFs = (req: MergeRequest): Promise<void> =>
 export const rotatePdfPage = (path: string, pageNum: number, angle: number): Promise<string> =>
     invoke('rotate_pdf_page', { path, pageNum, angle });
 
-export const openDocsFromPaths = (paths: string[]): Promise<Doc[]> =>
-    invoke('open_docs_from_paths', { paths });
+export const openFilesFromPaths = (paths: string[]): Promise<SourceFile[]> =>
+    invoke('open_files_from_paths', { paths });
 
 // asset:// protocol: il webview Tauri carica il file locale direttamente
 export const getPreviewUrl = (path: string): string =>

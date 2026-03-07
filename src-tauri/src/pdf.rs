@@ -10,7 +10,8 @@ fn temp_pdf(prefix: &str) -> std::path::PathBuf {
 }
 
 /// Converte un'immagine in un PdfDoc in memoria (nessun file su disco).
-fn image_to_pdf_doc(path: &str) -> Result<PdfDoc, String> {
+/// `image_fit`: "fit" (pagina = dimensioni immagine), "contain" (A4 letterbox), "cover" (A4 crop)
+fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc, String> {
     use lopdf::{Dictionary, Stream};
 
     let img = image::open(path).map_err(|e| format!("Errore apertura immagine: {e}"))?;
@@ -18,9 +19,47 @@ fn image_to_pdf_doc(path: &str) -> Result<PdfDoc, String> {
     let (width_px, height_px) = rgb.dimensions();
     let img_data = rgb.into_raw();
 
-    // Dimensioni pagina in punti tipografici a 96 DPI
-    let w_pt = (width_px as f64 * 72.0 / 96.0).ceil() as i64;
-    let h_pt = (height_px as f64 * 72.0 / 96.0).ceil() as i64;
+    // Dimensioni immagine in punti tipografici a 96 DPI
+    let w_pt = width_px as f64 * 72.0 / 96.0;
+    let h_pt = height_px as f64 * 72.0 / 96.0;
+
+    // Calcola dimensioni pagina e content stream in base alla modalità
+    const A4_W: f64 = 595.0;
+    const A4_H: f64 = 842.0;
+
+    let (page_w, page_h, content) = match image_fit {
+        "contain" => {
+            // Pagina A4, immagine scalata per stare dentro con bande bianche
+            let scale = (A4_W / w_pt).min(A4_H / h_pt);
+            let sw = w_pt * scale;
+            let sh = h_pt * scale;
+            let tx = (A4_W - sw) / 2.0;
+            let ty = (A4_H - sh) / 2.0;
+            let c = format!(
+                "1 g 0 0 {A4_W} {A4_H} re f q {sw:.4} 0 0 {sh:.4} {tx:.4} {ty:.4} cm /Im0 Do Q\n"
+            );
+            (A4_W.ceil() as i64, A4_H.ceil() as i64, c)
+        }
+        "cover" => {
+            // Pagina A4, immagine scalata per coprire tutta la pagina (crop ai bordi)
+            let scale = (A4_W / w_pt).max(A4_H / h_pt);
+            let sw = w_pt * scale;
+            let sh = h_pt * scale;
+            let tx = (A4_W - sw) / 2.0;
+            let ty = (A4_H - sh) / 2.0;
+            let c = format!(
+                "q 0 0 {A4_W} {A4_H} re W n {sw:.4} 0 0 {sh:.4} {tx:.4} {ty:.4} cm /Im0 Do Q\n"
+            );
+            (A4_W.ceil() as i64, A4_H.ceil() as i64, c)
+        }
+        _ => {
+            // "fit": pagina con dimensioni esatte dell'immagine (default)
+            let pw = w_pt.ceil() as i64;
+            let ph = h_pt.ceil() as i64;
+            let c = format!("q {pw} 0 0 {ph} 0 0 cm /Im0 Do Q\n");
+            (pw, ph, c)
+        }
+    };
 
     let mut doc = PdfDoc::with_version("1.4");
 
@@ -33,7 +72,6 @@ fn image_to_pdf_doc(path: &str) -> Result<PdfDoc, String> {
     img_dict.set("BitsPerComponent", Object::Integer(8));
     let img_id = doc.add_object(Stream::new(img_dict, img_data));
 
-    let content = format!("q {w_pt} 0 0 {h_pt} 0 0 cm /Im0 Do Q\n");
     let content_id = doc.add_object(Stream::new(Dictionary::new(), content.into_bytes()));
 
     let mut xobject = Dictionary::new();
@@ -55,8 +93,8 @@ fn image_to_pdf_doc(path: &str) -> Result<PdfDoc, String> {
         Object::Array(vec![
             Object::Integer(0),
             Object::Integer(0),
-            Object::Integer(w_pt),
-            Object::Integer(h_pt),
+            Object::Integer(page_w),
+            Object::Integer(page_h),
         ]),
     );
     page_dict.set("Resources", Object::Dictionary(resources));
@@ -123,9 +161,9 @@ pub fn detect_kind_from_ext(path: &str) -> Option<&'static str> {
 }
 
 /// Dato un path (immagine o PDF) e una page spec, restituisce un PdfDoc in memoria.
-pub fn prepare_doc(path: &str, page_spec: &str) -> Result<PdfDoc, String> {
+pub fn prepare_doc(path: &str, page_spec: &str, image_fit: &str) -> Result<PdfDoc, String> {
     if is_image_path(path) {
-        image_to_pdf_doc(path)
+        image_to_pdf_doc(path, image_fit)
     } else {
         load_pdf_with_pages(path, page_spec)
     }

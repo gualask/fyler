@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { openDocsFromPaths } from '../platform';
-import type { Doc } from '../domain';
+import { openFilesFromPaths } from '../platform';
+import type { SourceFile } from '../domain';
 
 interface DragDropPayload {
     paths: string[];
 }
 
 export function useFileDrop(
-    addDocs: (docs: Doc[]) => void,
+    addFiles: (files: SourceFile[]) => void,
     setSelectedId: (id: string) => void,
 ): { isDragOver: boolean } {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -25,10 +25,10 @@ export function useFileDrop(
                 setIsDragOver(false);
                 const paths = e.payload.paths;
                 if (!paths?.length) return;
-                void openDocsFromPaths(paths).then((docs) => {
-                    if (!docs.length) return;
-                    addDocs(docs);
-                    setSelectedId(docs[0].id);
+                void openFilesFromPaths(paths).then((files) => {
+                    if (!files.length) return;
+                    addFiles(files);
+                    setSelectedId(files[0].id);
                 });
             }),
         ]).then((fns) => {
@@ -43,7 +43,7 @@ export function useFileDrop(
             active = false;
             unlisteners.forEach((fn) => fn());
         };
-    }, [addDocs, setSelectedId]);
+    }, [addFiles, setSelectedId]);
 
     return { isDragOver };
 }

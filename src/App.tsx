@@ -1,20 +1,47 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import type { MergeRequest } from './domain';
+import { finalPagesToMergeInputs, type MergeRequest } from './domain';
 import { mergePDFs, savePDFDialog } from './platform';
-import { useDocs } from './hooks/useDocs';
+import { ThumbnailCacheProvider } from './hooks/useThumbnailCache';
+import { useFiles } from './hooks/useFiles';
 import { useTheme } from './hooks/useTheme';
 import { useOptimize } from './hooks/useOptimize';
 import { AppHeader } from './components/AppHeader';
-import { DocumentList } from './components/DocumentList';
-import { PreviewPanel } from './components/PreviewPanel';
-import { OptimizePopover } from './components/OptimizePopover';
+import { FileList } from './components/FileList';
+import { PagePicker } from './components/PagePicker';
+import { FinalDocument } from './components/FinalDocument';
+import { FinalPreviewModal } from './components/FinalPreviewModal';
+import { OutputPanel } from './components/OutputPanel';
 
-function App() {
+function AppContent() {
     const [status, setStatus] = useState('');
-    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addFiles, removeDoc, updatePageSpec, reorderDocs, rotatePage, isDragOver } = useDocs();
+    const [showFinalPreview, setShowFinalPreview] = useState(false);
+
+    useEffect(() => {
+        if (!status) return;
+        const t = setTimeout(() => setStatus(''), 4000);
+        return () => clearTimeout(t);
+    }, [status]);
+
+    const {
+        files,
+        selectedId,
+        selectedFile,
+        setSelectedId,
+        addFiles,
+        removeFile,
+        isDragOver,
+        finalPages,
+        togglePage,
+        togglePageRange,
+        setFromPageSpec,
+        selectAll,
+        deselectAll,
+        removeFinalPage,
+        reorderFinalPages,
+    } = useFiles();
     const { isDark, toggleTheme } = useTheme();
-    const { optimizeOptions, popoverProps } = useOptimize();
+    const { compression, resize, imageFit, setCompression, setResize, setImageFit, optimizeOptions } = useOptimize();
 
     useEffect(() => {
         const handleRejection = (e: PromiseRejectionEvent) => {
@@ -28,23 +55,21 @@ function App() {
 
     useEffect(() => {
         let unlisten: (() => void) | undefined;
-        void listen<string>('app-error', (e) => setStatus(`Errore: ${e.payload}`))
-            .then((fn) => { unlisten = fn; });
+        void listen<string>('app-error', (e) => setStatus(`Errore: ${e.payload}`)).then((fn) => {
+            unlisten = fn;
+        });
         return () => unlisten?.();
     }, []);
 
     const exportMerged = useCallback(async () => {
-        if (docs.length === 0) return;
+        if (finalPages.length === 0) return;
         const outputPath = await savePDFDialog('merged.pdf');
         if (!outputPath) return;
-        const req: MergeRequest = {
-            inputs: docs.map((d) => ({ path: d.path, pageSpec: d.pageSpec })),
-            outputPath,
-            optimize: optimizeOptions,
-        };
+        const inputs = finalPagesToMergeInputs(finalPages, files);
+        const req: MergeRequest = { inputs, outputPath, optimize: optimizeOptions };
         await mergePDFs(req);
         setStatus('Esportazione completata.');
-    }, [docs, optimizeOptions]);
+    }, [finalPages, files, optimizeOptions]);
 
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text">
@@ -52,8 +77,9 @@ function App() {
                 isDark={isDark}
                 onToggleTheme={toggleTheme}
                 onExport={() => void exportMerged()}
-                canExport={docs.length > 0}
-                optimizeSlot={<OptimizePopover {...popoverProps} />}
+                canExport={finalPages.length > 0}
+                onPreview={() => setShowFinalPreview(true)}
+                canPreview={finalPages.length > 0}
             />
 
             <div className="relative flex min-h-0 flex-1 overflow-hidden">
@@ -65,43 +91,74 @@ function App() {
                     </div>
                 )}
 
-                <aside className="flex shrink-0 flex-col bg-ui-surface/50">
-                    <DocumentList
-                        docs={docs}
+                <aside className="w-[260px] shrink-0 border-r border-ui-border bg-ui-source">
+                    <FileList
+                        files={files}
+                        finalPages={finalPages}
                         selectedId={selectedId}
                         onSelect={setSelectedId}
-                        onRemove={removeDoc}
-                        onReorder={reorderDocs}
-                        onPageSpecChange={updatePageSpec}
+                        onRemove={removeFile}
                         onAddFiles={() => void addFiles()}
                     />
                 </aside>
 
-                <section className="flex min-h-0 flex-1 flex-col overflow-hidden p-6">
-                    <PreviewPanel
-                        selectedDoc={selectedDoc}
-                        previewUrl={selectedPreviewUrl}
-                        onStatus={setStatus}
-                        onRotate={(pageNum, angle) => void rotatePage(pageNum, angle)}
+                <section className="w-[320px] shrink-0 overflow-hidden border-r border-ui-border bg-ui-source">
+                    <PagePicker
+                        file={selectedFile}
+                        finalPages={finalPages}
+                        onTogglePage={togglePage}
+                        onToggleRange={togglePageRange}
+                        onSetFromSpec={setFromPageSpec}
+                        onSelectAll={selectAll}
+                        onDeselectAll={deselectAll}
+                    />
+                </section>
+
+                <section className="min-h-0 flex-1 overflow-hidden bg-ui-output">
+                    <FinalDocument
+                        finalPages={finalPages}
+                        files={files}
+                        selectedFileId={selectedId}
+                        onReorder={reorderFinalPages}
+                        onRemove={removeFinalPage}
                     />
                 </section>
             </div>
 
-            <footer className="flex h-8 shrink-0 items-center justify-between border-t border-ui-border bg-ui-surface px-4">
-                <div className="flex items-center gap-3 text-xs text-ui-text-muted">
-                    <div className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-green-500" />
-                        <span>Pronto</span>
-                    </div>
-                    {status && (
-                        <>
-                            <span className="h-3 w-px bg-ui-border" />
-                            <span className="truncate">{status}</span>
-                        </>
-                    )}
-                </div>
+            <footer className="shrink-0 border-t border-ui-border bg-ui-surface">
+                <OutputPanel
+                    compression={compression}
+                    resize={resize}
+                    imageFit={imageFit}
+                    onCompressionChange={setCompression}
+                    onResizeChange={setResize}
+                    onImageFitChange={setImageFit}
+                />
             </footer>
+
+            {status && (
+                <div className="absolute bottom-12 left-1/2 -translate-x-1/2 rounded-lg bg-ui-surface px-4 py-2 text-xs text-ui-text shadow-lg">
+                    {status}
+                </div>
+            )}
+
+            {showFinalPreview && (
+                <FinalPreviewModal
+                    finalPages={finalPages}
+                    files={files}
+                    imageFit={imageFit}
+                    onClose={() => setShowFinalPreview(false)}
+                />
+            )}
         </div>
+    );
+}
+
+function App() {
+    return (
+        <ThumbnailCacheProvider>
+            <AppContent />
+        </ThumbnailCacheProvider>
     );
 }
 

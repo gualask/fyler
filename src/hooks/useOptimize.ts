@@ -1,26 +1,21 @@
 import { useState } from 'react';
-import type { JpegQuality, OptimizeOptions } from '../domain';
+import type { ImageFit, OptimizeOptions } from '../domain';
+
+export type CompressionLevel = 'none' | 'medium' | 'high';
+export type ResizeLevel = 'original' | '2000' | '1500';
+export type { ImageFit };
 
 export function useOptimize() {
-    const [jpegEnabled, setJpegEnabled] = useState(false);
-    const [jpegQuality, setJpegQuality] = useState<JpegQuality>('high');
-    const [resizeEnabled, setResizeEnabled] = useState(false);
-    const [maxPx, setMaxPx] = useState(1920);
+    const [compression, setCompression] = useState<CompressionLevel>('none');
+    const [resize, setResize] = useState<ResizeLevel>('original');
+    const [imageFit, setImageFit] = useState<ImageFit>('fit');
 
-    const optimizeOptions: OptimizeOptions | undefined =
-        jpegEnabled || resizeEnabled
-            ? {
-                  jpegQuality: jpegEnabled ? jpegQuality : undefined,
-                  maxPx: resizeEnabled ? maxPx : undefined,
-              }
-            : undefined;
-
-    const popoverProps = {
-        jpegEnabled,  onJpegEnabled: setJpegEnabled,
-        jpegQuality,  onJpegQuality: setJpegQuality,
-        resizeEnabled, onResizeEnabled: setResizeEnabled,
-        maxPx,        onMaxPx: setMaxPx,
+    const optimizeOptions: OptimizeOptions = {
+        jpegQuality:
+            compression === 'high' ? 'low' : compression === 'medium' ? 'medium' : undefined,
+        maxPx: resize === '2000' ? 2000 : resize === '1500' ? 1500 : undefined,
+        imageFit,
     };
 
-    return { optimizeOptions, popoverProps };
+    return { compression, resize, imageFit, setCompression, setResize, setImageFit, optimizeOptions };
 }
