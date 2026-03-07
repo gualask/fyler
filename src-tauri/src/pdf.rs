@@ -10,6 +10,10 @@ fn temp_pdf(prefix: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!("fyler_{}_{}.pdf", prefix, Uuid::new_v4()))
 }
 
+// Helpers lopdf per ridurre il boilerplate Object::Name / Object::Integer
+fn name(s: &[u8]) -> Object { Object::Name(s.to_vec()) }
+fn int(n: i64) -> Object { Object::Integer(n) }
+
 /// Converte un'immagine in un PdfDoc in memoria (nessun file su disco).
 /// `image_fit`: "fit" (pagina = dimensioni immagine), "contain" (A4 letterbox), "cover" (A4 crop)
 fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc> {
@@ -65,12 +69,12 @@ fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc> {
     let mut doc = PdfDoc::with_version("1.4");
 
     let mut img_dict = Dictionary::new();
-    img_dict.set("Type", Object::Name(b"XObject".to_vec()));
-    img_dict.set("Subtype", Object::Name(b"Image".to_vec()));
-    img_dict.set("Width", Object::Integer(width_px as i64));
-    img_dict.set("Height", Object::Integer(height_px as i64));
-    img_dict.set("ColorSpace", Object::Name(b"DeviceRGB".to_vec()));
-    img_dict.set("BitsPerComponent", Object::Integer(8));
+    img_dict.set("Type", name(b"XObject"));
+    img_dict.set("Subtype", name(b"Image"));
+    img_dict.set("Width", int(width_px as i64));
+    img_dict.set("Height", int(height_px as i64));
+    img_dict.set("ColorSpace", name(b"DeviceRGB"));
+    img_dict.set("BitsPerComponent", int(8));
     let img_id = doc.add_object(Stream::new(img_dict, img_data));
 
     let content_id = doc.add_object(Stream::new(Dictionary::new(), content.into_bytes()));
@@ -81,22 +85,17 @@ fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc> {
     resources.set("XObject", Object::Dictionary(xobject));
 
     let mut pages_dict = Dictionary::new();
-    pages_dict.set("Type", Object::Name(b"Pages".to_vec()));
+    pages_dict.set("Type", name(b"Pages"));
     pages_dict.set("Kids", Object::Array(vec![]));
-    pages_dict.set("Count", Object::Integer(1));
+    pages_dict.set("Count", int(1));
     let pages_id = doc.add_object(Object::Dictionary(pages_dict));
 
     let mut page_dict = Dictionary::new();
-    page_dict.set("Type", Object::Name(b"Page".to_vec()));
+    page_dict.set("Type", name(b"Page"));
     page_dict.set("Parent", Object::Reference(pages_id));
     page_dict.set(
         "MediaBox",
-        Object::Array(vec![
-            Object::Integer(0),
-            Object::Integer(0),
-            Object::Integer(page_w),
-            Object::Integer(page_h),
-        ]),
+        Object::Array(vec![int(0), int(0), int(page_w), int(page_h)]),
     );
     page_dict.set("Resources", Object::Dictionary(resources));
     page_dict.set("Contents", Object::Reference(content_id));
@@ -109,7 +108,7 @@ fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc> {
     }
 
     let mut catalog = Dictionary::new();
-    catalog.set("Type", Object::Name(b"Catalog".to_vec()));
+    catalog.set("Type", name(b"Catalog"));
     catalog.set("Pages", Object::Reference(pages_id));
     let catalog_id = doc.add_object(Object::Dictionary(catalog));
 
@@ -212,7 +211,7 @@ pub fn rotate_pdf_page(path: &str, page_num: u32, angle: i32) -> Result<std::pat
     let page_dict = doc.get_dictionary_mut(page_obj_id)?;
     let current = page_dict.get(b"Rotate").and_then(|o| o.as_i64()).unwrap_or(0) as i32;
     let new_rotate = (current + angle).rem_euclid(360);
-    page_dict.set("Rotate", Object::Integer(new_rotate as i64));
+    page_dict.set("Rotate", int(new_rotate as i64));
 
     let tmp = temp_pdf("rot");
     let mut file = std::fs::File::create(&tmp)?;
@@ -251,8 +250,7 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
             }
         }
 
-        let pages_dict = base
-            .get_dictionary_mut(base_pages_id)?;
+        let pages_dict = base.get_dictionary_mut(base_pages_id)?;
 
         let current_count = pages_dict
             .get(b"Count")
@@ -266,10 +264,7 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
             }
         }
 
-        pages_dict.set(
-            "Count",
-            Object::Integer(current_count + other_page_ids.len() as i64),
-        );
+        pages_dict.set("Count", int(current_count + other_page_ids.len() as i64));
     }
 
     Ok(base)

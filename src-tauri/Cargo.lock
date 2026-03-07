@@ -1354,6 +1354,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tauri-plugin-store",
+ "thiserror 2.0.18",
  "uuid",
 ]
 

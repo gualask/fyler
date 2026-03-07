@@ -1,6 +1,8 @@
+use anyhow::bail;
 use tauri_plugin_dialog::DialogExt;
 
-use crate::models::{SourceFile, MergeRequest};
+use crate::error::AppError;
+use crate::models::{MergeRequest, SourceFile};
 use crate::optimize;
 use crate::pdf::{count_pages, detect_kind_from_ext, merge_pdf_documents, prepare_doc, IMAGE_EXTENSIONS};
 
@@ -39,7 +41,7 @@ fn path_to_file(path: String) -> anyhow::Result<Option<SourceFile>> {
 }
 
 #[tauri::command]
-pub async fn open_files_dialog(app: tauri::AppHandle) -> Result<Vec<SourceFile>, String> {
+pub async fn open_files_dialog(app: tauri::AppHandle) -> Result<Vec<SourceFile>, AppError> {
     let mut filter_exts = vec!["pdf"];
     filter_exts.extend_from_slice(IMAGE_EXTENSIONS);
 
@@ -54,19 +56,19 @@ pub async fn open_files_dialog(app: tauri::AppHandle) -> Result<Vec<SourceFile>,
         .into_iter()
         .filter_map(|f| f.into_path().ok())
         .map(|p| p.to_string_lossy().to_string());
-    files_from_paths(paths).map_err(|e| e.to_string())
+    Ok(files_from_paths(paths)?)
 }
 
 #[tauri::command]
-pub fn open_files_from_paths(paths: Vec<String>) -> Result<Vec<SourceFile>, String> {
-    files_from_paths(paths).map_err(|e| e.to_string())
+pub fn open_files_from_paths(paths: Vec<String>) -> Result<Vec<SourceFile>, AppError> {
+    Ok(files_from_paths(paths)?)
 }
 
 #[tauri::command]
 pub async fn save_pdf_dialog(
     app: tauri::AppHandle,
     default_filename: String,
-) -> Result<String, String> {
+) -> Result<String, AppError> {
     Ok(app
         .dialog()
         .file()
@@ -79,37 +81,40 @@ pub async fn save_pdf_dialog(
 }
 
 #[tauri::command]
-pub fn rotate_pdf_page(path: String, page_num: u32, angle: i32) -> Result<String, String> {
-    let tmp = crate::pdf::rotate_pdf_page(&path, page_num, angle)
-        .map_err(|e| e.to_string())?;
+pub fn rotate_pdf_page(path: String, page_num: u32, angle: i32) -> Result<String, AppError> {
+    let tmp = crate::pdf::rotate_pdf_page(&path, page_num, angle)?;
     Ok(tmp.to_string_lossy().to_string())
 }
 
 #[tauri::command]
-pub fn merge_pdfs(req: MergeRequest) -> Result<(), String> {
+pub fn merge_pdfs(req: MergeRequest) -> Result<(), AppError> {
+    merge_pdfs_inner(req).map_err(Into::into)
+}
+
+fn merge_pdfs_inner(req: MergeRequest) -> anyhow::Result<()> {
     let image_fit = req.optimize.as_ref()
         .and_then(|o| o.image_fit.as_deref())
         .unwrap_or("fit");
 
     let docs = req.inputs.iter()
         .map(|input| prepare_doc(&input.path, &input.page_spec, image_fit))
-        .collect::<anyhow::Result<Vec<_>>>()
-        .map_err(|e| e.to_string())?;
+        .collect::<anyhow::Result<Vec<_>>>()?;
 
     if docs.is_empty() {
-        return Err("Nessun documento da unire".into());
+        bail!("Nessun documento da unire");
     }
 
-    let mut merged = merge_pdf_documents(docs).map_err(|e| e.to_string())?;
+    let mut merged = merge_pdf_documents(docs)?;
 
     if let Some(opts) = &req.optimize {
         if opts.jpeg_quality.is_some() || opts.max_px.is_some() {
-            optimize::optimize_images(&mut merged, opts).map_err(|e| e.to_string())?;
+            optimize::optimize_images(&mut merged, opts)?;
         }
     }
     if let Some(parent) = std::path::Path::new(&req.output_path).parent() {
-        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(parent)?;
     }
-    let mut file = std::fs::File::create(&req.output_path).map_err(|e| e.to_string())?;
-    merged.save_modern(&mut file).map_err(|e| e.to_string())
+    let mut file = std::fs::File::create(&req.output_path)?;
+    merged.save_modern(&mut file)?;
+    Ok(())
 }

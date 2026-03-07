@@ -1,6 +1,7 @@
 use tauri::Emitter;
 
 mod commands;
+mod error;
 mod models;
 mod optimize;
 mod pdf;
