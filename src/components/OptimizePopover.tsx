@@ -49,10 +49,8 @@ export function OptimizePopover({
                 onClick={() => setOpen((v) => !v)}
                 title="Opzioni ottimizzazione"
                 className={[
-                    'rounded-md p-1.5 transition-colors',
-                    active
-                        ? 'text-ui-accent hover:bg-ui-surface-hover'
-                        : 'text-ui-text-dim hover:bg-ui-surface-hover',
+                    'rounded-lg bg-ui-bg p-1.5 transition-colors hover:bg-ui-surface-hover',
+                    active ? 'text-ui-accent' : 'text-ui-text-muted',
                 ].join(' ')}
             >
                 <Cog6ToothIcon className="h-4 w-4" />

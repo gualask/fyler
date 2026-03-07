@@ -11,12 +11,11 @@ import { PreviewPanel } from './components/PreviewPanel';
 import { OptimizePopover } from './components/OptimizePopover';
 
 function App() {
-    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addFiles, removeSelected, updatePageSpec, dragHandlers, rotatePage, isDragOver } = useDocs();
+    const [status, setStatus] = useState('');
+    const { docs, selectedId, selectedDoc, selectedPreviewUrl, setSelectedId, addFiles, removeDoc, updatePageSpec, reorderDocs, rotatePage, isDragOver } = useDocs();
     const { isDark, toggleTheme } = useTheme();
     const { optimizeOptions, popoverProps } = useOptimize();
-    const [status, setStatus] = useState('');
 
-    // Global error handler: unhandled promise rejections (invoke errors, plugin errors)
     useEffect(() => {
         const handleRejection = (e: PromiseRejectionEvent) => {
             e.preventDefault();
@@ -27,7 +26,6 @@ function App() {
         return () => window.removeEventListener('unhandledrejection', handleRejection);
     }, []);
 
-    // Global error handler: backend panics emitted via "app-error" event
     useEffect(() => {
         let unlisten: (() => void) | undefined;
         void listen<string>('app-error', (e) => setStatus(`Errore: ${e.payload}`))
@@ -53,37 +51,55 @@ function App() {
             <AppHeader
                 isDark={isDark}
                 onToggleTheme={toggleTheme}
-                onAddFiles={() => void addFiles()}
-                onRemove={removeSelected}
-                canRemove={!!selectedId}
                 onExport={() => void exportMerged()}
                 canExport={docs.length > 0}
                 optimizeSlot={<OptimizePopover {...popoverProps} />}
             />
+
             <div className="relative flex min-h-0 flex-1 overflow-hidden">
                 {isDragOver && (
-                    <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed border-ui-accent bg-ui-accent/10">
-                        <span className="text-sm font-medium text-ui-accent">Rilascia i file qui</span>
+                    <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center border-2 border-dashed border-ui-accent bg-ui-accent/10">
+                        <span className="rounded-lg bg-ui-surface px-4 py-2 text-sm font-medium text-ui-accent shadow-lg">
+                            Rilascia i file qui
+                        </span>
                     </div>
                 )}
-                <main className="flex min-h-0 flex-1 gap-4 overflow-hidden p-4">
+
+                <aside className="flex shrink-0 flex-col bg-ui-surface/50">
                     <DocumentList
                         docs={docs}
                         selectedId={selectedId}
                         onSelect={setSelectedId}
+                        onRemove={removeDoc}
+                        onReorder={reorderDocs}
                         onPageSpecChange={updatePageSpec}
-                        dragHandlers={dragHandlers}
+                        onAddFiles={() => void addFiles()}
                     />
+                </aside>
+
+                <section className="flex min-h-0 flex-1 flex-col overflow-hidden p-6">
                     <PreviewPanel
                         selectedDoc={selectedDoc}
                         previewUrl={selectedPreviewUrl}
                         onStatus={setStatus}
                         onRotate={(pageNum, angle) => void rotatePage(pageNum, angle)}
                     />
-                </main>
+                </section>
             </div>
-            <footer className="flex h-8 shrink-0 items-center border-t border-ui-border bg-ui-surface px-4">
-                <span className="truncate text-xs text-ui-text-muted">{status || 'Pronto'}</span>
+
+            <footer className="flex h-8 shrink-0 items-center justify-between border-t border-ui-border bg-ui-surface px-4">
+                <div className="flex items-center gap-3 text-xs text-ui-text-muted">
+                    <div className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-green-500" />
+                        <span>Pronto</span>
+                    </div>
+                    {status && (
+                        <>
+                            <span className="h-3 w-px bg-ui-border" />
+                            <span className="truncate">{status}</span>
+                        </>
+                    )}
+                </div>
             </footer>
         </div>
     );

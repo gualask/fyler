@@ -17,9 +17,9 @@ export function useFileDrop(
         let active = true;
         const unlisteners: Array<() => void> = [];
 
-        Promise.all([
-            listen('tauri://drag-enter', () => setIsDragOver(true)),
-            listen('tauri://drag-over', () => setIsDragOver(true)),
+        void Promise.all([
+            listen<DragDropPayload>('tauri://drag-enter', (e) => { if (e.payload.paths?.length) setIsDragOver(true); }),
+            listen<DragDropPayload>('tauri://drag-over', (e) => { if (e.payload.paths?.length) setIsDragOver(true); }),
             listen('tauri://drag-leave', () => setIsDragOver(false)),
             listen<DragDropPayload>('tauri://drag-drop', (e) => {
                 setIsDragOver(false);

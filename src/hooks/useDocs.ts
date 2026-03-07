@@ -1,17 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 import { getPreviewUrl, openFilesDialog, rotatePdfPage } from '../platform';
 import { useDocList } from './useDocList';
-import { useDragDrop, type DragHandlers } from './useDragDrop';
 import { useFileDrop } from './useFileDrop';
 
-export type { DragHandlers };
-
 /**
- * Composes useDocList + useDragDrop, adds selection and preview URL.
+ * Composes useDocList + useFileDrop, adds selection and preview URL.
  * Exposes the full API consumed by App.
  */
 export function useDocs() {
-    const { docs, addDocs, removeDoc, updatePageSpec, updateDocPath, reorderDocs } = useDocList();
+    const { docs, addDocs, removeDoc: removeDocFromList, updatePageSpec, updateDocPath, reorderDocs } = useDocList();
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
     const selectedDoc = useMemo(
@@ -32,12 +29,13 @@ export function useDocs() {
         setSelectedId((prev) => prev ?? newDocs[0].id);
     }, [addDocs]);
 
-    const removeSelected = useCallback(() => {
-        if (!selectedId) return;
-        const remaining = docs.filter((d) => d.id !== selectedId);
-        setSelectedId(remaining.length ? remaining[0].id : null);
-        removeDoc(selectedId);
-    }, [selectedId, docs, removeDoc]);
+    const removeDoc = useCallback((id: string) => {
+        if (id === selectedId) {
+            const remaining = docs.filter((d) => d.id !== id);
+            setSelectedId(remaining.length ? remaining[0].id : null);
+        }
+        removeDocFromList(id);
+    }, [selectedId, docs, removeDocFromList]);
 
     const rotatePage = useCallback(
         async (pageNum: number, angle: number) => {
@@ -53,7 +51,6 @@ export function useDocs() {
         [],
     );
 
-    const dragHandlers = useDragDrop(reorderDocs);
     const { isDragOver } = useFileDrop(addDocs, selectIfNone);
 
     return {
@@ -63,9 +60,9 @@ export function useDocs() {
         selectedPreviewUrl,
         setSelectedId,
         addFiles,
-        removeSelected,
+        removeDoc,
         updatePageSpec,
-        dragHandlers,
+        reorderDocs,
         rotatePage,
         isDragOver,
     };

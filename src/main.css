@@ -8,14 +8,15 @@
 
 :root {
   /* superfici e testo */
-  --ui-bg:               var(--color-gray-50);
+  --ui-bg:               var(--color-gray-100);
   --ui-surface:          #ffffff;
   --ui-surface-hover:    var(--color-gray-100);
-  --ui-border:           var(--color-gray-200);
+  --ui-border:           var(--color-gray-300);
+  --ui-border-hover:     var(--color-gray-400);
   --ui-text:             var(--color-gray-900);
   --ui-text-secondary:   var(--color-gray-700);
   --ui-text-dim:         var(--color-gray-600);
-  --ui-text-muted:       var(--color-gray-400);
+  --ui-text-muted:       var(--color-gray-500);
 
   /* accent — cambia solo questi per cambiare il colore brand */
   --ui-accent:           var(--color-indigo-600);
@@ -28,20 +29,27 @@
 
 .dark {
   /* superfici e testo */
-  --ui-bg:               var(--color-gray-900);
-  --ui-surface:          var(--color-gray-800);
-  --ui-surface-hover:    var(--color-gray-700);
-  --ui-border:           var(--color-gray-700);
+  --ui-bg:               var(--color-gray-800);
+  --ui-surface:          #374151;
+  --ui-surface-hover:    var(--color-gray-600);
+  --ui-border:           var(--color-gray-600);
+  --ui-border-hover:     var(--color-gray-500);
   --ui-text:             var(--color-gray-100);
   --ui-text-secondary:   var(--color-gray-300);
   --ui-text-dim:         var(--color-gray-400);
-  --ui-text-muted:       var(--color-gray-500);
+  --ui-text-muted:       var(--color-gray-400);
 
   /* accent in dark — soft diventa semi-trasparente */
   --ui-accent-muted:     var(--color-indigo-400);
   --ui-accent-soft:      color-mix(in srgb, var(--color-indigo-500) 18%, transparent);
   --ui-accent-soft-hover: color-mix(in srgb, var(--color-indigo-500) 28%, transparent);
   --ui-accent-on-soft:   var(--color-indigo-300);
+}
+
+/* ── Placeholder ─────────────────────────────────────────────────────────── */
+::placeholder {
+  color: var(--ui-text-muted);
+  opacity: 1; /* annulla l'opacità ridotta applicata di default dal browser */
 }
 
 /* ── Tailwind utilities ──────────────────────────────────────────────────── */
@@ -51,6 +59,7 @@
   --color-ui-surface:         var(--ui-surface);
   --color-ui-surface-hover:   var(--ui-surface-hover);
   --color-ui-border:          var(--ui-border);
+  --color-ui-border-hover:    var(--ui-border-hover);
   /* testo */
   --color-ui-text:            var(--ui-text);
   --color-ui-text-secondary:  var(--ui-text-secondary);

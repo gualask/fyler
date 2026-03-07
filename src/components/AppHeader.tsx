@@ -1,57 +1,42 @@
-import { ArrowDownTrayIcon, DocumentIcon, DocumentPlusIcon, MoonIcon, SunIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, DocumentIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline';
 import type { ReactNode } from 'react';
 
 interface Props {
     isDark: boolean;
     onToggleTheme: () => void;
-    onAddFiles: () => void;
-    onRemove: () => void;
-    canRemove: boolean;
     onExport: () => void;
     canExport: boolean;
     optimizeSlot: ReactNode;
 }
 
-export function AppHeader({ isDark, onToggleTheme, onAddFiles, onRemove, canRemove, onExport, canExport, optimizeSlot }: Props) {
+export function AppHeader({ isDark, onToggleTheme, onExport, canExport, optimizeSlot }: Props) {
     return (
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-4">
-            <div className="flex items-center gap-2">
-                <DocumentIcon className="h-5 w-5 text-ui-accent" />
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-6">
+            <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent">
+                    <DocumentIcon className="h-5 w-5" />
+                </div>
                 <div className="flex flex-col leading-none">
-                    <span className="text-sm font-semibold">Fyler</span>
-                    <span className="text-[10px] text-ui-text-muted">v0.1.0</span>
+                    <span className="text-base font-bold">Fyler</span>
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-ui-text-muted">v0.1.0</span>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 <button
                     onClick={onToggleTheme}
-                    className="rounded-md p-1.5 text-ui-text-dim hover:bg-ui-surface-hover"
+                    title={isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
+                    className="rounded-lg bg-ui-bg p-1.5 text-ui-text-muted transition-colors hover:bg-ui-surface-hover"
                 >
                     {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                 </button>
-                <div className="h-4 w-px bg-ui-border" />
-                <button
-                    onClick={onAddFiles}
-                    className="flex items-center gap-1.5 rounded-md border border-ui-border px-3 py-1.5 text-sm font-medium text-ui-text-secondary hover:bg-ui-surface-hover"
-                >
-                    <DocumentPlusIcon className="h-4 w-4" />
-                    Aggiungi file
-                </button>
-                <button
-                    disabled={!canRemove}
-                    onClick={onRemove}
-                    className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ui-text-dim hover:bg-red-50 hover:text-red-600 disabled:opacity-40 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                >
-                    <TrashIcon className="h-4 w-4" />
-                    Rimuovi
-                </button>
+                <div className="h-6 w-px bg-ui-border" />
                 {optimizeSlot}
                 <button
                     disabled={!canExport}
                     onClick={onExport}
-                    className="flex items-center gap-1.5 rounded-md bg-ui-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-accent-hover disabled:opacity-40"
+                    className="flex items-center gap-2 rounded-lg bg-ui-accent px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-ui-accent-hover disabled:opacity-40"
                 >
-                    <ArrowDownTrayIcon className="h-4 w-4" />
+                    <ArrowDownTrayIcon className="h-5 w-5" />
                     Esporta PDF
                 </button>
             </div>
