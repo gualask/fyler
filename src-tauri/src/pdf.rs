@@ -216,8 +216,8 @@ pub fn rotate_pdf_page(path: &str, page_num: u32, angle: i32) -> Result<std::pat
     page_dict.set("Rotate", Object::Integer(new_rotate as i64));
 
     let tmp = temp_pdf("rot");
-    doc.compress();
-    doc.save(&tmp).map_err(|e| e.to_string())?;
+    let mut file = std::fs::File::create(&tmp).map_err(|e| e.to_string())?;
+    doc.save_modern(&mut file).map_err(|e| e.to_string())?;
     Ok(tmp)
 }
 

@@ -105,10 +105,9 @@ pub fn merge_pdfs(req: MergeRequest) -> Result<(), String> {
             optimize::optimize_images(&mut merged, opts)?;
         }
     }
-    merged.compress();
-
     if let Some(parent) = std::path::Path::new(&req.output_path).parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    merged.save(&req.output_path).map(|_| ()).map_err(|e| e.to_string())
+    let mut file = std::fs::File::create(&req.output_path).map_err(|e| e.to_string())?;
+    merged.save_modern(&mut file).map_err(|e| e.to_string())
 }
