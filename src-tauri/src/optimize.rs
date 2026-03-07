@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use image::{imageops, imageops::FilterType, RgbImage};
 use lopdf::{Dictionary, Document as PdfDoc, Object};
 
@@ -11,13 +12,12 @@ fn jpeg_quality(q: &str) -> u8 {
     }
 }
 
-fn encode_jpeg(rgb: &[u8], w: u32, h: u32, quality: u8) -> Result<Vec<u8>, String> {
+fn encode_jpeg(rgb: &[u8], w: u32, h: u32, quality: u8) -> Result<Vec<u8>> {
     use image::codecs::jpeg::JpegEncoder;
     use image::ImageEncoder;
     let mut buf = Vec::with_capacity((w as usize * h as usize) / 8);
     JpegEncoder::new_with_quality(&mut buf, quality)
-        .write_image(rgb, w, h, image::ExtendedColorType::Rgb8)
-        .map_err(|e| e.to_string())?;
+        .write_image(rgb, w, h, image::ExtendedColorType::Rgb8)?;
     Ok(buf)
 }
 
@@ -33,7 +33,7 @@ fn is_rgb_image_stream(obj: &lopdf::Object) -> bool {
         && s.dict.get(b"ColorSpace").ok().and_then(|o| o.as_name().ok()) == Some(b"DeviceRGB".as_ref())
 }
 
-pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> Result<(), String> {
+pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> Result<()> {
     // Pre-scansione sui dict (senza decomprimere): evita decompress/compress se non ci sono immagini RGB
     if !doc.objects.values().any(is_rgb_image_stream) {
         return Ok(());
@@ -48,8 +48,8 @@ pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> Result<(), S
         .collect();
 
     for id in image_ids {
-        let obj = doc.objects.get_mut(&id).ok_or("oggetto non trovato")?;
-        let stream = obj.as_stream_mut().map_err(|e| e.to_string())?;
+        let obj = doc.objects.get_mut(&id).context("oggetto non trovato")?;
+        let stream = obj.as_stream_mut()?;
 
         let w = dict_u32(&stream.dict, b"Width");
         let h = dict_u32(&stream.dict, b"Height");
@@ -63,7 +63,7 @@ pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> Result<(), S
         }
 
         let mut img = RgbImage::from_raw(w, h, raw)
-            .ok_or("impossibile costruire l'immagine")?;
+            .context("impossibile costruire l'immagine")?;
 
         // Resize opzionale
         let did_resize = if let Some(max_px) = opts.max_px {

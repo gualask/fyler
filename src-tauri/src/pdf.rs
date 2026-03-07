@@ -1,3 +1,4 @@
+use anyhow::{bail, Context, Result};
 use lopdf::{Document as PdfDoc, Object};
 use uuid::Uuid;
 
@@ -11,10 +12,10 @@ fn temp_pdf(prefix: &str) -> std::path::PathBuf {
 
 /// Converte un'immagine in un PdfDoc in memoria (nessun file su disco).
 /// `image_fit`: "fit" (pagina = dimensioni immagine), "contain" (A4 letterbox), "cover" (A4 crop)
-fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc, String> {
+fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc> {
     use lopdf::{Dictionary, Stream};
 
-    let img = image::open(path).map_err(|e| format!("Errore apertura immagine: {e}"))?;
+    let img = image::open(path).context("Errore apertura immagine")?;
     let rgb = img.to_rgb8();
     let (width_px, height_px) = rgb.dimensions();
     let img_data = rgb.into_raw();
@@ -118,17 +119,15 @@ fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc, String> {
 }
 
 /// Carica un PDF applicando la selezione pagine in memoria (nessun file temporaneo).
-fn load_pdf_with_pages(path: &str, page_spec: &str) -> Result<PdfDoc, String> {
-    let mut doc = PdfDoc::load(path).map_err(|e| e.to_string())?;
+fn load_pdf_with_pages(path: &str, page_spec: &str) -> Result<PdfDoc> {
+    let mut doc = PdfDoc::load(path)?;
     let selected = parse_page_spec(page_spec)?;
     if !selected.is_empty() {
         let all_pages: Vec<u32> = doc.get_pages().keys().copied().collect();
         let total = all_pages.len() as u32;
         for &p in &selected {
             if p > total {
-                return Err(format!(
-                    "Pagina {p} non esiste in '{path}' ({total} pagine totali)"
-                ));
+                bail!("Pagina {p} non esiste in '{path}' ({total} pagine totali)");
             }
         }
         let selected_set: std::collections::HashSet<u32> = selected.into_iter().collect();
@@ -161,7 +160,7 @@ pub fn detect_kind_from_ext(path: &str) -> Option<&'static str> {
 }
 
 /// Dato un path (immagine o PDF) e una page spec, restituisce un PdfDoc in memoria.
-pub fn prepare_doc(path: &str, page_spec: &str, image_fit: &str) -> Result<PdfDoc, String> {
+pub fn prepare_doc(path: &str, page_spec: &str, image_fit: &str) -> Result<PdfDoc> {
     if is_image_path(path) {
         image_to_pdf_doc(path, image_fit)
     } else {
@@ -170,7 +169,7 @@ pub fn prepare_doc(path: &str, page_spec: &str, image_fit: &str) -> Result<PdfDo
 }
 
 /// Parsa "1-3,5,8" → Vec<u32> pagine 1-indexed.
-pub fn parse_page_spec(spec: &str) -> Result<Vec<u32>, String> {
+pub fn parse_page_spec(spec: &str) -> Result<Vec<u32>> {
     if spec.trim().is_empty() {
         return Ok(vec![]);
     }
@@ -178,22 +177,22 @@ pub fn parse_page_spec(spec: &str) -> Result<Vec<u32>, String> {
     for token in spec.split(',') {
         let token = token.trim();
         if token.is_empty() {
-            return Err("token vuoto".into());
+            bail!("token vuoto");
         }
         if let Some((s, e)) = token.split_once('-') {
-            let start: u32 = s.parse().map_err(|_| format!("pagina non valida: {s}"))?;
-            let end: u32 = e.parse().map_err(|_| format!("pagina non valida: {e}"))?;
+            let start: u32 = s.parse().with_context(|| format!("pagina non valida: {s}"))?;
+            let end: u32 = e.parse().with_context(|| format!("pagina non valida: {e}"))?;
             if start == 0 || end == 0 {
-                return Err("le pagine devono essere > 0".into());
+                bail!("le pagine devono essere > 0");
             }
             if start > end {
-                return Err(format!("range invertito: {start}-{end}"));
+                bail!("range invertito: {start}-{end}");
             }
             pages.extend(start..=end);
         } else {
-            let n: u32 = token.parse().map_err(|_| format!("pagina non valida: {token}"))?;
+            let n: u32 = token.parse().with_context(|| format!("pagina non valida: {token}"))?;
             if n == 0 {
-                return Err("le pagine devono essere > 0".into());
+                bail!("le pagine devono essere > 0");
             }
             pages.push(n);
         }
@@ -201,42 +200,39 @@ pub fn parse_page_spec(spec: &str) -> Result<Vec<u32>, String> {
     Ok(pages)
 }
 
-pub fn rotate_pdf_page(path: &str, page_num: u32, angle: i32) -> Result<std::path::PathBuf, String> {
-    let mut doc = PdfDoc::load(path).map_err(|e| e.to_string())?;
+pub fn rotate_pdf_page(path: &str, page_num: u32, angle: i32) -> Result<std::path::PathBuf> {
+    let mut doc = PdfDoc::load(path)?;
 
     let page_obj_id = {
         let pages = doc.get_pages();
         pages.get(&page_num).copied()
-            .ok_or_else(|| format!("Pagina {page_num} non trovata"))?
+            .with_context(|| format!("Pagina {page_num} non trovata"))?
     };
 
-    let page_dict = doc.get_dictionary_mut(page_obj_id).map_err(|e| e.to_string())?;
+    let page_dict = doc.get_dictionary_mut(page_obj_id)?;
     let current = page_dict.get(b"Rotate").and_then(|o| o.as_i64()).unwrap_or(0) as i32;
     let new_rotate = (current + angle).rem_euclid(360);
     page_dict.set("Rotate", Object::Integer(new_rotate as i64));
 
     let tmp = temp_pdf("rot");
-    let mut file = std::fs::File::create(&tmp).map_err(|e| e.to_string())?;
-    doc.save_modern(&mut file).map_err(|e| e.to_string())?;
+    let mut file = std::fs::File::create(&tmp)?;
+    doc.save_modern(&mut file)?;
     Ok(tmp)
 }
 
-pub fn count_pages(path: &str) -> Result<u32, String> {
-    PdfDoc::load(path)
-        .map(|doc| doc.get_pages().len() as u32)
-        .map_err(|e| e.to_string())
+pub fn count_pages(path: &str) -> Result<u32> {
+    Ok(PdfDoc::load(path)?.get_pages().len() as u32)
 }
 
 /// Unisce più PdfDoc in uno, appendendo le pagine di ciascuno al primo.
-pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc, String> {
+pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
     let mut base = docs.remove(0);
 
     let base_pages_id = base
-        .catalog()
-        .map_err(|e| e.to_string())?
+        .catalog()?
         .get(b"Pages")
         .and_then(|o| o.as_reference())
-        .map_err(|e| e.to_string())?;
+        .context("Pages non trovato nel catalog")?;
 
     for mut other in docs {
         other.renumber_objects_with(base.max_id + 1);
@@ -256,8 +252,7 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc, String> {
         }
 
         let pages_dict = base
-            .get_dictionary_mut(base_pages_id)
-            .map_err(|e| e.to_string())?;
+            .get_dictionary_mut(base_pages_id)?;
 
         let current_count = pages_dict
             .get(b"Count")
@@ -265,7 +260,7 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc, String> {
             .unwrap_or(0);
 
         {
-            let kids_obj = pages_dict.get_mut(b"Kids").map_err(|e| e.to_string())?;
+            let kids_obj = pages_dict.get_mut(b"Kids")?;
             if let Object::Array(kids) = kids_obj {
                 kids.extend(other_page_ids.iter().map(|&id| Object::Reference(id)));
             }

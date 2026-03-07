@@ -1344,6 +1344,7 @@ dependencies = [
 name = "fyler-tmp"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "image",
  "lopdf",
  "serde",

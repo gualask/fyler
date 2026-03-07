@@ -4,7 +4,7 @@ use crate::models::{SourceFile, MergeRequest};
 use crate::optimize;
 use crate::pdf::{count_pages, detect_kind_from_ext, merge_pdf_documents, prepare_doc, IMAGE_EXTENSIONS};
 
-fn files_from_paths(paths: impl IntoIterator<Item = String>) -> Result<Vec<SourceFile>, String> {
+fn files_from_paths(paths: impl IntoIterator<Item = String>) -> anyhow::Result<Vec<SourceFile>> {
     paths
         .into_iter()
         .filter_map(|path| match path_to_file(path) {
@@ -15,7 +15,7 @@ fn files_from_paths(paths: impl IntoIterator<Item = String>) -> Result<Vec<Sourc
         .collect()
 }
 
-fn path_to_file(path: String) -> Result<Option<SourceFile>, String> {
+fn path_to_file(path: String) -> anyhow::Result<Option<SourceFile>> {
     let name = std::path::Path::new(&path)
         .file_name()
         .unwrap_or_default()
@@ -54,12 +54,12 @@ pub async fn open_files_dialog(app: tauri::AppHandle) -> Result<Vec<SourceFile>,
         .into_iter()
         .filter_map(|f| f.into_path().ok())
         .map(|p| p.to_string_lossy().to_string());
-    files_from_paths(paths)
+    files_from_paths(paths).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn open_files_from_paths(paths: Vec<String>) -> Result<Vec<SourceFile>, String> {
-    files_from_paths(paths)
+    files_from_paths(paths).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -80,7 +80,8 @@ pub async fn save_pdf_dialog(
 
 #[tauri::command]
 pub fn rotate_pdf_page(path: String, page_num: u32, angle: i32) -> Result<String, String> {
-    let tmp = crate::pdf::rotate_pdf_page(&path, page_num, angle)?;
+    let tmp = crate::pdf::rotate_pdf_page(&path, page_num, angle)
+        .map_err(|e| e.to_string())?;
     Ok(tmp.to_string_lossy().to_string())
 }
 
@@ -92,17 +93,18 @@ pub fn merge_pdfs(req: MergeRequest) -> Result<(), String> {
 
     let docs = req.inputs.iter()
         .map(|input| prepare_doc(&input.path, &input.page_spec, image_fit))
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<anyhow::Result<Vec<_>>>()
+        .map_err(|e| e.to_string())?;
 
     if docs.is_empty() {
         return Err("Nessun documento da unire".into());
     }
 
-    let mut merged = merge_pdf_documents(docs)?;
+    let mut merged = merge_pdf_documents(docs).map_err(|e| e.to_string())?;
 
     if let Some(opts) = &req.optimize {
         if opts.jpeg_quality.is_some() || opts.max_px.is_some() {
-            optimize::optimize_images(&mut merged, opts)?;
+            optimize::optimize_images(&mut merged, opts).map_err(|e| e.to_string())?;
         }
     }
     if let Some(parent) = std::path::Path::new(&req.output_path).parent() {
