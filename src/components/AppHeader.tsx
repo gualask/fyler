@@ -21,20 +21,21 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                     <span className="text-base font-bold">Fyler</span>
                     <span className="text-[10px] font-medium uppercase tracking-wider text-ui-text-muted">v0.1.0</span>
                 </div>
+                <div className="ml-2 flex items-center gap-3">
+                    <button
+                        onClick={onToggleTheme}
+                        title={isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
+                        className="btn-icon"
+                    >
+                        {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+                    </button>
+                    <button onClick={onQuickDrop} className="btn-ghost" title="Modalità Quick Drop">
+                        <ArrowsPointingInIcon className="h-4 w-4" />
+                        Quick Drop
+                    </button>
+                </div>
             </div>
             <div className="flex items-center gap-3">
-                <button
-                    onClick={onToggleTheme}
-                    title={isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
-                    className="btn-icon"
-                >
-                    {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-                </button>
-                <button onClick={onQuickDrop} className="btn-ghost" title="Modalità Quick Drop">
-                    <ArrowsPointingInIcon className="h-4 w-4" />
-                    Quick Drop
-                </button>
-                <div className="h-6 w-px bg-ui-border" />
                 <button
                     disabled={!canPreview}
                     onClick={onPreview}
