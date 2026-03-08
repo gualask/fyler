@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    ArrowUturnLeftIcon,
+    ArrowUturnRightIcon,
     ArrowPathIcon,
     MagnifyingGlassMinusIcon,
     MagnifyingGlassPlusIcon,
     XMarkIcon,
 } from '@heroicons/react/24/outline';
-import type { SourceFile, FinalPage, ImageFit } from '../domain';
-import { useThumbnailCache } from '../hooks/useThumbnailCache';
+
+import type { FileEdits, FinalPage, ImageFit, SourceFile } from '../domain';
+import type { RotationDirection } from '../fileEdits';
+import { emptyFileEdits, getImageRotationDegrees } from '../fileEdits';
+import { usePdfCache } from '../hooks/usePdfCache';
+import { buildPreviewRenderRequest } from '../pdfRenderProfiles';
 import { getPreviewUrl } from '../platform';
 
 const BASE_WIDTH = 680;
@@ -16,13 +22,16 @@ const ZOOM_MAX = 3;
 interface Props {
     finalPages: FinalPage[];
     files: SourceFile[];
+    editsByFile: Record<string, FileEdits>;
     imageFit?: ImageFit;
+    onRotatePage?: (pageNum: number, direction: RotationDirection) => Promise<void>;
     onClose: () => void;
 }
 
 interface PageSlotProps {
     fp: FinalPage;
     file: SourceFile | undefined;
+    edits: FileEdits;
     index: number;
     scrollRoot: HTMLElement | null;
     zoomLevel: number;
@@ -30,50 +39,51 @@ interface PageSlotProps {
     onVisible: (index: number) => void;
 }
 
-function PageSlot({ fp, file, index, scrollRoot, zoomLevel, imageFit, onVisible }: PageSlotProps) {
+function PageSlot({ fp, file, edits, index, scrollRoot, zoomLevel, imageFit, onVisible }: PageSlotProps) {
     const slotRef = useRef<HTMLDivElement>(null);
-    const [src, setSrc] = useState<string | null>(null);
-    const { renderPageLarge } = useThumbnailCache();
+    const [shouldRender, setShouldRender] = useState(false);
+    const { requestRenders, getRender } = usePdfCache();
 
-    const filePath = file?.path ?? null;
-    const fileKind = file?.kind ?? null;
+    const isImage = file?.kind === 'image';
+    const useA4Container = isImage && (imageFit === 'contain' || imageFit === 'cover');
+    const imageRotation = getImageRotationDegrees(edits);
+    const previewRequest = useMemo(
+        () => (file?.kind === 'pdf' ? buildPreviewRenderRequest(fp.pageNum, edits) : null),
+        [edits, file?.kind, fp.pageNum],
+    );
+    const pdfSrc = file && previewRequest ? getRender(file.id, previewRequest) : undefined;
+    const imageSrc = file?.kind === 'image' ? getPreviewUrl(file.originalPath) : undefined;
 
-    // Lazy load: carica quando entra nel viewport (con 300px di anticipo)
     useEffect(() => {
-        const el = slotRef.current;
-        if (!el || !filePath || !fileKind) return;
-        const io = new IntersectionObserver(
-            ([e]) => {
-                if (!e.isIntersecting) return;
-                io.disconnect();
-                if (fileKind === 'image') {
-                    setSrc(getPreviewUrl(filePath));
-                } else {
-                    void renderPageLarge(getPreviewUrl(filePath), fp.pageNum).then(setSrc);
+        if (!slotRef.current || !scrollRoot) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setShouldRender(true);
                 }
             },
-            { rootMargin: '300px' },
+            { root: scrollRoot, rootMargin: '300px' },
         );
-        io.observe(el);
-        return () => io.disconnect();
-    }, [filePath, fileKind, fp.pageNum, renderPageLarge]);
+        observer.observe(slotRef.current);
+        return () => observer.disconnect();
+    }, [scrollRoot]);
 
-    // Tracking pagina corrente: notifica quando ≥30% visibile nello scroll area
     useEffect(() => {
-        if (!scrollRoot || !slotRef.current) return;
-        const io = new IntersectionObserver(
-            ([e]) => {
-                if (e.isIntersecting) onVisible(index);
+        if (!slotRef.current || !scrollRoot) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) onVisible(index);
             },
             { root: scrollRoot, threshold: 0.3 },
         );
-        io.observe(slotRef.current);
-        return () => io.disconnect();
-    }, [scrollRoot, index, onVisible]);
+        observer.observe(slotRef.current);
+        return () => observer.disconnect();
+    }, [index, onVisible, scrollRoot]);
 
-    // Per le immagini, il contenitore simula visivamente la modalità scelta
-    const isImage = file?.kind === 'image';
-    const useA4Container = isImage && (imageFit === 'contain' || imageFit === 'cover');
+    useEffect(() => {
+        if (!shouldRender || !file || !previewRequest) return;
+        requestRenders(file, [previewRequest]);
+    }, [file, previewRequest, requestRenders, shouldRender]);
 
     return (
         <div
@@ -81,28 +91,36 @@ function PageSlot({ fp, file, index, scrollRoot, zoomLevel, imageFit, onVisible 
             style={{ width: BASE_WIDTH * zoomLevel }}
             className="mx-auto mb-4 shadow-lg"
         >
-            {src ? (
+            {isImage && imageSrc ? (
                 useA4Container ? (
                     <div
                         className="relative w-full overflow-hidden bg-white"
                         style={{ aspectRatio: '595/842' }}
                     >
                         <img
-                            src={src}
+                            src={imageSrc}
                             draggable={false}
                             className={[
                                 'absolute inset-0 h-full w-full select-none',
                                 imageFit === 'cover' ? 'object-cover' : 'object-contain',
                             ].join(' ')}
+                            style={{ transform: `rotate(${imageRotation}deg)` }}
                         />
                     </div>
                 ) : (
                     <img
-                        src={src}
+                        src={imageSrc}
                         draggable={false}
                         className="block h-auto w-full select-none bg-white"
+                        style={{ transform: `rotate(${imageRotation}deg)` }}
                     />
                 )
+            ) : pdfSrc ? (
+                <img
+                    src={pdfSrc}
+                    draggable={false}
+                    className="block h-auto w-full select-none bg-white"
+                />
             ) : (
                 <div className="flex w-full items-center justify-center bg-white" style={{ aspectRatio: '210/297' }}>
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
@@ -112,29 +130,32 @@ function PageSlot({ fp, file, index, scrollRoot, zoomLevel, imageFit, onVisible 
     );
 }
 
-export function PreviewModal({ finalPages, files, imageFit = 'fit', onClose }: Props) {
-    const fileMap = useMemo(() => new Map(files.map((f) => [f.id, f])), [files]);
+export function PreviewModal({ finalPages, files, editsByFile, imageFit = 'fit', onRotatePage, onClose }: Props) {
+    const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isRotating, setIsRotating] = useState(false);
     const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
     const total = finalPages.length;
+    const singlePreview = total === 1 ? finalPages[0] : null;
+    const canRotate = Boolean(onRotatePage && singlePreview && fileMap.get(singlePreview.fileId));
 
-    // Escape chiude il modal
     useEffect(() => {
-        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        const handler = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') onClose();
+        };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
     }, [onClose]);
 
-    // Ctrl+scroll → zoom, scroll normale → passa attraverso (nativo)
     useEffect(() => {
         const el = scrollEl;
         if (!el) return;
-        const handler = (e: WheelEvent) => {
-            if (!e.ctrlKey) return;
-            e.preventDefault();
-            const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
-            setZoomLevel((z) => Math.min(Math.max(z * factor, ZOOM_MIN), ZOOM_MAX));
+        const handler = (event: WheelEvent) => {
+            if (!event.ctrlKey) return;
+            event.preventDefault();
+            const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+            setZoomLevel((value) => Math.min(Math.max(value * factor, ZOOM_MIN), ZOOM_MAX));
         };
         el.addEventListener('wheel', handler, { passive: false });
         return () => el.removeEventListener('wheel', handler);
@@ -144,9 +165,15 @@ export function PreviewModal({ finalPages, files, imageFit = 'fit', onClose }: P
         setCurrentPage(index + 1);
     }, []);
 
-    const zoomIn = () => setZoomLevel((z) => Math.min(z * 1.2, ZOOM_MAX));
-    const zoomOut = () => setZoomLevel((z) => Math.max(z / 1.2, ZOOM_MIN));
-    const resetZoom = () => setZoomLevel(1);
+    const handleRotate = useCallback(async (direction: RotationDirection) => {
+        if (!onRotatePage || !singlePreview) return;
+        setIsRotating(true);
+        try {
+            await onRotatePage(singlePreview.pageNum, direction);
+        } finally {
+            setIsRotating(false);
+        }
+    }, [onRotatePage, singlePreview]);
 
     return (
         <div
@@ -154,15 +181,13 @@ export function PreviewModal({ finalPages, files, imageFit = 'fit', onClose }: P
             onClick={onClose}
         >
             <div
-                className="relative flex h-[88vh] w-[82vw] flex-col overflow-hidden rounded-xl shadow-2xl bg-zinc-900"
-                onClick={(e) => e.stopPropagation()}
+                className="relative flex h-[88vh] w-[82vw] flex-col overflow-hidden rounded-xl bg-zinc-900 shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
             >
-                {/* Toolbar fissa top */}
                 <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-black/60 px-4 py-2">
-                    {/* Zoom controls */}
                     <div className="flex items-center gap-1 rounded-lg bg-white/10 p-1">
                         <button
-                            onClick={zoomOut}
+                            onClick={() => setZoomLevel((value) => Math.max(value / 1.2, ZOOM_MIN))}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                             title="Riduci (Ctrl+scroll giù)"
                         >
@@ -172,7 +197,7 @@ export function PreviewModal({ finalPages, files, imageFit = 'fit', onClose }: P
                             {Math.round(zoomLevel * 100)}%
                         </span>
                         <button
-                            onClick={zoomIn}
+                            onClick={() => setZoomLevel((value) => Math.min(value * 1.2, ZOOM_MAX))}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                             title="Ingrandisci (Ctrl+scroll su)"
                         >
@@ -180,7 +205,7 @@ export function PreviewModal({ finalPages, files, imageFit = 'fit', onClose }: P
                         </button>
                         <div className="mx-1 h-4 w-px bg-white/20" />
                         <button
-                            onClick={resetZoom}
+                            onClick={() => setZoomLevel(1)}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                             title="Ripristina zoom (100%)"
                         >
@@ -188,28 +213,50 @@ export function PreviewModal({ finalPages, files, imageFit = 'fit', onClose }: P
                         </button>
                     </div>
 
-                    {/* Chiudi */}
-                    <button
-                        onClick={onClose}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-                        title="Chiudi (Esc)"
-                    >
-                        <XMarkIcon className="h-5 w-5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {canRotate && (
+                            <div className="flex items-center gap-1 rounded-lg bg-white/10 p-1">
+                                <button
+                                    onClick={() => void handleRotate('ccw')}
+                                    disabled={isRotating}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
+                                    title="Ruota 90° antiorario"
+                                >
+                                    <ArrowUturnLeftIcon className="h-4 w-4" />
+                                </button>
+                                <button
+                                    onClick={() => void handleRotate('cw')}
+                                    disabled={isRotating}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
+                                    title="Ruota 90° orario"
+                                >
+                                    <ArrowUturnRightIcon className="h-4 w-4" />
+                                </button>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={onClose}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                            title="Chiudi (Esc)"
+                        >
+                            <XMarkIcon className="h-5 w-5" />
+                        </button>
+                    </div>
                 </div>
 
-                {/* Area di scroll */}
                 <div
                     ref={setScrollEl}
-                    className="flex-1 overflow-y-auto pt-14 pb-10 px-4"
+                    className="flex-1 overflow-y-auto px-4 pb-10 pt-14"
                 >
                     <div className={total === 1 ? 'flex min-h-full items-center justify-center' : undefined}>
-                        {finalPages.map((fp, i) => (
+                        {finalPages.map((fp, index) => (
                             <PageSlot
-                                key={fp.id}
+                                key={`${fp.id}:${(editsByFile[fp.fileId] ?? emptyFileEdits()).revision}`}
                                 fp={fp}
                                 file={fileMap.get(fp.fileId)}
-                                index={i}
+                                edits={editsByFile[fp.fileId] ?? emptyFileEdits()}
+                                index={index}
                                 scrollRoot={scrollEl}
                                 zoomLevel={zoomLevel}
                                 imageFit={imageFit}
@@ -219,7 +266,6 @@ export function PreviewModal({ finalPages, files, imageFit = 'fit', onClose }: P
                     </div>
                 </div>
 
-                {/* Status bar fissa bottom */}
                 <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center bg-black/50 py-2">
                     <span className="text-sm font-medium text-white/80">
                         Pagina {currentPage} / {total}

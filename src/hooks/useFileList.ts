@@ -8,8 +8,12 @@ export function useFileList() {
 
     const addFiles = useCallback((newFiles: SourceFile[]) => {
         setFiles((prev) => {
-            const existingPaths = new Set(prev.map((f) => f.path));
-            const unique = newFiles.filter((f) => !existingPaths.has(f.path));
+            const existingPaths = new Set(prev.map((f) => f.originalPath));
+            const unique = newFiles.filter((f) => {
+                if (existingPaths.has(f.originalPath)) return false;
+                existingPaths.add(f.originalPath);
+                return true;
+            });
             return unique.length ? [...prev, ...unique] : prev;
         });
     }, []);
@@ -18,13 +22,9 @@ export function useFileList() {
         setFiles((prev) => prev.filter((f) => f.id !== id));
     }, []);
 
-    const updateFilePath = useCallback((id: string, path: string) => {
-        setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, path } : f)));
-    }, []);
-
     const reorderFiles = useCallback((fromId: string, toId: string) => {
         setFiles((prev) => reorderById(prev, fromId, toId));
     }, []);
 
-    return { files, addFiles, removeFile, updateFilePath, reorderFiles };
+    return { files, addFiles, removeFile, reorderFiles };
 }

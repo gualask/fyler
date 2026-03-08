@@ -1,11 +1,14 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
     CheckIcon,
-    MagnifyingGlassPlusIcon,
 } from '@heroicons/react/24/outline';
-import type { SourceFile, FinalPage } from '../domain';
-import { useThumbnailCache } from '../hooks/useThumbnailCache';
+import type { FileEdits, FinalPage, SourceFile } from '../domain';
+import type { RotationDirection } from '../fileEdits';
+import { emptyFileEdits, getImageRotationDegrees } from '../fileEdits';
+import { usePdfCache } from '../hooks/usePdfCache';
+import { buildThumbnailRenderRequest } from '../pdfRenderProfiles';
 import { getPreviewUrl } from '../platform';
+import { PageQuickActions } from './PageQuickActions';
 import { PreviewModal } from './PreviewModal';
 
 interface Props {
@@ -13,26 +16,32 @@ interface Props {
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
     onToggleRange: (fileId: string, from: number, to: number) => void;
-    onSetFromSpec: (fileId: string, spec: string, total: number) => void;
+    onSetFromSpec: (fileId: string, spec: string, total: number) => string | null;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
+    onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    editsByFile: Record<string, FileEdits>;
 }
 
 function PdfThumbnailItem({
-    filePath,
+    fileId,
     pageNum,
+    edits,
     isSelected,
     onClick,
     onPreview,
+    onRotate,
 }: {
-    filePath: string;
+    fileId: string;
     pageNum: number;
+    edits: FileEdits;
     isSelected: boolean;
     onClick: (e: React.MouseEvent) => void;
     onPreview: () => void;
+    onRotate: (direction: RotationDirection) => void;
 }) {
-    const { getThumbnail } = useThumbnailCache();
-    const dataUrl = getThumbnail(getPreviewUrl(filePath), pageNum);
+    const { getRender } = usePdfCache();
+    const dataUrl = getRender(fileId, buildThumbnailRenderRequest(pageNum, edits));
 
     return (
         <div className="flex flex-col">
@@ -58,30 +67,17 @@ function PdfThumbnailItem({
                     </div>
                 )}
 
-                {/* Hover overlay con zoom */}
-                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/10 opacity-0 transition-opacity group-hover:opacity-100 dark:bg-black/20">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onPreview();
-                        }}
-                        className={[
-                            'flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition-colors',
-                            isSelected
-                                ? 'bg-ui-accent/80 text-white hover:bg-ui-accent'
-                                : 'bg-slate-800/80 text-white hover:bg-slate-900',
-                        ].join(' ')}
-                    >
-                        <MagnifyingGlassPlusIcon className="h-4 w-4" />
-                    </button>
-                </div>
-
-                {/* Badge selezionato */}
                 {isSelected && (
                     <div className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-ui-accent shadow-md">
                         <CheckIcon className="h-3 w-3 text-white" />
                     </div>
                 )}
+
+                <PageQuickActions
+                    onPreview={onPreview}
+                    onRotateLeft={() => onRotate('ccw')}
+                    onRotateRight={() => onRotate('cw')}
+                />
             </div>
 
             <p
@@ -104,13 +100,15 @@ export function PagePicker({
     onSetFromSpec,
     onSelectAll,
     onDeselectAll,
+    onRotatePage,
+    editsByFile,
 }: Props) {
     const [specInput, setSpecInput] = useState('');
     const [gotoInput, setGotoInput] = useState('');
-    const [previewPage, setPreviewPage] = useState<number | null>(null);
-    const lastClickedPage = useRef<number | null>(null);
-    const gridRef = useRef<HTMLDivElement>(null);
-    useThumbnailCache(); // mantiene il context attivo per i figli
+    const [pageSpecError, setPageSpecError] = useState('');
+    const [previewTarget, setPreviewTarget] = useState<FinalPage | null>(null);
+    const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
+    const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null);
 
     if (!file) {
         return (
@@ -127,23 +125,24 @@ export function PagePicker({
     const allSelected = file.pageCount > 0 && selectedPageNums.size === file.pageCount;
 
     const handleThumbClick = (pageNum: number, e: React.MouseEvent) => {
-        if (e.shiftKey && lastClickedPage.current !== null) {
-            onToggleRange(file.id, lastClickedPage.current, pageNum);
+        if (e.shiftKey && lastClickedPage !== null) {
+            onToggleRange(file.id, lastClickedPage, pageNum);
         } else {
             onTogglePage(file.id, pageNum);
         }
-        lastClickedPage.current = pageNum;
+        setLastClickedPage(pageNum);
     };
 
     const handleGoto = () => {
-        const n = parseInt(gotoInput, 10);
+        const n = Number.parseInt(gotoInput, 10);
         if (!n || n < 1 || n > file.pageCount) return;
-        const el = gridRef.current?.querySelector(`[data-page="${n}"]`);
+        const el = gridEl?.querySelector(`[data-page="${n}"]`);
         el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
 
     const handleSpecApply = () => {
-        onSetFromSpec(file.id, specInput, file.pageCount);
+        const error = onSetFromSpec(file.id, specInput, file.pageCount);
+        setPageSpecError(error ?? '');
     };
 
     const handleToggleAll = () => {
@@ -155,7 +154,8 @@ export function PagePicker({
     };
 
     if (file.kind === 'image') {
-        const imageUrl = getPreviewUrl(file.path);
+        const imageUrl = getPreviewUrl(file.originalPath);
+        const rotation = getImageRotationDegrees(editsByFile[file.id]);
         return (
             <>
                 <div className="flex h-full flex-col overflow-hidden">
@@ -167,34 +167,31 @@ export function PagePicker({
                     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
                         <div
                             className="group relative cursor-pointer"
-                            onClick={() => setPreviewPage(-1)}
+                            onClick={() => setPreviewTarget({ id: `${file.id}:0`, fileId: file.id, pageNum: 0 })}
                         >
                             <img
                                 src={imageUrl}
                                 alt={file.name}
                                 className="max-h-48 max-w-full rounded-lg object-contain shadow-sm"
+                                style={{ transform: `rotate(${rotation}deg)` }}
                             />
-                            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/10 opacity-0 transition-opacity group-hover:opacity-100 dark:bg-black/20">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewPage(-1);
-                                    }}
-                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800/80 text-white shadow-lg hover:bg-slate-900"
-                                >
-                                    <MagnifyingGlassPlusIcon className="h-4 w-4" />
-                                </button>
-                            </div>
+                            <PageQuickActions
+                                onPreview={() => setPreviewTarget({ id: `${file.id}:0`, fileId: file.id, pageNum: 0 })}
+                                onRotateLeft={() => void onRotatePage(file.id, 0, 'ccw')}
+                                onRotateRight={() => void onRotatePage(file.id, 0, 'cw')}
+                            />
                         </div>
                         <span className="text-xs text-ui-text-muted">Inclusa automaticamente</span>
                     </div>
                 </div>
 
-                {previewPage === -1 && (
+                {previewTarget && (
                     <PreviewModal
-                        finalPages={[{ id: 'preview', fileId: file.id, pageNum: 0 }]}
+                        finalPages={[previewTarget]}
                         files={[file]}
-                        onClose={() => setPreviewPage(null)}
+                        editsByFile={editsByFile}
+                        onRotatePage={(pageNum, direction) => onRotatePage(file.id, pageNum, direction)}
+                        onClose={() => setPreviewTarget(null)}
                     />
                 )}
             </>
@@ -204,13 +201,11 @@ export function PagePicker({
     return (
         <>
             <div className="flex h-full flex-col overflow-hidden">
-                {/* Toolbar */}
                 <div className="shrink-0 border-b border-ui-border px-4 py-4">
                     <h2 className="mb-3 truncate text-[10px] font-bold uppercase tracking-widest text-ui-text-muted">
                         Pagine di {file.name}
                     </h2>
                     <div className="flex gap-2">
-                        {/* Vai a */}
                         <div className="flex flex-[1] flex-col gap-1">
                             <label className="px-1 text-[10px] font-bold uppercase tracking-wide text-ui-text-muted">
                                 Vai a
@@ -226,7 +221,6 @@ export function PagePicker({
                                 className="input-base"
                             />
                         </div>
-                        {/* Range */}
                         <div className="flex flex-[2] flex-col gap-1">
                             <label className="px-1 text-[10px] font-bold uppercase tracking-wide text-ui-text-muted">
                                 Range
@@ -235,51 +229,57 @@ export function PagePicker({
                                 type="text"
                                 placeholder="Es. 1-5, 8"
                                 value={specInput}
-                                onChange={(e) => setSpecInput(e.target.value)}
+                                onChange={(e) => {
+                                    setSpecInput(e.target.value);
+                                    if (pageSpecError) setPageSpecError('');
+                                }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSpecApply()}
                                 className="input-base"
                             />
                         </div>
-                        {/* Toggle tutti */}
                         <div className="flex flex-col justify-end gap-1">
                             <div className="invisible text-[10px]">_</div>
                             <button
                                 onClick={handleToggleAll}
                                 className={[
                                     'h-[38px] rounded-lg border px-3 text-[10px] font-bold uppercase tracking-wide transition-colors',
-                                    allSelected
-                                        ? 'toggle-on'
-                                        : 'toggle-off',
+                                    allSelected ? 'toggle-on' : 'toggle-off',
                                 ].join(' ')}
                             >
                                 {allSelected ? 'Nessuna' : 'Tutti'}
                             </button>
                         </div>
                     </div>
+                    {pageSpecError && (
+                        <p className="mt-3 text-xs text-red-500">{pageSpecError}</p>
+                    )}
                 </div>
 
-                {/* Griglia thumbnail */}
-                <div ref={gridRef} className="min-h-0 flex-1 overflow-y-auto p-4">
+                <div ref={setGridEl} className="min-h-0 flex-1 overflow-y-auto p-4">
                     <div className="grid grid-cols-2 gap-4">
                         {Array.from({ length: file.pageCount }, (_, i) => i + 1).map((pageNum) => (
                             <PdfThumbnailItem
                                 key={pageNum}
-                                filePath={file.path}
+                                fileId={file.id}
                                 pageNum={pageNum}
+                                edits={editsByFile[file.id] ?? emptyFileEdits()}
                                 isSelected={selectedPageNums.has(pageNum)}
                                 onClick={(e) => handleThumbClick(pageNum, e)}
-                                onPreview={() => setPreviewPage(pageNum)}
+                                onPreview={() => setPreviewTarget({ id: `${file.id}:${pageNum}`, fileId: file.id, pageNum })}
+                                onRotate={(direction) => void onRotatePage(file.id, pageNum, direction)}
                             />
                         ))}
                     </div>
                 </div>
             </div>
 
-            {previewPage !== null && previewPage > 0 && (
+            {previewTarget && (
                 <PreviewModal
-                    finalPages={[{ id: 'preview', fileId: file.id, pageNum: previewPage }]}
+                    finalPages={[previewTarget]}
                     files={[file]}
-                    onClose={() => setPreviewPage(null)}
+                    editsByFile={editsByFile}
+                    onRotatePage={(pageNum, direction) => onRotatePage(file.id, pageNum, direction)}
+                    onClose={() => setPreviewTarget(null)}
                 />
             )}
         </>

@@ -1,69 +1,73 @@
 use anyhow::{bail, Context, Result};
+use image::DynamicImage;
 use lopdf::{Document as PdfDoc, Object};
 use rayon::prelude::*;
-use uuid::Uuid;
 
 pub const IMAGE_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "tiff", "tif", "webp", "bmp", "ico", "tga", "qoi",
 ];
 
-fn temp_pdf(prefix: &str) -> std::path::PathBuf {
-    std::env::temp_dir().join(format!("fyler_{}_{}.pdf", prefix, Uuid::new_v4()))
-}
-
-// Helpers lopdf per ridurre il boilerplate Object::Name / Object::Integer
 fn name(s: &[u8]) -> Object { Object::Name(s.to_vec()) }
 fn int(n: i64) -> Object { Object::Integer(n) }
 
-/// Converte un'immagine in un PdfDoc in memoria (nessun file su disco).
-/// `image_fit`: "fit" (pagina = dimensioni immagine), "contain" (A4 letterbox), "cover" (A4 crop)
-fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc> {
+pub fn quarter_turns_to_degrees(turns: u8) -> Result<i32> {
+    match turns {
+        0..=3 => Ok(i32::from(turns) * 90),
+        other => bail!("Rotazione non supportata: {other}"),
+    }
+}
+
+fn rotate_dynamic_image(img: DynamicImage, quarter_turns: u8) -> Result<DynamicImage> {
+    Ok(match quarter_turns_to_degrees(quarter_turns)? {
+        0 => img,
+        90 => img.rotate90(),
+        180 => img.rotate180(),
+        270 => img.rotate270(),
+        _ => unreachable!(),
+    })
+}
+
+fn image_to_pdf_doc_from_image(img: DynamicImage, image_fit: &str) -> Result<PdfDoc> {
     use lopdf::{Dictionary, Stream};
 
-    let img = image::open(path).context("Errore apertura immagine")?;
     let rgb = img.to_rgb8();
     let (width_px, height_px) = rgb.dimensions();
     let img_data = rgb.into_raw();
 
-    // Dimensioni immagine in punti tipografici a 96 DPI
     let w_pt = width_px as f64 * 72.0 / 96.0;
     let h_pt = height_px as f64 * 72.0 / 96.0;
 
-    // Calcola dimensioni pagina e content stream in base alla modalità
     const A4_W: f64 = 595.0;
     const A4_H: f64 = 842.0;
 
     let (page_w, page_h, content) = match image_fit {
         "contain" => {
-            // Pagina A4, immagine scalata per stare dentro con bande bianche
             let scale = (A4_W / w_pt).min(A4_H / h_pt);
             let sw = w_pt * scale;
             let sh = h_pt * scale;
             let tx = (A4_W - sw) / 2.0;
             let ty = (A4_H - sh) / 2.0;
-            let c = format!(
+            let content = format!(
                 "1 g 0 0 {A4_W} {A4_H} re f q {sw:.4} 0 0 {sh:.4} {tx:.4} {ty:.4} cm /Im0 Do Q\n"
             );
-            (A4_W.ceil() as i64, A4_H.ceil() as i64, c)
+            (A4_W.ceil() as i64, A4_H.ceil() as i64, content)
         }
         "cover" => {
-            // Pagina A4, immagine scalata per coprire tutta la pagina (crop ai bordi)
             let scale = (A4_W / w_pt).max(A4_H / h_pt);
             let sw = w_pt * scale;
             let sh = h_pt * scale;
             let tx = (A4_W - sw) / 2.0;
             let ty = (A4_H - sh) / 2.0;
-            let c = format!(
+            let content = format!(
                 "q 0 0 {A4_W} {A4_H} re W n {sw:.4} 0 0 {sh:.4} {tx:.4} {ty:.4} cm /Im0 Do Q\n"
             );
-            (A4_W.ceil() as i64, A4_H.ceil() as i64, c)
+            (A4_W.ceil() as i64, A4_H.ceil() as i64, content)
         }
         _ => {
-            // "fit": pagina con dimensioni esatte dell'immagine (default)
             let pw = w_pt.ceil() as i64;
             let ph = h_pt.ceil() as i64;
-            let c = format!("q {pw} 0 0 {ph} 0 0 cm /Im0 Do Q\n");
-            (pw, ph, c)
+            let content = format!("q {pw} 0 0 {ph} 0 0 cm /Im0 Do Q\n");
+            (pw, ph, content)
         }
     };
 
@@ -91,7 +95,7 @@ fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc> {
     pages_dict.set("Count", int(1));
     let pages_id = doc.add_object(Object::Dictionary(pages_dict));
 
-    let mut page_dict = Dictionary::new();
+    let mut page_dict = lopdf::Dictionary::new();
     page_dict.set("Type", name(b"Page"));
     page_dict.set("Parent", Object::Reference(pages_id));
     page_dict.set(
@@ -108,35 +112,18 @@ fn image_to_pdf_doc(path: &str, image_fit: &str) -> Result<PdfDoc> {
         }
     }
 
-    let mut catalog = Dictionary::new();
+    let mut catalog = lopdf::Dictionary::new();
     catalog.set("Type", name(b"Catalog"));
     catalog.set("Pages", Object::Reference(pages_id));
     let catalog_id = doc.add_object(Object::Dictionary(catalog));
 
     doc.trailer.set("Root", Object::Reference(catalog_id));
-
     Ok(doc)
 }
 
-/// Carica un PDF applicando la selezione pagine in memoria (nessun file temporaneo).
-fn load_pdf_with_pages(path: &str, page_spec: &str) -> Result<PdfDoc> {
-    let mut doc = PdfDoc::load(path)?;
-    let selected = parse_page_spec(page_spec)?;
-    if !selected.is_empty() {
-        let all_pages: Vec<u32> = doc.get_pages().keys().copied().collect();
-        let total = all_pages.len() as u32;
-        for &p in &selected {
-            if p > total {
-                bail!("Pagina {p} non esiste in '{path}' ({total} pagine totali)");
-            }
-        }
-        let selected_set: std::collections::HashSet<u32> = selected.into_iter().collect();
-        let to_delete: Vec<u32> = all_pages.into_iter().filter(|p| !selected_set.contains(p)).collect();
-        if !to_delete.is_empty() {
-            doc.delete_pages(&to_delete);
-        }
-    }
-    Ok(doc)
+pub fn image_to_pdf_doc(path: &str, image_fit: &str, quarter_turns: u8) -> Result<PdfDoc> {
+    let img = image::open(path).context("Errore apertura immagine")?;
+    image_to_pdf_doc_from_image(rotate_dynamic_image(img, quarter_turns)?, image_fit)
 }
 
 pub fn is_image_path(path: &str) -> bool {
@@ -148,7 +135,6 @@ pub fn is_image_path(path: &str) -> bool {
     IMAGE_EXTENSIONS.contains(&ext.as_str())
 }
 
-/// Ritorna "pdf" o "image" in base all'estensione, None se non supportato.
 pub fn detect_kind_from_ext(path: &str) -> Option<&'static str> {
     if is_image_path(path) {
         Some("image")
@@ -159,92 +145,68 @@ pub fn detect_kind_from_ext(path: &str) -> Option<&'static str> {
     }
 }
 
-/// Dato un path (immagine o PDF) e una page spec, restituisce un PdfDoc in memoria.
-pub fn prepare_doc(path: &str, page_spec: &str, image_fit: &str) -> Result<PdfDoc> {
-    if is_image_path(path) {
-        image_to_pdf_doc(path, image_fit)
-    } else {
-        load_pdf_with_pages(path, page_spec)
-    }
-}
-
-/// Parsa "1-3,5,8" → Vec<u32> pagine 1-indexed.
-pub fn parse_page_spec(spec: &str) -> Result<Vec<u32>> {
-    if spec.trim().is_empty() {
-        return Ok(vec![]);
-    }
-    let mut pages = vec![];
-    for token in spec.split(',') {
-        let token = token.trim();
-        if token.is_empty() {
-            bail!("token vuoto");
-        }
-        if let Some((s, e)) = token.split_once('-') {
-            let start: u32 = s.parse().with_context(|| format!("pagina non valida: {s}"))?;
-            let end: u32 = e.parse().with_context(|| format!("pagina non valida: {e}"))?;
-            if start == 0 || end == 0 {
-                bail!("le pagine devono essere > 0");
-            }
-            if start > end {
-                bail!("range invertito: {start}-{end}");
-            }
-            pages.extend(start..=end);
-        } else {
-            let n: u32 = token.parse().with_context(|| format!("pagina non valida: {token}"))?;
-            if n == 0 {
-                bail!("le pagine devono essere > 0");
-            }
-            pages.push(n);
-        }
-    }
-    Ok(pages)
-}
-
-pub fn rotate_pdf_page(path: &str, page_num: u32, angle: i32) -> Result<std::path::PathBuf> {
-    let mut doc = PdfDoc::load(path)?;
-
+fn apply_pdf_rotation(doc: &mut PdfDoc, page_num: u32, quarter_turns: u8) -> Result<()> {
     let page_obj_id = {
         let pages = doc.get_pages();
-        pages.get(&page_num).copied()
+        pages.get(&page_num)
+            .copied()
             .with_context(|| format!("Pagina {page_num} non trovata"))?
     };
 
     let page_dict = doc.get_dictionary_mut(page_obj_id)?;
-    let current = page_dict.get(b"Rotate").and_then(|o| o.as_i64()).unwrap_or(0) as i32;
-    let new_rotate = (current + angle).rem_euclid(360);
-    page_dict.set("Rotate", int(new_rotate as i64));
+    let current = page_dict
+        .get(b"Rotate")
+        .and_then(|obj| obj.as_i64())
+        .unwrap_or(0) as i32;
+    let next = (current + quarter_turns_to_degrees(quarter_turns)?).rem_euclid(360);
+    page_dict.set("Rotate", int(next as i64));
+    Ok(())
+}
 
-    let tmp = temp_pdf("rot");
-    let mut file = std::fs::File::create(&tmp)?;
-    doc.save_modern(&mut file)?;
-    Ok(tmp)
+pub fn prepare_pdf_page_doc(mut doc: PdfDoc, page_num: u32, quarter_turns: u8) -> Result<PdfDoc> {
+    let all_pages: Vec<u32> = doc.get_pages().keys().copied().collect();
+    let total = all_pages.len() as u32;
+    if page_num == 0 || page_num > total {
+        bail!("Pagina {page_num} non esiste ({total} pagine totali)");
+    }
+
+    if quarter_turns != 0 {
+        apply_pdf_rotation(&mut doc, page_num, quarter_turns)?;
+    }
+
+    let to_delete: Vec<u32> = all_pages
+        .into_iter()
+        .filter(|candidate| *candidate != page_num)
+        .collect();
+    if !to_delete.is_empty() {
+        doc.delete_pages(&to_delete);
+    }
+    Ok(doc)
 }
 
 pub fn count_pages(path: &str) -> Result<u32> {
     Ok(PdfDoc::load(path)?.get_pages().len() as u32)
 }
 
-/// Unisce più PdfDoc in uno, appendendo le pagine di ciascuno al primo.
 pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
     let mut base = docs.remove(0);
 
     let base_pages_id = base
         .catalog()?
         .get(b"Pages")
-        .and_then(|o| o.as_reference())
+        .and_then(|obj| obj.as_reference())
         .context("Pages non trovato nel catalog")?;
 
-    // Pre-calcola gli offset cumulativi per rinumerare tutti i doc in parallelo
     let mut offset = base.max_id + 1;
-    let offsets: Vec<u32> = docs.iter().map(|d| {
-        let o = offset;
-        offset += d.max_id + 1;
-        o
+    let offsets: Vec<u32> = docs.iter().map(|doc| {
+        let current = offset;
+        offset += doc.max_id + 1;
+        current
     }).collect();
 
     docs.par_iter_mut()
         .zip(offsets.par_iter())
-        .for_each(|(doc, &off)| doc.renumber_objects_with(off));
+        .for_each(|(doc, &current_offset)| doc.renumber_objects_with(current_offset));
 
     for other in docs {
         let other_page_ids: Vec<lopdf::ObjectId> = other.page_iter().collect();
@@ -262,10 +224,9 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
         }
 
         let pages_dict = base.get_dictionary_mut(base_pages_id)?;
-
         let current_count = pages_dict
             .get(b"Count")
-            .and_then(|o| o.as_i64())
+            .and_then(|obj| obj.as_i64())
             .unwrap_or(0);
 
         {

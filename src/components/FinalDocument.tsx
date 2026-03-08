@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import {
     DndContext,
     closestCenter,
@@ -10,9 +10,14 @@ import {
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Bars3Icon, DocumentIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import type { SourceFile, FinalPage } from '../domain';
-import { useThumbnailCache } from '../hooks/useThumbnailCache';
+import type { FileEdits, FinalPage, SourceFile } from '../domain';
+import type { RotationDirection } from '../fileEdits';
+import { emptyFileEdits, getImageRotationDegrees } from '../fileEdits';
+import { usePdfCache } from '../hooks/usePdfCache';
+import { buildThumbnailRenderRequest } from '../pdfRenderProfiles';
 import { getPreviewUrl } from '../platform';
+import { PageQuickActions } from './PageQuickActions';
+import { PreviewModal } from './PreviewModal';
 
 interface Props {
     finalPages: FinalPage[];
@@ -20,25 +25,33 @@ interface Props {
     selectedFileId: string | null;
     onReorder: (fromId: string, toId: string) => void;
     onRemove: (id: string) => void;
+    onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    editsByFile: Record<string, FileEdits>;
 }
 
 const FinalPageRow = memo(function FinalPageRow({
     fp,
     file,
+    edits,
     index,
     isHighlighted,
     onRemove,
+    onPreview,
+    onRotate,
 }: {
     fp: FinalPage;
     file: SourceFile | undefined;
+    edits: FileEdits;
     index: number;
     isHighlighted: boolean;
     onRemove: (id: string) => void;
+    onPreview: () => void;
+    onRotate: (direction: RotationDirection) => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: fp.id,
     });
-    const { getThumbnail } = useThumbnailCache();
+    const { getRender } = usePdfCache();
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
@@ -47,8 +60,9 @@ const FinalPageRow = memo(function FinalPageRow({
     };
 
     const thumbUrl =
-        file?.kind === 'pdf' ? getThumbnail(getPreviewUrl(file.path), fp.pageNum) : null;
-    const imageUrl = file?.kind === 'image' ? getPreviewUrl(file.path) : null;
+        file?.kind === 'pdf' ? getRender(fp.fileId, buildThumbnailRenderRequest(fp.pageNum, edits)) : null;
+    const imageUrl = file?.kind === 'image' ? getPreviewUrl(file.originalPath) : null;
+    const imageRotation = file?.kind === 'image' ? getImageRotationDegrees(edits) : 0;
 
     return (
         <div
@@ -79,13 +93,18 @@ const FinalPageRow = memo(function FinalPageRow({
 
                 {/* Thumbnail 60×80 */}
                 <div
-                    className="shrink-0 overflow-hidden rounded bg-ui-surface-hover"
+                    className="group relative shrink-0 overflow-hidden rounded bg-ui-surface-hover"
                     style={{ width: 60, height: 80 }}
                 >
                     {thumbUrl ? (
                         <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
                     ) : imageUrl ? (
-                        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                        <img
+                            src={imageUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            style={{ transform: `rotate(${imageRotation}deg)` }}
+                        />
                     ) : (
                         <div className="flex h-full items-center justify-center">
                             {file?.kind === 'image' ? (
@@ -95,6 +114,12 @@ const FinalPageRow = memo(function FinalPageRow({
                             )}
                         </div>
                     )}
+                    <PageQuickActions
+                        compact
+                        onPreview={onPreview}
+                        onRotateLeft={() => onRotate('ccw')}
+                        onRotateRight={() => onRotate('cw')}
+                    />
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -118,9 +143,10 @@ const FinalPageRow = memo(function FinalPageRow({
     );
 });
 
-export function FinalDocument({ finalPages, files, selectedFileId, onReorder, onRemove }: Props) {
+export function FinalDocument({ finalPages, files, selectedFileId, onReorder, onRemove, onRotatePage, editsByFile }: Props) {
     const fileMap = useMemo(() => new Map(files.map((f) => [f.id, f])), [files]);
     const sortableItems = useMemo(() => finalPages.map((fp) => fp.id), [finalPages]);
+    const [previewTarget, setPreviewTarget] = useState<FinalPage | null>(null);
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     );
@@ -167,9 +193,12 @@ export function FinalDocument({ finalPages, files, selectedFileId, onReorder, on
                                         key={fp.id}
                                         fp={fp}
                                         file={fileMap.get(fp.fileId)}
+                                        edits={editsByFile[fp.fileId] ?? emptyFileEdits()}
                                         index={i}
                                         isHighlighted={fp.fileId === selectedFileId}
                                         onRemove={onRemove}
+                                        onPreview={() => setPreviewTarget(fp)}
+                                        onRotate={(direction) => void onRotatePage(fp.fileId, fp.pageNum, direction)}
                                     />
                                 ))}
                             </div>
@@ -177,6 +206,16 @@ export function FinalDocument({ finalPages, files, selectedFileId, onReorder, on
                     </DndContext>
                 )}
             </div>
+
+            {previewTarget && (
+                <PreviewModal
+                    finalPages={[previewTarget]}
+                    files={files}
+                    editsByFile={editsByFile}
+                    onRotatePage={(pageNum, direction) => onRotatePage(previewTarget.fileId, pageNum, direction)}
+                    onClose={() => setPreviewTarget(null)}
+                />
+            )}
         </div>
     );
 }

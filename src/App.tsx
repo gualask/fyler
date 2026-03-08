@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { finalPagesToMergeInputs, type MergeRequest } from './domain';
+import { buildMergeRequest } from './domain';
 import { mergePDFs, savePDFDialog } from './platform';
-import { ThumbnailCacheProvider } from './hooks/ThumbnailCacheProvider';
+import { PdfCacheProvider } from './hooks/PdfCacheProvider';
 import { useFiles } from './hooks/useFiles';
 import { useQuickDrop } from './hooks/useQuickDrop';
 import { useTheme } from './hooks/useTheme';
@@ -32,6 +32,7 @@ function AppContent() {
 
     const {
         files,
+        editsByFile,
         selectedId,
         selectedFile,
         setSelectedId,
@@ -44,6 +45,7 @@ function AppContent() {
         setFromPageSpec,
         selectAll,
         deselectAll,
+        rotatePage,
         removeFinalPage,
         reorderFinalPages,
     } = useFiles({ onFilesAdded });
@@ -87,8 +89,7 @@ function AppContent() {
         if (finalPages.length === 0) return;
         const outputPath = await savePDFDialog('merged.pdf');
         if (!outputPath) return;
-        const inputs = finalPagesToMergeInputs(finalPages, files);
-        const req: MergeRequest = { inputs, outputPath, optimize: optimizeOptions };
+        const req = buildMergeRequest(finalPages, editsByFile, outputPath, optimizeOptions);
         setLoading({ message: 'Preparazione...', progress: 0 });
         try {
             await mergePDFs(req);
@@ -96,7 +97,7 @@ function AppContent() {
         } finally {
             setLoading(null);
         }
-    }, [finalPages, files, optimizeOptions]);
+    }, [editsByFile, finalPages, optimizeOptions]);
 
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
@@ -149,6 +150,8 @@ function AppContent() {
                                             onSetFromSpec={setFromPageSpec}
                                             onSelectAll={selectAll}
                                             onDeselectAll={deselectAll}
+                                            onRotatePage={rotatePage}
+                                            editsByFile={editsByFile}
                                         />
                                     </section>
 
@@ -159,6 +162,8 @@ function AppContent() {
                                             selectedFileId={selectedId}
                                             onReorder={reorderFinalPages}
                                             onRemove={removeFinalPage}
+                                            onRotatePage={rotatePage}
+                                            editsByFile={editsByFile}
                                         />
                                     </section>
                                 </div>
@@ -191,6 +196,7 @@ function AppContent() {
                 <PreviewModal
                     finalPages={finalPages}
                     files={files}
+                    editsByFile={editsByFile}
                     imageFit={imageFit}
                     onClose={() => setShowFinalPreview(false)}
                 />
@@ -201,9 +207,9 @@ function AppContent() {
 
 function App() {
     return (
-        <ThumbnailCacheProvider>
+        <PdfCacheProvider>
             <AppContent />
-        </ThumbnailCacheProvider>
+        </PdfCacheProvider>
     );
 }
 

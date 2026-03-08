@@ -1,113 +1,169 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useReducer } from 'react';
 import type { SourceFile, FinalPage } from '../domain';
-import { reorderById } from '../utils';
+import { parseSelectedPagesFromSpec } from '../pageSpec';
+
+type CompositionState = {
+    selectedPagesByFile: Record<string, number[]>;
+    pageOrder: string[];
+};
+
+type CompositionAction =
+    | { type: 'set-file-selection'; fileId: string; pages: number[] }
+    | { type: 'remove-file'; fileId: string }
+    | { type: 'reorder'; fromId: string; toId: string };
+
+const initialState: CompositionState = {
+    selectedPagesByFile: {},
+    pageOrder: [],
+};
+
+function toFinalPageId(fileId: string, pageNum: number): string {
+    return `${fileId}:${pageNum}`;
+}
+
+function fromFinalPageId(id: string): { fileId: string; pageNum: number } {
+    const separator = id.lastIndexOf(':');
+    return {
+        fileId: id.slice(0, separator),
+        pageNum: Number.parseInt(id.slice(separator + 1), 10),
+    };
+}
+
+function normalizePages(pages: number[]): number[] {
+    return Array.from(new Set(pages)).sort((a, b) => a - b);
+}
+
+function allPagesForFile(file: SourceFile): number[] {
+    return file.kind === 'image'
+        ? [0]
+        : Array.from({ length: file.pageCount }, (_, i) => i + 1);
+}
+
+function reconcileFileOrder(pageOrder: string[], fileId: string, pages: number[]): string[] {
+    const idsForFile = pages.map((pageNum) => toFinalPageId(fileId, pageNum));
+    const idsForFileSet = new Set(idsForFile);
+    const prefix = `${fileId}:`;
+
+    const kept = pageOrder.filter((id) => !id.startsWith(prefix) || idsForFileSet.has(id));
+    const keptSet = new Set(kept);
+    const additions = idsForFile.filter((id) => !keptSet.has(id));
+    return [...kept, ...additions];
+}
+
+function reorderPageIds(pageOrder: string[], fromId: string, toId: string): string[] {
+    const fromIdx = pageOrder.findIndex((id) => id === fromId);
+    const toIdx = pageOrder.findIndex((id) => id === toId);
+    if (fromIdx === -1 || toIdx === -1) return pageOrder;
+
+    const next = [...pageOrder];
+    const [item] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, item);
+    return next;
+}
+
+function compositionReducer(state: CompositionState, action: CompositionAction): CompositionState {
+    switch (action.type) {
+        case 'set-file-selection': {
+            const pages = normalizePages(action.pages);
+            const selectedPagesByFile = { ...state.selectedPagesByFile };
+
+            if (pages.length === 0) {
+                delete selectedPagesByFile[action.fileId];
+            } else {
+                selectedPagesByFile[action.fileId] = pages;
+            }
+
+            return {
+                selectedPagesByFile,
+                pageOrder: reconcileFileOrder(state.pageOrder, action.fileId, pages),
+            };
+        }
+        case 'remove-file': {
+            const selectedPagesByFile = { ...state.selectedPagesByFile };
+            delete selectedPagesByFile[action.fileId];
+
+            return {
+                selectedPagesByFile,
+                pageOrder: state.pageOrder.filter((id) => !id.startsWith(`${action.fileId}:`)),
+            };
+        }
+        case 'reorder':
+            return {
+                ...state,
+                pageOrder: reorderPageIds(state.pageOrder, action.fromId, action.toId),
+            };
+        default:
+            return state;
+    }
+}
 
 export function useFinalPages() {
-    const [finalPages, setFinalPages] = useState<FinalPage[]>([]);
+    const [state, dispatch] = useReducer(compositionReducer, initialState);
+
+    const finalPages = useMemo<FinalPage[]>(
+        () => state.pageOrder.map((id) => {
+            const { fileId, pageNum } = fromFinalPageId(id);
+            return { id, fileId, pageNum };
+        }),
+        [state.pageOrder],
+    );
 
     const addAllPagesForFile = useCallback((file: SourceFile) => {
-        setFinalPages((prev) => {
-            const filtered = prev.filter((fp) => fp.fileId !== file.id);
-            const newPages: FinalPage[] =
-                file.kind === 'image'
-                    ? [{ id: crypto.randomUUID(), fileId: file.id, pageNum: 0 }]
-                    : Array.from({ length: file.pageCount }, (_, i) => ({
-                          id: crypto.randomUUID(),
-                          fileId: file.id,
-                          pageNum: i + 1,
-                      }));
-            return [...filtered, ...newPages];
-        });
+        dispatch({ type: 'set-file-selection', fileId: file.id, pages: allPagesForFile(file) });
     }, []);
 
     const removePagesForFile = useCallback((fileId: string) => {
-        setFinalPages((prev) => prev.filter((fp) => fp.fileId !== fileId));
+        dispatch({ type: 'remove-file', fileId });
     }, []);
-    const deselectAll = removePagesForFile;
 
     const togglePage = useCallback((fileId: string, pageNum: number) => {
-        setFinalPages((prev) => {
-            const exists = prev.some((fp) => fp.fileId === fileId && fp.pageNum === pageNum);
-            if (exists) {
-                return prev.filter((fp) => !(fp.fileId === fileId && fp.pageNum === pageNum));
-            }
-            return [...prev, { id: crypto.randomUUID(), fileId, pageNum }];
-        });
-    }, []);
+        const current = state.selectedPagesByFile[fileId] ?? [];
+        const next = current.includes(pageNum)
+            ? current.filter((n) => n !== pageNum)
+            : [...current, pageNum];
+        dispatch({ type: 'set-file-selection', fileId, pages: next });
+    }, [state.selectedPagesByFile]);
 
     const togglePageRange = useCallback((fileId: string, from: number, to: number) => {
         const [lo, hi] = from <= to ? [from, to] : [to, from];
-        setFinalPages((prev) => {
-            const existingNums = new Set(
-                prev.filter((fp) => fp.fileId === fileId).map((fp) => fp.pageNum),
-            );
-            const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
-            const allPresent = rangeNums.every((n) => existingNums.has(n));
-            if (allPresent) {
-                return prev.filter(
-                    (fp) => !(fp.fileId === fileId && fp.pageNum >= lo && fp.pageNum <= hi),
-                );
-            }
-            const toAdd = rangeNums
-                .filter((n) => !existingNums.has(n))
-                .map((n) => ({ id: crypto.randomUUID(), fileId, pageNum: n }));
-            return [...prev, ...toAdd];
-        });
-    }, []);
+        const current = state.selectedPagesByFile[fileId] ?? [];
+        const currentSet = new Set(current);
+        const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+        const allPresent = rangeNums.every((pageNum) => currentSet.has(pageNum));
+        const next = allPresent
+            ? current.filter((pageNum) => pageNum < lo || pageNum > hi)
+            : [...current, ...rangeNums.filter((pageNum) => !currentSet.has(pageNum))];
+        dispatch({ type: 'set-file-selection', fileId, pages: next });
+    }, [state.selectedPagesByFile]);
 
     const setFromPageSpec = useCallback((fileId: string, spec: string, total: number) => {
-        setFinalPages((prev) => {
-            const filtered = prev.filter((fp) => fp.fileId !== fileId);
-            const pages = new Set<number>();
-            if (!spec.trim()) {
-                for (let p = 1; p <= total; p++) pages.add(p);
-            } else {
-                for (const token of spec.split(',')) {
-                    const m = token.trim().match(/^(\d+)(?:-(\d+))?$/);
-                    if (!m) continue;
-                    const a = parseInt(m[1], 10);
-                    const b = m[2] ? parseInt(m[2], 10) : a;
-                    const lo = Math.min(a, b);
-                    const hi = Math.min(Math.max(a, b), total);
-                    for (let p = lo; p <= hi; p++) pages.add(p);
-                }
-            }
-            const newPages = Array.from(pages)
-                .sort((a, b) => a - b)
-                .map((n) => ({ id: crypto.randomUUID(), fileId, pageNum: n }));
-            return [...filtered, ...newPages];
-        });
+        const result = parseSelectedPagesFromSpec(spec, total);
+        if (result.pages === null) return result.error;
+        dispatch({ type: 'set-file-selection', fileId, pages: result.pages });
+        return null;
     }, []);
 
     const removeFinalPage = useCallback((id: string) => {
-        setFinalPages((prev) => prev.filter((fp) => fp.id !== id));
-    }, []);
+        const { fileId, pageNum } = fromFinalPageId(id);
+        const current = state.selectedPagesByFile[fileId] ?? [];
+        dispatch({
+            type: 'set-file-selection',
+            fileId,
+            pages: current.filter((n) => n !== pageNum),
+        });
+    }, [state.selectedPagesByFile]);
 
     const reorderFinalPages = useCallback((fromId: string, toId: string) => {
-        setFinalPages((prev) => reorderById(prev, fromId, toId));
+        dispatch({ type: 'reorder', fromId, toId });
     }, []);
 
     const selectAll = useCallback((file: SourceFile) => {
-        setFinalPages((prev) => {
-            const existingNums = new Set(
-                prev.filter((fp) => fp.fileId === file.id).map((fp) => fp.pageNum),
-            );
-            if (file.kind === 'image') {
-                if (existingNums.has(0)) return prev;
-                return [...prev, { id: crypto.randomUUID(), fileId: file.id, pageNum: 0 }];
-            }
-            const toAdd: FinalPage[] = [];
-            for (let p = 1; p <= file.pageCount; p++) {
-                if (!existingNums.has(p)) {
-                    toAdd.push({ id: crypto.randomUUID(), fileId: file.id, pageNum: p });
-                }
-            }
-            return toAdd.length ? [...prev, ...toAdd] : prev;
-        });
+        dispatch({ type: 'set-file-selection', fileId: file.id, pages: allPagesForFile(file) });
     }, []);
 
     return {
         finalPages,
+        selectedPagesByFile: state.selectedPagesByFile,
         addAllPagesForFile,
         removePagesForFile,
         togglePage,
@@ -116,6 +172,6 @@ export function useFinalPages() {
         removeFinalPage,
         reorderFinalPages,
         selectAll,
-        deselectAll,
+        deselectAll: removePagesForFile,
     };
 }

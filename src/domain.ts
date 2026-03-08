@@ -1,22 +1,29 @@
 export type DocKind = 'pdf' | 'image';
+export type QuarterTurn = 0 | 1 | 2 | 3;
 
 export type SourceFile = {
     id: string;
-    path: string;
+    originalPath: string;
     name: string;
     pageCount: number;
     kind: DocKind;
 };
 
 export type FinalPage = {
-    id: string;       // UUID univoco nell'ordine finale
-    fileId: string;   // SourceFile.id sorgente
-    pageNum: number;  // 1-indexed (0 per immagini)
+    id: string;
+    fileId: string;
+    pageNum: number;
 };
 
-export type MergeInput = {
-    path: string;
-    pageSpec: string;
+export type FileEdits = {
+    revision: number;
+    pageRotations?: Record<number, QuarterTurn>;
+    imageRotation?: QuarterTurn;
+};
+
+export type ExportPage = {
+    fileId: string;
+    pageNum: number;
 };
 
 export type JpegQuality = 'high' | 'medium' | 'low';
@@ -28,35 +35,23 @@ export type OptimizeOptions = {
     imageFit?: ImageFit;
 };
 
-/**
- * Converte FinalPage[] in MergeInput[] per l'export.
- * Raggruppa run consecutive dello stesso fileId in un singolo MergeInput.
- */
-export function finalPagesToMergeInputs(finalPages: FinalPage[], files: SourceFile[]): MergeInput[] {
-    const fileMap = new Map(files.map((f) => [f.id, f]));
-    const result: MergeInput[] = [];
-    let i = 0;
-    while (i < finalPages.length) {
-        const fp = finalPages[i];
-        const file = fileMap.get(fp.fileId);
-        if (!file) { i++; continue; }
-
-        const pages: number[] = [fp.pageNum];
-        let j = i + 1;
-        while (j < finalPages.length && finalPages[j].fileId === fp.fileId) {
-            pages.push(finalPages[j].pageNum);
-            j++;
-        }
-
-        const pageSpec = file.kind === 'image' ? '' : pages.join(',');
-        result.push({ path: file.path, pageSpec });
-        i = j;
-    }
-    return result;
-}
-
 export type MergeRequest = {
-    inputs: MergeInput[];
+    pages: ExportPage[];
+    edits: Record<string, FileEdits>;
     outputPath: string;
     optimize?: OptimizeOptions;
 };
+
+export function buildMergeRequest(
+    finalPages: FinalPage[],
+    edits: Record<string, FileEdits>,
+    outputPath: string,
+    optimize?: OptimizeOptions,
+): MergeRequest {
+    return {
+        pages: finalPages.map(({ fileId, pageNum }) => ({ fileId, pageNum })),
+        edits,
+        outputPath,
+        optimize,
+    };
+}
