@@ -12,10 +12,12 @@ import { PagePicker } from './components/PagePicker';
 import { FinalDocument } from './components/FinalDocument';
 import { PreviewModal } from './components/PreviewModal';
 import { OutputPanel } from './components/OutputPanel';
+import { ProgressModal } from './components/ProgressModal';
 
 function AppContent() {
     const [status, setStatus] = useState('');
     const [showFinalPreview, setShowFinalPreview] = useState(false);
+    const [loading, setLoading] = useState<{ message: string; progress?: number } | null>(null);
 
     useEffect(() => {
         if (!status) return;
@@ -40,6 +42,11 @@ function AppContent() {
         removeFinalPage,
         reorderFinalPages,
     } = useFiles();
+    const handleAddFiles = useCallback(() => {
+        setLoading({ message: 'Caricamento file...' });
+        void addFiles().finally(() => setLoading(null));
+    }, [addFiles]);
+
     const { isDark, toggleTheme } = useTheme();
     const { compression, resize, imageFit, setCompression, setResize, setImageFit, optimizeOptions } = useOptimize();
 
@@ -61,14 +68,29 @@ function AppContent() {
         return () => unlisten?.();
     }, []);
 
+    useEffect(() => {
+        let unlisten: (() => void) | undefined;
+        void listen<{ message: string; progress: number }>('merge-progress', (e) => {
+            setLoading({ message: e.payload.message, progress: e.payload.progress });
+        }).then((fn) => {
+            unlisten = fn;
+        });
+        return () => unlisten?.();
+    }, []);
+
     const exportMerged = useCallback(async () => {
         if (finalPages.length === 0) return;
         const outputPath = await savePDFDialog('merged.pdf');
         if (!outputPath) return;
         const inputs = finalPagesToMergeInputs(finalPages, files);
         const req: MergeRequest = { inputs, outputPath, optimize: optimizeOptions };
-        await mergePDFs(req);
-        setStatus('Esportazione completata.');
+        setLoading({ message: 'Preparazione...', progress: 0 });
+        try {
+            await mergePDFs(req);
+            setStatus('Esportazione completata.');
+        } finally {
+            setLoading(null);
+        }
     }, [finalPages, files, optimizeOptions]);
 
     return (
@@ -98,7 +120,7 @@ function AppContent() {
                         selectedId={selectedId}
                         onSelect={setSelectedId}
                         onRemove={removeFile}
-                        onAddFiles={() => void addFiles()}
+                        onAddFiles={handleAddFiles}
                     />
                 </aside>
 
@@ -142,6 +164,8 @@ function AppContent() {
                     {status}
                 </div>
             )}
+
+            {loading && <ProgressModal {...loading} />}
 
             {showFinalPreview && (
                 <PreviewModal

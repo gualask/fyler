@@ -1,5 +1,6 @@
 use anyhow::bail;
 use rayon::prelude::*;
+use tauri::Emitter;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
@@ -89,15 +90,27 @@ pub fn rotate_pdf_page(path: String, page_num: u32, angle: i32) -> Result<String
     Ok(tmp.to_string_lossy().to_string())
 }
 
-#[tauri::command]
-pub fn merge_pdfs(req: MergeRequest) -> Result<(), AppError> {
-    merge_pdfs_inner(req).map_err(Into::into)
+#[derive(serde::Serialize, Clone)]
+struct ProgressPayload {
+    message: &'static str,
+    progress: u8,
 }
 
-fn merge_pdfs_inner(req: MergeRequest) -> anyhow::Result<()> {
+fn emit_progress(app: &tauri::AppHandle, message: &'static str, progress: u8) {
+    let _ = app.emit("merge-progress", ProgressPayload { message, progress });
+}
+
+#[tauri::command]
+pub async fn merge_pdfs(app: tauri::AppHandle, req: MergeRequest) -> Result<(), AppError> {
+    merge_pdfs_inner(app, req).map_err(Into::into)
+}
+
+fn merge_pdfs_inner(app: tauri::AppHandle, req: MergeRequest) -> anyhow::Result<()> {
     let image_fit = req.optimize.as_ref()
         .and_then(|o| o.image_fit.as_deref())
         .unwrap_or("fit");
+
+    emit_progress(&app, "Preparazione documenti...", 0);
 
     let docs = req.inputs.par_iter()
         .map(|input| prepare_doc(&input.path, &input.page_spec, image_fit))
@@ -107,13 +120,17 @@ fn merge_pdfs_inner(req: MergeRequest) -> anyhow::Result<()> {
         bail!("Nessun documento da unire");
     }
 
+    emit_progress(&app, "Unione pagine...", 60);
     let mut merged = merge_pdf_documents(docs)?;
 
     if let Some(opts) = &req.optimize {
         if opts.jpeg_quality.is_some() || opts.max_px.is_some() {
+            emit_progress(&app, "Ottimizzazione immagini...", 80);
             optimize::optimize_images(&mut merged, opts)?;
         }
     }
+
+    emit_progress(&app, "Salvataggio...", 90);
     if let Some(parent) = std::path::Path::new(&req.output_path).parent() {
         std::fs::create_dir_all(parent)?;
     }
