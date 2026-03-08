@@ -25,7 +25,7 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                 <button
                     onClick={onToggleTheme}
                     title={isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
-                    className="rounded-lg bg-ui-bg p-1.5 text-ui-text-muted transition-colors hover:bg-ui-surface-hover"
+                    className="btn-icon"
                 >
                     {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                 </button>
@@ -33,7 +33,7 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                 <button
                     disabled={!canPreview}
                     onClick={onPreview}
-                    className="flex items-center gap-2 rounded-lg border border-ui-border px-4 py-2 text-sm font-medium text-ui-text-secondary transition-colors hover:bg-ui-surface-hover disabled:opacity-40"
+                    className="btn-ghost"
                 >
                     <EyeIcon className="h-4 w-4" />
                     Anteprima
@@ -41,7 +41,7 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                 <button
                     disabled={!canExport}
                     onClick={onExport}
-                    className="flex items-center gap-2 rounded-lg bg-ui-accent px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-ui-accent-hover disabled:opacity-40"
+                    className="btn-primary"
                 >
                     <ArrowDownTrayIcon className="h-5 w-5" />
                     Esporta PDF

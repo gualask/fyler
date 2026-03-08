@@ -51,8 +51,8 @@ function SegmentedControl<T extends string>({
                         className={[
                             'rounded-md px-3 py-1 text-xs font-medium transition-all',
                             value === opt.value
-                                ? 'bg-white text-ui-accent shadow-sm dark:bg-slate-700'
-                                : 'text-ui-text-secondary hover:text-ui-text',
+                                ? 'segment-on'
+                                : 'segment-off',
                         ].join(' ')}
                     >
                         {opt.label}

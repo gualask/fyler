@@ -16,8 +16,8 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
             className={[
                 'cursor-pointer select-none rounded-xl p-3 transition-colors',
                 selected
-                    ? 'border border-indigo-200 bg-indigo-50 dark:border-indigo-500/30 dark:bg-indigo-500/10'
-                    : 'border border-transparent hover:bg-slate-100 dark:hover:bg-white/5',
+                    ? 'border border-ui-accent/30 bg-ui-accent-soft'
+                    : 'border border-transparent hover:bg-ui-surface-hover',
             ].join(' ')}
         >
             <div className="flex items-start gap-3">

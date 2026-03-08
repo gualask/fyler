@@ -65,7 +65,7 @@ const FinalPageRow = memo(function FinalPageRow({
                 className={[
                     'group relative flex flex-1 items-center gap-3 rounded-xl border-2 p-3 transition-colors',
                     isHighlighted
-                        ? 'border-indigo-200 bg-indigo-50 dark:border-indigo-500/30 dark:bg-indigo-500/10'
+                        ? 'border-ui-accent/50 bg-ui-surface'
                         : 'border-ui-border bg-ui-surface',
                 ].join(' ')}
             >

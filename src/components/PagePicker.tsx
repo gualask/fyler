@@ -223,7 +223,7 @@ export function PagePicker({
                                 placeholder="Es. 5"
                                 onChange={(e) => setGotoInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleGoto()}
-                                className="h-[38px] w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none focus:ring-1 focus:ring-ui-accent"
+                                className="input-base"
                             />
                         </div>
                         {/* Range */}
@@ -237,7 +237,7 @@ export function PagePicker({
                                 value={specInput}
                                 onChange={(e) => setSpecInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSpecApply()}
-                                className="h-[38px] w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none focus:ring-1 focus:ring-ui-accent"
+                                className="input-base"
                             />
                         </div>
                         {/* Toggle tutti */}
@@ -245,7 +245,12 @@ export function PagePicker({
                             <div className="invisible text-[10px]">_</div>
                             <button
                                 onClick={handleToggleAll}
-                                className="h-[38px] rounded-lg border border-ui-border px-3 text-[10px] font-bold uppercase tracking-wide text-ui-text transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                                className={[
+                                    'h-[38px] rounded-lg border px-3 text-[10px] font-bold uppercase tracking-wide transition-colors',
+                                    allSelected
+                                        ? 'toggle-on'
+                                        : 'toggle-off',
+                                ].join(' ')}
                             >
                                 {allSelected ? 'Nessuna' : 'Tutti'}
                             </button>

@@ -30,7 +30,7 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
                 <button
                     onClick={onAddFiles}
                     title="Aggiungi file"
-                    className="flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-ui-accent transition-colors hover:bg-ui-accent/10"
+                    className="flex items-center gap-1 rounded-md border border-ui-border px-2 py-1 text-sm font-medium text-ui-text-secondary transition-colors hover:bg-ui-surface-hover"
                 >
                     <DocumentPlusIcon className="h-4 w-4" />
                     Aggiungi
