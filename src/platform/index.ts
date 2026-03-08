@@ -1,4 +1,5 @@
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
+import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
 import type { SourceFile, MergeRequest } from '../domain';
 
 export const openFilesDialog = (): Promise<SourceFile[]> =>
@@ -19,3 +20,16 @@ export const openFilesFromPaths = (paths: string[]): Promise<SourceFile[]> =>
 // asset:// protocol: il webview Tauri carica il file locale direttamente
 export const getPreviewUrl = (path: string): string =>
     convertFileSrc(path);
+
+export const windowGetLogicalSize = async () => {
+    const win = getCurrentWindow();
+    const physical = await win.innerSize();
+    const scale = await win.scaleFactor();
+    return physical.toLogical(scale);
+};
+
+export const windowSetSize = (w: number, h: number) =>
+    getCurrentWindow().setSize(new LogicalSize(w, h));
+
+export const windowSetAlwaysOnTop = (flag: boolean) =>
+    getCurrentWindow().setAlwaysOnTop(flag);

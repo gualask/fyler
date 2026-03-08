@@ -10,7 +10,7 @@ import type { SourceFile } from '../domain';
  * Composes useFileList + useFileDrop + useFinalPages.
  * Exposes the full API consumed by App.
  */
-export function useFiles() {
+export function useFiles({ onFilesAdded }: { onFilesAdded?: (ids: string[]) => void } = {}) {
     const { files, addFiles: addToList, removeFile: removeFileFromList, reorderFiles } = useFileList();
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const { requestThumbnails } = useThumbnailCache();
@@ -31,8 +31,9 @@ export function useFiles() {
                     requestThumbnails(getPreviewUrl(file.path), file.pageCount);
                 }
             }
+            onFilesAdded?.(newFiles.map((f) => f.id));
         },
-        [addToList, addAllPagesForFile, requestThumbnails],
+        [addToList, addAllPagesForFile, requestThumbnails, onFilesAdded],
     );
 
     const addFiles = useCallback(async () => {

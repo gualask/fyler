@@ -1,4 +1,4 @@
-import { ArrowDownTrayIcon, EyeIcon, MoonIcon, Squares2X2Icon, SunIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ArrowsPointingInIcon, EyeIcon, MoonIcon, Squares2X2Icon, SunIcon } from '@heroicons/react/24/outline';
 
 interface Props {
     isDark: boolean;
@@ -7,9 +7,10 @@ interface Props {
     canExport: boolean;
     onPreview: () => void;
     canPreview: boolean;
+    onQuickDrop: () => void;
 }
 
-export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPreview, canPreview }: Props) {
+export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPreview, canPreview, onQuickDrop }: Props) {
     return (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-6">
             <div className="flex items-center gap-3">
@@ -28,6 +29,10 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                     className="btn-icon"
                 >
                     {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+                </button>
+                <button onClick={onQuickDrop} className="btn-ghost" title="Modalità Quick Drop">
+                    <ArrowsPointingInIcon className="h-4 w-4" />
+                    Quick Drop
                 </button>
                 <div className="h-6 w-px bg-ui-border" />
                 <button
