@@ -82,7 +82,7 @@ function AppContent() {
                 canPreview={finalPages.length > 0}
             />
 
-            <div className="relative flex min-h-0 flex-1 overflow-hidden">
+            <div className="relative grid min-h-0 flex-1 overflow-hidden" style={{ gridTemplateColumns: 'minmax(200px, 35fr) minmax(200px, 30fr) minmax(200px, 35fr)' }}>
                 {isDragOver && (
                     <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center border-2 border-dashed border-ui-accent bg-ui-accent/10">
                         <span className="rounded-lg bg-ui-surface px-4 py-2 text-sm font-medium text-ui-accent shadow-lg">
@@ -91,7 +91,7 @@ function AppContent() {
                     </div>
                 )}
 
-                <aside className="w-[260px] shrink-0 border-r border-ui-border bg-ui-source">
+                <aside className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                     <FileList
                         files={files}
                         finalPages={finalPages}
@@ -102,7 +102,7 @@ function AppContent() {
                     />
                 </aside>
 
-                <section className="w-[320px] shrink-0 overflow-hidden border-r border-ui-border bg-ui-source">
+                <section className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                     <PagePicker
                         key={selectedFile?.id}
                         file={selectedFile}
@@ -115,7 +115,7 @@ function AppContent() {
                     />
                 </section>
 
-                <section className="min-h-0 flex-1 overflow-hidden bg-ui-output">
+                <section className="min-w-0 overflow-hidden bg-ui-output">
                     <FinalDocument
                         finalPages={finalPages}
                         files={files}

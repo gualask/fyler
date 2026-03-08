@@ -55,7 +55,7 @@ const FinalPageRow = memo(function FinalPageRow({
             ref={setNodeRef}
             style={style}
             {...attributes}
-            className={['flex items-center gap-3', isDragging ? 'opacity-50' : ''].join(' ')}
+            className={['flex min-w-0 items-center gap-3', isDragging ? 'opacity-50' : ''].join(' ')}
         >
             <span className="w-4 shrink-0 text-center text-xs font-bold text-ui-text-muted">
                 {index + 1}
@@ -63,7 +63,7 @@ const FinalPageRow = memo(function FinalPageRow({
 
             <div
                 className={[
-                    'group relative flex flex-1 items-center gap-3 rounded-xl border-2 p-3 transition-colors',
+                    'group relative flex min-w-0 flex-1 items-center gap-3 rounded-xl border-2 p-3 transition-colors',
                     isHighlighted
                         ? 'border-ui-accent/50 bg-ui-surface'
                         : 'border-ui-border bg-ui-surface',
