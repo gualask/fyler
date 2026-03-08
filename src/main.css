@@ -70,6 +70,11 @@ body {
            text-sm font-semibold text-white shadow-md transition-colors
            hover:bg-ui-accent-hover disabled:opacity-40;
   }
+  .btn-primary-lg {
+    @apply flex items-center gap-2 rounded-lg bg-ui-accent px-6 py-3
+           text-base font-semibold text-white shadow-md transition-colors
+           hover:bg-ui-accent-hover disabled:opacity-40;
+  }
   .btn-ghost {
     @apply flex items-center gap-2 rounded-lg border border-ui-border
            px-4 py-2 text-sm font-medium text-ui-text-secondary
