@@ -125,7 +125,7 @@ const FinalPageRow = memo(function FinalPageRow({
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-bold text-ui-text">{file?.name ?? '—'}</p>
                     {file?.kind === 'pdf' && (
-                        <p className="mt-0.5 text-[11px] font-semibold text-ui-accent">
+                        <p className="mt-0.5 text-[11px] font-semibold text-ui-accent-text">
                             Pagina {fp.pageNum}
                         </p>
                     )}

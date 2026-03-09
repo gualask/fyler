@@ -51,7 +51,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
             </div>
 
             {selected && (
-                <div className="mt-3 flex items-center justify-between text-[11px] font-medium text-ui-accent">
+                <div className="mt-3 flex items-center justify-between text-[11px] font-medium text-ui-accent-text">
                     <span>
                         {file.kind === 'image'
                             ? usedPages > 0
