@@ -54,6 +54,7 @@ function AppContent() {
         rotatePage,
         removeFinalPage,
         reorderFinalPages,
+        moveFinalPageToIndex,
         focusFinalPageSource,
     } = useFiles({ onFilesAdded });
     const handleAddFiles = useCallback(() => {
@@ -180,6 +181,7 @@ function AppContent() {
                                             files={files}
                                             selectedPageId={focusedSource ? `${focusedSource.fileId}:${focusedSource.pageNum}` : null}
                                             onReorder={reorderFinalPages}
+                                            onMovePageToIndex={moveFinalPageToIndex}
                                             onRemove={removeFinalPage}
                                             onSelectPage={focusFinalPageSource}
                                             onRotatePage={rotatePage}

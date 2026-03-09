@@ -235,7 +235,8 @@ export function PagePicker({
                         finalPages={[previewTarget]}
                         files={[file]}
                         editsByFile={editsByFile}
-                        onRotatePage={(pageNum, direction) => onRotatePage(file.id, pageNum, direction)}
+                        indicator={{ total: 1, mode: 'page-num' }}
+                        onRotatePage={onRotatePage}
                         onClose={() => setPreviewTarget(null)}
                     />
                 )}
@@ -325,7 +326,8 @@ export function PagePicker({
                     finalPages={[previewTarget]}
                     files={[file]}
                     editsByFile={editsByFile}
-                    onRotatePage={(pageNum, direction) => onRotatePage(file.id, pageNum, direction)}
+                    indicator={{ total: file.pageCount, mode: 'page-num' }}
+                    onRotatePage={onRotatePage}
                     onClose={() => setPreviewTarget(null)}
                 />
             )}

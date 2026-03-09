@@ -10,7 +10,8 @@ type CompositionState = {
 type CompositionAction =
     | { type: 'set-file-selection'; fileId: string; pages: number[] }
     | { type: 'remove-file'; fileId: string }
-    | { type: 'reorder'; fromId: string; toId: string };
+    | { type: 'reorder'; fromId: string; toId: string }
+    | { type: 'move-to-index'; id: string; targetIndex: number };
 
 const initialState: CompositionState = {
     selectedPagesByFile: {},
@@ -54,11 +55,23 @@ function reorderPageIds(pageOrder: string[], fromId: string, toId: string): stri
     const fromIdx = pageOrder.findIndex((id) => id === fromId);
     const toIdx = pageOrder.findIndex((id) => id === toId);
     if (fromIdx === -1 || toIdx === -1) return pageOrder;
+    return moveItem(pageOrder, fromIdx, toIdx);
+}
 
-    const next = [...pageOrder];
+function moveItem<T>(items: T[], fromIdx: number, toIdx: number): T[] {
+    if (fromIdx === toIdx) return items;
+    const next = [...items];
     const [item] = next.splice(fromIdx, 1);
     next.splice(toIdx, 0, item);
     return next;
+}
+
+function movePageIdToIndex(pageOrder: string[], id: string, targetIndex: number): string[] {
+    const fromIdx = pageOrder.findIndex((pageId) => pageId === id);
+    if (fromIdx === -1) return pageOrder;
+
+    const boundedIndex = Math.min(Math.max(targetIndex, 0), pageOrder.length - 1);
+    return moveItem(pageOrder, fromIdx, boundedIndex);
 }
 
 function compositionReducer(state: CompositionState, action: CompositionAction): CompositionState {
@@ -91,6 +104,11 @@ function compositionReducer(state: CompositionState, action: CompositionAction):
             return {
                 ...state,
                 pageOrder: reorderPageIds(state.pageOrder, action.fromId, action.toId),
+            };
+        case 'move-to-index':
+            return {
+                ...state,
+                pageOrder: movePageIdToIndex(state.pageOrder, action.id, action.targetIndex),
             };
         default:
             return state;
@@ -157,6 +175,10 @@ export function useFinalPages() {
         dispatch({ type: 'reorder', fromId, toId });
     }, []);
 
+    const moveFinalPageToIndex = useCallback((id: string, targetIndex: number) => {
+        dispatch({ type: 'move-to-index', id, targetIndex });
+    }, []);
+
     const selectAll = useCallback((file: SourceFile) => {
         dispatch({ type: 'set-file-selection', fileId: file.id, pages: allPagesForFile(file) });
     }, []);
@@ -171,6 +193,7 @@ export function useFinalPages() {
         setFromPageSpec,
         removeFinalPage,
         reorderFinalPages,
+        moveFinalPageToIndex,
         selectAll,
         deselectAll: removePagesForFile,
     };

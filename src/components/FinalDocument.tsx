@@ -24,6 +24,7 @@ interface Props {
     files: SourceFile[];
     selectedPageId: string | null;
     onReorder: (fromId: string, toId: string) => void;
+    onMovePageToIndex: (id: string, targetIndex: number) => void;
     onRemove: (id: string) => void;
     onSelectPage: (fileId: string, pageNum: number) => void;
     onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
@@ -39,7 +40,6 @@ const FinalPageRow = memo(function FinalPageRow({
     onRemove,
     onSelect,
     onPreview,
-    onRotate,
 }: {
     fp: FinalPage;
     file: SourceFile | undefined;
@@ -49,7 +49,6 @@ const FinalPageRow = memo(function FinalPageRow({
     onRemove: (id: string) => void;
     onSelect: () => void;
     onPreview: () => void;
-    onRotate: (direction: RotationDirection) => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: fp.id,
@@ -120,8 +119,6 @@ const FinalPageRow = memo(function FinalPageRow({
                     <PageQuickActions
                         compact
                         onPreview={onPreview}
-                        onRotateLeft={() => onRotate('ccw')}
-                        onRotateRight={() => onRotate('cw')}
                     />
                 </div>
 
@@ -149,10 +146,28 @@ const FinalPageRow = memo(function FinalPageRow({
     );
 });
 
-export function FinalDocument({ finalPages, files, selectedPageId, onReorder, onRemove, onSelectPage, onRotatePage, editsByFile }: Props) {
+export function FinalDocument({
+    finalPages,
+    files,
+    selectedPageId,
+    onReorder,
+    onMovePageToIndex,
+    onRemove,
+    onSelectPage,
+    onRotatePage,
+    editsByFile,
+}: Props) {
     const fileMap = useMemo(() => new Map(files.map((f) => [f.id, f])), [files]);
     const sortableItems = useMemo(() => finalPages.map((fp) => fp.id), [finalPages]);
-    const [previewTarget, setPreviewTarget] = useState<FinalPage | null>(null);
+    const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
+    const resolvedPreviewTarget = useMemo(
+        () => (previewTargetId ? finalPages.find((page) => page.id === previewTargetId) ?? null : null),
+        [finalPages, previewTargetId],
+    );
+    const previewTargetPosition = useMemo(
+        () => (resolvedPreviewTarget ? finalPages.findIndex((page) => page.id === resolvedPreviewTarget.id) + 1 : 0),
+        [finalPages, resolvedPreviewTarget],
+    );
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     );
@@ -204,8 +219,7 @@ export function FinalDocument({ finalPages, files, selectedPageId, onReorder, on
                                         isSelected={fp.id === selectedPageId}
                                         onRemove={onRemove}
                                         onSelect={() => onSelectPage(fp.fileId, fp.pageNum)}
-                                        onPreview={() => setPreviewTarget(fp)}
-                                        onRotate={(direction) => void onRotatePage(fp.fileId, fp.pageNum, direction)}
+                                        onPreview={() => setPreviewTargetId(fp.id)}
                                     />
                                 ))}
                             </div>
@@ -214,13 +228,19 @@ export function FinalDocument({ finalPages, files, selectedPageId, onReorder, on
                 )}
             </div>
 
-            {previewTarget && (
+            {resolvedPreviewTarget && (
                 <PreviewModal
-                    finalPages={[previewTarget]}
+                    finalPages={[resolvedPreviewTarget]}
                     files={files}
                     editsByFile={editsByFile}
-                    onRotatePage={(pageNum, direction) => onRotatePage(previewTarget.fileId, pageNum, direction)}
-                    onClose={() => setPreviewTarget(null)}
+                    indicator={{ current: previewTargetPosition, total: finalPages.length }}
+                    moveControl={{
+                        currentPosition: previewTargetPosition,
+                        totalPositions: finalPages.length,
+                        onMoveToPosition: (targetIndex) => onMovePageToIndex(resolvedPreviewTarget.id, targetIndex),
+                    }}
+                    onRotatePage={onRotatePage}
+                    onClose={() => setPreviewTargetId(null)}
                 />
             )}
         </div>
