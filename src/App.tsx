@@ -17,6 +17,11 @@ import { ProgressModal } from './components/ProgressModal';
 import { EmptyState } from './components/EmptyState';
 import { DragOverlay } from './components/DragOverlay';
 import { QuickDropView } from './components/QuickDropView';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
+
+function toErrorMessage(value: unknown): string {
+    return value instanceof Error ? value.message : String(value);
+}
 
 function AppContent() {
     const [status, setStatus] = useState('');
@@ -58,13 +63,20 @@ function AppContent() {
     const { compression, resize, imageFit, setCompression, setResize, setImageFit, optimizeOptions } = useOptimize();
 
     useEffect(() => {
+        const handleError = (e: ErrorEvent) => {
+            e.preventDefault();
+            setStatus(`Errore: ${toErrorMessage(e.error ?? e.message)}`);
+        };
         const handleRejection = (e: PromiseRejectionEvent) => {
             e.preventDefault();
-            const msg = e.reason instanceof Error ? e.reason.message : String(e.reason);
-            setStatus(`Errore: ${msg}`);
+            setStatus(`Errore: ${toErrorMessage(e.reason)}`);
         };
+        window.addEventListener('error', handleError);
         window.addEventListener('unhandledrejection', handleRejection);
-        return () => window.removeEventListener('unhandledrejection', handleRejection);
+        return () => {
+            window.removeEventListener('error', handleError);
+            window.removeEventListener('unhandledrejection', handleRejection);
+        };
     }, []);
 
     useEffect(() => {
@@ -207,9 +219,11 @@ function AppContent() {
 
 function App() {
     return (
-        <PdfCacheProvider>
-            <AppContent />
-        </PdfCacheProvider>
+        <AppErrorBoundary>
+            <PdfCacheProvider>
+                <AppContent />
+            </PdfCacheProvider>
+        </AppErrorBoundary>
     );
 }
 

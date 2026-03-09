@@ -1,7 +1,8 @@
+use std::collections::BTreeMap;
+
 use anyhow::{bail, Context, Result};
 use image::DynamicImage;
 use lopdf::{Document as PdfDoc, Object};
-use rayon::prelude::*;
 
 pub const IMAGE_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "tiff", "tif", "webp", "bmp", "ico", "tga", "qoi",
@@ -181,6 +182,50 @@ pub fn prepare_pdf_page_doc(mut doc: PdfDoc, page_num: u32, quarter_turns: u8) -
     if !to_delete.is_empty() {
         doc.delete_pages(&to_delete);
     }
+    // `delete_pages` updates the page tree, but leaves the removed pages' objects
+    // in the document until they are explicitly pruned.
+    doc.prune_objects();
+    doc.renumber_objects();
+    doc.adjust_zero_pages();
+    Ok(doc)
+}
+
+pub fn prepare_pdf_subset_doc(mut doc: PdfDoc, pages: &[(u32, u8)]) -> Result<PdfDoc> {
+    if pages.is_empty() {
+        bail!("Nessuna pagina selezionata");
+    }
+
+    let all_pages: Vec<u32> = doc.get_pages().keys().copied().collect();
+    let total = all_pages.len() as u32;
+    let mut selected = std::collections::BTreeSet::new();
+    let mut previous_page = 0;
+
+    for (page_num, quarter_turns) in pages {
+        if *page_num == 0 || *page_num > total {
+            bail!("Pagina {page_num} non esiste ({total} pagine totali)");
+        }
+        if *page_num <= previous_page {
+            bail!("Le pagine del subset devono essere in ordine crescente senza duplicati");
+        }
+        previous_page = *page_num;
+        selected.insert(*page_num);
+
+        if *quarter_turns != 0 {
+            apply_pdf_rotation(&mut doc, *page_num, *quarter_turns)?;
+        }
+    }
+
+    let to_delete: Vec<u32> = all_pages
+        .into_iter()
+        .filter(|candidate| !selected.contains(candidate))
+        .collect();
+    if !to_delete.is_empty() {
+        doc.delete_pages(&to_delete);
+    }
+
+    doc.prune_objects();
+    doc.renumber_objects();
+    doc.adjust_zero_pages();
     Ok(doc)
 }
 
@@ -189,55 +234,224 @@ pub fn count_pages(path: &str) -> Result<u32> {
 }
 
 pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
-    let mut base = docs.remove(0);
+    let mut document = PdfDoc::with_version("1.5");
+    let mut documents_pages = BTreeMap::new();
+    let mut documents_objects = BTreeMap::new();
+    let mut max_id = 1;
 
-    let base_pages_id = base
-        .catalog()?
-        .get(b"Pages")
-        .and_then(|obj| obj.as_reference())
-        .context("Pages non trovato nel catalog")?;
+    for mut doc in docs.drain(..) {
+        doc.renumber_objects_with(max_id);
+        max_id = doc.max_id + 1;
 
-    let mut offset = base.max_id + 1;
-    let offsets: Vec<u32> = docs.iter().map(|doc| {
-        let current = offset;
-        offset += doc.max_id + 1;
-        current
-    }).collect();
-
-    docs.par_iter_mut()
-        .zip(offsets.par_iter())
-        .for_each(|(doc, &current_offset)| doc.renumber_objects_with(current_offset));
-
-    for other in docs {
-        let other_page_ids: Vec<lopdf::ObjectId> = other.page_iter().collect();
-        let other_max = other.max_id;
-
-        base.objects.extend(other.objects);
-        if other_max > base.max_id {
-            base.max_id = other_max;
+        for object_id in doc.page_iter() {
+            documents_pages.insert(object_id, doc.get_object(object_id)?.to_owned());
         }
 
-        for &page_id in &other_page_ids {
-            if let Ok(page_dict) = base.get_dictionary_mut(page_id) {
-                page_dict.set("Parent", Object::Reference(base_pages_id));
-            }
-        }
-
-        let pages_dict = base.get_dictionary_mut(base_pages_id)?;
-        let current_count = pages_dict
-            .get(b"Count")
-            .and_then(|obj| obj.as_i64())
-            .unwrap_or(0);
-
-        {
-            let kids_obj = pages_dict.get_mut(b"Kids")?;
-            if let Object::Array(kids) = kids_obj {
-                kids.extend(other_page_ids.iter().map(|&id| Object::Reference(id)));
-            }
-        }
-
-        pages_dict.set("Count", int(current_count + other_page_ids.len() as i64));
+        documents_objects.extend(doc.objects);
     }
 
-    Ok(base)
+    let mut catalog_object: Option<(lopdf::ObjectId, Object)> = None;
+    let mut pages_object: Option<(lopdf::ObjectId, Object)> = None;
+
+    for (object_id, object) in documents_objects {
+        match object.type_name().unwrap_or(b"") {
+            b"Catalog" => {
+                catalog_object = Some((
+                    catalog_object.as_ref().map(|(id, _)| *id).unwrap_or(object_id),
+                    object,
+                ));
+            }
+            b"Pages" => {
+                if let Ok(dictionary) = object.as_dict() {
+                    let mut dictionary = dictionary.clone();
+                    if let Some((_, existing)) = &pages_object {
+                        if let Ok(old_dictionary) = existing.as_dict() {
+                            dictionary.extend(old_dictionary);
+                        }
+                    }
+
+                    pages_object = Some((
+                        pages_object.as_ref().map(|(id, _)| *id).unwrap_or(object_id),
+                        Object::Dictionary(dictionary),
+                    ));
+                }
+            }
+            b"Page" | b"Outlines" | b"Outline" => {}
+            _ => {
+                document.objects.insert(object_id, object);
+            }
+        }
+    }
+
+    let (catalog_id, catalog_object) = catalog_object.context("Catalog root not found")?;
+    let (pages_id, pages_object) = pages_object.context("Pages root not found")?;
+
+    for (object_id, object) in &documents_pages {
+        if let Ok(dictionary) = object.as_dict() {
+            let mut dictionary = dictionary.clone();
+            dictionary.set("Parent", pages_id);
+            document.objects.insert(*object_id, Object::Dictionary(dictionary));
+        }
+    }
+
+    if let Ok(dictionary) = pages_object.as_dict() {
+        let mut dictionary = dictionary.clone();
+        dictionary.set("Count", documents_pages.len() as u32);
+        dictionary.set(
+            "Kids",
+            documents_pages
+                .keys()
+                .map(|object_id| Object::Reference(*object_id))
+                .collect::<Vec<_>>(),
+        );
+        document.objects.insert(pages_id, Object::Dictionary(dictionary));
+    }
+
+    if let Ok(dictionary) = catalog_object.as_dict() {
+        let mut dictionary = dictionary.clone();
+        dictionary.set("Pages", pages_id);
+        dictionary.remove(b"Outlines");
+        document.objects.insert(catalog_id, Object::Dictionary(dictionary));
+    }
+
+    document.trailer.set("Root", catalog_id);
+    document.max_id = document.objects.len() as u32;
+    document.renumber_objects();
+    document.adjust_zero_pages();
+
+    Ok(document)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{merge_pdf_documents, prepare_pdf_page_doc, prepare_pdf_subset_doc};
+    use anyhow::Context;
+    use lopdf::Document as PdfDoc;
+    use std::fs::{self, File};
+    use std::path::{Path, PathBuf};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn repo_fixture(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("workspace root")
+            .join(name)
+    }
+
+    fn page_tree_stats(doc: &PdfDoc) -> anyhow::Result<(usize, i64)> {
+        let pages_id = doc.catalog()?.get(b"Pages")?.as_reference()?;
+        let pages = doc.get_dictionary(pages_id)?;
+        let kids = pages.get(b"Kids")?.as_array()?;
+        let count = pages.get(b"Count")?.as_i64()?;
+
+        for kid in kids {
+            let kid_id = kid.as_reference()?;
+            doc.get_dictionary(kid_id)
+                .with_context(|| format!("Missing page tree child {:?}", kid_id))?;
+        }
+
+        Ok((kids.len(), count))
+    }
+
+    fn temp_output_path(label: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "fyler-{}-{}.pdf",
+            label,
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
+        ))
+    }
+
+    fn save_doc_classic_for_test(doc: &mut PdfDoc, label: &str) -> anyhow::Result<PathBuf> {
+        let output = temp_output_path(label);
+        let mut file = File::create(&output).with_context(|| format!("create temp output {label}"))?;
+        doc.compress();
+        doc.save_to(&mut file)
+            .with_context(|| format!("save temp output {label}"))?;
+        drop(file);
+        Ok(output)
+    }
+
+    fn remove_temp_output(path: &Path) {
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn prepare_and_merge_preserves_valid_page_tree_for_fisio_fixture() -> anyhow::Result<()> {
+        let fixture = repo_fixture("fisio.pdf");
+        if !fixture.exists() {
+            return Ok(());
+        }
+        let source_doc = PdfDoc::load(&fixture).context("load fixture")?;
+        let mut docs = Vec::new();
+
+        for page_num in 2..=15 {
+            let mut doc = prepare_pdf_page_doc(source_doc.clone(), page_num, 0)
+                .with_context(|| format!("prepare page {page_num}"))?;
+            let output = save_doc_classic_for_test(&mut doc, &format!("prepared-page-{page_num}"))
+                .unwrap_or_else(|error| panic!("prepared page {page_num} failed to save: {error:#}"));
+            remove_temp_output(&output);
+            docs.push(doc);
+        }
+
+        let mut merged = merge_pdf_documents(docs).context("merge docs")?;
+        let output = save_doc_classic_for_test(&mut merged, "fisio-regression")
+            .unwrap_or_else(|error| panic!("merged document failed to save: {error:#}"));
+
+        let output_doc = PdfDoc::load(&output).context("reload merged output")?;
+        let output_size = fs::metadata(&output)?.len();
+        let input_size = fs::metadata(&fixture)?.len();
+        let visible_pages = output_doc.get_pages().len();
+        let (kids_len, count) = page_tree_stats(&output_doc)?;
+
+        remove_temp_output(&output);
+
+        assert_eq!(visible_pages, 14, "saved output should expose 14 pages");
+        assert_eq!(kids_len, 14, "page tree should have 14 kids");
+        assert_eq!(count, 14, "page tree /Count should match the visible pages");
+        assert!(
+            output_size < input_size * 2,
+            "merged output unexpectedly inflated: input={} output={}",
+            input_size,
+            output_size
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn subset_export_of_fisio_fixture_stays_compact_and_valid() -> anyhow::Result<()> {
+        let fixture = repo_fixture("fisio.pdf");
+        if !fixture.exists() {
+            return Ok(());
+        }
+        let mut doc = prepare_pdf_subset_doc(
+            PdfDoc::load(&fixture).context("load fixture")?,
+            &(2..=15).map(|page_num| (page_num, 0)).collect::<Vec<_>>(),
+        )?;
+
+        let output = save_doc_classic_for_test(&mut doc, "fisio-subset")
+            .unwrap_or_else(|error| panic!("subset export failed to save: {error:#}"));
+
+        let output_doc = PdfDoc::load(&output).context("reload subset output")?;
+        let output_size = fs::metadata(&output)?.len();
+        let input_size = fs::metadata(&fixture)?.len();
+        let visible_pages = output_doc.get_pages().len();
+        let (_, count) = page_tree_stats(&output_doc)?;
+
+        remove_temp_output(&output);
+
+        assert_eq!(visible_pages, 14, "subset output should expose 14 pages");
+        assert_eq!(count, 14, "subset page tree /Count should match the visible pages");
+        assert!(
+            output_size <= input_size + (input_size / 10),
+            "subset output unexpectedly inflated: input={} output={}",
+            input_size,
+            output_size
+        );
+
+        Ok(())
+    }
 }

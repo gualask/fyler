@@ -1,12 +1,10 @@
-use anyhow::bail;
-use tauri::{Emitter, State};
+use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
-use crate::export::build_documents;
+use crate::export::export_pdf;
 use crate::models::{MergeRequest, SourceFile};
-use crate::optimize;
-use crate::pdf::{merge_pdf_documents, IMAGE_EXTENSIONS};
+use crate::pdf::IMAGE_EXTENSIONS;
 use crate::source_registry::{files_from_paths, SourceRegistry};
 
 #[tauri::command]
@@ -61,57 +59,11 @@ pub async fn save_pdf_dialog(
         .unwrap_or_default())
 }
 
-#[derive(serde::Serialize, Clone)]
-struct ProgressPayload {
-    message: &'static str,
-    progress: u8,
-}
-
-fn emit_progress(app: &tauri::AppHandle, message: &'static str, progress: u8) {
-    let _ = app.emit("merge-progress", ProgressPayload { message, progress });
-}
-
 #[tauri::command]
 pub async fn merge_pdfs(
     app: tauri::AppHandle,
     registry: State<'_, SourceRegistry>,
     req: MergeRequest,
 ) -> Result<(), AppError> {
-    merge_pdfs_inner(app, &registry, req).map_err(Into::into)
-}
-
-fn merge_pdfs_inner(
-    app: tauri::AppHandle,
-    registry: &SourceRegistry,
-    req: MergeRequest,
-) -> anyhow::Result<()> {
-    let image_fit = req
-        .optimize
-        .as_ref()
-        .and_then(|options| options.image_fit.as_deref())
-        .unwrap_or("fit");
-
-    emit_progress(&app, "Preparazione documenti...", 0);
-    let docs = build_documents(&req, registry, image_fit)?;
-    if docs.is_empty() {
-        bail!("Nessun documento da unire");
-    }
-
-    emit_progress(&app, "Unione pagine...", 60);
-    let mut merged = merge_pdf_documents(docs)?;
-
-    if let Some(options) = &req.optimize {
-        if options.jpeg_quality.is_some() || options.max_px.is_some() {
-            emit_progress(&app, "Ottimizzazione immagini...", 80);
-            optimize::optimize_images(&mut merged, options)?;
-        }
-    }
-
-    emit_progress(&app, "Salvataggio...", 90);
-    if let Some(parent) = std::path::Path::new(&req.output_path).parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    let mut file = std::fs::File::create(&req.output_path)?;
-    merged.save_modern(&mut file)?;
-    Ok(())
+    export_pdf(&app, &registry, req).map_err(Into::into)
 }

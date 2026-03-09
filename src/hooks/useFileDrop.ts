@@ -8,7 +8,7 @@ interface DragDropPayload {
 }
 
 export function useFileDrop(
-    addFiles: (files: SourceFile[]) => void,
+    addFiles: (files: SourceFile[]) => Promise<SourceFile[]> | SourceFile[],
     setSelectedId: (id: string) => void,
 ): { isDragOver: boolean } {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -33,8 +33,10 @@ export function useFileDrop(
                 if (!paths?.length) return;
                 void openFilesFromPaths(paths).then((files) => {
                     if (!files.length) return;
-                    addFilesRef.current(files);
-                    setSelectedIdRef.current(files[0].id);
+                    void Promise.resolve(addFilesRef.current(files)).then((addedFiles) => {
+                        if (!addedFiles.length) return;
+                        setSelectedIdRef.current(addedFiles[0].id);
+                    });
                 });
             }),
         ]).then((fns) => {

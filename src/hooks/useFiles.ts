@@ -6,7 +6,11 @@ import { useFileDrop } from './useFileDrop';
 import { useFinalPages } from './useFinalPages';
 import { useSourceSession } from './useSourceSession';
 
-export function useFiles({ onFilesAdded }: { onFilesAdded?: (ids: string[]) => void } = {}) {
+export function useFiles({
+    onFilesAdded,
+}: {
+    onFilesAdded?: (ids: string[]) => void;
+} = {}) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const finalPagesApi = useFinalPages();
     const { addAllPagesForFile, removePagesForFile } = finalPagesApi;
@@ -41,7 +45,7 @@ export function useFiles({ onFilesAdded }: { onFilesAdded?: (ids: string[]) => v
         [files, selectedId],
     );
 
-    const acceptFiles = useCallback((newFiles: typeof files) => {
+    const acceptFiles = useCallback(async (newFiles: typeof files) => {
         const addedFiles = addSourceFiles(newFiles);
         if (addedFiles.length) {
             setSelectedId((prev) => prev ?? addedFiles[0].id);
