@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     CheckIcon,
 } from '@heroicons/react/24/outline';
@@ -21,6 +21,31 @@ interface Props {
     onDeselectAll: (fileId: string) => void;
     onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
     editsByFile: Record<string, FileEdits>;
+    focusedPageNum: number | null;
+    focusFlashKey?: number;
+}
+
+function scrollToPage(gridEl: HTMLDivElement | null, pageNum: number) {
+    const el = gridEl?.querySelector(`[data-page="${pageNum}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function FocusFlashOverlay({
+    flashKey,
+    className,
+}: {
+    flashKey: number;
+    className: string;
+}) {
+    return (
+        <div
+            key={flashKey}
+            onAnimationEnd={(e) => {
+                e.currentTarget.style.display = 'none';
+            }}
+            className={`flash-accent-thumb pointer-events-none absolute z-10 bg-ui-accent/60 ${className}`}
+        />
+    );
 }
 
 function PdfThumbnailItem({
@@ -28,6 +53,8 @@ function PdfThumbnailItem({
     pageNum,
     edits,
     isSelected,
+    isFocused,
+    focusFlashKey,
     onClick,
     onPreview,
     onRotate,
@@ -36,6 +63,8 @@ function PdfThumbnailItem({
     pageNum: number;
     edits: FileEdits;
     isSelected: boolean;
+    isFocused: boolean;
+    focusFlashKey?: number;
     onClick: (e: React.MouseEvent) => void;
     onPreview: () => void;
     onRotate: (direction: RotationDirection) => void;
@@ -50,8 +79,8 @@ function PdfThumbnailItem({
                 onClick={onClick}
                 className={[
                     'group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-lg border-2 transition-all active:scale-95',
-                    isSelected
-                        ? 'border-ui-accent shadow-sm'
+                    isFocused
+                        ? 'border-[3px] border-ui-accent shadow-sm'
                         : 'border-transparent hover:border-ui-accent/50 hover:shadow-md',
                 ].join(' ')}
             >
@@ -67,8 +96,12 @@ function PdfThumbnailItem({
                     </div>
                 )}
 
+                {isFocused && focusFlashKey && (
+                    <FocusFlashOverlay flashKey={focusFlashKey} className="inset-0" />
+                )}
+
                 {isSelected && (
-                    <div className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-ui-accent shadow-md">
+                    <div className="absolute right-1.5 top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-ui-accent shadow-md">
                         <CheckIcon className="h-3 w-3 text-white" />
                     </div>
                 )}
@@ -83,7 +116,7 @@ function PdfThumbnailItem({
             <p
                 className={[
                     'mt-1.5 text-center text-[10px]',
-                    isSelected ? 'font-bold text-ui-accent' : 'font-medium text-ui-text-muted',
+                    isFocused ? 'font-bold text-ui-accent' : 'font-medium text-ui-text-muted',
                 ].join(' ')}
             >
                 Pagina {pageNum}
@@ -102,6 +135,8 @@ export function PagePicker({
     onDeselectAll,
     onRotatePage,
     editsByFile,
+    focusedPageNum,
+    focusFlashKey,
 }: Props) {
     const [specInput, setSpecInput] = useState('');
     const [gotoInput, setGotoInput] = useState('');
@@ -109,6 +144,11 @@ export function PagePicker({
     const [previewTarget, setPreviewTarget] = useState<FinalPage | null>(null);
     const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
     const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!file || file.kind !== 'pdf' || focusedPageNum === null) return;
+        scrollToPage(gridEl, focusedPageNum);
+    }, [file, focusedPageNum, focusFlashKey, gridEl]);
 
     if (!file) {
         return (
@@ -136,8 +176,7 @@ export function PagePicker({
     const handleGoto = () => {
         const n = Number.parseInt(gotoInput, 10);
         if (!n || n < 1 || n > file.pageCount) return;
-        const el = gridEl?.querySelector(`[data-page="${n}"]`);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        scrollToPage(gridEl, n);
     };
 
     const handleSpecApply = () => {
@@ -166,7 +205,10 @@ export function PagePicker({
                     </div>
                     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
                         <div
-                            className="group relative cursor-pointer"
+                            className={[
+                                'group relative cursor-pointer rounded-xl border-2 p-1 transition-colors',
+                                focusedPageNum === 0 ? 'border-[3px] border-ui-accent' : 'border-transparent',
+                            ].join(' ')}
                             onClick={() => setPreviewTarget({ id: `${file.id}:0`, fileId: file.id, pageNum: 0 })}
                         >
                             <img
@@ -175,6 +217,9 @@ export function PagePicker({
                                 className="max-h-48 max-w-full rounded-lg object-contain shadow-sm"
                                 style={{ transform: `rotate(${rotation}deg)` }}
                             />
+                            {focusedPageNum === 0 && focusFlashKey && (
+                                <FocusFlashOverlay flashKey={focusFlashKey} className="inset-1 rounded-lg" />
+                            )}
                             <PageQuickActions
                                 onPreview={() => setPreviewTarget({ id: `${file.id}:0`, fileId: file.id, pageNum: 0 })}
                                 onRotateLeft={() => void onRotatePage(file.id, 0, 'ccw')}
@@ -259,11 +304,13 @@ export function PagePicker({
                     <div className="grid grid-cols-2 gap-4">
                         {Array.from({ length: file.pageCount }, (_, i) => i + 1).map((pageNum) => (
                             <PdfThumbnailItem
-                                key={pageNum}
+                                key={`${pageNum}:${focusedPageNum === pageNum ? focusFlashKey ?? 0 : 0}`}
                                 fileId={file.id}
                                 pageNum={pageNum}
                                 edits={editsByFile[file.id] ?? emptyFileEdits()}
                                 isSelected={selectedPageNums.has(pageNum)}
+                                isFocused={focusedPageNum === pageNum}
+                                focusFlashKey={focusedPageNum === pageNum ? focusFlashKey : undefined}
                                 onClick={(e) => handleThumbClick(pageNum, e)}
                                 onPreview={() => setPreviewTarget({ id: `${file.id}:${pageNum}`, fileId: file.id, pageNum })}
                                 onRotate={(direction) => void onRotatePage(file.id, pageNum, direction)}

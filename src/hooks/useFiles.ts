@@ -12,6 +12,7 @@ export function useFiles({
     onFilesAdded?: (ids: string[]) => void;
 } = {}) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [focusedSource, setFocusedSource] = useState<{ fileId: string; pageNum: number; flashKey: number } | null>(null);
     const finalPagesApi = useFinalPages();
     const { addAllPagesForFile, removePagesForFile } = finalPagesApi;
 
@@ -59,11 +60,17 @@ export function useFiles({
         setSelectedId((prev) => prev ?? addedFiles[0].id);
     }, [openAndAddSourceFiles]);
 
+    const selectFile = useCallback((id: string) => {
+        setSelectedId(id);
+        setFocusedSource(null);
+    }, []);
+
     const removeFile = useCallback((id: string) => {
         if (id === selectedId) {
             const remaining = files.filter((file) => file.id !== id);
             setSelectedId(remaining.length ? remaining[0].id : null);
         }
+        setFocusedSource((prev) => (prev?.fileId === id ? null : prev));
         removeSourceFile(id);
     }, [files, removeSourceFile, selectedId]);
 
@@ -75,6 +82,11 @@ export function useFiles({
         setSelectedId((prev) => prev ?? id);
     }, []);
 
+    const focusFinalPageSource = useCallback((fileId: string, pageNum: number) => {
+        setSelectedId(fileId);
+        setFocusedSource({ fileId, pageNum, flashKey: Date.now() });
+    }, []);
+
     const { isDragOver } = useFileDrop(acceptFiles, selectIfNone);
 
     return {
@@ -82,10 +94,12 @@ export function useFiles({
         editsByFile,
         selectedId,
         selectedFile,
-        setSelectedId,
+        selectFile,
+        focusedSource,
         addFiles,
         removeFile,
         rotatePage,
+        focusFinalPageSource,
         reorderFiles,
         isDragOver,
         ...finalPagesApi,

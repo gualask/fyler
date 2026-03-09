@@ -40,7 +40,8 @@ function AppContent() {
         editsByFile,
         selectedId,
         selectedFile,
-        setSelectedId,
+        selectFile,
+        focusedSource,
         addFiles,
         removeFile,
         isDragOver,
@@ -53,6 +54,7 @@ function AppContent() {
         rotatePage,
         removeFinalPage,
         reorderFinalPages,
+        focusFinalPageSource,
     } = useFiles({ onFilesAdded });
     const handleAddFiles = useCallback(() => {
         setLoading({ message: 'Caricamento file...' });
@@ -61,6 +63,9 @@ function AppContent() {
 
     const { isDark, toggleTheme } = useTheme();
     const { compression, resize, imageFit, setCompression, setResize, setImageFit, optimizeOptions } = useOptimize();
+    const focusedSourceMatchesSelected = Boolean(focusedSource && focusedSource.fileId === selectedFile?.id);
+    const focusedSourcePageNum = focusedSourceMatchesSelected ? focusedSource!.pageNum : null;
+    const focusedSourceFlashKey = focusedSourceMatchesSelected ? focusedSource!.flashKey : undefined;
 
     useEffect(() => {
         const handleError = (e: ErrorEvent) => {
@@ -146,7 +151,7 @@ function AppContent() {
                                             files={files}
                                             finalPages={finalPages}
                                             selectedId={selectedId}
-                                            onSelect={setSelectedId}
+                                            onSelect={selectFile}
                                             onRemove={removeFile}
                                             onAddFiles={handleAddFiles}
                                         />
@@ -164,6 +169,8 @@ function AppContent() {
                                             onDeselectAll={deselectAll}
                                             onRotatePage={rotatePage}
                                             editsByFile={editsByFile}
+                                            focusedPageNum={focusedSourcePageNum}
+                                            focusFlashKey={focusedSourceFlashKey}
                                         />
                                     </section>
 
@@ -171,9 +178,10 @@ function AppContent() {
                                         <FinalDocument
                                             finalPages={finalPages}
                                             files={files}
-                                            selectedFileId={selectedId}
+                                            selectedPageId={focusedSource ? `${focusedSource.fileId}:${focusedSource.pageNum}` : null}
                                             onReorder={reorderFinalPages}
                                             onRemove={removeFinalPage}
+                                            onSelectPage={focusFinalPageSource}
                                             onRotatePage={rotatePage}
                                             editsByFile={editsByFile}
                                         />

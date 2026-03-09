@@ -22,9 +22,10 @@ import { PreviewModal } from './PreviewModal';
 interface Props {
     finalPages: FinalPage[];
     files: SourceFile[];
-    selectedFileId: string | null;
+    selectedPageId: string | null;
     onReorder: (fromId: string, toId: string) => void;
     onRemove: (id: string) => void;
+    onSelectPage: (fileId: string, pageNum: number) => void;
     onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
     editsByFile: Record<string, FileEdits>;
 }
@@ -34,8 +35,9 @@ const FinalPageRow = memo(function FinalPageRow({
     file,
     edits,
     index,
-    isHighlighted,
+    isSelected,
     onRemove,
+    onSelect,
     onPreview,
     onRotate,
 }: {
@@ -43,8 +45,9 @@ const FinalPageRow = memo(function FinalPageRow({
     file: SourceFile | undefined;
     edits: FileEdits;
     index: number;
-    isHighlighted: boolean;
+    isSelected: boolean;
     onRemove: (id: string) => void;
+    onSelect: () => void;
     onPreview: () => void;
     onRotate: (direction: RotationDirection) => void;
 }) {
@@ -76,16 +79,16 @@ const FinalPageRow = memo(function FinalPageRow({
             </span>
 
             <div
+                onClick={onSelect}
                 className={[
-                    'group relative flex min-w-0 flex-1 items-center gap-3 rounded-xl border-2 p-3 transition-colors',
-                    isHighlighted
-                        ? 'border-ui-accent/50 bg-ui-surface'
-                        : 'border-ui-border bg-ui-surface',
+                    'group relative flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-colors',
+                    isSelected ? 'border-ui-accent bg-ui-surface' : 'border-ui-border bg-ui-surface',
                 ].join(' ')}
             >
                 {/* Drag handle */}
                 <div
                     {...listeners}
+                    onClick={(e) => e.stopPropagation()}
                     className="shrink-0 cursor-grab text-ui-text-muted active:cursor-grabbing"
                 >
                     <Bars3Icon className="h-3.5 w-3.5" />
@@ -133,7 +136,10 @@ const FinalPageRow = memo(function FinalPageRow({
 
                 {/* Delete hover-reveal */}
                 <button
-                    onClick={() => onRemove(fp.id)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove(fp.id);
+                    }}
                     className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-colors hover:bg-red-600 group-hover:flex"
                 >
                     <XMarkIcon className="h-3.5 w-3.5" />
@@ -143,7 +149,7 @@ const FinalPageRow = memo(function FinalPageRow({
     );
 });
 
-export function FinalDocument({ finalPages, files, selectedFileId, onReorder, onRemove, onRotatePage, editsByFile }: Props) {
+export function FinalDocument({ finalPages, files, selectedPageId, onReorder, onRemove, onSelectPage, onRotatePage, editsByFile }: Props) {
     const fileMap = useMemo(() => new Map(files.map((f) => [f.id, f])), [files]);
     const sortableItems = useMemo(() => finalPages.map((fp) => fp.id), [finalPages]);
     const [previewTarget, setPreviewTarget] = useState<FinalPage | null>(null);
@@ -195,8 +201,9 @@ export function FinalDocument({ finalPages, files, selectedFileId, onReorder, on
                                         file={fileMap.get(fp.fileId)}
                                         edits={editsByFile[fp.fileId] ?? emptyFileEdits()}
                                         index={i}
-                                        isHighlighted={fp.fileId === selectedFileId}
+                                        isSelected={fp.id === selectedPageId}
                                         onRemove={onRemove}
+                                        onSelect={() => onSelectPage(fp.fileId, fp.pageNum)}
                                         onPreview={() => setPreviewTarget(fp)}
                                         onRotate={(direction) => void onRotatePage(fp.fileId, fp.pageNum, direction)}
                                     />

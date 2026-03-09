@@ -50,6 +50,25 @@
   --ui-accent-on-soft:   #a5b4fc;
 }
 
+@keyframes ui-thumb-flash {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  18% {
+    opacity: 0.92;
+    transform: scale(1.01);
+  }
+  42% {
+    opacity: 0.76;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
 /* ── Font ────────────────────────────────────────────────────────────────── */
 body {
   font-family: 'Public Sans Variable', 'Public Sans', system-ui, sans-serif;
@@ -116,6 +135,10 @@ body {
   .panel-header {
     @apply flex shrink-0 items-center justify-between
            border-b border-ui-border px-4 py-3;
+  }
+
+  .flash-accent-thumb {
+    animation: ui-thumb-flash 1.2s ease-out 1;
   }
 }
 
