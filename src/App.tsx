@@ -146,7 +146,7 @@ function AppContent() {
                             <EmptyState onAddFiles={handleAddFiles} />
                         ) : (
                             <>
-                                <div className="grid min-h-0 flex-1 overflow-hidden" style={{ gridTemplateColumns: 'minmax(200px, 35fr) minmax(200px, 30fr) minmax(200px, 35fr)' }}>
+                                <div className="grid min-h-0 flex-1 overflow-hidden" style={{ gridTemplateColumns: 'minmax(200px, 30fr) minmax(200px, 40fr) minmax(200px, 30fr)' }}>
                                     <aside className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                                         <FileList
                                             files={files}
