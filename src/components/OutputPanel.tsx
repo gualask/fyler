@@ -33,44 +33,36 @@ const IMAGE_FIT_OPTIONS: { value: ImageFit; label: string }[] = [
 const COMPRESSION_TOOLTIP_ITEMS: {
     title: string;
     description: string;
-    visual: ReactNode;
 }[] = [
     {
         title: 'Nessuna',
-        description: "Mantiene le immagini cosi' come sono; qualita' massima, file piu' pesante.",
-        visual: <ScalePreview level="none" />,
+        description: 'Non ricodifica in JPEG: mantiene i dati immagine originali.',
     },
     {
         title: 'Media',
-        description: "Riduce bene il peso senza cambiare troppo l'aspetto nella maggior parte dei casi.",
-        visual: <ScalePreview level="medium" />,
+        description: 'Ricodifica in JPEG qualita 75%: buon compromesso tra peso e resa.',
     },
     {
         title: 'Alta',
-        description: "Taglia di piu' la dimensione finale, ma la perdita di dettaglio diventa piu' visibile.",
-        visual: <ScalePreview level="high" />,
+        description: 'Ricodifica in JPEG qualita 55%: comprime di piu ma la perdita si vede prima.',
     },
 ];
 
 const RESIZE_TOOLTIP_ITEMS: {
     title: string;
     description: string;
-    visual: ReactNode;
 }[] = [
     {
         title: 'Originale',
-        description: "Non ridimensiona nulla; e' la scelta piu' fedele ma anche la piu' pesante.",
-        visual: <ScalePreview level="original" />,
+        description: "Non ridimensiona: il lato lungo resta quello originale.",
     },
     {
         title: 'Max 2000px',
-        description: "Riduce solo le immagini piu' grandi, con un compromesso equilibrato tra peso e nitidezza.",
-        visual: <ScalePreview level="2000" />,
+        description: "Riduce solo le immagini il cui lato lungo supera 2000px.",
     },
     {
         title: 'Max 1500px',
-        description: "Riduce di piu' la risoluzione per alleggerire il PDF, utile quando il peso conta piu' del dettaglio.",
-        visual: <ScalePreview level="1500" />,
+        description: "Riduce solo le immagini il cui lato lungo supera 1500px.",
     },
 ];
 
@@ -150,14 +142,17 @@ function TooltipSection({
 
 function TooltipContent({
     title,
+    leadVisual,
     items,
 }: {
     title: string;
+    leadVisual?: ReactNode;
     items: { title: string; description: string; visual?: ReactNode }[];
 }) {
     return (
         <>
             <span className="info-tooltip-title">{title}</span>
+            {leadVisual ? <span className="info-tooltip-lead">{leadVisual}</span> : null}
             {items.map((item) => (
                 <TooltipSection
                     key={item.title}
@@ -181,12 +176,16 @@ function FitPreview({ mode }: { mode: ImageFit }) {
     );
 }
 
-function ScalePreview({ level }: { level: CompressionLevel | ResizeLevel }) {
+function ResizeGuidePreview() {
     return (
-        <span className={`scale-preview scale-preview-${level}`} aria-hidden="true">
-            <span />
-            <span />
-            <span />
+        <span className="resize-guide" aria-hidden="true">
+            <span className="resize-guide-label">lato lungo</span>
+            <span className="resize-guide-rule" />
+            <span className="resize-guide-cap resize-guide-cap-start" />
+            <span className="resize-guide-cap resize-guide-cap-end" />
+            <span className="resize-guide-frame">
+                <span className="resize-guide-photo" />
+            </span>
         </span>
     );
 }
@@ -203,7 +202,7 @@ function ImageFitTooltip() {
 function CompressionTooltip() {
     return (
         <TooltipContent
-            title="Bilancia peso del file e fedelta' visiva"
+            title="Se attiva, le immagini vengono ricodificate in JPEG durante l'ottimizzazione"
             items={COMPRESSION_TOOLTIP_ITEMS}
         />
     );
@@ -212,7 +211,8 @@ function CompressionTooltip() {
 function ResizeTooltip() {
     return (
         <TooltipContent
-            title="Limita la risoluzione massima delle immagini prima dell'export"
+            title="Il limite si applica al lato lungo dell'immagine prima dell'export"
+            leadVisual={<ResizeGuidePreview />}
             items={RESIZE_TOOLTIP_ITEMS}
         />
     );
