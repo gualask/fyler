@@ -1,3 +1,6 @@
+import { useId, useState, type ReactNode } from 'react';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
+
 import type { CompressionLevel, ImageFit, ResizeLevel } from '../hooks/useOptimize';
 
 interface Props {
@@ -27,21 +30,212 @@ const IMAGE_FIT_OPTIONS: { value: ImageFit; label: string }[] = [
     { value: 'cover', label: 'Ritaglia' },
 ];
 
+const COMPRESSION_TOOLTIP_ITEMS: {
+    title: string;
+    description: string;
+    visual: ReactNode;
+}[] = [
+    {
+        title: 'Nessuna',
+        description: "Mantiene le immagini cosi' come sono; qualita' massima, file piu' pesante.",
+        visual: <ScalePreview level="none" />,
+    },
+    {
+        title: 'Media',
+        description: "Riduce bene il peso senza cambiare troppo l'aspetto nella maggior parte dei casi.",
+        visual: <ScalePreview level="medium" />,
+    },
+    {
+        title: 'Alta',
+        description: "Taglia di piu' la dimensione finale, ma la perdita di dettaglio diventa piu' visibile.",
+        visual: <ScalePreview level="high" />,
+    },
+];
+
+const RESIZE_TOOLTIP_ITEMS: {
+    title: string;
+    description: string;
+    visual: ReactNode;
+}[] = [
+    {
+        title: 'Originale',
+        description: "Non ridimensiona nulla; e' la scelta piu' fedele ma anche la piu' pesante.",
+        visual: <ScalePreview level="original" />,
+    },
+    {
+        title: 'Max 2000px',
+        description: "Riduce solo le immagini piu' grandi, con un compromesso equilibrato tra peso e nitidezza.",
+        visual: <ScalePreview level="2000" />,
+    },
+    {
+        title: 'Max 1500px',
+        description: "Riduce di piu' la risoluzione per alleggerire il PDF, utile quando il peso conta piu' del dettaglio.",
+        visual: <ScalePreview level="1500" />,
+    },
+];
+
+const IMAGE_FIT_TOOLTIP_ITEMS: {
+    title: string;
+    description: string;
+    visual: ReactNode;
+}[] = [
+    {
+        title: 'Adatta',
+        description: "La pagina prende la dimensione dell'immagine: tutto visibile, senza cornice A4 fissa.",
+        visual: <FitPreview mode="fit" />,
+    },
+    {
+        title: 'Contieni',
+        description: "Usa una pagina A4 e ci fa stare dentro l'immagine intera, con margini bianchi se necessario.",
+        visual: <FitPreview mode="contain" />,
+    },
+    {
+        title: 'Ritaglia',
+        description: "Usa una pagina A4 piena: l'immagine copre tutta la pagina e le parti in eccesso vengono tagliate.",
+        visual: <FitPreview mode="cover" />,
+    },
+];
+
+function InfoTooltip({ label, children }: { label: string; children: ReactNode }) {
+    const [open, setOpen] = useState(false);
+    const tooltipId = useId();
+
+    return (
+        <span
+            className="info-tooltip"
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+        >
+            <button
+                type="button"
+                className="info-tooltip-trigger"
+                aria-label={`Mostra dettagli: ${label}`}
+                aria-describedby={open ? tooltipId : undefined}
+                aria-expanded={open}
+                onFocus={() => setOpen(true)}
+                onBlur={() => setOpen(false)}
+                onClick={() => setOpen((current) => !current)}
+            >
+                <InformationCircleIcon className="h-3.5 w-3.5" />
+            </button>
+
+            {open ? (
+                <span id={tooltipId} role="tooltip" className="info-tooltip-panel">
+                    {children}
+                </span>
+            ) : null}
+        </span>
+    );
+}
+
+function TooltipSection({
+    title,
+    description,
+    visual,
+}: {
+    title: string;
+    description: string;
+    visual?: ReactNode;
+}) {
+    return (
+        <div className="info-tooltip-row">
+            {visual ? <span className="info-tooltip-visual">{visual}</span> : null}
+            <span className="min-w-0">
+                <span className="info-tooltip-row-title">{title}</span>
+                <span className="info-tooltip-row-copy">{description}</span>
+            </span>
+        </div>
+    );
+}
+
+function TooltipContent({
+    title,
+    items,
+}: {
+    title: string;
+    items: { title: string; description: string; visual?: ReactNode }[];
+}) {
+    return (
+        <>
+            <span className="info-tooltip-title">{title}</span>
+            {items.map((item) => (
+                <TooltipSection
+                    key={item.title}
+                    title={item.title}
+                    description={item.description}
+                    visual={item.visual}
+                />
+            ))}
+        </>
+    );
+}
+
+function FitPreview({ mode }: { mode: ImageFit }) {
+    return (
+        <span className={`fit-preview fit-preview-${mode}`} aria-hidden="true">
+            <span className="fit-preview-overflow" />
+            <span className="fit-preview-page">
+                <span className="fit-preview-media" />
+            </span>
+        </span>
+    );
+}
+
+function ScalePreview({ level }: { level: CompressionLevel | ResizeLevel }) {
+    return (
+        <span className={`scale-preview scale-preview-${level}`} aria-hidden="true">
+            <span />
+            <span />
+            <span />
+        </span>
+    );
+}
+
+function ImageFitTooltip() {
+    return (
+        <TooltipContent
+            title="Come viene resa l'immagine nella pagina finale"
+            items={IMAGE_FIT_TOOLTIP_ITEMS}
+        />
+    );
+}
+
+function CompressionTooltip() {
+    return (
+        <TooltipContent
+            title="Bilancia peso del file e fedelta' visiva"
+            items={COMPRESSION_TOOLTIP_ITEMS}
+        />
+    );
+}
+
+function ResizeTooltip() {
+    return (
+        <TooltipContent
+            title="Limita la risoluzione massima delle immagini prima dell'export"
+            items={RESIZE_TOOLTIP_ITEMS}
+        />
+    );
+}
+
 function SegmentedControl<T extends string>({
     label,
+    helpContent,
     options,
     value,
     onChange,
 }: {
     label: string;
+    helpContent?: ReactNode;
     options: { value: T; label: string }[];
     value: T;
     onChange: (v: T) => void;
 }) {
     return (
         <div className="flex flex-col gap-1">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-ui-text-muted">
+            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-ui-text-muted">
                 {label}
+                {helpContent ? <InfoTooltip label={label}>{helpContent}</InfoTooltip> : null}
             </span>
             <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-zinc-800">
                 {options.map((opt) => (
@@ -68,6 +262,7 @@ export function OutputPanel({ compression, resize, imageFit, onCompressionChange
         <div className="flex items-center gap-6 px-6 py-3">
             <SegmentedControl
                 label="Compressione"
+                helpContent={<CompressionTooltip />}
                 options={COMPRESSION_OPTIONS}
                 value={compression}
                 onChange={onCompressionChange}
@@ -77,6 +272,7 @@ export function OutputPanel({ compression, resize, imageFit, onCompressionChange
 
             <SegmentedControl
                 label="Ridimensiona"
+                helpContent={<ResizeTooltip />}
                 options={RESIZE_OPTIONS}
                 value={resize}
                 onChange={onResizeChange}
@@ -86,6 +282,7 @@ export function OutputPanel({ compression, resize, imageFit, onCompressionChange
 
             <SegmentedControl
                 label="Immagini"
+                helpContent={<ImageFitTooltip />}
                 options={IMAGE_FIT_OPTIONS}
                 value={imageFit}
                 onChange={onImageFitChange}

@@ -151,6 +151,241 @@ body {
   }
 }
 
+.info-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1rem;
+  width: 1rem;
+  border: 0;
+  border-radius: 9999px;
+  color: var(--ui-text-muted);
+  background: transparent;
+  transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.info-tooltip-trigger:hover,
+.info-tooltip-trigger:focus-visible,
+.info-tooltip-trigger[aria-expanded='true'] {
+  color: var(--ui-accent-on-soft);
+  background: var(--ui-accent-soft);
+}
+
+.info-tooltip-trigger:focus-visible {
+  outline: 2px solid var(--ui-accent-muted);
+  outline-offset: 2px;
+}
+
+.info-tooltip-panel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.55rem);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 20rem;
+  padding: 0.8rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--ui-surface) 94%, var(--ui-bg));
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.info-tooltip-panel::after {
+  content: '';
+  position: absolute;
+  left: 0.7rem;
+  top: 100%;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-right: 1px solid var(--ui-border);
+  border-bottom: 1px solid var(--ui-border);
+  background: inherit;
+  transform: translateY(-0.42rem) rotate(45deg);
+}
+
+.info-tooltip-title {
+  display: block;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--ui-text);
+}
+
+.info-tooltip-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.info-tooltip-visual {
+  display: inline-flex;
+  flex: none;
+}
+
+.info-tooltip-row-title {
+  display: block;
+  margin-bottom: 0.14rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ui-text);
+}
+
+.info-tooltip-row-copy {
+  display: block;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--ui-text-muted);
+}
+
+.fit-preview {
+  position: relative;
+  display: inline-flex;
+  width: 3.4rem;
+  height: 2.6rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.85rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 15%, transparent), transparent 58%),
+    color-mix(in srgb, var(--ui-bg) 84%, var(--ui-surface));
+}
+
+.fit-preview-page {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 85%, transparent);
+  border-radius: 0.2rem;
+  background: white;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.fit-preview-media {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.14rem;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.22), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 85%, white), color-mix(in srgb, var(--ui-accent) 55%, #22c55e));
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.22);
+}
+
+.fit-preview-overflow {
+  position: absolute;
+  display: none;
+  border-radius: 0.2rem;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.16), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 38%, white), color-mix(in srgb, var(--ui-accent) 26%, #22c55e));
+  opacity: 0.35;
+}
+
+.fit-preview-fit .fit-preview-page {
+  width: 2.3rem;
+  height: 1.32rem;
+}
+
+.fit-preview-contain .fit-preview-page {
+  width: 1.56rem;
+  height: 2.22rem;
+}
+
+.fit-preview-contain .fit-preview-media {
+  inset: 0.66rem 0.08rem auto;
+  height: 0.88rem;
+}
+
+.fit-preview-cover .fit-preview-page {
+  width: 1.56rem;
+  height: 2.22rem;
+}
+
+.fit-preview-cover .fit-preview-media {
+  inset: 0.35rem -0.54rem auto;
+  height: 1.5rem;
+}
+
+.fit-preview-cover .fit-preview-overflow {
+  display: block;
+  width: 2.64rem;
+  height: 1.5rem;
+}
+
+.fit-preview-cover .fit-preview-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px dashed color-mix(in srgb, var(--ui-accent) 40%, transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.fit-preview-contain .fit-preview-page::after,
+.fit-preview-fit .fit-preview-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255,255,255,0.55);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.scale-preview {
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: end;
+  gap: 0.18rem;
+  width: 3.4rem;
+  height: 2.4rem;
+  padding: 0.5rem 0.45rem;
+  border-radius: 0.85rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ui-accent) 12%, transparent), transparent 48%),
+    color-mix(in srgb, var(--ui-bg) 84%, var(--ui-surface));
+}
+
+.scale-preview span {
+  display: block;
+  width: 0.42rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--ui-accent) 75%, white);
+}
+
+.scale-preview-none span:nth-child(1) { height: 1rem; }
+.scale-preview-none span:nth-child(2) { height: 1.2rem; }
+.scale-preview-none span:nth-child(3) { height: 1.45rem; }
+
+.scale-preview-medium span:nth-child(1) { height: 0.85rem; }
+.scale-preview-medium span:nth-child(2) { height: 1rem; }
+.scale-preview-medium span:nth-child(3) { height: 1.15rem; }
+
+.scale-preview-high span:nth-child(1) { height: 0.62rem; }
+.scale-preview-high span:nth-child(2) { height: 0.8rem; }
+.scale-preview-high span:nth-child(3) { height: 0.96rem; }
+
+.scale-preview-original span:nth-child(1) { height: 0.82rem; }
+.scale-preview-original span:nth-child(2) { height: 1.15rem; }
+.scale-preview-original span:nth-child(3) { height: 1.45rem; }
+
+.scale-preview-2000 span:nth-child(1) { height: 0.74rem; }
+.scale-preview-2000 span:nth-child(2) { height: 0.96rem; }
+.scale-preview-2000 span:nth-child(3) { height: 1.18rem; }
+
+.scale-preview-1500 span:nth-child(1) { height: 0.62rem; }
+.scale-preview-1500 span:nth-child(2) { height: 0.84rem; }
+.scale-preview-1500 span:nth-child(3) { height: 1.02rem; }
+
 @theme inline {
   /* superfici */
   --color-ui-bg:              var(--ui-bg);
