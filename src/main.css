@@ -158,6 +158,24 @@ body {
   }
 
   /* ── Header pannello ───────────────────────────────────────── */
+  .column-header {
+    @apply flex h-[54px] shrink-0 items-center justify-between gap-3 border-b border-ui-border px-4;
+  }
+  .column-header-title {
+    @apply min-w-0 shrink-0 truncate text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
+  }
+  .column-toolbar {
+    @apply flex min-w-0 items-center justify-end gap-2;
+  }
+  .column-toolbar-label {
+    @apply shrink-0 text-[10px] font-bold uppercase tracking-wide text-ui-text-muted;
+  }
+  .column-toolbar-note {
+    @apply inline-flex h-[34px] items-center text-xs font-medium text-ui-text-muted;
+  }
+  .column-toolbar-stat {
+    @apply inline-flex h-[34px] items-center rounded-lg bg-ui-surface-hover px-3 text-sm font-semibold text-ui-text-secondary;
+  }
   .panel-header {
     @apply flex shrink-0 items-center justify-between
            border-b border-ui-border px-4 py-3;

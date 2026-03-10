@@ -1,11 +1,26 @@
 use tauri::State;
+use tauri::Emitter;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
 use crate::export::export_pdf;
 use crate::models::{MergeRequest, SourceFile};
-use crate::pdf::IMAGE_EXTENSIONS;
+use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{files_from_paths, SourceRegistry};
+
+fn emit_import_warning(app: &tauri::AppHandle, skipped_errors: &[String]) {
+    if skipped_errors.is_empty() {
+        return;
+    }
+
+    let summary = skipped_errors.iter().take(2).cloned().collect::<Vec<_>>().join("; ");
+    let suffix = if skipped_errors.len() > 2 { " ..." } else { "" };
+    let label = if skipped_errors.len() == 1 { "file saltato" } else { "file saltati" };
+    let _ = app.emit(
+        "app-status",
+        format!("{} {}: {}{}", skipped_errors.len(), label, summary, suffix),
+    );
+}
 
 #[tauri::command]
 pub async fn open_files_dialog(
@@ -27,15 +42,20 @@ pub async fn open_files_dialog(
         .filter_map(|file| file.into_path().ok())
         .map(|path| path.to_string_lossy().to_string());
 
-    Ok(files_from_paths(paths, &registry)?)
+    let result = files_from_paths(paths, &registry)?;
+    emit_import_warning(&app, &result.skipped_errors);
+    Ok(result.files)
 }
 
 #[tauri::command]
 pub fn open_files_from_paths(
+    app: tauri::AppHandle,
     paths: Vec<String>,
     registry: State<'_, SourceRegistry>,
 ) -> Result<Vec<SourceFile>, AppError> {
-    Ok(files_from_paths(paths, &registry)?)
+    let result = files_from_paths(paths, &registry)?;
+    emit_import_warning(&app, &result.skipped_errors);
+    Ok(result.files)
 }
 
 #[tauri::command]
@@ -66,4 +86,13 @@ pub async fn merge_pdfs(
     req: MergeRequest,
 ) -> Result<(), AppError> {
     export_pdf(&app, &registry, req).map_err(Into::into)
+}
+
+#[tauri::command]
+pub fn get_image_export_preview_layout(
+    path: String,
+    image_fit: String,
+    quarter_turns: u8,
+) -> Result<ImageExportPreviewLayout, AppError> {
+    Ok(image_export_preview_layout(&path, &image_fit, quarter_turns)?)
 }

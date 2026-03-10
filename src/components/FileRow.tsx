@@ -14,7 +14,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
         <div
             onClick={onSelect}
             className={[
-                'cursor-pointer select-none rounded-xl p-3 transition-colors',
+                'group cursor-pointer select-none rounded-xl p-3 transition-colors',
                 selected
                     ? 'border border-ui-accent/30 bg-ui-accent-soft'
                     : 'border border-transparent hover:bg-ui-surface-hover',

@@ -35,6 +35,17 @@ export type OptimizeOptions = {
     imageFit?: ImageFit;
 };
 
+export type ImageExportPreviewLayout = {
+    pageWidthPt: number;
+    pageHeightPt: number;
+    drawXPt: number;
+    drawYPt: number;
+    drawWidthPt: number;
+    drawHeightPt: number;
+    clipToPage: boolean;
+    fillBackground: boolean;
+};
+
 export type MergeRequest = {
     pages: ExportPage[];
     edits: Record<string, FileEdits>;

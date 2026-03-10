@@ -9,9 +9,9 @@ import { useTheme } from './hooks/useTheme';
 import { useOptimize } from './hooks/useOptimize';
 import { AppHeader } from './components/AppHeader';
 import { FileList } from './components/FileList';
-import { PagePicker } from './components/PagePicker';
-import { FinalDocument } from './components/FinalDocument';
-import { PreviewModal } from './components/PreviewModal';
+import { PagePicker } from './components/page-picker';
+import { FinalDocument } from './components/final-document';
+import { PreviewModal } from './components/preview';
 import { OutputPanel } from './components/OutputPanel';
 import { ProgressModal } from './components/ProgressModal';
 import { EmptyState } from './components/EmptyState';
@@ -100,6 +100,14 @@ function AppContent() {
     useEffect(() => {
         let unlisten: (() => void) | undefined;
         void listen<string>('app-error', (e) => setStatus(`Errore: ${e.payload}`)).then((fn) => {
+            unlisten = fn;
+        });
+        return () => unlisten?.();
+    }, []);
+
+    useEffect(() => {
+        let unlisten: (() => void) | undefined;
+        void listen<string>('app-status', (e) => setStatus(e.payload)).then((fn) => {
             unlisten = fn;
         });
         return () => unlisten?.();
@@ -236,6 +244,7 @@ function AppContent() {
                     files={files}
                     editsByFile={editsByFile}
                     imageFit={imageFit}
+                    matchExportedImages
                     onClose={() => setShowFinalPreview(false)}
                 />
             )}

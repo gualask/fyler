@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import type { RotationDirection } from '../fileEdits';
 import { emptyFileEdits } from '../fileEdits';
@@ -18,9 +18,14 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
     const { files, addFiles: addToList, removeFile: removeFileFromList, reorderFiles } = useFileList();
     const { editsByFile, rotatePage: rotateFileEdits, clearFileEdits } = useFileEdits();
     const { requestRenders, releaseFile } = usePdfCache();
+    const knownPathsRef = useRef<Set<string>>(new Set());
+
+    useEffect(() => {
+        knownPathsRef.current = new Set(files.map((file) => file.originalPath));
+    }, [files]);
 
     const addSourceFiles = useCallback((newFiles: SourceFile[]) => {
-        const knownPaths = new Set(files.map((file) => file.originalPath));
+        const knownPaths = new Set(knownPathsRef.current);
         const duplicateIds: string[] = [];
         const uniqueFiles = newFiles.filter((file) => {
             if (knownPaths.has(file.originalPath)) {
@@ -30,6 +35,7 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
             knownPaths.add(file.originalPath);
             return true;
         });
+        knownPathsRef.current = knownPaths;
         if (duplicateIds.length) {
             void releaseSources(duplicateIds);
         }
@@ -50,7 +56,7 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
 
         onFilesAdded?.(uniqueFiles);
         return uniqueFiles;
-    }, [addToList, files, onFilesAdded, requestRenders]);
+    }, [addToList, onFilesAdded, requestRenders]);
 
     const openAndAddSourceFiles = useCallback(async () => {
         const newFiles = await openFilesDialog();
@@ -60,6 +66,11 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
 
     const removeSourceFile = useCallback((id: string) => {
         const removed = files.find((file) => file.id === id) ?? null;
+        if (removed) {
+            const knownPaths = new Set(knownPathsRef.current);
+            knownPaths.delete(removed.originalPath);
+            knownPathsRef.current = knownPaths;
+        }
         if (removed?.kind === 'pdf') {
             releaseFile(id);
         }

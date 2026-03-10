@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ArrowUpTrayIcon, DocumentPlusIcon } from '@heroicons/react/24/outline';
 import type { SourceFile, FinalPage } from '../domain';
+import { ColumnHeader } from './shared/layout/ColumnHeader';
 import { FileRow } from './FileRow';
 
 interface Props {
@@ -23,19 +24,16 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
-            <div className="flex shrink-0 items-center justify-between border-b border-ui-border px-4 py-3">
-                <h2 className="text-[10px] font-bold uppercase tracking-widest text-ui-text-muted">
-                    File ({files.length})
-                </h2>
+            <ColumnHeader title={`File (${files.length})`}>
                 <button
                     onClick={onAddFiles}
                     title="Aggiungi file"
-                    className="btn-ghost-sm"
+                    className="btn-ghost-sm h-[34px]"
                 >
                     <DocumentPlusIcon className="h-4 w-4" />
                     Aggiungi
                 </button>
-            </div>
+            </ColumnHeader>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
                 {files.length === 0 ? (

@@ -7,9 +7,31 @@ use lopdf::{Document as PdfDoc, Object};
 pub const IMAGE_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "tiff", "tif", "webp", "bmp", "ico", "tga", "qoi",
 ];
+const A4_W: f64 = 595.0;
+const A4_H: f64 = 842.0;
 
 fn name(s: &[u8]) -> Object { Object::Name(s.to_vec()) }
 fn int(n: i64) -> Object { Object::Integer(n) }
+
+#[derive(Debug, Clone, Copy, serde::Serialize)]
+pub struct ImageExportPreviewLayout {
+    #[serde(rename = "pageWidthPt")]
+    pub page_width_pt: f64,
+    #[serde(rename = "pageHeightPt")]
+    pub page_height_pt: f64,
+    #[serde(rename = "drawXPt")]
+    pub draw_x_pt: f64,
+    #[serde(rename = "drawYPt")]
+    pub draw_y_pt: f64,
+    #[serde(rename = "drawWidthPt")]
+    pub draw_width_pt: f64,
+    #[serde(rename = "drawHeightPt")]
+    pub draw_height_pt: f64,
+    #[serde(rename = "clipToPage")]
+    pub clip_to_page: bool,
+    #[serde(rename = "fillBackground")]
+    pub fill_background: bool,
+}
 
 pub fn quarter_turns_to_degrees(turns: u8) -> Result<i32> {
     match turns {
@@ -28,48 +50,109 @@ fn rotate_dynamic_image(img: DynamicImage, quarter_turns: u8) -> Result<DynamicI
     })
 }
 
+fn rotated_dimensions(width_px: u32, height_px: u32, quarter_turns: u8) -> Result<(u32, u32)> {
+    Ok(match quarter_turns_to_degrees(quarter_turns)? {
+        0 | 180 => (width_px, height_px),
+        90 | 270 => (height_px, width_px),
+        _ => unreachable!(),
+    })
+}
+
+fn compute_image_export_layout(width_px: u32, height_px: u32, image_fit: &str) -> ImageExportPreviewLayout {
+    let w_pt = width_px as f64 * 72.0 / 96.0;
+    let h_pt = height_px as f64 * 72.0 / 96.0;
+
+    match image_fit {
+        "contain" => {
+            let scale = (A4_W / w_pt).min(A4_H / h_pt);
+            let sw = w_pt * scale;
+            let sh = h_pt * scale;
+            ImageExportPreviewLayout {
+                page_width_pt: A4_W.ceil(),
+                page_height_pt: A4_H.ceil(),
+                draw_x_pt: (A4_W - sw) / 2.0,
+                draw_y_pt: (A4_H - sh) / 2.0,
+                draw_width_pt: sw,
+                draw_height_pt: sh,
+                clip_to_page: false,
+                fill_background: true,
+            }
+        }
+        "cover" => {
+            let scale = (A4_W / w_pt).max(A4_H / h_pt);
+            let sw = w_pt * scale;
+            let sh = h_pt * scale;
+            ImageExportPreviewLayout {
+                page_width_pt: A4_W.ceil(),
+                page_height_pt: A4_H.ceil(),
+                draw_x_pt: (A4_W - sw) / 2.0,
+                draw_y_pt: (A4_H - sh) / 2.0,
+                draw_width_pt: sw,
+                draw_height_pt: sh,
+                clip_to_page: true,
+                fill_background: false,
+            }
+        }
+        _ => ImageExportPreviewLayout {
+            page_width_pt: w_pt.ceil(),
+            page_height_pt: h_pt.ceil(),
+            draw_x_pt: 0.0,
+            draw_y_pt: 0.0,
+            draw_width_pt: w_pt.ceil(),
+            draw_height_pt: h_pt.ceil(),
+            clip_to_page: false,
+            fill_background: false,
+        },
+    }
+}
+
+pub fn image_export_preview_layout(
+    path: &str,
+    image_fit: &str,
+    quarter_turns: u8,
+) -> Result<ImageExportPreviewLayout> {
+    let (width_px, height_px) = image::image_dimensions(path).context("Errore apertura immagine")?;
+    let (rotated_width_px, rotated_height_px) = rotated_dimensions(width_px, height_px, quarter_turns)?;
+    Ok(compute_image_export_layout(rotated_width_px, rotated_height_px, image_fit))
+}
+
 fn image_to_pdf_doc_from_image(img: DynamicImage, image_fit: &str) -> Result<PdfDoc> {
     use lopdf::{Dictionary, Stream};
 
     let rgb = img.to_rgb8();
     let (width_px, height_px) = rgb.dimensions();
     let img_data = rgb.into_raw();
-
-    let w_pt = width_px as f64 * 72.0 / 96.0;
-    let h_pt = height_px as f64 * 72.0 / 96.0;
-
-    const A4_W: f64 = 595.0;
-    const A4_H: f64 = 842.0;
-
-    let (page_w, page_h, content) = match image_fit {
-        "contain" => {
-            let scale = (A4_W / w_pt).min(A4_H / h_pt);
-            let sw = w_pt * scale;
-            let sh = h_pt * scale;
-            let tx = (A4_W - sw) / 2.0;
-            let ty = (A4_H - sh) / 2.0;
-            let content = format!(
-                "1 g 0 0 {A4_W} {A4_H} re f q {sw:.4} 0 0 {sh:.4} {tx:.4} {ty:.4} cm /Im0 Do Q\n"
-            );
-            (A4_W.ceil() as i64, A4_H.ceil() as i64, content)
-        }
-        "cover" => {
-            let scale = (A4_W / w_pt).max(A4_H / h_pt);
-            let sw = w_pt * scale;
-            let sh = h_pt * scale;
-            let tx = (A4_W - sw) / 2.0;
-            let ty = (A4_H - sh) / 2.0;
-            let content = format!(
-                "q 0 0 {A4_W} {A4_H} re W n {sw:.4} 0 0 {sh:.4} {tx:.4} {ty:.4} cm /Im0 Do Q\n"
-            );
-            (A4_W.ceil() as i64, A4_H.ceil() as i64, content)
-        }
-        _ => {
-            let pw = w_pt.ceil() as i64;
-            let ph = h_pt.ceil() as i64;
-            let content = format!("q {pw} 0 0 {ph} 0 0 cm /Im0 Do Q\n");
-            (pw, ph, content)
-        }
+    let layout = compute_image_export_layout(width_px, height_px, image_fit);
+    let page_w = layout.page_width_pt as i64;
+    let page_h = layout.page_height_pt as i64;
+    let content = if layout.clip_to_page {
+        format!(
+            "q 0 0 {} {} re W n {:.4} 0 0 {:.4} {:.4} {:.4} cm /Im0 Do Q\n",
+            layout.page_width_pt,
+            layout.page_height_pt,
+            layout.draw_width_pt,
+            layout.draw_height_pt,
+            layout.draw_x_pt,
+            layout.draw_y_pt,
+        )
+    } else if layout.fill_background {
+        format!(
+            "1 g 0 0 {} {} re f q {:.4} 0 0 {:.4} {:.4} {:.4} cm /Im0 Do Q\n",
+            layout.page_width_pt,
+            layout.page_height_pt,
+            layout.draw_width_pt,
+            layout.draw_height_pt,
+            layout.draw_x_pt,
+            layout.draw_y_pt,
+        )
+    } else {
+        format!(
+            "q {:.4} 0 0 {:.4} {:.4} {:.4} cm /Im0 Do Q\n",
+            layout.draw_width_pt,
+            layout.draw_height_pt,
+            layout.draw_x_pt,
+            layout.draw_y_pt,
+        )
     };
 
     let mut doc = PdfDoc::with_version("1.4");
@@ -324,8 +407,15 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
 
 #[cfg(test)]
 mod tests {
-    use super::{merge_pdf_documents, prepare_pdf_page_doc, prepare_pdf_subset_doc};
+    use super::{
+        compute_image_export_layout,
+        image_export_preview_layout,
+        merge_pdf_documents,
+        prepare_pdf_page_doc,
+        prepare_pdf_subset_doc,
+    };
     use anyhow::Context;
+    use image::RgbImage;
     use lopdf::Document as PdfDoc;
     use std::fs::{self, File};
     use std::path::{Path, PathBuf};
@@ -452,6 +542,30 @@ mod tests {
             output_size
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn contain_layout_uses_a4_and_centers_image() {
+        let layout = compute_image_export_layout(1000, 500, "contain");
+        assert_eq!(layout.page_width_pt, 595.0);
+        assert_eq!(layout.page_height_pt, 842.0);
+        assert!(layout.draw_x_pt.abs() < 0.0001);
+        assert!(layout.draw_y_pt > 0.0);
+        assert!(layout.fill_background);
+        assert!(!layout.clip_to_page);
+    }
+
+    #[test]
+    fn rotated_image_preview_layout_matches_swapped_dimensions() -> anyhow::Result<()> {
+        let path = std::env::temp_dir().join("fyler-rotated-preview-layout.png");
+        RgbImage::new(800, 400).save(&path)?;
+
+        let layout = image_export_preview_layout(path.to_string_lossy().as_ref(), "fit", 1)?;
+
+        assert_eq!(layout.page_width_pt, 300.0);
+        assert_eq!(layout.page_height_pt, 600.0);
+        let _ = fs::remove_file(path);
         Ok(())
     }
 }
