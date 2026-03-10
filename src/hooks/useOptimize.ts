@@ -1,21 +1,46 @@
 import { useState } from 'react';
-import type { ImageFit, OptimizeOptions } from '../domain';
 
-export type CompressionLevel = 'none' | 'medium' | 'high';
-export type ResizeLevel = 'original' | '2000' | '1500';
+import type { ImageFit, OptimizeOptions } from '../domain';
+import {
+    deriveOptimizationPreset,
+    getOptimizationSettings,
+    type BasicOptimizationPreset,
+} from '../optimizationConfig';
+
 export type { ImageFit };
+export type { BasicOptimizationPreset, ImageOptimizationPreset } from '../optimizationConfig';
 
 export function useOptimize() {
-    const [compression, setCompression] = useState<CompressionLevel>('none');
-    const [resize, setResize] = useState<ResizeLevel>('original');
+    const [jpegQuality, setJpegQuality] = useState<number | undefined>(undefined);
+    const [maxPx, setMaxPx] = useState<number | undefined>(undefined);
     const [imageFit, setImageFit] = useState<ImageFit>('fit');
+    const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+
+    const optimizationPreset = deriveOptimizationPreset(jpegQuality, maxPx);
+
+    const setOptimizationPreset = (preset: BasicOptimizationPreset) => {
+        const settings = getOptimizationSettings(preset);
+        setJpegQuality(settings.jpegQuality);
+        setMaxPx(settings.maxPx);
+    };
 
     const optimizeOptions: OptimizeOptions = {
-        jpegQuality:
-            compression === 'high' ? 'low' : compression === 'medium' ? 'medium' : undefined,
-        maxPx: resize === '2000' ? 2000 : resize === '1500' ? 1500 : undefined,
+        jpegQuality,
+        maxPx,
         imageFit,
     };
 
-    return { compression, resize, imageFit, setCompression, setResize, setImageFit, optimizeOptions };
+    return {
+        imageFit,
+        isAdvancedOpen,
+        jpegQuality,
+        maxPx,
+        optimizationPreset,
+        optimizeOptions,
+        setImageFit,
+        setIsAdvancedOpen,
+        setJpegQuality,
+        setMaxPx,
+        setOptimizationPreset,
+    };
 }

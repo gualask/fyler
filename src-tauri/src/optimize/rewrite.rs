@@ -7,14 +7,6 @@ use crate::models::OptimizeOptions;
 use super::candidate::SupportedColorSpace;
 use super::raster::DecodedRaster;
 
-fn jpeg_quality(q: &str) -> u8 {
-    match q {
-        "high" => 90,
-        "medium" => 75,
-        _ => 55,
-    }
-}
-
 fn encode_jpeg(data: &[u8], width: u32, height: u32, color_type: ExtendedColorType, quality: u8) -> Result<Vec<u8>> {
     use image::ImageEncoder;
     use image::codecs::jpeg::JpegEncoder;
@@ -67,8 +59,8 @@ pub fn rewrite_stream(
     raster: DecodedRaster,
     opts: &OptimizeOptions,
 ) -> Result<()> {
-    if let Some(quality) = opts.jpeg_quality.as_deref() {
-        rewrite_jpeg(stream, color_space, raster, jpeg_quality(quality))
+    if let Some(quality) = opts.jpeg_quality {
+        rewrite_jpeg(stream, color_space, raster, quality.clamp(1, 100))
     } else {
         rewrite_raw(stream, color_space, raster);
         Ok(())

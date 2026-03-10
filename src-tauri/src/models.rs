@@ -32,7 +32,7 @@ pub struct FileEdits {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct OptimizeOptions {
     #[serde(rename = "jpegQuality")]
-    pub jpeg_quality: Option<String>, // "high" | "medium" | "low"
+    pub jpeg_quality: Option<u8>, // 1..=100
     #[serde(rename = "maxPx")]
     pub max_px: Option<u32>,
     #[serde(rename = "imageFit")]

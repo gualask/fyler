@@ -26,7 +26,7 @@ export type ExportPage = {
     pageNum: number;
 };
 
-export type JpegQuality = 'high' | 'medium' | 'low';
+export type JpegQuality = number;
 export type ImageFit = 'fit' | 'contain' | 'cover';
 
 export type OptimizeOptions = {

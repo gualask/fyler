@@ -139,7 +139,7 @@ mod tests {
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some("medium".into()),
+                jpeg_quality: Some(75),
                 max_px: None,
                 image_fit: None,
             },
@@ -161,7 +161,7 @@ mod tests {
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some("medium".into()),
+                jpeg_quality: Some(75),
                 max_px: None,
                 image_fit: None,
             },
@@ -182,7 +182,7 @@ mod tests {
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some("medium".into()),
+                jpeg_quality: Some(75),
                 max_px: None,
                 image_fit: None,
             },
@@ -205,7 +205,7 @@ mod tests {
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some("medium".into()),
+                jpeg_quality: Some(75),
                 max_px: None,
                 image_fit: None,
             },
@@ -225,7 +225,7 @@ mod tests {
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some("medium".into()),
+                jpeg_quality: Some(75),
                 max_px: None,
                 image_fit: None,
             },
@@ -246,7 +246,7 @@ mod tests {
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some("medium".into()),
+                jpeg_quality: Some(75),
                 max_px: None,
                 image_fit: None,
             },

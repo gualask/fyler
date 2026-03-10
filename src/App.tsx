@@ -63,7 +63,19 @@ function AppContent() {
     }, [addFiles]);
 
     const { isDark, toggleTheme } = useTheme();
-    const { compression, resize, imageFit, setCompression, setResize, setImageFit, optimizeOptions } = useOptimize();
+    const {
+        imageFit,
+        isAdvancedOpen,
+        jpegQuality,
+        maxPx,
+        optimizationPreset,
+        setImageFit,
+        setIsAdvancedOpen,
+        setJpegQuality,
+        setMaxPx,
+        setOptimizationPreset,
+        optimizeOptions,
+    } = useOptimize();
     const focusedSourceMatchesSelected = Boolean(focusedSource && focusedSource.fileId === selectedFile?.id);
     const focusedSourcePageNum = focusedSourceMatchesSelected ? focusedSource!.pageNum : null;
     const focusedSourceFlashKey = focusedSourceMatchesSelected ? focusedSource!.flashKey : undefined;
@@ -192,12 +204,16 @@ function AppContent() {
 
                                 <footer className="shrink-0 border-t border-ui-border bg-ui-surface">
                                     <OutputPanel
-                                        compression={compression}
-                                        resize={resize}
                                         imageFit={imageFit}
-                                        onCompressionChange={setCompression}
-                                        onResizeChange={setResize}
+                                        isAdvancedOpen={isAdvancedOpen}
+                                        jpegQuality={jpegQuality}
+                                        maxPx={maxPx}
+                                        optimizationPreset={optimizationPreset}
+                                        onAdvancedOpenChange={setIsAdvancedOpen}
                                         onImageFitChange={setImageFit}
+                                        onJpegQualityChange={setJpegQuality}
+                                        onMaxPxChange={setMaxPx}
+                                        onOptimizationPresetChange={setOptimizationPreset}
                                     />
                                 </footer>
                             </>

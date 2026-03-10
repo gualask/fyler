@@ -1,70 +1,57 @@
 import { useId, useState, type ReactNode } from 'react';
-import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import {
+    AdjustmentsHorizontalIcon,
+    InformationCircleIcon,
+    Squares2X2Icon,
+} from '@heroicons/react/24/outline';
 
-import type { CompressionLevel, ImageFit, ResizeLevel } from '../hooks/useOptimize';
+import type {
+    BasicOptimizationPreset,
+    ImageOptimizationPreset,
+} from '../optimizationConfig';
+import {
+    JPEG_QUALITY_OPTIONS,
+    MAX_PX_OPTIONS,
+    OPTIMIZATION_PRESETS,
+} from '../optimizationConfig';
+import type { ImageFit } from '../domain';
+
+type SegmentOption<T extends string> = {
+    value: T;
+    label: string;
+    disabled?: boolean;
+};
 
 interface Props {
-    compression: CompressionLevel;
-    resize: ResizeLevel;
     imageFit: ImageFit;
-    onCompressionChange: (v: CompressionLevel) => void;
-    onResizeChange: (v: ResizeLevel) => void;
+    isAdvancedOpen: boolean;
+    jpegQuality?: number;
+    maxPx?: number;
+    optimizationPreset: ImageOptimizationPreset;
+    onAdvancedOpenChange: (isOpen: boolean) => void;
     onImageFitChange: (v: ImageFit) => void;
+    onJpegQualityChange: (v: number | undefined) => void;
+    onMaxPxChange: (v: number | undefined) => void;
+    onOptimizationPresetChange: (v: BasicOptimizationPreset) => void;
 }
 
-const COMPRESSION_OPTIONS: { value: CompressionLevel; label: string }[] = [
-    { value: 'none', label: 'Nessuna' },
-    { value: 'medium', label: 'Media' },
-    { value: 'high', label: 'Alta' },
-];
-
-const RESIZE_OPTIONS: { value: ResizeLevel; label: string }[] = [
-    { value: 'original', label: 'Originale' },
-    { value: '2000', label: 'Max 2000px' },
-    { value: '1500', label: 'Max 1500px' },
-];
-
-const IMAGE_FIT_OPTIONS: { value: ImageFit; label: string }[] = [
+const IMAGE_FIT_OPTIONS: SegmentOption<ImageFit>[] = [
     { value: 'fit', label: 'Adatta' },
     { value: 'contain', label: 'Contieni' },
     { value: 'cover', label: 'Ritaglia' },
 ];
 
-const COMPRESSION_TOOLTIP_ITEMS: {
-    title: string;
-    description: string;
-}[] = [
-    {
-        title: 'Nessuna',
-        description: 'Non ricodifica in JPEG: mantiene i dati immagine originali.',
-    },
-    {
-        title: 'Media',
-        description: 'Ricodifica in JPEG qualita 75%: buon compromesso tra peso e resa.',
-    },
-    {
-        title: 'Alta',
-        description: 'Ricodifica in JPEG qualita 55%: comprime di piu ma la perdita si vede prima.',
-    },
-];
-
-const RESIZE_TOOLTIP_ITEMS: {
-    title: string;
-    description: string;
-}[] = [
-    {
-        title: 'Originale',
-        description: "Non ridimensiona: il lato lungo resta quello originale.",
-    },
-    {
-        title: 'Max 2000px',
-        description: "Riduce solo le immagini il cui lato lungo supera 2000px.",
-    },
-    {
-        title: 'Max 1500px',
-        description: "Riduce solo le immagini il cui lato lungo supera 1500px.",
-    },
-];
+const BASIC_PRESET_OPTIONS: SegmentOption<BasicOptimizationPreset>[] = OPTIMIZATION_PRESETS.map(
+    ({ value, label }) => ({ value, label }),
+);
+const JPEG_OPTIONS: SegmentOption<string>[] = JPEG_QUALITY_OPTIONS.map(({ value, label }) => ({
+    value: value === undefined ? 'off' : String(value),
+    label,
+}));
+const MAX_LONG_SIDE_OPTIONS: SegmentOption<string>[] = MAX_PX_OPTIONS.map(({ value, label }) => ({
+    value: value === undefined ? 'off' : String(value),
+    label,
+}));
 
 const IMAGE_FIT_TOOLTIP_ITEMS: {
     title: string;
@@ -87,6 +74,20 @@ const IMAGE_FIT_TOOLTIP_ITEMS: {
         visual: <FitPreview mode="cover" />,
     },
 ];
+
+function buildPresetOptions(preset: ImageOptimizationPreset): SegmentOption<ImageOptimizationPreset>[] {
+    if (preset !== 'custom') return BASIC_PRESET_OPTIONS;
+    return [...BASIC_PRESET_OPTIONS, { value: 'custom', label: 'Personal.', disabled: true }];
+}
+
+function encodeOptionalNumberOption(value: number | undefined) {
+    return value === undefined ? 'off' : String(value);
+}
+
+function decodeOptionalNumberOption(option: string): number | undefined {
+    if (option === 'off') return undefined;
+    return Number(option);
+}
 
 function InfoTooltip({ label, children }: { label: string; children: ReactNode }) {
     const [open, setOpen] = useState(false);
@@ -190,20 +191,26 @@ function ResizeGuidePreview() {
     );
 }
 
-function ImageFitTooltip() {
+function OptimizationTooltip() {
     return (
         <TooltipContent
-            title="Come viene resa l'immagine nella pagina finale"
-            items={IMAGE_FIT_TOOLTIP_ITEMS}
+            title="Preset intelligenti che combinano ridimensionamento e qualita JPEG"
+            items={OPTIMIZATION_PRESETS.map(({ label, description }) => ({
+                title: label,
+                description,
+            }))}
         />
     );
 }
 
-function CompressionTooltip() {
+function JpegTooltip() {
     return (
         <TooltipContent
-            title="Se attiva, le immagini vengono ricodificate in JPEG durante l'ottimizzazione"
-            items={COMPRESSION_TOOLTIP_ITEMS}
+            title="Qualita numerica usata quando un'immagine viene ricodificata in JPEG"
+            items={JPEG_QUALITY_OPTIONS.map(({ title, description }) => ({
+                title,
+                description,
+            }))}
         />
     );
 }
@@ -213,7 +220,19 @@ function ResizeTooltip() {
         <TooltipContent
             title="Il limite si applica al lato lungo dell'immagine prima dell'export"
             leadVisual={<ResizeGuidePreview />}
-            items={RESIZE_TOOLTIP_ITEMS}
+            items={MAX_PX_OPTIONS.map(({ title, description }) => ({
+                title,
+                description,
+            }))}
+        />
+    );
+}
+
+function ImageFitTooltip() {
+    return (
+        <TooltipContent
+            title="Come viene resa l'immagine nella pagina finale"
+            items={IMAGE_FIT_TOOLTIP_ITEMS}
         />
     );
 }
@@ -227,26 +246,26 @@ function SegmentedControl<T extends string>({
 }: {
     label: string;
     helpContent?: ReactNode;
-    options: { value: T; label: string }[];
+    options: SegmentOption<T>[];
     value: T;
     onChange: (v: T) => void;
 }) {
     return (
-        <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-ui-text-muted">
+        <div className="footer-control-group">
+            <span className="footer-control-label">
                 {label}
                 {helpContent ? <InfoTooltip label={label}>{helpContent}</InfoTooltip> : null}
             </span>
-            <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-zinc-800">
+            <div className="footer-segment-shell">
                 {options.map((opt) => (
                     <button
                         key={opt.value}
+                        type="button"
+                        disabled={opt.disabled}
                         onClick={() => onChange(opt.value)}
                         className={[
-                            'rounded-md px-3 py-1 text-xs font-medium transition-all',
-                            value === opt.value
-                                ? 'segment-on'
-                                : 'segment-off',
+                            'footer-segment-btn',
+                            value === opt.value ? 'segment-on' : 'segment-off',
                         ].join(' ')}
                     >
                         {opt.label}
@@ -257,28 +276,94 @@ function SegmentedControl<T extends string>({
     );
 }
 
-export function OutputPanel({ compression, resize, imageFit, onCompressionChange, onResizeChange, onImageFitChange }: Props) {
+function FooterAction({
+    label,
+    actionLabel,
+    icon,
+    onClick,
+}: {
+    label: string;
+    actionLabel: string;
+    icon: ReactNode;
+    onClick: () => void;
+}) {
     return (
-        <div className="flex items-center gap-6 px-6 py-3">
-            <SegmentedControl
-                label="Compressione"
-                helpContent={<CompressionTooltip />}
-                options={COMPRESSION_OPTIONS}
-                value={compression}
-                onChange={onCompressionChange}
-            />
+        <div className="footer-control-group">
+            <span className="footer-control-label">
+                {label}
+            </span>
+            <button
+                type="button"
+                onClick={onClick}
+                className="footer-action-btn"
+            >
+                {icon}
+                {actionLabel}
+            </button>
+        </div>
+    );
+}
 
-            <div className="h-8 w-px bg-ui-border" />
+export function OutputPanel({
+    imageFit,
+    isAdvancedOpen,
+    jpegQuality,
+    maxPx,
+    optimizationPreset,
+    onAdvancedOpenChange,
+    onImageFitChange,
+    onJpegQualityChange,
+    onMaxPxChange,
+    onOptimizationPresetChange,
+}: Props) {
+    const presetOptions = buildPresetOptions(optimizationPreset);
 
-            <SegmentedControl
-                label="Ridimensiona"
-                helpContent={<ResizeTooltip />}
-                options={RESIZE_OPTIONS}
-                value={resize}
-                onChange={onResizeChange}
-            />
+    return (
+        <div className="relative z-20 flex items-center gap-6 overflow-visible px-6 py-3">
+            {isAdvancedOpen ? (
+                <div className="flex shrink-0 items-end gap-3">
+                    <SegmentedControl
+                        label="Qualita JPEG"
+                        helpContent={<JpegTooltip />}
+                        options={JPEG_OPTIONS}
+                        value={encodeOptionalNumberOption(jpegQuality)}
+                        onChange={(value) => onJpegQualityChange(decodeOptionalNumberOption(value))}
+                    />
+                    <SegmentedControl
+                        label="Lato lungo max"
+                        helpContent={<ResizeTooltip />}
+                        options={MAX_LONG_SIDE_OPTIONS}
+                        value={encodeOptionalNumberOption(maxPx)}
+                        onChange={(value) => onMaxPxChange(decodeOptionalNumberOption(value))}
+                    />
+                    <FooterAction
+                        label="Vista"
+                        actionLabel="Preset"
+                        icon={<Squares2X2Icon className="h-3.5 w-3.5" />}
+                        onClick={() => onAdvancedOpenChange(false)}
+                    />
+                </div>
+            ) : (
+                <div className="flex shrink-0 items-end gap-3">
+                    <SegmentedControl
+                        label="Ottimizzazione immagini"
+                        helpContent={<OptimizationTooltip />}
+                        options={presetOptions}
+                        value={optimizationPreset}
+                        onChange={(value) => {
+                            if (value !== 'custom') onOptimizationPresetChange(value);
+                        }}
+                    />
+                    <FooterAction
+                        label="Vista"
+                        actionLabel="Avanzate"
+                        icon={<AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />}
+                        onClick={() => onAdvancedOpenChange(true)}
+                    />
+                </div>
+            )}
 
-            <div className="h-8 w-px bg-ui-border" />
+            <div className="h-8 w-px shrink-0 bg-ui-border" />
 
             <SegmentedControl
                 label="Immagini"
@@ -288,7 +373,7 @@ export function OutputPanel({ compression, resize, imageFit, onCompressionChange
                 onChange={onImageFitChange}
             />
 
-            <span className="ml-auto text-xs text-ui-text-muted">Dim. stimata: — MB</span>
+            <span className="ml-auto shrink-0 text-xs text-ui-text-muted">Dim. stimata: — MB</span>
         </div>
     );
 }
