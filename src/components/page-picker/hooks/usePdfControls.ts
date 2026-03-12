@@ -1,13 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { FinalPage, SourceFile } from '../../../domain';
+import { parseSelectedPagesFromSpec } from '../../../pageSpec';
+
+const PAGE_INPUT_DEBOUNCE_MS = 600;
+
+function normalizePageInput(value: string): string {
+    return value.replace(/\s+/g, '');
+}
+
+function isIncompletePageInput(value: string): boolean {
+    return /[-,]$/.test(value);
+}
 
 interface Props {
     file: SourceFile;
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
     onToggleRange: (fileId: string, from: number, to: number) => void;
-    onSetFromSpec: (fileId: string, spec: string, total: number) => string | null;
+    onSetPages: (fileId: string, pages: number[]) => void;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
 }
@@ -17,14 +28,16 @@ export function usePdfControls({
     finalPages,
     onTogglePage,
     onToggleRange,
-    onSetFromSpec,
+    onSetPages,
     onSelectAll,
     onDeselectAll,
 }: Props) {
-    const [specInput, setSpecInput] = useState('');
-    const [gotoInput, setGotoInput] = useState('');
-    const [pageSpecError, setPageSpecError] = useState('');
+    const [pageInput, setPageInput] = useState('');
+    const [pageInputError, setPageInputError] = useState('');
     const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
+    const [appliedPageNum, setAppliedPageNum] = useState<number | null>(null);
+    const [appliedPageSignal, setAppliedPageSignal] = useState(0);
+    const lastAppliedSpecRef = useRef<string | null>(null);
 
     const selectedPageNums = useMemo(
         () => new Set(finalPages.filter((page) => page.fileId === file.id).map((page) => page.pageNum)),
@@ -41,18 +54,52 @@ export function usePdfControls({
         setLastClickedPage(pageNum);
     };
 
-    const getGotoTargetPage = () => {
-        const pageNum = Number.parseInt(gotoInput, 10);
-        if (!pageNum || pageNum < 1 || pageNum > file.pageCount) {
+    const applyPageInput = useCallback((force = false) => {
+        const normalizedValue = normalizePageInput(pageInput);
+        if (!normalizedValue) {
+            setPageInputError('');
             return null;
         }
-        return pageNum;
-    };
 
-    const handleSpecApply = () => {
-        const error = onSetFromSpec(file.id, specInput, file.pageCount);
-        setPageSpecError(error ?? '');
-    };
+        if (isIncompletePageInput(normalizedValue)) {
+            setPageInputError('');
+            return null;
+        }
+
+        const parsed = parseSelectedPagesFromSpec(normalizedValue, file.pageCount);
+        if (parsed.pages === null) {
+            setPageInputError(parsed.error);
+            return null;
+        }
+
+        if (!force && lastAppliedSpecRef.current === normalizedValue) {
+            setPageInputError('');
+            setAppliedPageNum(parsed.pages[0]);
+            setAppliedPageSignal((signal) => signal + 1);
+            return parsed.pages[0];
+        }
+
+        onSetPages(file.id, parsed.pages);
+        setPageInputError('');
+        lastAppliedSpecRef.current = normalizedValue;
+        setPageInput(normalizedValue);
+        setAppliedPageNum(parsed.pages[0]);
+        setAppliedPageSignal((signal) => signal + 1);
+        return parsed.pages[0];
+    }, [file.id, file.pageCount, onSetPages, pageInput]);
+
+    useEffect(() => {
+        const normalizedValue = normalizePageInput(pageInput);
+        if (!normalizedValue || isIncompletePageInput(normalizedValue) || lastAppliedSpecRef.current === normalizedValue) {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            applyPageInput();
+        }, PAGE_INPUT_DEBOUNCE_MS);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [applyPageInput, pageInput]);
 
     const handleToggleAll = () => {
         if (allSelected) {
@@ -62,24 +109,26 @@ export function usePdfControls({
         }
     };
 
-    const handleSpecInputChange = (value: string) => {
-        setSpecInput(value);
-        if (pageSpecError) {
-            setPageSpecError('');
+    const handlePageInputChange = (value: string) => {
+        setPageInput(value.replace(/[^\d,\-\s]/g, ''));
+        if (lastAppliedSpecRef.current !== normalizePageInput(value)) {
+            lastAppliedSpecRef.current = null;
+        }
+        if (pageInputError) {
+            setPageInputError('');
         }
     };
 
     return {
-        specInput,
-        gotoInput,
-        pageSpecError,
+        pageInput,
+        pageInputError,
         selectedPageNums,
         allSelected,
-        setGotoInput,
         handleThumbClick,
-        getGotoTargetPage,
-        handleSpecApply,
+        applyPageInput,
+        appliedPageNum,
+        appliedPageSignal,
         handleToggleAll,
-        handleSpecInputChange,
+        handlePageInputChange,
     };
 }

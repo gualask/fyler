@@ -98,7 +98,7 @@ interface Props {
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
     onToggleRange: (fileId: string, from: number, to: number) => void;
-    onSetFromSpec: (fileId: string, spec: string, total: number) => string | null;
+    onSetPages: (fileId: string, pages: number[]) => void;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
     onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
@@ -113,7 +113,7 @@ export function PdfPanel({
     finalPages,
     onTogglePage,
     onToggleRange,
-    onSetFromSpec,
+    onSetPages,
     onSelectAll,
     onDeselectAll,
     onRotatePage,
@@ -124,23 +124,22 @@ export function PdfPanel({
 }: Props) {
     const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null);
     const {
-        specInput,
-        gotoInput,
-        pageSpecError,
+        pageInput,
+        pageInputError,
         selectedPageNums,
         allSelected,
-        setGotoInput,
         handleThumbClick,
-        getGotoTargetPage,
-        handleSpecApply,
+        applyPageInput,
+        appliedPageNum,
+        appliedPageSignal,
         handleToggleAll,
-        handleSpecInputChange,
+        handlePageInputChange,
     } = usePdfControls({
         file,
         finalPages,
         onTogglePage,
         onToggleRange,
-        onSetFromSpec,
+        onSetPages,
         onSelectAll,
         onDeselectAll,
     });
@@ -150,24 +149,24 @@ export function PdfPanel({
         scrollToPage(gridEl, focusedPageNum);
     }, [focusedPageNum, focusFlashKey, gridEl]);
 
-    const handleGoto = () => {
-        const pageNum = getGotoTargetPage();
-        if (pageNum === null) return;
-        scrollToPage(gridEl, pageNum);
+    useEffect(() => {
+        if (appliedPageNum === null) return;
+        scrollToPage(gridEl, appliedPageNum);
+    }, [appliedPageNum, appliedPageSignal, gridEl]);
+
+    const handlePageInputCommit = () => {
+        applyPageInput(true);
     };
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
             <PdfToolbar
                 fileId={file.id}
-                gotoInput={gotoInput}
-                specInput={specInput}
-                pageSpecError={pageSpecError}
+                pageInput={pageInput}
+                pageInputError={pageInputError}
                 allSelected={allSelected}
-                onGotoInputChange={setGotoInput}
-                onSpecInputChange={handleSpecInputChange}
-                onGotoSubmit={handleGoto}
-                onSpecApply={handleSpecApply}
+                onPageInputChange={handlePageInputChange}
+                onPageInputCommit={handlePageInputCommit}
                 onToggleAll={handleToggleAll}
             />
 

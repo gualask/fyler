@@ -12,7 +12,7 @@ interface Props {
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
     onToggleRange: (fileId: string, from: number, to: number) => void;
-    onSetFromSpec: (fileId: string, spec: string, total: number) => string | null;
+    onSetPages: (fileId: string, pages: number[]) => void;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
     onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
@@ -26,7 +26,7 @@ export function PagePicker({
     finalPages,
     onTogglePage,
     onToggleRange,
-    onSetFromSpec,
+    onSetPages,
     onSelectAll,
     onDeselectAll,
     onRotatePage,
@@ -80,7 +80,7 @@ export function PagePicker({
                 finalPages={finalPages}
                 onTogglePage={onTogglePage}
                 onToggleRange={onToggleRange}
-                onSetFromSpec={onSetFromSpec}
+                onSetPages={onSetPages}
                 onSelectAll={onSelectAll}
                 onDeselectAll={onDeselectAll}
                 onRotatePage={onRotatePage}

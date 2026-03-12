@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useReducer } from 'react';
 import type { SourceFile, FinalPage } from '../domain';
-import { parseSelectedPagesFromSpec } from '../pageSpec';
 
 type CompositionState = {
     selectedPagesByFile: Record<string, number[]>;
@@ -154,11 +153,8 @@ export function useFinalPages() {
         dispatch({ type: 'set-file-selection', fileId, pages: next });
     }, [state.selectedPagesByFile]);
 
-    const setFromPageSpec = useCallback((fileId: string, spec: string, total: number) => {
-        const result = parseSelectedPagesFromSpec(spec, total);
-        if (result.pages === null) return result.error;
-        dispatch({ type: 'set-file-selection', fileId, pages: result.pages });
-        return null;
+    const setPagesForFile = useCallback((fileId: string, pages: number[]) => {
+        dispatch({ type: 'set-file-selection', fileId, pages });
     }, []);
 
     const removeFinalPage = useCallback((id: string) => {
@@ -190,7 +186,7 @@ export function useFinalPages() {
         removePagesForFile,
         togglePage,
         togglePageRange,
-        setFromPageSpec,
+        setPagesForFile,
         removeFinalPage,
         reorderFinalPages,
         moveFinalPageToIndex,

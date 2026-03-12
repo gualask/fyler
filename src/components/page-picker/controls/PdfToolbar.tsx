@@ -2,60 +2,40 @@ import { ColumnHeader } from '../../shared/layout/ColumnHeader';
 
 interface Props {
     fileId: string;
-    gotoInput: string;
-    specInput: string;
-    pageSpecError: string;
+    pageInput: string;
+    pageInputError: string;
     allSelected: boolean;
-    onGotoInputChange: (value: string) => void;
-    onSpecInputChange: (value: string) => void;
-    onGotoSubmit: () => void;
-    onSpecApply: () => void;
+    onPageInputChange: (value: string) => void;
+    onPageInputCommit: () => void;
     onToggleAll: () => void;
 }
 
 export function PdfToolbar({
     fileId,
-    gotoInput,
-    specInput,
-    pageSpecError,
+    pageInput,
+    pageInputError,
     allSelected,
-    onGotoInputChange,
-    onSpecInputChange,
-    onGotoSubmit,
-    onSpecApply,
+    onPageInputChange,
+    onPageInputCommit,
     onToggleAll,
 }: Props) {
     return (
         <>
             <ColumnHeader title="Pagine">
                 <div className="flex min-w-0 items-center gap-2">
-                    <label htmlFor={`goto-page-${fileId}`} className="column-toolbar-label">
-                        Vai a
+                    <label htmlFor={`page-input-${fileId}`} className="column-toolbar-label">
+                        Pagine
                     </label>
                     <input
-                        id={`goto-page-${fileId}`}
+                        id={`page-input-${fileId}`}
                         type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={gotoInput}
-                        placeholder="Es. 5"
-                        onChange={(event) => onGotoInputChange(event.target.value.replace(/\D+/g, ''))}
-                        onKeyDown={(event) => event.key === 'Enter' && onGotoSubmit()}
-                        className="input-base h-[34px] w-16 min-w-0"
-                    />
-                </div>
-                <div className="flex min-w-0 items-center gap-2">
-                    <label htmlFor={`page-range-${fileId}`} className="column-toolbar-label">
-                        Range
-                    </label>
-                    <input
-                        id={`page-range-${fileId}`}
-                        type="text"
+                        inputMode="text"
+                        value={pageInput}
                         placeholder="Es. 1-5, 8"
-                        value={specInput}
-                        onChange={(event) => onSpecInputChange(event.target.value)}
-                        onKeyDown={(event) => event.key === 'Enter' && onSpecApply()}
-                        className="input-base h-[34px] w-32 min-w-0"
+                        onChange={(event) => onPageInputChange(event.target.value)}
+                        onKeyDown={(event) => event.key === 'Enter' && onPageInputCommit()}
+                        onBlur={onPageInputCommit}
+                        className="input-base h-[34px] w-40 min-w-0"
                     />
                 </div>
                 <button
@@ -69,9 +49,9 @@ export function PdfToolbar({
                 </button>
             </ColumnHeader>
 
-            {pageSpecError && (
+            {pageInputError && (
                 <div className="shrink-0 border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-xs text-red-500">
-                    {pageSpecError}
+                    {pageInputError}
                 </div>
             )}
         </>

@@ -48,7 +48,7 @@ function AppContent() {
         finalPages,
         togglePage,
         togglePageRange,
-        setFromPageSpec,
+        setPagesForFile,
         selectAll,
         deselectAll,
         rotatePage,
@@ -183,7 +183,7 @@ function AppContent() {
                                             finalPages={finalPages}
                                             onTogglePage={togglePage}
                                             onToggleRange={togglePageRange}
-                                            onSetFromSpec={setFromPageSpec}
+                                            onSetPages={setPagesForFile}
                                             onSelectAll={selectAll}
                                             onDeselectAll={deselectAll}
                                             onRotatePage={rotatePage}
