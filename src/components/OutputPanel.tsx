@@ -1,9 +1,5 @@
-import { useId, useState, type ReactNode } from 'react';
-import {
-    AdjustmentsHorizontalIcon,
-    InformationCircleIcon,
-    Squares2X2Icon,
-} from '@heroicons/react/24/outline';
+import { useEffect, useRef, useState } from 'react';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 import type {
     BasicOptimizationPreset,
@@ -16,19 +12,25 @@ import {
 } from '../optimizationConfig';
 import type { ImageFit } from '../domain';
 
-type SegmentOption<T extends string> = {
-    value: T;
-    label: string;
-    disabled?: boolean;
-};
+import { InfoTooltip } from './output-panel/InfoTooltip';
+import {
+    ImageFitTooltip,
+    JpegTooltip,
+    OptimizationTooltip,
+    ResizeTooltip,
+} from './output-panel/helpContent';
+import {
+    SegmentButtons,
+    SegmentedControl,
+    type SegmentOption,
+} from './output-panel/SegmentedControl';
+import './output-panel/output-panel.css';
 
 interface Props {
     imageFit: ImageFit;
-    isAdvancedOpen: boolean;
     jpegQuality?: number;
     maxPx?: number;
     optimizationPreset: ImageOptimizationPreset;
-    onAdvancedOpenChange: (isOpen: boolean) => void;
     onImageFitChange: (v: ImageFit) => void;
     onJpegQualityChange: (v: number | undefined) => void;
     onMaxPxChange: (v: number | undefined) => void;
@@ -36,8 +38,8 @@ interface Props {
 }
 
 const IMAGE_FIT_OPTIONS: SegmentOption<ImageFit>[] = [
-    { value: 'fit', label: 'Adatta' },
     { value: 'contain', label: 'Contieni' },
+    { value: 'fit', label: 'Adatta' },
     { value: 'cover', label: 'Ritaglia' },
 ];
 
@@ -53,28 +55,6 @@ const MAX_LONG_SIDE_OPTIONS: SegmentOption<string>[] = MAX_PX_OPTIONS.map(({ val
     label,
 }));
 
-const IMAGE_FIT_TOOLTIP_ITEMS: {
-    title: string;
-    description: string;
-    visual: ReactNode;
-}[] = [
-    {
-        title: 'Adatta',
-        description: "La pagina prende la dimensione dell'immagine: tutto visibile, senza cornice A4 fissa.",
-        visual: <FitPreview mode="fit" />,
-    },
-    {
-        title: 'Contieni',
-        description: "Usa una pagina A4 e ci fa stare dentro l'immagine intera, con margini bianchi se necessario.",
-        visual: <FitPreview mode="contain" />,
-    },
-    {
-        title: 'Ritaglia',
-        description: "Usa una pagina A4 piena: l'immagine copre tutta la pagina e le parti in eccesso vengono tagliate.",
-        visual: <FitPreview mode="cover" />,
-    },
-];
-
 function buildPresetOptions(preset: ImageOptimizationPreset): SegmentOption<ImageOptimizationPreset>[] {
     if (preset !== 'custom') return BASIC_PRESET_OPTIONS;
     return [...BASIC_PRESET_OPTIONS, { value: 'custom', label: 'Personal.', disabled: true }];
@@ -89,291 +69,133 @@ function decodeOptionalNumberOption(option: string): number | undefined {
     return Number(option);
 }
 
-function InfoTooltip({ label, children }: { label: string; children: ReactNode }) {
-    const [open, setOpen] = useState(false);
-    const tooltipId = useId();
-
-    return (
-        <span
-            className="info-tooltip"
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
-        >
-            <button
-                type="button"
-                className="info-tooltip-trigger"
-                aria-label={`Mostra dettagli: ${label}`}
-                aria-describedby={open ? tooltipId : undefined}
-                aria-expanded={open}
-                onFocus={() => setOpen(true)}
-                onBlur={() => setOpen(false)}
-                onClick={() => setOpen((current) => !current)}
-            >
-                <InformationCircleIcon className="h-3.5 w-3.5" />
-            </button>
-
-            {open ? (
-                <span id={tooltipId} role="tooltip" className="info-tooltip-panel">
-                    {children}
-                </span>
-            ) : null}
-        </span>
-    );
-}
-
-function TooltipSection({
-    title,
-    description,
-    visual,
+function OptimizationAdvancedPanel({
+    jpegQuality,
+    maxPx,
+    onJpegQualityChange,
+    onMaxPxChange,
 }: {
-    title: string;
-    description: string;
-    visual?: ReactNode;
+    jpegQuality?: number;
+    maxPx?: number;
+    onJpegQualityChange: (v: number | undefined) => void;
+    onMaxPxChange: (v: number | undefined) => void;
 }) {
     return (
-        <div className="info-tooltip-row">
-            {visual ? <span className="info-tooltip-visual">{visual}</span> : null}
-            <span className="min-w-0">
-                <span className="info-tooltip-row-title">{title}</span>
-                <span className="info-tooltip-row-copy">{description}</span>
-            </span>
-        </div>
-    );
-}
-
-function TooltipContent({
-    title,
-    leadVisual,
-    items,
-}: {
-    title: string;
-    leadVisual?: ReactNode;
-    items: { title: string; description: string; visual?: ReactNode }[];
-}) {
-    return (
-        <>
-            <span className="info-tooltip-title">{title}</span>
-            {leadVisual ? <span className="info-tooltip-lead">{leadVisual}</span> : null}
-            {items.map((item) => (
-                <TooltipSection
-                    key={item.title}
-                    title={item.title}
-                    description={item.description}
-                    visual={item.visual}
+        <div className="output-panel-advanced-panel">
+            <div className="output-panel-advanced-grid">
+                <SegmentedControl
+                    label="Qualita JPEG"
+                    helpContent={<JpegTooltip />}
+                    helpAlign="start"
+                    className="output-panel-group-fill"
+                    options={JPEG_OPTIONS}
+                    value={encodeOptionalNumberOption(jpegQuality)}
+                    onChange={(value) => onJpegQualityChange(decodeOptionalNumberOption(value))}
                 />
-            ))}
-        </>
-    );
-}
-
-function FitPreview({ mode }: { mode: ImageFit }) {
-    return (
-        <span className={`fit-preview fit-preview-${mode}`} aria-hidden="true">
-            <span className="fit-preview-overflow" />
-            <span className="fit-preview-page">
-                <span className="fit-preview-media" />
-            </span>
-        </span>
-    );
-}
-
-function ResizeGuidePreview() {
-    return (
-        <span className="resize-guide" aria-hidden="true">
-            <span className="resize-guide-label">lato lungo</span>
-            <span className="resize-guide-rule" />
-            <span className="resize-guide-cap resize-guide-cap-start" />
-            <span className="resize-guide-cap resize-guide-cap-end" />
-            <span className="resize-guide-frame">
-                <span className="resize-guide-photo" />
-            </span>
-        </span>
-    );
-}
-
-function OptimizationTooltip() {
-    return (
-        <TooltipContent
-            title="Preset intelligenti che combinano ridimensionamento e qualita JPEG"
-            items={OPTIMIZATION_PRESETS.map(({ label, description }) => ({
-                title: label,
-                description,
-            }))}
-        />
-    );
-}
-
-function JpegTooltip() {
-    return (
-        <TooltipContent
-            title="Qualita numerica usata quando un'immagine viene ricodificata in JPEG"
-            items={JPEG_QUALITY_OPTIONS.map(({ title, description }) => ({
-                title,
-                description,
-            }))}
-        />
-    );
-}
-
-function ResizeTooltip() {
-    return (
-        <TooltipContent
-            title="Il limite si applica al lato lungo dell'immagine prima dell'export"
-            leadVisual={<ResizeGuidePreview />}
-            items={MAX_PX_OPTIONS.map(({ title, description }) => ({
-                title,
-                description,
-            }))}
-        />
-    );
-}
-
-function ImageFitTooltip() {
-    return (
-        <TooltipContent
-            title="Come viene resa l'immagine nella pagina finale"
-            items={IMAGE_FIT_TOOLTIP_ITEMS}
-        />
-    );
-}
-
-function SegmentedControl<T extends string>({
-    label,
-    helpContent,
-    options,
-    value,
-    onChange,
-}: {
-    label: string;
-    helpContent?: ReactNode;
-    options: SegmentOption<T>[];
-    value: T;
-    onChange: (v: T) => void;
-}) {
-    return (
-        <div className="footer-control-group">
-            <span className="footer-control-label">
-                {label}
-                {helpContent ? <InfoTooltip label={label}>{helpContent}</InfoTooltip> : null}
-            </span>
-            <div className="footer-segment-shell">
-                {options.map((opt) => (
-                    <button
-                        key={opt.value}
-                        type="button"
-                        disabled={opt.disabled}
-                        onClick={() => onChange(opt.value)}
-                        className={[
-                            'footer-segment-btn',
-                            value === opt.value ? 'segment-on' : 'segment-off',
-                        ].join(' ')}
-                    >
-                        {opt.label}
-                    </button>
-                ))}
+                <SegmentedControl
+                    label="Lato lungo max"
+                    helpContent={<ResizeTooltip />}
+                    helpAlign="end"
+                    className="output-panel-group-fill"
+                    options={MAX_LONG_SIDE_OPTIONS}
+                    value={encodeOptionalNumberOption(maxPx)}
+                    onChange={(value) => onMaxPxChange(decodeOptionalNumberOption(value))}
+                />
             </div>
-        </div>
-    );
-}
-
-function FooterAction({
-    label,
-    actionLabel,
-    icon,
-    onClick,
-}: {
-    label: string;
-    actionLabel: string;
-    icon: ReactNode;
-    onClick: () => void;
-}) {
-    return (
-        <div className="footer-control-group">
-            <span className="footer-control-label">
-                {label}
-            </span>
-            <button
-                type="button"
-                onClick={onClick}
-                className="footer-action-btn"
-            >
-                {icon}
-                {actionLabel}
-            </button>
         </div>
     );
 }
 
 export function OutputPanel({
     imageFit,
-    isAdvancedOpen,
     jpegQuality,
     maxPx,
     optimizationPreset,
-    onAdvancedOpenChange,
     onImageFitChange,
     onJpegQualityChange,
     onMaxPxChange,
     onOptimizationPresetChange,
 }: Props) {
     const presetOptions = buildPresetOptions(optimizationPreset);
+    const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+    const advancedRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!isAdvancedOpen) return;
+
+        const handleMouseDown = (event: MouseEvent) => {
+            if (!advancedRef.current?.contains(event.target as Node)) {
+                setIsAdvancedOpen(false);
+            }
+        };
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setIsAdvancedOpen(false);
+        };
+
+        window.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('mousedown', handleMouseDown);
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isAdvancedOpen]);
 
     return (
-        <div className="relative z-20 flex items-center gap-6 overflow-visible px-6 py-3">
-            {isAdvancedOpen ? (
-                <div className="flex shrink-0 items-end gap-3">
-                    <SegmentedControl
-                        label="Qualita JPEG"
-                        helpContent={<JpegTooltip />}
-                        options={JPEG_OPTIONS}
-                        value={encodeOptionalNumberOption(jpegQuality)}
-                        onChange={(value) => onJpegQualityChange(decodeOptionalNumberOption(value))}
-                    />
-                    <SegmentedControl
-                        label="Lato lungo max"
-                        helpContent={<ResizeTooltip />}
-                        options={MAX_LONG_SIDE_OPTIONS}
-                        value={encodeOptionalNumberOption(maxPx)}
-                        onChange={(value) => onMaxPxChange(decodeOptionalNumberOption(value))}
-                    />
-                    <FooterAction
-                        label="Vista"
-                        actionLabel="Preset"
-                        icon={<Squares2X2Icon className="h-3.5 w-3.5" />}
-                        onClick={() => onAdvancedOpenChange(false)}
-                    />
-                </div>
-            ) : (
-                <div className="flex shrink-0 items-end gap-3">
-                    <SegmentedControl
-                        label="Ottimizzazione immagini"
-                        helpContent={<OptimizationTooltip />}
-                        options={presetOptions}
-                        value={optimizationPreset}
-                        onChange={(value) => {
-                            if (value !== 'custom') onOptimizationPresetChange(value);
-                        }}
-                    />
-                    <FooterAction
-                        label="Vista"
-                        actionLabel="Avanzate"
-                        icon={<AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />}
-                        onClick={() => onAdvancedOpenChange(true)}
-                    />
-                </div>
-            )}
+        <div className="relative z-20 flex items-start gap-6 overflow-visible px-6 py-3">
+            <div className="output-panel-group output-panel-optimization">
+                <span className="output-panel-label">
+                    Ottimizzazione
+                    <InfoTooltip label="Ottimizzazione" align="start">
+                        <OptimizationTooltip />
+                    </InfoTooltip>
+                </span>
+                <div ref={advancedRef} className="output-panel-advanced-anchor">
+                    <div className="output-panel-advanced-trigger-row">
+                        <SegmentButtons
+                            className="output-panel-preset-shell"
+                            options={presetOptions}
+                            value={optimizationPreset}
+                            onChange={(value) => {
+                                if (value !== 'custom') onOptimizationPresetChange(value);
+                            }}
+                        />
+                        <button
+                            type="button"
+                            aria-label="Apri impostazioni avanzate"
+                            aria-expanded={isAdvancedOpen}
+                            onClick={() => setIsAdvancedOpen((current) => !current)}
+                            className={[
+                                'btn-icon',
+                                isAdvancedOpen ? 'btn-icon-active' : '',
+                            ].filter(Boolean).join(' ')}
+                        >
+                            <Cog6ToothIcon className="h-4 w-4" />
+                        </button>
+                    </div>
 
-            <div className="h-8 w-px shrink-0 bg-ui-border" />
+                    {isAdvancedOpen ? (
+                        <OptimizationAdvancedPanel
+                            jpegQuality={jpegQuality}
+                            maxPx={maxPx}
+                            onJpegQualityChange={onJpegQualityChange}
+                            onMaxPxChange={onMaxPxChange}
+                        />
+                    ) : null}
+                </div>
+            </div>
+
+            <div className="my-0.5 w-px shrink-0 self-stretch bg-ui-border" />
 
             <SegmentedControl
-                label="Immagini"
+                label="Adattamento pagina"
                 helpContent={<ImageFitTooltip />}
+                helpAlign="end"
+                className="shrink-0"
                 options={IMAGE_FIT_OPTIONS}
                 value={imageFit}
                 onChange={onImageFitChange}
             />
-
-            <span className="ml-auto shrink-0 text-xs text-ui-text-muted">Dim. stimata: — MB</span>
         </div>
     );
 }

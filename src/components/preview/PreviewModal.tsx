@@ -13,7 +13,7 @@ export function PreviewModal({
     finalPages,
     files,
     editsByFile,
-    imageFit = 'fit',
+    imageFit = 'contain',
     matchExportedImages = false,
     indicator,
     moveControl,

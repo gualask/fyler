@@ -13,8 +13,7 @@ export type { BasicOptimizationPreset, ImageOptimizationPreset } from '../optimi
 export function useOptimize() {
     const [jpegQuality, setJpegQuality] = useState<number | undefined>(undefined);
     const [maxPx, setMaxPx] = useState<number | undefined>(undefined);
-    const [imageFit, setImageFit] = useState<ImageFit>('fit');
-    const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+    const [imageFit, setImageFit] = useState<ImageFit>('contain');
 
     const optimizationPreset = deriveOptimizationPreset(jpegQuality, maxPx);
 
@@ -32,13 +31,11 @@ export function useOptimize() {
 
     return {
         imageFit,
-        isAdvancedOpen,
         jpegQuality,
         maxPx,
         optimizationPreset,
         optimizeOptions,
         setImageFit,
-        setIsAdvancedOpen,
         setJpegQuality,
         setMaxPx,
         setOptimizationPreset,

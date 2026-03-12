@@ -160,7 +160,6 @@ export function PdfPanel({
         <div className="flex h-full flex-col overflow-hidden">
             <PdfToolbar
                 fileId={file.id}
-                pageCount={file.pageCount}
                 gotoInput={gotoInput}
                 specInput={specInput}
                 pageSpecError={pageSpecError}

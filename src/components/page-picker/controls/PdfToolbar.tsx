@@ -2,7 +2,6 @@ import { ColumnHeader } from '../../shared/layout/ColumnHeader';
 
 interface Props {
     fileId: string;
-    pageCount: number;
     gotoInput: string;
     specInput: string;
     pageSpecError: string;
@@ -16,7 +15,6 @@ interface Props {
 
 export function PdfToolbar({
     fileId,
-    pageCount,
     gotoInput,
     specInput,
     pageSpecError,
@@ -36,12 +34,12 @@ export function PdfToolbar({
                     </label>
                     <input
                         id={`goto-page-${fileId}`}
-                        type="number"
-                        min={1}
-                        max={pageCount}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={gotoInput}
                         placeholder="Es. 5"
-                        onChange={(event) => onGotoInputChange(event.target.value)}
+                        onChange={(event) => onGotoInputChange(event.target.value.replace(/\D+/g, ''))}
                         onKeyDown={(event) => event.key === 'Enter' && onGotoSubmit()}
                         className="input-base h-[34px] w-16 min-w-0"
                     />

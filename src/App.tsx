@@ -65,12 +65,10 @@ function AppContent() {
     const { isDark, toggleTheme } = useTheme();
     const {
         imageFit,
-        isAdvancedOpen,
         jpegQuality,
         maxPx,
         optimizationPreset,
         setImageFit,
-        setIsAdvancedOpen,
         setJpegQuality,
         setMaxPx,
         setOptimizationPreset,
@@ -213,11 +211,9 @@ function AppContent() {
                                 <footer className="shrink-0 border-t border-ui-border bg-ui-surface">
                                     <OutputPanel
                                         imageFit={imageFit}
-                                        isAdvancedOpen={isAdvancedOpen}
                                         jpegQuality={jpegQuality}
                                         maxPx={maxPx}
                                         optimizationPreset={optimizationPreset}
-                                        onAdvancedOpenChange={setIsAdvancedOpen}
                                         onImageFitChange={setImageFit}
                                         onJpegQualityChange={setJpegQuality}
                                         onMaxPxChange={setMaxPx}
