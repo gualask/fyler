@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import type { RotationDirection } from '../fileEdits';
-import { emptyFileEdits } from '../fileEdits';
+import { applyRotationToEdits, emptyFileEdits } from '../fileEdits';
 import type { SourceFile } from '../domain';
 import { buildThumbnailRenderRequest, buildThumbnailRenderRequests } from '../pdfRenderProfiles';
 import { openFilesDialog, releaseSources } from '../platform';
@@ -16,7 +16,7 @@ interface Options {
 
 export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) {
     const { files, addFiles: addToList, removeFile: removeFileFromList, reorderFiles } = useFileList();
-    const { editsByFile, rotatePage: rotateFileEdits, clearFileEdits } = useFileEdits();
+    const { editsByFile, setFileEdits, clearFileEdits } = useFileEdits();
     const { requestRenders, releaseFile } = usePdfCache();
     const knownPathsRef = useRef<Set<string>>(new Set());
 
@@ -85,11 +85,12 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
         const file = files.find((entry) => entry.id === fileId);
         if (!file) return;
 
-        const nextEdits = rotateFileEdits(file, pageNum, direction);
+        const nextEdits = applyRotationToEdits(editsByFile[file.id], file.kind, pageNum, direction);
+        setFileEdits(file.id, nextEdits);
         if (file.kind === 'pdf') {
             requestRenders(file, [buildThumbnailRenderRequest(pageNum, nextEdits)]);
         }
-    }, [files, requestRenders, rotateFileEdits]);
+    }, [editsByFile, files, requestRenders, setFileEdits]);
 
     return {
         files,

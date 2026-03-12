@@ -1,17 +1,11 @@
 import { useCallback, useState } from 'react';
-import type { FileEdits, SourceFile } from '../domain';
-import { applyRotationToEdits, emptyFileEdits, type RotationDirection } from '../fileEdits';
+import type { FileEdits } from '../domain';
 
 export function useFileEdits() {
     const [editsByFile, setEditsByFile] = useState<Record<string, FileEdits>>({});
 
-    const rotatePage = useCallback((file: SourceFile, pageNum: number, direction: RotationDirection): FileEdits => {
-        let next = emptyFileEdits();
-        setEditsByFile((prev) => {
-            next = applyRotationToEdits(prev[file.id], file.kind, pageNum, direction);
-            return { ...prev, [file.id]: next };
-        });
-        return next;
+    const setFileEdits = useCallback((fileId: string, edits: FileEdits) => {
+        setEditsByFile((prev) => ({ ...prev, [fileId]: edits }));
     }, []);
 
     const clearFileEdits = useCallback((fileId: string) => {
@@ -25,7 +19,7 @@ export function useFileEdits() {
 
     return {
         editsByFile,
-        rotatePage,
+        setFileEdits,
         clearFileEdits,
     };
 }

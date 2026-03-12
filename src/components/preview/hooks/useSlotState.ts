@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getImageQuarterTurn, getImageRotationDegrees } from '../../../fileEdits';
 import { buildPreviewRenderRequest } from '../../../pdfRenderProfiles';
 import { getImageExportPreviewLayout, getPreviewUrl } from '../../../platform';
-import { renderExportMatchedImage } from '../utils/renderImage';
+import { renderExportMatchedImage, renderRotatedImage } from '../utils/renderImage';
 import type { SlotContext, SlotPage } from '../models/slotModel';
 import { usePdfCache } from '../../../hooks/usePdfCache';
 
@@ -11,6 +11,7 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
     const slotRef = useRef<HTMLDivElement>(null);
     const [shouldRender, setShouldRender] = useState(false);
     const [exportMatchedImage, setExportMatchedImage] = useState<{ key: string; src: string } | null>(null);
+    const [rotatedImagePreview, setRotatedImagePreview] = useState<{ key: string; src: string } | null>(null);
     const { requestRenders, getRender } = usePdfCache();
     const { fp, file, edits, index } = page;
     const { scrollRoot, imageFit, matchExportedImages, onVisible } = context;
@@ -26,10 +27,14 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
     const pdfSrc = file && previewRequest ? getRender(file.id, previewRequest) : undefined;
     const imageOriginalPath = file?.originalPath;
     const imageSrc = file?.kind === 'image' ? getPreviewUrl(file.originalPath) : undefined;
+    const rotatedImagePreviewKey = imageSrc && !useA4Container && imageQuarterTurns !== 0
+        ? `${imageSrc}:${imageQuarterTurns}`
+        : null;
     const exportPreviewKey = matchExportedImages && imageSrc && imageOriginalPath
         ? `${imageOriginalPath}:${imageFit}:${imageQuarterTurns}`
         : null;
     const exportMatchedImageSrc = exportMatchedImage?.key === exportPreviewKey ? exportMatchedImage.src : null;
+    const rotatedImagePreviewSrc = rotatedImagePreview?.key === rotatedImagePreviewKey ? rotatedImagePreview.src : null;
 
     useEffect(() => {
         if (!slotRef.current || !scrollRoot) return;
@@ -63,6 +68,29 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
     }, [file, previewRequest, requestRenders, shouldRender]);
 
     useEffect(() => {
+        if (!rotatedImagePreviewKey || !imageSrc) {
+            return;
+        }
+
+        let active = true;
+        void renderRotatedImage(imageSrc, imageQuarterTurns)
+            .then((src) => {
+                if (active) {
+                    setRotatedImagePreview({ key: rotatedImagePreviewKey, src });
+                }
+            })
+            .catch(() => {
+                if (active) {
+                    setRotatedImagePreview((current) => (current?.key === rotatedImagePreviewKey ? null : current));
+                }
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [imageQuarterTurns, imageSrc, rotatedImagePreviewKey]);
+
+    useEffect(() => {
         if (!exportPreviewKey || !imageSrc || !imageOriginalPath) {
             return;
         }
@@ -89,8 +117,8 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
     return {
         slotRef,
         isImage,
-        imageSrc,
-        imageRotation,
+        imageSrc: rotatedImagePreviewSrc ?? imageSrc,
+        imageRotation: rotatedImagePreviewSrc ? 0 : imageRotation,
         pdfSrc,
         useA4Container,
         imageFitMode: imageFit === 'cover' ? 'cover' : 'contain',

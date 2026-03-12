@@ -47,6 +47,12 @@ function buildRotatedImageCanvas(img: HTMLImageElement, quarterTurns: number): H
     return canvas;
 }
 
+export async function renderRotatedImage(src: string, quarterTurns: number): Promise<string> {
+    const img = await loadImage(src);
+    const rotated = buildRotatedImageCanvas(img, quarterTurns);
+    return rotated.toDataURL('image/jpeg', 0.92);
+}
+
 export async function renderExportMatchedImage(
     src: string,
     layout: ImageExportPreviewLayout,
