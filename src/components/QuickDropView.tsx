@@ -1,6 +1,8 @@
 import { DocumentArrowDownIcon, DocumentIcon, PhotoIcon, XMarkIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import type { SourceFile } from '../domain';
+import { useTranslation } from '../i18n';
 import { DragOverlay } from './DragOverlay';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface Props {
     files: SourceFile[];
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export function QuickDropView({ files, quickDropFileIds, isDragOver, onRemove, onExit }: Props) {
+    const { t } = useTranslation();
     const addedFiles = files.filter((f) => quickDropFileIds.has(f.id));
 
     return (
@@ -22,25 +25,28 @@ export function QuickDropView({ files, quickDropFileIds, isDragOver, onRemove, o
                     <div className="flex h-7 w-7 items-center justify-center rounded-md bg-ui-accent text-white shadow-sm">
                         <Squares2X2Icon className="h-4 w-4" />
                     </div>
-                    <span className="text-sm font-semibold">Quick Drop</span>
+                    <span className="text-sm font-semibold">{t('header.quickDrop')}</span>
                 </div>
-                <button onClick={onExit} className="btn-icon" title="Esci da Quick Drop">
-                    <XMarkIcon className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <LanguageSwitcher />
+                    <button onClick={onExit} className="btn-icon" title={t('quickDrop.close')}>
+                        <XMarkIcon className="h-4 w-4" />
+                    </button>
+                </div>
             </header>
 
             {/* Drop area */}
             <div className="flex flex-1 flex-col gap-3 overflow-hidden p-4">
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-ui-border bg-ui-surface min-h-28">
                     <DocumentArrowDownIcon className="h-10 w-10 text-ui-text-muted" />
-                    <p className="text-center text-sm text-ui-text-muted">Trascina PDF o immagini</p>
+                    <p className="text-center text-sm text-ui-text-muted">{t('quickDrop.dragFiles')}</p>
                 </div>
 
                 {/* File list */}
                 {addedFiles.length > 0 && (
                     <div className="flex flex-col gap-1">
                         <p className="text-xs font-medium text-ui-text-muted">
-                            Aggiunti ({addedFiles.length})
+                            {t('quickDrop.addedCount', { count: addedFiles.length })}
                         </p>
                         <div className="flex max-h-36 flex-col gap-0.5 overflow-y-auto rounded-lg border border-ui-border bg-ui-surface">
                             {addedFiles.map((file) => (
@@ -57,7 +63,7 @@ export function QuickDropView({ files, quickDropFileIds, isDragOver, onRemove, o
                                     <button
                                         onClick={() => onRemove(file.id)}
                                         className="shrink-0 text-ui-text-muted transition-colors hover:text-red-500"
-                                        title="Rimuovi"
+                                        title={t('quickDrop.remove')}
                                     >
                                         <XMarkIcon className="h-3.5 w-3.5" />
                                     </button>
@@ -69,7 +75,7 @@ export function QuickDropView({ files, quickDropFileIds, isDragOver, onRemove, o
 
                 {/* Done button */}
                 <button onClick={onExit} className="btn-primary w-full justify-center py-3">
-                    Fatto
+                    {t('quickDrop.done')}
                 </button>
             </div>
         </div>

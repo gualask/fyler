@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 import type { RotationDirection } from '../../../fileEdits';
+import { useTranslation } from '../../../i18n';
 import type { MoveControl } from '../types';
 
 interface Props {
@@ -38,6 +39,7 @@ export function Toolbar({
     onRotate,
     onClose,
 }: Props) {
+    const { t } = useTranslation();
     const [moveToValue, setMoveToValue] = useState('');
     const showMoveTo = Boolean(moveControl && moveControl.totalPositions > 1);
     const moveOptions = moveControl
@@ -62,7 +64,7 @@ export function Toolbar({
                     <button
                         onClick={onZoomOut}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
-                        title="Riduci (Ctrl+scroll giu)"
+                        title={t('preview.zoomOut')}
                     >
                         <MagnifyingGlassMinusIcon className="h-4 w-4" />
                     </button>
@@ -72,22 +74,22 @@ export function Toolbar({
                     <button
                         onClick={onZoomIn}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
-                        title="Ingrandisci (Ctrl+scroll su)"
+                        title={t('preview.zoomIn')}
                     >
                         <MagnifyingGlassPlusIcon className="h-4 w-4" />
                     </button>
                     <button
                         onClick={onZoomReset}
                         className="rounded-md px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20"
-                        title="Ripristina zoom (100%)"
+                        title={t('preview.resetZoom')}
                     >
-                        Reset
+                        {t('preview.resetLabel')}
                     </button>
                 </div>
             </div>
 
             <div className="justify-self-center text-sm font-medium text-white/85">
-                Page {displayCurrentPage} / {displayTotalPages}
+                {t('preview.counter', { current: displayCurrentPage, total: displayTotalPages })}
             </div>
 
             <div className="flex items-center gap-2 justify-self-end">
@@ -97,7 +99,7 @@ export function Toolbar({
                             onClick={() => onRotate('ccw')}
                             disabled={isRotating}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
-                            title="Ruota 90 gradi antiorario"
+                            title={t('preview.rotateLeft')}
                         >
                             <ArrowUturnLeftIcon className="h-4 w-4" />
                         </button>
@@ -105,7 +107,7 @@ export function Toolbar({
                             onClick={() => onRotate('cw')}
                             disabled={isRotating}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
-                            title="Ruota 90 gradi orario"
+                            title={t('preview.rotateRight')}
                         >
                             <ArrowUturnRightIcon className="h-4 w-4" />
                         </button>
@@ -118,9 +120,9 @@ export function Toolbar({
                             value={moveToValue}
                             onChange={(event) => handleMoveToChange(event.target.value)}
                             className="h-9 appearance-none rounded-lg bg-transparent py-1 pl-3 pr-9 text-sm outline-none"
-                            title="Sposta la pagina in un'altra posizione"
+                            title={t('preview.moveTo')}
                         >
-                            <option value="" className="text-slate-900">Move to</option>
+                            <option value="" className="text-slate-900">{t('preview.moveTo')}</option>
                             {moveOptions.map((position) => (
                                 <option
                                     key={position}
@@ -128,7 +130,7 @@ export function Toolbar({
                                     disabled={position === moveControl?.currentPosition}
                                     className="text-slate-900"
                                 >
-                                    Move to {position}
+                                    {t('preview.moveToPosition', { position })}
                                 </option>
                             ))}
                         </select>
@@ -139,7 +141,7 @@ export function Toolbar({
                 <button
                     onClick={onClose}
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-                    title="Chiudi (Esc)"
+                    title={t('preview.close')}
                 >
                     <XMarkIcon className="h-5 w-5" />
                 </button>

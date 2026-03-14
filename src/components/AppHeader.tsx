@@ -1,4 +1,6 @@
 import { ArrowDownTrayIcon, ArrowsPointingInIcon, EyeIcon, MoonIcon, Squares2X2Icon, SunIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '../i18n';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface Props {
     isDark: boolean;
@@ -11,6 +13,8 @@ interface Props {
 }
 
 export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPreview, canPreview, onQuickDrop }: Props) {
+    const { t } = useTranslation();
+
     return (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-6">
             <div className="flex items-center gap-3">
@@ -24,14 +28,15 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                 <div className="ml-2 flex items-center gap-3">
                     <button
                         onClick={onToggleTheme}
-                        title={isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
+                        title={isDark ? t('header.toggleTheme.light') : t('header.toggleTheme.dark')}
                         className="btn-icon"
                     >
                         {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                     </button>
-                    <button onClick={onQuickDrop} className="btn-ghost" title="Modalità Quick Drop">
+                    <LanguageSwitcher />
+                    <button onClick={onQuickDrop} className="btn-ghost" title={t('header.quickDrop')}>
                         <ArrowsPointingInIcon className="h-4 w-4" />
-                        Quick Drop
+                        {t('header.quickDrop')}
                     </button>
                 </div>
             </div>
@@ -42,7 +47,7 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                     className="btn-ghost"
                 >
                     <EyeIcon className="h-4 w-4" />
-                    Anteprima
+                    {t('header.preview')}
                 </button>
                 <button
                     disabled={!canExport}
@@ -50,7 +55,7 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                     className="btn-primary"
                 >
                     <ArrowDownTrayIcon className="h-5 w-5" />
-                    Esporta PDF
+                    {t('header.exportPdf')}
                 </button>
             </div>
         </header>

@@ -1,5 +1,6 @@
 import { ChevronRightIcon, DocumentIcon, PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { SourceFile } from '../domain';
+import { useTranslation } from '../i18n';
 
 interface Props {
     file: SourceFile;
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props) {
+    const { t, tp } = useTranslation();
+
     return (
         <div
             onClick={onSelect}
@@ -30,9 +33,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ui-text">{file.name}</p>
                     <p className="mt-0.5 text-[11px] text-ui-text-muted">
-                        {file.kind === 'image'
-                            ? '1 pag'
-                            : `${file.pageCount} ${file.pageCount === 1 ? 'pag' : 'pag'}`}
+                        {t('fileList.pageCount', { count: file.kind === 'image' ? 1 : file.pageCount })}
                     </p>
                 </div>
 
@@ -45,6 +46,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                     style={{ opacity: selected ? 0.6 : undefined }}
                     onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = '')}
+                    title={t('fileList.remove')}
                 >
                     <TrashIcon className="h-3.5 w-3.5" />
                 </button>
@@ -55,9 +57,9 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                     <span>
                         {file.kind === 'image'
                             ? usedPages > 0
-                                ? 'Inclusa nel documento'
-                                : 'Non inclusa'
-                            : `${usedPages} ${usedPages === 1 ? 'pagina usata' : 'pagine usate'}`}
+                                ? t('fileList.imageIncluded')
+                                : t('fileList.imageNotIncluded')
+                            : tp('fileList.usedPages', usedPages)}
                     </span>
                     <ChevronRightIcon className="h-3.5 w-3.5" />
                 </div>

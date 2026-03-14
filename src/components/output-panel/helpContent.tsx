@@ -4,6 +4,7 @@ import {
     OPTIMIZATION_PRESETS,
 } from '../../optimizationConfig';
 import type { ImageFit } from '../../domain';
+import { useTranslation } from '../../i18n';
 
 import { TooltipContent, type TooltipItem } from './InfoTooltip';
 
@@ -19,9 +20,11 @@ function FitPreview({ mode }: { mode: ImageFit }) {
 }
 
 function ResizeGuidePreview() {
+    const { t } = useTranslation();
+
     return (
         <span className="resize-guide" aria-hidden="true">
-            <span className="resize-guide-label">lato lungo</span>
+            <span className="resize-guide-label">{t('tooltips.resizeGuideLabel')}</span>
             <span className="resize-guide-rule" />
             <span className="resize-guide-cap resize-guide-cap-start" />
             <span className="resize-guide-cap resize-guide-cap-end" />
@@ -32,66 +35,71 @@ function ResizeGuidePreview() {
     );
 }
 
-const IMAGE_FIT_TOOLTIP_ITEMS: TooltipItem[] = [
-    {
-        title: 'Contieni',
-        description: "Usa una pagina A4 e ci fa stare dentro l'immagine intera, con margini bianchi se necessario.",
-        visual: <FitPreview mode="contain" />,
-    },
-    {
-        title: 'Adatta',
-        description: "La pagina prende la dimensione dell'immagine: tutto visibile, senza cornice A4 fissa.",
-        visual: <FitPreview mode="fit" />,
-    },
-    {
-        title: 'Ritaglia',
-        description: "Usa una pagina A4 piena: l'immagine copre tutta la pagina e le parti in eccesso vengono tagliate.",
-        visual: <FitPreview mode="cover" />,
-    },
-];
-
 export function OptimizationTooltip() {
+    const { t } = useTranslation();
+
     return (
         <TooltipContent
-            title="Preset rapidi per l'ottimizzazione delle immagini"
-            items={OPTIMIZATION_PRESETS.map(({ label, description }) => ({
-                title: label,
-                description,
+            title={t('tooltips.optimizationTitle')}
+            items={OPTIMIZATION_PRESETS.map(({ value }) => ({
+                title: t(`outputPanel.presets.${value}.label`),
+                description: t(`outputPanel.presets.${value}.description`),
             }))}
         />
     );
 }
 
 export function JpegTooltip() {
+    const { t } = useTranslation();
+
     return (
         <TooltipContent
-            title="Qualita numerica usata quando un'immagine viene ricodificata in JPEG"
-            items={JPEG_QUALITY_OPTIONS.map(({ title, description }) => ({
-                title,
-                description,
-            }))}
+            title={t('tooltips.jpegTitle')}
+            items={JPEG_QUALITY_OPTIONS.map(({ value }) => {
+                const key: 'off' | '95' | '90' | '85' = value === undefined
+                    ? 'off'
+                    : (String(value) as '95' | '90' | '85');
+                return {
+                    title: value === undefined ? t('outputPanel.off') : String(value),
+                    description: t(`tooltips.jpegDescriptions.${key}`),
+                };
+            })}
         />
     );
 }
 
 export function ResizeTooltip() {
+    const { t } = useTranslation();
+
     return (
         <TooltipContent
-            title="Il limite si applica al lato lungo dell'immagine prima dell'export"
+            title={t('tooltips.resizeTitle')}
             leadVisual={<ResizeGuidePreview />}
-            items={MAX_PX_OPTIONS.map(({ title, description }) => ({
-                title,
-                description,
-            }))}
+            items={MAX_PX_OPTIONS.map(({ value }) => {
+                const key: 'off' | '2500' | '2000' | '1500' = value === undefined
+                    ? 'off'
+                    : (String(value) as '2500' | '2000' | '1500');
+                return {
+                    title: value === undefined ? t('outputPanel.off') : `${value}px`,
+                    description: t(`tooltips.resizeDescriptions.${key}`),
+                };
+            })}
         />
     );
 }
 
 export function ImageFitTooltip() {
+    const { t } = useTranslation();
+    const imageFitTooltipItems: TooltipItem[] = (['contain', 'fit', 'cover'] as ImageFit[]).map((mode) => ({
+        title: t(`tooltips.imageFitItems.${mode}.title`),
+        description: t(`tooltips.imageFitItems.${mode}.description`),
+        visual: <FitPreview mode={mode} />,
+    }));
+
     return (
         <TooltipContent
-            title="Come viene resa l'immagine nella pagina finale"
-            items={IMAGE_FIT_TOOLTIP_ITEMS}
+            title={t('tooltips.imageFitTitle')}
+            items={imageFitTooltipItems}
         />
     );
 }

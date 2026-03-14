@@ -2,11 +2,11 @@ import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
 import type { ImageExportPreviewLayout, SourceFile, MergeRequest, ImageFit, QuarterTurn } from '../domain';
 
-export const openFilesDialog = (): Promise<SourceFile[]> =>
-    invoke('open_files_dialog');
+export const openFilesDialog = (filterLabel: string): Promise<SourceFile[]> =>
+    invoke('open_files_dialog', { filterLabel });
 
-export const savePDFDialog = (defaultFilename: string): Promise<string> =>
-    invoke('save_pdf_dialog', { defaultFilename });
+export const savePDFDialog = (defaultFilename: string, filterLabel: string): Promise<string> =>
+    invoke('save_pdf_dialog', { defaultFilename, filterLabel });
 
 export const mergePDFs = (req: MergeRequest): Promise<void> =>
     invoke('merge_pdfs', { req });

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ArrowUpTrayIcon, DocumentPlusIcon } from '@heroicons/react/24/outline';
 import type { SourceFile, FinalPage } from '../domain';
+import { useTranslation } from '../i18n';
 import { ColumnHeader } from './shared/layout/ColumnHeader';
 import { FileRow } from './FileRow';
 
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function FileList({ files, finalPages, selectedId, onSelect, onRemove, onAddFiles }: Props) {
+    const { t } = useTranslation();
     const pageCountByFile = useMemo(() => {
         const map = new Map<string, number>();
         for (const fp of finalPages) {
@@ -24,14 +26,14 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
-            <ColumnHeader title={`File (${files.length})`}>
+            <ColumnHeader title={t('fileList.title', { count: files.length })}>
                 <button
                     onClick={onAddFiles}
-                    title="Aggiungi file"
+                    title={t('fileList.addFilesTitle')}
                     className="btn-ghost-sm h-[34px]"
                 >
                     <DocumentPlusIcon className="h-4 w-4" />
-                    Aggiungi
+                    {t('fileList.add')}
                 </button>
             </ColumnHeader>
 
@@ -39,7 +41,7 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
                 {files.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-2 text-ui-text-muted">
                         <ArrowUpTrayIcon className="h-8 w-8 opacity-25" />
-                        <p className="text-center text-xs">Trascina file o clicca Aggiungi</p>
+                        <p className="text-center text-xs">{t('fileList.empty')}</p>
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">

@@ -11,6 +11,7 @@ import {
     OPTIMIZATION_PRESETS,
 } from '../optimizationConfig';
 import type { ImageFit } from '../domain';
+import { useTranslation } from '../i18n';
 
 import { InfoTooltip } from './output-panel/InfoTooltip';
 import {
@@ -38,26 +39,22 @@ interface Props {
 }
 
 const IMAGE_FIT_OPTIONS: SegmentOption<ImageFit>[] = [
-    { value: 'contain', label: 'Contieni' },
-    { value: 'fit', label: 'Adatta' },
-    { value: 'cover', label: 'Ritaglia' },
+    { value: 'contain', label: '' },
+    { value: 'fit', label: '' },
+    { value: 'cover', label: '' },
 ];
 
-const BASIC_PRESET_OPTIONS: SegmentOption<BasicOptimizationPreset>[] = OPTIMIZATION_PRESETS.map(
-    ({ value, label }) => ({ value, label }),
-);
-const JPEG_OPTIONS: SegmentOption<string>[] = JPEG_QUALITY_OPTIONS.map(({ value, label }) => ({
-    value: value === undefined ? 'off' : String(value),
-    label,
-}));
-const MAX_LONG_SIDE_OPTIONS: SegmentOption<string>[] = MAX_PX_OPTIONS.map(({ value, label }) => ({
-    value: value === undefined ? 'off' : String(value),
-    label,
-}));
-
-function buildPresetOptions(preset: ImageOptimizationPreset): SegmentOption<ImageOptimizationPreset>[] {
-    if (preset !== 'custom') return BASIC_PRESET_OPTIONS;
-    return [...BASIC_PRESET_OPTIONS, { value: 'custom', label: 'Personal.', disabled: true }];
+function buildPresetOptions(
+    preset: ImageOptimizationPreset,
+    presetLabels: Record<BasicOptimizationPreset, string>,
+    customLabel: string,
+): SegmentOption<ImageOptimizationPreset>[] {
+    const baseOptions: SegmentOption<ImageOptimizationPreset>[] = OPTIMIZATION_PRESETS.map(({ value }) => ({
+        value,
+        label: presetLabels[value],
+    }));
+    if (preset !== 'custom') return baseOptions;
+    return [...baseOptions, { value: 'custom', label: customLabel, disabled: true }];
 }
 
 function encodeOptionalNumberOption(value: number | undefined) {
@@ -80,24 +77,34 @@ function OptimizationAdvancedPanel({
     onJpegQualityChange: (v: number | undefined) => void;
     onMaxPxChange: (v: number | undefined) => void;
 }) {
+    const { t } = useTranslation();
+    const jpegOptions: SegmentOption<string>[] = JPEG_QUALITY_OPTIONS.map(({ value }) => ({
+        value: value === undefined ? 'off' : String(value),
+        label: value === undefined ? t('outputPanel.off') : String(value),
+    }));
+    const maxLongSideOptions: SegmentOption<string>[] = MAX_PX_OPTIONS.map(({ value }) => ({
+        value: value === undefined ? 'off' : String(value),
+        label: value === undefined ? t('outputPanel.off') : String(value),
+    }));
+
     return (
         <div className="output-panel-advanced-panel">
             <div className="output-panel-advanced-grid">
                 <SegmentedControl
-                    label="Qualita JPEG"
+                    label={t('outputPanel.jpegQuality')}
                     helpContent={<JpegTooltip />}
                     helpAlign="start"
                     className="output-panel-group-fill"
-                    options={JPEG_OPTIONS}
+                    options={jpegOptions}
                     value={encodeOptionalNumberOption(jpegQuality)}
                     onChange={(value) => onJpegQualityChange(decodeOptionalNumberOption(value))}
                 />
                 <SegmentedControl
-                    label="Lato lungo max"
+                    label={t('outputPanel.maxLongSide')}
                     helpContent={<ResizeTooltip />}
                     helpAlign="end"
                     className="output-panel-group-fill"
-                    options={MAX_LONG_SIDE_OPTIONS}
+                    options={maxLongSideOptions}
                     value={encodeOptionalNumberOption(maxPx)}
                     onChange={(value) => onMaxPxChange(decodeOptionalNumberOption(value))}
                 />
@@ -116,7 +123,21 @@ export function OutputPanel({
     onMaxPxChange,
     onOptimizationPresetChange,
 }: Props) {
-    const presetOptions = buildPresetOptions(optimizationPreset);
+    const { t } = useTranslation();
+    const imageFitOptions: SegmentOption<ImageFit>[] = IMAGE_FIT_OPTIONS.map(({ value }) => ({
+        value,
+        label: t(`outputPanel.imageFitOptions.${value}`),
+    }));
+    const presetOptions = buildPresetOptions(
+        optimizationPreset,
+        {
+            original: t('outputPanel.presets.original.label'),
+            light: t('outputPanel.presets.light.label'),
+            balanced: t('outputPanel.presets.balanced.label'),
+            compact: t('outputPanel.presets.compact.label'),
+        },
+        t('outputPanel.customShort'),
+    );
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const advancedRef = useRef<HTMLDivElement | null>(null);
 
@@ -145,8 +166,8 @@ export function OutputPanel({
         <div className="relative z-20 flex items-start gap-6 overflow-visible px-6 py-3">
             <div className="output-panel-group output-panel-optimization">
                 <span className="output-panel-label">
-                    Ottimizzazione
-                    <InfoTooltip label="Ottimizzazione" align="start">
+                    {t('outputPanel.optimization')}
+                    <InfoTooltip label={t('outputPanel.optimization')} align="start">
                         <OptimizationTooltip />
                     </InfoTooltip>
                 </span>
@@ -162,7 +183,7 @@ export function OutputPanel({
                         />
                         <button
                             type="button"
-                            aria-label="Apri impostazioni avanzate"
+                            aria-label={t('outputPanel.advancedSettings')}
                             aria-expanded={isAdvancedOpen}
                             onClick={() => setIsAdvancedOpen((current) => !current)}
                             className={[
@@ -188,11 +209,11 @@ export function OutputPanel({
             <div className="my-0.5 w-px shrink-0 self-stretch bg-ui-border" />
 
             <SegmentedControl
-                label="Adattamento pagina"
+                label={t('outputPanel.pageFit')}
                 helpContent={<ImageFitTooltip />}
                 helpAlign="end"
                 className="shrink-0"
-                options={IMAGE_FIT_OPTIONS}
+                options={imageFitOptions}
                 value={imageFit}
                 onChange={onImageFitChange}
             />

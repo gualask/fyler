@@ -1,5 +1,6 @@
 import { useId, useState, type ReactNode } from 'react';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '../../i18n';
 
 export type TooltipAlign = 'start' | 'center' | 'end';
 
@@ -55,6 +56,7 @@ export function InfoTooltip({
     align?: TooltipAlign;
     children: ReactNode;
 }) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const tooltipId = useId();
 
@@ -67,7 +69,7 @@ export function InfoTooltip({
             <button
                 type="button"
                 className="info-tooltip-trigger"
-                aria-label={`Mostra dettagli: ${label}`}
+                aria-label={t('tooltips.showDetails', { label })}
                 aria-describedby={open ? tooltipId : undefined}
                 aria-expanded={open}
                 onFocus={() => setOpen(true)}

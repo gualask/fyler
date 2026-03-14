@@ -115,6 +115,18 @@ body {
   .btn-icon-active {
     @apply bg-ui-accent-soft text-ui-accent-on-soft;
   }
+  .language-switcher {
+    @apply inline-flex h-[34px] shrink-0 items-center rounded-lg border border-ui-border bg-ui-surface-hover p-0.5;
+  }
+  .language-switcher__option {
+    @apply inline-flex h-full min-w-9 items-center justify-center rounded-md px-2 text-[10px] font-bold uppercase tracking-wide transition-colors;
+  }
+  .language-switcher__option-active {
+    @apply bg-ui-accent text-white;
+  }
+  .language-switcher__option-inactive {
+    @apply text-ui-text-muted hover:bg-ui-bg hover:text-ui-text;
+  }
 
   /* ── Toggle (pulsante "Tutti/Nessuna" e opzioni SegmentedControl) ── */
   .toggle-on {

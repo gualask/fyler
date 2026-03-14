@@ -10,13 +10,14 @@ use crate::pdf::{image_to_pdf_doc, prepare_pdf_page_doc, prepare_pdf_subset_doc,
 use crate::source_registry::SourceRegistry;
 
 #[derive(serde::Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 struct ProgressPayload {
-    message: &'static str,
+    step: &'static str,
     progress: u8,
 }
 
-fn emit_progress(app: &AppHandle, message: &'static str, progress: u8) {
-    let _ = app.emit("merge-progress", ProgressPayload { message, progress });
+fn emit_progress(app: &AppHandle, step: &'static str, progress: u8) {
+    let _ = app.emit("merge-progress", ProgressPayload { step, progress });
 }
 
 fn quarter_turns_for_pdf_page(edits: Option<&FileEdits>, page_num: u32) -> anyhow::Result<u8> {
@@ -112,13 +113,13 @@ pub fn export_pdf(app: &AppHandle, registry: &SourceRegistry, req: MergeRequest)
         .and_then(|options| options.image_fit.as_deref())
         .unwrap_or("fit");
 
-    emit_progress(app, "Preparazione documenti...", 0);
+    emit_progress(app, "preparing-documents", 0);
     let docs = build_documents(&req, registry, image_fit)?;
     if docs.is_empty() {
         bail!("Nessun documento da unire");
     }
 
-    emit_progress(app, "Unione pagine...", 60);
+    emit_progress(app, "merging-pages", 60);
     let mut docs = docs;
     let mut merged = if docs.len() == 1 {
         docs.pop().expect("single prepared document")
@@ -128,12 +129,12 @@ pub fn export_pdf(app: &AppHandle, registry: &SourceRegistry, req: MergeRequest)
 
     if let Some(options) = &req.optimize {
         if options.jpeg_quality.is_some() || options.max_px.is_some() {
-            emit_progress(app, "Ottimizzazione immagini...", 80);
+            emit_progress(app, "optimizing-images", 80);
             optimize::optimize_images(&mut merged, options)?;
         }
     }
 
-    emit_progress(app, "Salvataggio...", 90);
+    emit_progress(app, "saving", 90);
     if let Some(parent) = std::path::Path::new(&req.output_path).parent() {
         std::fs::create_dir_all(parent)?;
     }

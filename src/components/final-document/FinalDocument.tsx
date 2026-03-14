@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { FileEdits, FinalPage, SourceFile } from '../../domain';
 import type { RotationDirection } from '../../fileEdits';
+import { useTranslation } from '../../i18n';
 import { ColumnHeader } from '../shared/layout/ColumnHeader';
 import { List } from './components/List';
 import { Preview } from './components/Preview';
@@ -29,12 +30,13 @@ export function FinalDocument({
     onRotatePage,
     editsByFile,
 }: Props) {
+    const { t } = useTranslation();
     const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
-            <ColumnHeader title="Documento finale">
-                <span className="column-toolbar-stat">{finalPages.length} pag</span>
+            <ColumnHeader title={t('finalDocument.title')}>
+                <span className="column-toolbar-stat">{t('finalDocument.pageCount', { count: finalPages.length })}</span>
             </ColumnHeader>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">

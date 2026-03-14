@@ -4,6 +4,7 @@ import type { FileEdits, SourceFile } from '../../../domain';
 import type { RotationDirection } from '../../../fileEdits';
 import { getImageQuarterTurn, getImageRotationDegrees } from '../../../fileEdits';
 import { useElementWidth } from '../../../hooks/useElementWidth';
+import { useTranslation } from '../../../i18n';
 import { getPreviewUrl } from '../../../platform';
 import { ColumnHeader } from '../../shared/layout/ColumnHeader';
 import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
@@ -47,6 +48,7 @@ export function ImagePanel({
     onRotatePage,
     onPreview,
 }: Props) {
+    const { t } = useTranslation();
     const [imagePanelEl, imagePanelWidth] = useElementWidth();
     const [imageNaturalSize, setImageNaturalSize] = useState<{
         width: number;
@@ -76,8 +78,8 @@ export function ImagePanel({
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
-            <ColumnHeader title="Pagine">
-                <span className="column-toolbar-note">Immagine singola</span>
+            <ColumnHeader title={t('pagePicker.title')}>
+                <span className="column-toolbar-note">{t('pagePicker.singleImage')}</span>
             </ColumnHeader>
             <div ref={imagePanelEl} className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
                 <div
@@ -120,7 +122,7 @@ export function ImagePanel({
                         onRotateRight={() => void onRotatePage(file.id, 0, 'cw')}
                     />
                 </div>
-                <span className="text-xs text-ui-text-muted">Inclusa automaticamente</span>
+                <span className="text-xs text-ui-text-muted">{t('pagePicker.includedAutomatically')}</span>
             </div>
         </div>
     );

@@ -1,4 +1,5 @@
 import { ColumnHeader } from '../../shared/layout/ColumnHeader';
+import { useTranslation } from '../../../i18n';
 
 interface Props {
     fileId: string;
@@ -19,19 +20,21 @@ export function PdfToolbar({
     onPageInputCommit,
     onToggleAll,
 }: Props) {
+    const { t } = useTranslation();
+
     return (
         <>
-            <ColumnHeader title="Pagine">
+            <ColumnHeader title={t('pagePicker.title')}>
                 <div className="flex min-w-0 items-center gap-2">
                     <label htmlFor={`page-input-${fileId}`} className="column-toolbar-label">
-                        Pagine
+                        {t('pagePicker.inputLabel')}
                     </label>
                     <input
                         id={`page-input-${fileId}`}
                         type="text"
                         inputMode="text"
                         value={pageInput}
-                        placeholder="Es. 1-5, 8"
+                        placeholder={t('pagePicker.inputPlaceholder')}
                         onChange={(event) => onPageInputChange(event.target.value)}
                         onKeyDown={(event) => event.key === 'Enter' && onPageInputCommit()}
                         onBlur={onPageInputCommit}
@@ -45,7 +48,7 @@ export function PdfToolbar({
                         allSelected ? 'toggle-on' : 'toggle-off',
                     ].join(' ')}
                 >
-                    {allSelected ? 'Nessuna' : 'Tutti'}
+                    {allSelected ? t('pagePicker.clearAll') : t('pagePicker.selectAll')}
                 </button>
             </ColumnHeader>
 

@@ -1,16 +1,16 @@
 import { invoke } from '@tauri-apps/api/core';
 
-interface AppSettings {
+import type { Locale } from './locale';
+
+export interface AppSettings {
     isDark: boolean;
+    locale?: Locale;
 }
 
 export async function loadSettings(): Promise<AppSettings> {
-    const isDark = await invoke<boolean>('load_settings');
-    return { isDark };
+    return invoke<AppSettings>('load_settings');
 }
 
-export async function saveSettings(patch: Partial<AppSettings>): Promise<void> {
-    if (patch.isDark !== undefined) {
-        await invoke('save_settings', { isDark: patch.isDark });
-    }
+export async function saveSettings(settings: AppSettings): Promise<void> {
+    await invoke('save_settings', { settings });
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { FinalPage, SourceFile } from '../../../domain';
+import { formatPageSpecError, useTranslation } from '../../../i18n';
 import { parseSelectedPagesFromSpec } from '../../../pageSpec';
 
 const PAGE_INPUT_DEBOUNCE_MS = 600;
@@ -32,6 +33,7 @@ export function usePdfControls({
     onSelectAll,
     onDeselectAll,
 }: Props) {
+    const { t } = useTranslation();
     const [pageInput, setPageInput] = useState('');
     const [pageInputError, setPageInputError] = useState('');
     const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
@@ -68,7 +70,7 @@ export function usePdfControls({
 
         const parsed = parseSelectedPagesFromSpec(normalizedValue, file.pageCount);
         if (parsed.pages === null) {
-            setPageInputError(parsed.error);
+            setPageInputError(formatPageSpecError(parsed.error, t));
             return null;
         }
 
@@ -86,7 +88,7 @@ export function usePdfControls({
         setAppliedPageNum(parsed.pages[0]);
         setAppliedPageSignal((signal) => signal + 1);
         return parsed.pages[0];
-    }, [file.id, file.pageCount, onSetPages, pageInput]);
+    }, [file.id, file.pageCount, onSetPages, pageInput, t]);
 
     useEffect(() => {
         const normalizedValue = normalizePageInput(pageInput);

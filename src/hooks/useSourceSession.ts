@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { RotationDirection } from '../fileEdits';
 import { applyRotationToEdits, emptyFileEdits } from '../fileEdits';
 import type { SourceFile } from '../domain';
+import { useTranslation } from '../i18n';
 import { buildThumbnailRenderRequest, buildThumbnailRenderRequests } from '../pdfRenderProfiles';
 import { openFilesDialog, releaseSources } from '../platform';
 import { usePdfCache } from './usePdfCache';
@@ -15,6 +16,7 @@ interface Options {
 }
 
 export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) {
+    const { t } = useTranslation();
     const { files, addFiles: addToList, removeFile: removeFileFromList, reorderFiles } = useFileList();
     const { editsByFile, setFileEdits, clearFileEdits } = useFileEdits();
     const { requestRenders, releaseFile } = usePdfCache();
@@ -59,10 +61,10 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
     }, [addToList, onFilesAdded, requestRenders]);
 
     const openAndAddSourceFiles = useCallback(async () => {
-        const newFiles = await openFilesDialog();
+        const newFiles = await openFilesDialog(t('dialogs.filters.documentsAndImages'));
         if (!newFiles.length) return [];
         return addSourceFiles(newFiles);
-    }, [addSourceFiles]);
+    }, [addSourceFiles, t]);
 
     const removeSourceFile = useCallback((id: string) => {
         const removed = files.find((file) => file.id === id) ?? null;

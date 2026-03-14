@@ -8,23 +8,32 @@ use crate::models::{MergeRequest, SourceFile};
 use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{files_from_paths, SourceRegistry};
 
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ImportWarningPayload {
+    kind: &'static str,
+    skipped_count: usize,
+    preview: Vec<String>,
+    has_more: bool,
+}
+
 fn emit_import_warning(app: &tauri::AppHandle, skipped_errors: &[String]) {
     if skipped_errors.is_empty() {
         return;
     }
 
-    let summary = skipped_errors.iter().take(2).cloned().collect::<Vec<_>>().join("; ");
-    let suffix = if skipped_errors.len() > 2 { " ..." } else { "" };
-    let label = if skipped_errors.len() == 1 { "file saltato" } else { "file saltati" };
-    let _ = app.emit(
-        "app-status",
-        format!("{} {}: {}{}", skipped_errors.len(), label, summary, suffix),
-    );
+    let _ = app.emit("app-status", ImportWarningPayload {
+        kind: "import-warning",
+        skipped_count: skipped_errors.len(),
+        preview: skipped_errors.iter().take(2).cloned().collect(),
+        has_more: skipped_errors.len() > 2,
+    });
 }
 
 #[tauri::command]
 pub async fn open_files_dialog(
     app: tauri::AppHandle,
+    filter_label: String,
     registry: State<'_, SourceRegistry>,
 ) -> Result<Vec<SourceFile>, AppError> {
     let mut filter_exts = vec!["pdf"];
@@ -33,7 +42,7 @@ pub async fn open_files_dialog(
     let files = app
         .dialog()
         .file()
-        .add_filter("PDF e immagini", &filter_exts)
+        .add_filter(&filter_label, &filter_exts)
         .blocking_pick_files()
         .unwrap_or_default();
 
@@ -67,11 +76,12 @@ pub fn release_sources(file_ids: Vec<String>, registry: State<'_, SourceRegistry
 pub async fn save_pdf_dialog(
     app: tauri::AppHandle,
     default_filename: String,
+    filter_label: String,
 ) -> Result<String, AppError> {
     Ok(app
         .dialog()
         .file()
-        .add_filter("PDF", &["pdf"])
+        .add_filter(&filter_label, &["pdf"])
         .set_file_name(&default_filename)
         .blocking_save_file()
         .and_then(|file| file.into_path().ok())

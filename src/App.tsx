@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import { useCallback, useState } from 'react';
 import { buildMergeRequest } from './domain';
 import { mergePDFs, savePDFDialog } from './platform';
 import { PdfCacheProvider } from './hooks/PdfCacheProvider';
 import { useFiles } from './hooks/useFiles';
+import { useAppNotifications } from './hooks/useAppNotifications';
 import { useQuickDrop } from './hooks/useQuickDrop';
 import { useTheme } from './hooks/useTheme';
 import { useOptimize } from './hooks/useOptimize';
@@ -18,22 +18,21 @@ import { EmptyState } from './components/EmptyState';
 import { DragOverlay } from './components/DragOverlay';
 import { QuickDropView } from './components/QuickDropView';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
-
-function toErrorMessage(value: unknown): string {
-    return value instanceof Error ? value.message : String(value);
-}
+import { AppPreferencesProvider, useTranslation } from './i18n';
 
 function AppContent() {
-    const [status, setStatus] = useState('');
+    const { t } = useTranslation();
     const [showFinalPreview, setShowFinalPreview] = useState(false);
-    const [loading, setLoading] = useState<{ message: string; progress?: number } | null>(null);
     const { isQuickDrop, quickDropFileIds, isTransitioning, onFilesAdded, enterQuickDrop, exitQuickDrop } = useQuickDrop();
-
-    useEffect(() => {
-        if (!status) return;
-        const t = setTimeout(() => setStatus(''), 4000);
-        return () => clearTimeout(t);
-    }, [status]);
+    const {
+        statusMessage,
+        loadingMessage,
+        loadingProgress,
+        showOpeningFiles,
+        showMergePreparing,
+        clearLoading,
+        showExportCompleted,
+    } = useAppNotifications();
 
     const {
         files,
@@ -58,9 +57,9 @@ function AppContent() {
         focusFinalPageSource,
     } = useFiles({ onFilesAdded });
     const handleAddFiles = useCallback(() => {
-        setLoading({ message: 'Caricamento file...' });
-        void addFiles().finally(() => setLoading(null));
-    }, [addFiles]);
+        showOpeningFiles();
+        void addFiles().finally(() => clearLoading());
+    }, [addFiles, clearLoading, showOpeningFiles]);
 
     const { isDark, toggleTheme } = useTheme();
     const {
@@ -78,62 +77,22 @@ function AppContent() {
     const focusedSourcePageNum = focusedSourceMatchesSelected ? focusedSource!.pageNum : null;
     const focusedSourceFlashKey = focusedSourceMatchesSelected ? focusedSource!.flashKey : undefined;
 
-    useEffect(() => {
-        const handleError = (e: ErrorEvent) => {
-            e.preventDefault();
-            setStatus(`Errore: ${toErrorMessage(e.error ?? e.message)}`);
-        };
-        const handleRejection = (e: PromiseRejectionEvent) => {
-            e.preventDefault();
-            setStatus(`Errore: ${toErrorMessage(e.reason)}`);
-        };
-        window.addEventListener('error', handleError);
-        window.addEventListener('unhandledrejection', handleRejection);
-        return () => {
-            window.removeEventListener('error', handleError);
-            window.removeEventListener('unhandledrejection', handleRejection);
-        };
-    }, []);
-
-    useEffect(() => {
-        let unlisten: (() => void) | undefined;
-        void listen<string>('app-error', (e) => setStatus(`Errore: ${e.payload}`)).then((fn) => {
-            unlisten = fn;
-        });
-        return () => unlisten?.();
-    }, []);
-
-    useEffect(() => {
-        let unlisten: (() => void) | undefined;
-        void listen<string>('app-status', (e) => setStatus(e.payload)).then((fn) => {
-            unlisten = fn;
-        });
-        return () => unlisten?.();
-    }, []);
-
-    useEffect(() => {
-        let unlisten: (() => void) | undefined;
-        void listen<{ message: string; progress: number }>('merge-progress', (e) => {
-            setLoading({ message: e.payload.message, progress: e.payload.progress });
-        }).then((fn) => {
-            unlisten = fn;
-        });
-        return () => unlisten?.();
-    }, []);
-
     const exportMerged = useCallback(async () => {
         if (finalPages.length === 0) return;
-        const outputPath = await savePDFDialog('merged.pdf');
+        const outputPath = await savePDFDialog(
+            t('header.defaultExportFilename'),
+            t('dialogs.filters.pdf'),
+        );
         if (!outputPath) return;
         const req = buildMergeRequest(finalPages, editsByFile, outputPath, optimizeOptions);
-        setLoading({ message: 'Preparazione...', progress: 0 });
+        showMergePreparing();
         try {
             await mergePDFs(req);
-            setStatus('Esportazione completata.');
+            showExportCompleted();
         } finally {
-            setLoading(null);
+            clearLoading();
         }
-    }, [editsByFile, finalPages, optimizeOptions]);
+    }, [clearLoading, editsByFile, finalPages, optimizeOptions, showExportCompleted, showMergePreparing, t]);
 
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
@@ -226,13 +185,13 @@ function AppContent() {
                 </>
             )}
 
-            {status && (
+            {statusMessage && (
                 <div className="absolute bottom-12 left-1/2 -translate-x-1/2 rounded-lg bg-ui-surface px-4 py-2 text-xs text-ui-text shadow-lg">
-                    {status}
+                    {statusMessage}
                 </div>
             )}
 
-            {loading && <ProgressModal {...loading} />}
+            {loadingMessage && <ProgressModal message={loadingMessage} progress={loadingProgress} />}
 
             {showFinalPreview && (
                 <PreviewModal
@@ -248,13 +207,26 @@ function AppContent() {
     );
 }
 
-function App() {
+function AppShell() {
+    const { t } = useTranslation();
+
     return (
-        <AppErrorBoundary>
+        <AppErrorBoundary
+            title={t('errors.unhandled')}
+            reloadLabel={t('errors.reload')}
+        >
             <PdfCacheProvider>
                 <AppContent />
             </PdfCacheProvider>
         </AppErrorBoundary>
+    );
+}
+
+function App() {
+    return (
+        <AppPreferencesProvider>
+            <AppShell />
+        </AppPreferencesProvider>
     );
 }
 

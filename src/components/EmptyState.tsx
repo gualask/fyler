@@ -1,10 +1,13 @@
 import { DocumentArrowUpIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '../i18n';
 
 interface EmptyStateProps {
     onAddFiles: () => void;
 }
 
 export function EmptyState({ onAddFiles }: EmptyStateProps) {
+    const { t } = useTranslation();
+
     return (
         <button
             type="button"
@@ -15,13 +18,13 @@ export function EmptyState({ onAddFiles }: EmptyStateProps) {
                 <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-ui-surface-hover text-ui-text-secondary transition-colors group-hover:bg-ui-accent-soft group-hover:text-ui-accent-on-soft">
                     <DocumentArrowUpIcon className="h-10 w-10" strokeWidth={1.75} />
                 </div>
-                <p className="text-2xl font-semibold text-ui-text">Trascina PDF o immagini qui</p>
+                <p className="text-2xl font-semibold text-ui-text">{t('emptyState.title')}</p>
                 <p className="max-w-md text-sm text-ui-text-muted">
-                    Rilascia i file in questa area oppure clicca per sceglierli dal disco.
+                    {t('emptyState.description')}
                 </p>
                 <span className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-ui-accent-on-soft transition-colors group-hover:text-ui-accent">
                     <PlusIcon className="h-4 w-4" />
-                    Aggiungi file
+                    {t('emptyState.addFiles')}
                 </span>
             </div>
         </button>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { FileEdits, FinalPage, SourceFile } from '../../domain';
 import type { RotationDirection } from '../../fileEdits';
+import { useTranslation } from '../../i18n';
 import { ColumnHeader } from '../shared/layout/ColumnHeader';
 import { ImagePanel } from './panels/ImagePanel';
 import { PdfPanel } from './panels/PdfPanel';
@@ -34,14 +35,15 @@ export function PagePicker({
     focusedPageNum,
     focusFlashKey,
 }: Props) {
+    const { t } = useTranslation();
     const [previewTarget, setPreviewTarget] = useState<FinalPage | null>(null);
 
     if (!file) {
         return (
             <div className="flex h-full flex-col overflow-hidden">
-                <ColumnHeader title="Pagine" />
+                <ColumnHeader title={t('pagePicker.title')} />
                 <div className="flex min-h-0 flex-1 items-center justify-center text-ui-text-muted">
-                    <p className="text-xs">Seleziona un file</p>
+                    <p className="text-xs">{t('pagePicker.selectAFile')}</p>
                 </div>
             </div>
         );

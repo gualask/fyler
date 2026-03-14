@@ -12,6 +12,7 @@ import { DocumentIcon } from '@heroicons/react/24/outline';
 
 import type { FileEdits, FinalPage, SourceFile } from '../../../domain';
 import { emptyFileEdits } from '../../../fileEdits';
+import { useTranslation } from '../../../i18n';
 import { ListRow } from './ListRow';
 import type { ListItem } from '../models/listItem';
 
@@ -36,6 +37,7 @@ export function List({
     onSelectPage,
     onPreviewPage,
 }: Props) {
+    const { t } = useTranslation();
     const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
     const items = useMemo<ListItem[]>(
         () => finalPages.map((page, index) => ({
@@ -63,7 +65,7 @@ export function List({
         return (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-ui-text-muted">
                 <DocumentIcon className="h-8 w-8 opacity-25" />
-                <p className="text-center text-xs">Nessuna pagina selezionata</p>
+                <p className="text-center text-xs">{t('finalDocument.empty')}</p>
             </div>
         );
     }

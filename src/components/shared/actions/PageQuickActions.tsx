@@ -3,6 +3,7 @@ import {
     ArrowUturnRightIcon,
     MagnifyingGlassPlusIcon,
 } from '@heroicons/react/24/outline';
+import { useTranslation } from '../../../i18n';
 
 interface Props {
     onPreview?: () => void;
@@ -19,6 +20,7 @@ export function PageQuickActions({
     disabled = false,
     compact = false,
 }: Props) {
+    const { t } = useTranslation();
     const previewSize = compact ? 'h-7 w-7' : 'h-8 w-8';
     const rotateSize = compact ? 'h-6 w-6' : 'h-7 w-7';
     const iconSize = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
@@ -37,6 +39,7 @@ export function PageQuickActions({
                         }}
                         disabled={disabled}
                         className={`flex ${previewSize} items-center justify-center rounded-full bg-slate-800/80 text-white shadow-lg transition-colors hover:bg-slate-900 disabled:cursor-wait disabled:opacity-40`}
+                        title={t('quickActions.preview')}
                     >
                         <MagnifyingGlassPlusIcon className={iconSize} />
                     </button>
@@ -54,7 +57,7 @@ export function PageQuickActions({
                             }}
                             disabled={disabled}
                             className={`flex ${rotateSize} items-center justify-center rounded-full bg-white/85 text-slate-800 shadow-md transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-40`}
-                            title="Ruota 90° antiorario"
+                            title={t('quickActions.rotateLeft')}
                         >
                             <ArrowUturnLeftIcon className={iconSize} />
                         </button>
@@ -68,7 +71,7 @@ export function PageQuickActions({
                             }}
                             disabled={disabled}
                             className={`flex ${rotateSize} items-center justify-center rounded-full bg-white/85 text-slate-800 shadow-md transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-40`}
-                            title="Ruota 90° orario"
+                            title={t('quickActions.rotateRight')}
                         >
                             <ArrowUturnRightIcon className={iconSize} />
                         </button>

@@ -6,6 +6,7 @@ import type { RotationDirection } from '../../../fileEdits';
 import { emptyFileEdits } from '../../../fileEdits';
 import { usePdfControls } from '../hooks/usePdfControls';
 import { usePdfCache } from '../../../hooks/usePdfCache';
+import { useTranslation } from '../../../i18n';
 import { buildThumbnailRenderRequest } from '../../../pdfRenderProfiles';
 import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';
@@ -37,6 +38,7 @@ function PdfThumbnailItem({
     onPreview: () => void;
     onRotate: (direction: RotationDirection) => void;
 }) {
+    const { t } = useTranslation();
     const { getRender } = usePdfCache();
     const dataUrl = getRender(fileId, buildThumbnailRenderRequest(pageNum, edits));
 
@@ -55,7 +57,7 @@ function PdfThumbnailItem({
                 {dataUrl ? (
                     <img
                         src={dataUrl}
-                        alt={`p.${pageNum}`}
+                        alt={t('pagePicker.pageLabel', { pageNum })}
                         className="block h-full w-full bg-white object-contain"
                     />
                 ) : (
@@ -87,7 +89,7 @@ function PdfThumbnailItem({
                     isFocused ? 'font-bold text-ui-accent' : 'font-medium text-ui-text-muted',
                 ].join(' ')}
             >
-                Pagina {pageNum}
+                {t('pagePicker.pageLabel', { pageNum })}
             </p>
         </div>
     );

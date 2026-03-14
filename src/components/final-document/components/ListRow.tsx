@@ -5,6 +5,7 @@ import { Bars3Icon, DocumentIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/
 
 import { getImageRotationDegrees } from '../../../fileEdits';
 import { usePdfCache } from '../../../hooks/usePdfCache';
+import { useTranslation } from '../../../i18n';
 import { buildThumbnailRenderRequest } from '../../../pdfRenderProfiles';
 import { getPreviewUrl } from '../../../platform';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';
@@ -23,6 +24,7 @@ export const ListRow = memo(function ListRow({
     onSelect,
     onPreview,
 }: Props) {
+    const { t } = useTranslation();
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: item.page.id,
     });
@@ -95,7 +97,7 @@ export const ListRow = memo(function ListRow({
                     <p className="truncate text-xs font-bold text-ui-text">{item.file?.name ?? '—'}</p>
                     {item.file?.kind === 'pdf' && (
                         <p className="mt-0.5 text-[11px] font-semibold text-ui-accent-text">
-                            Pagina {item.page.pageNum}
+                            {t('finalDocument.pageLabel', { pageNum: item.page.pageNum })}
                         </p>
                     )}
                 </div>
@@ -106,6 +108,7 @@ export const ListRow = memo(function ListRow({
                         onRemove(item.page.id);
                     }}
                     className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-colors hover:bg-red-600 group-hover:flex"
+                    title={t('finalDocument.removePage')}
                 >
                     <XMarkIcon className="h-3.5 w-3.5" />
                 </button>
