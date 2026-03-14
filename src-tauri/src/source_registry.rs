@@ -45,7 +45,9 @@ impl SourceRegistry {
     }
 }
 
-fn registered_file_from_path(path: String) -> anyhow::Result<Option<(SourceFile, RegisteredSource)>> {
+fn registered_file_from_path(
+    path: String,
+) -> anyhow::Result<Option<(SourceFile, RegisteredSource)>> {
     let name = std::path::Path::new(&path)
         .file_name()
         .unwrap_or_default()
@@ -108,7 +110,11 @@ pub fn files_from_paths(
         anyhow::bail!(skipped_errors.join("; "));
     }
 
-    registry.insert_many(entries.iter().map(|(source, registered)| (source.id.clone(), registered.clone())));
+    registry.insert_many(
+        entries
+            .iter()
+            .map(|(source, registered)| (source.id.clone(), registered.clone())),
+    );
     Ok(FilesFromPathsResult {
         files: entries.into_iter().map(|(source, _)| source).collect(),
         skipped_errors,

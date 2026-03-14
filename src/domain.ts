@@ -32,6 +32,7 @@ export type ImageFit = 'fit' | 'contain' | 'cover';
 export type OptimizeOptions = {
     jpegQuality?: JpegQuality;
     maxPx?: number;
+    targetDpi?: number;
     imageFit?: ImageFit;
 };
 

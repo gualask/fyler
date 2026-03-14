@@ -1,8 +1,11 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 use anyhow::{bail, Context, Result};
 use image::DynamicImage;
 use lopdf::{Document as PdfDoc, Object};
+
+use crate::models::OptimizeOptions;
+use crate::pdf_image::{decide_image_embed, load_source_image, prepare_pdf_image};
 
 pub const IMAGE_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "tiff", "tif", "webp", "bmp", "ico", "tga", "qoi",
@@ -10,8 +13,12 @@ pub const IMAGE_EXTENSIONS: &[&str] = &[
 const A4_W: f64 = 595.0;
 const A4_H: f64 = 842.0;
 
-fn name(s: &[u8]) -> Object { Object::Name(s.to_vec()) }
-fn int(n: i64) -> Object { Object::Integer(n) }
+fn name(s: &[u8]) -> Object {
+    Object::Name(s.to_vec())
+}
+fn int(n: i64) -> Object {
+    Object::Integer(n)
+}
 
 #[derive(Debug, Clone, Copy, serde::Serialize)]
 pub struct ImageExportPreviewLayout {
@@ -58,7 +65,11 @@ fn rotated_dimensions(width_px: u32, height_px: u32, quarter_turns: u8) -> Resul
     })
 }
 
-fn compute_image_export_layout(width_px: u32, height_px: u32, image_fit: &str) -> ImageExportPreviewLayout {
+fn compute_image_export_layout(
+    width_px: u32,
+    height_px: u32,
+    image_fit: &str,
+) -> ImageExportPreviewLayout {
     let w_pt = width_px as f64 * 72.0 / 96.0;
     let h_pt = height_px as f64 * 72.0 / 96.0;
 
@@ -111,17 +122,25 @@ pub fn image_export_preview_layout(
     image_fit: &str,
     quarter_turns: u8,
 ) -> Result<ImageExportPreviewLayout> {
-    let (width_px, height_px) = image::image_dimensions(path).context("Errore apertura immagine")?;
-    let (rotated_width_px, rotated_height_px) = rotated_dimensions(width_px, height_px, quarter_turns)?;
-    Ok(compute_image_export_layout(rotated_width_px, rotated_height_px, image_fit))
+    let (width_px, height_px) =
+        image::image_dimensions(path).context("Errore apertura immagine")?;
+    let (rotated_width_px, rotated_height_px) =
+        rotated_dimensions(width_px, height_px, quarter_turns)?;
+    Ok(compute_image_export_layout(
+        rotated_width_px,
+        rotated_height_px,
+        image_fit,
+    ))
 }
 
-fn image_to_pdf_doc_from_image(img: DynamicImage, image_fit: &str) -> Result<PdfDoc> {
+fn image_to_pdf_doc_from_image(
+    image_fit: &str,
+    prepared: crate::pdf_image::PreparedPdfImage,
+) -> Result<PdfDoc> {
     use lopdf::{Dictionary, Stream};
 
-    let rgb = img.to_rgb8();
-    let (width_px, height_px) = rgb.dimensions();
-    let img_data = rgb.into_raw();
+    let width_px = prepared.width;
+    let height_px = prepared.height;
     let layout = compute_image_export_layout(width_px, height_px, image_fit);
     let page_w = layout.page_width_pt as i64;
     let page_h = layout.page_height_pt as i64;
@@ -148,10 +167,7 @@ fn image_to_pdf_doc_from_image(img: DynamicImage, image_fit: &str) -> Result<Pdf
     } else {
         format!(
             "q {:.4} 0 0 {:.4} {:.4} {:.4} cm /Im0 Do Q\n",
-            layout.draw_width_pt,
-            layout.draw_height_pt,
-            layout.draw_x_pt,
-            layout.draw_y_pt,
+            layout.draw_width_pt, layout.draw_height_pt, layout.draw_x_pt, layout.draw_y_pt,
         )
     };
 
@@ -164,7 +180,10 @@ fn image_to_pdf_doc_from_image(img: DynamicImage, image_fit: &str) -> Result<Pdf
     img_dict.set("Height", int(height_px as i64));
     img_dict.set("ColorSpace", name(b"DeviceRGB"));
     img_dict.set("BitsPerComponent", int(8));
-    let img_id = doc.add_object(Stream::new(img_dict, img_data));
+    if let Some(filter) = prepared.filter {
+        img_dict.set("Filter", name(filter));
+    }
+    let img_id = doc.add_object(Stream::new(img_dict, prepared.data));
 
     let content_id = doc.add_object(Stream::new(Dictionary::new(), content.into_bytes()));
 
@@ -205,9 +224,16 @@ fn image_to_pdf_doc_from_image(img: DynamicImage, image_fit: &str) -> Result<Pdf
     Ok(doc)
 }
 
-pub fn image_to_pdf_doc(path: &str, image_fit: &str, quarter_turns: u8) -> Result<PdfDoc> {
-    let img = image::open(path).context("Errore apertura immagine")?;
-    image_to_pdf_doc_from_image(rotate_dynamic_image(img, quarter_turns)?, image_fit)
+pub fn image_to_pdf_doc(
+    path: &str,
+    image_fit: &str,
+    quarter_turns: u8,
+    optimize: Option<&OptimizeOptions>,
+) -> Result<PdfDoc> {
+    let (img, descriptor) = load_source_image(path)?;
+    let img = rotate_dynamic_image(img, quarter_turns)?;
+    let prepared = prepare_pdf_image(img, decide_image_embed(&descriptor, optimize))?;
+    image_to_pdf_doc_from_image(image_fit, prepared)
 }
 
 pub fn is_image_path(path: &str) -> bool {
@@ -232,7 +258,8 @@ pub fn detect_kind_from_ext(path: &str) -> Option<&'static str> {
 fn apply_pdf_rotation(doc: &mut PdfDoc, page_num: u32, quarter_turns: u8) -> Result<()> {
     let page_obj_id = {
         let pages = doc.get_pages();
-        pages.get(&page_num)
+        pages
+            .get(&page_num)
             .copied()
             .with_context(|| format!("Pagina {page_num} non trovata"))?
     };
@@ -265,6 +292,7 @@ pub fn prepare_pdf_page_doc(mut doc: PdfDoc, page_num: u32, quarter_turns: u8) -
     if !to_delete.is_empty() {
         doc.delete_pages(&to_delete);
     }
+    prune_unused_image_xobjects(&mut doc);
     // `delete_pages` updates the page tree, but leaves the removed pages' objects
     // in the document until they are explicitly pruned.
     doc.prune_objects();
@@ -306,6 +334,7 @@ pub fn prepare_pdf_subset_doc(mut doc: PdfDoc, pages: &[(u32, u8)]) -> Result<Pd
         doc.delete_pages(&to_delete);
     }
 
+    prune_unused_image_xobjects(&mut doc);
     doc.prune_objects();
     doc.renumber_objects();
     doc.adjust_zero_pages();
@@ -314,6 +343,147 @@ pub fn prepare_pdf_subset_doc(mut doc: PdfDoc, pages: &[(u32, u8)]) -> Result<Pd
 
 pub fn count_pages(path: &str) -> Result<u32> {
     Ok(PdfDoc::load(path)?.get_pages().len() as u32)
+}
+
+fn prune_unused_image_xobjects(doc: &mut PdfDoc) {
+    let used_image_ids = collect_used_image_ids(doc);
+    let image_object_ids = collect_image_object_ids(doc);
+    let object_ids: Vec<_> = doc.objects.keys().copied().collect();
+    let mut indirect_xobject_dict_ids = Vec::new();
+
+    for object_id in object_ids {
+        let Some(object) = doc.objects.get_mut(&object_id) else {
+            continue;
+        };
+
+        match object {
+            Object::Dictionary(dict)
+                if dict
+                    .get(b"Type")
+                    .ok()
+                    .and_then(|value| value.as_name().ok())
+                    == Some(b"Page".as_ref()) =>
+            {
+                prune_resources_in_owner(
+                    dict,
+                    &image_object_ids,
+                    &used_image_ids,
+                    &mut indirect_xobject_dict_ids,
+                );
+            }
+            Object::Stream(stream)
+                if stream
+                    .dict
+                    .get(b"Subtype")
+                    .ok()
+                    .and_then(|value| value.as_name().ok())
+                    == Some(b"Form".as_ref()) =>
+            {
+                prune_resources_in_owner(
+                    &mut stream.dict,
+                    &image_object_ids,
+                    &used_image_ids,
+                    &mut indirect_xobject_dict_ids,
+                );
+            }
+            _ => {}
+        }
+    }
+
+    indirect_xobject_dict_ids.sort_unstable();
+    indirect_xobject_dict_ids.dedup();
+
+    for dict_id in indirect_xobject_dict_ids {
+        let Some(object) = doc.objects.get_mut(&dict_id) else {
+            continue;
+        };
+        let Ok(dict) = object.as_dict_mut() else {
+            continue;
+        };
+        prune_xobject_entries(dict, &image_object_ids, &used_image_ids);
+    }
+}
+
+fn collect_used_image_ids(doc: &PdfDoc) -> HashSet<lopdf::ObjectId> {
+    let mut used = HashSet::new();
+    for page_id in doc.get_pages().into_values() {
+        let Ok(images) = doc.get_page_images(page_id) else {
+            continue;
+        };
+        used.extend(images.into_iter().map(|image| image.id));
+    }
+    used
+}
+
+fn collect_image_object_ids(doc: &PdfDoc) -> HashSet<lopdf::ObjectId> {
+    doc.objects
+        .iter()
+        .filter_map(|(object_id, object)| {
+            let stream = object.as_stream().ok()?;
+            let subtype = stream.dict.get(b"Subtype").ok()?.as_name().ok()?;
+            (subtype == b"Image").then_some(*object_id)
+        })
+        .collect()
+}
+
+fn prune_resources_in_owner(
+    owner: &mut lopdf::Dictionary,
+    image_object_ids: &HashSet<lopdf::ObjectId>,
+    used_image_ids: &HashSet<lopdf::ObjectId>,
+    indirect_xobject_dict_ids: &mut Vec<lopdf::ObjectId>,
+) {
+    let Ok(resources) = owner.get_mut(b"Resources") else {
+        return;
+    };
+    match resources {
+        Object::Reference(dict_id) => indirect_xobject_dict_ids.push(*dict_id),
+        Object::Dictionary(dict) => {
+            prune_resources_dict(
+                dict,
+                image_object_ids,
+                used_image_ids,
+                indirect_xobject_dict_ids,
+            );
+        }
+        _ => {}
+    }
+}
+
+fn prune_resources_dict(
+    resources: &mut lopdf::Dictionary,
+    image_object_ids: &HashSet<lopdf::ObjectId>,
+    used_image_ids: &HashSet<lopdf::ObjectId>,
+    indirect_xobject_dict_ids: &mut Vec<lopdf::ObjectId>,
+) {
+    let Ok(xobjects) = resources.get_mut(b"XObject") else {
+        return;
+    };
+    match xobjects {
+        Object::Reference(dict_id) => indirect_xobject_dict_ids.push(*dict_id),
+        Object::Dictionary(dict) => {
+            prune_xobject_entries(dict, image_object_ids, used_image_ids);
+        }
+        _ => {}
+    }
+}
+
+fn prune_xobject_entries(
+    xobjects: &mut lopdf::Dictionary,
+    image_object_ids: &HashSet<lopdf::ObjectId>,
+    used_image_ids: &HashSet<lopdf::ObjectId>,
+) {
+    let unused_names: Vec<Vec<u8>> = xobjects
+        .iter()
+        .filter_map(|(name, value)| {
+            let object_id = value.as_reference().ok()?;
+            (image_object_ids.contains(&object_id) && !used_image_ids.contains(&object_id))
+                .then_some(name.clone())
+        })
+        .collect();
+
+    for name in unused_names {
+        xobjects.remove(&name);
+    }
 }
 
 pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
@@ -340,7 +510,10 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
         match object.type_name().unwrap_or(b"") {
             b"Catalog" => {
                 catalog_object = Some((
-                    catalog_object.as_ref().map(|(id, _)| *id).unwrap_or(object_id),
+                    catalog_object
+                        .as_ref()
+                        .map(|(id, _)| *id)
+                        .unwrap_or(object_id),
                     object,
                 ));
             }
@@ -354,7 +527,10 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
                     }
 
                     pages_object = Some((
-                        pages_object.as_ref().map(|(id, _)| *id).unwrap_or(object_id),
+                        pages_object
+                            .as_ref()
+                            .map(|(id, _)| *id)
+                            .unwrap_or(object_id),
                         Object::Dictionary(dictionary),
                     ));
                 }
@@ -373,7 +549,9 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
         if let Ok(dictionary) = object.as_dict() {
             let mut dictionary = dictionary.clone();
             dictionary.set("Parent", pages_id);
-            document.objects.insert(*object_id, Object::Dictionary(dictionary));
+            document
+                .objects
+                .insert(*object_id, Object::Dictionary(dictionary));
         }
     }
 
@@ -387,14 +565,18 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
                 .map(|object_id| Object::Reference(*object_id))
                 .collect::<Vec<_>>(),
         );
-        document.objects.insert(pages_id, Object::Dictionary(dictionary));
+        document
+            .objects
+            .insert(pages_id, Object::Dictionary(dictionary));
     }
 
     if let Ok(dictionary) = catalog_object.as_dict() {
         let mut dictionary = dictionary.clone();
         dictionary.set("Pages", pages_id);
         dictionary.remove(b"Outlines");
-        document.objects.insert(catalog_id, Object::Dictionary(dictionary));
+        document
+            .objects
+            .insert(catalog_id, Object::Dictionary(dictionary));
     }
 
     document.trailer.set("Root", catalog_id);
@@ -408,15 +590,13 @@ pub fn merge_pdf_documents(mut docs: Vec<PdfDoc>) -> Result<PdfDoc> {
 #[cfg(test)]
 mod tests {
     use super::{
-        compute_image_export_layout,
-        image_export_preview_layout,
-        merge_pdf_documents,
-        prepare_pdf_page_doc,
-        prepare_pdf_subset_doc,
+        compute_image_export_layout, image_export_preview_layout, image_to_pdf_doc,
+        merge_pdf_documents, prepare_pdf_page_doc, prepare_pdf_subset_doc,
     };
+    use crate::models::OptimizeOptions;
     use anyhow::Context;
-    use image::RgbImage;
-    use lopdf::Document as PdfDoc;
+    use image::{RgbImage, RgbaImage};
+    use lopdf::{Document as PdfDoc, Object};
     use std::fs::{self, File};
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -456,7 +636,8 @@ mod tests {
 
     fn save_doc_classic_for_test(doc: &mut PdfDoc, label: &str) -> anyhow::Result<PathBuf> {
         let output = temp_output_path(label);
-        let mut file = File::create(&output).with_context(|| format!("create temp output {label}"))?;
+        let mut file =
+            File::create(&output).with_context(|| format!("create temp output {label}"))?;
         doc.compress();
         doc.save_to(&mut file)
             .with_context(|| format!("save temp output {label}"))?;
@@ -466,6 +647,55 @@ mod tests {
 
     fn remove_temp_output(path: &Path) {
         let _ = fs::remove_file(path);
+    }
+
+    fn page_image_filter(doc: &PdfDoc, page_index: usize) -> anyhow::Result<Option<Vec<u8>>> {
+        let page_id = *doc
+            .get_pages()
+            .values()
+            .nth(page_index)
+            .context("missing page")?;
+        let page = doc.get_dictionary(page_id)?;
+        let resources = resolve_dict(doc, page.get(b"Resources")?)?;
+        let xobject = resolve_dict(doc, resources.get(b"XObject")?)?;
+        let image_id = xobject
+            .get(b"Im0")?
+            .as_reference()
+            .context("missing Im0 reference")?;
+        let stream = doc.get_object(image_id)?.as_stream()?;
+
+        match stream.dict.get(b"Filter") {
+            Ok(Object::Name(name)) => Ok(Some(name.clone())),
+            Ok(Object::Array(filters)) => Ok(filters
+                .first()
+                .and_then(|value| value.as_name().ok())
+                .map(|name| name.to_vec())),
+            Err(_) => Ok(None),
+            Ok(_) => Ok(None),
+        }
+    }
+
+    fn resolve_dict<'a>(
+        doc: &'a PdfDoc,
+        object: &'a Object,
+    ) -> anyhow::Result<&'a lopdf::Dictionary> {
+        match object {
+            Object::Dictionary(dict) => Ok(dict),
+            Object::Reference(id) => Ok(doc.get_dictionary(*id)?),
+            _ => anyhow::bail!("expected dictionary"),
+        }
+    }
+
+    fn temp_image_path(label: &str, extension: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "fyler-image-{}-{}.{}",
+            label,
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos(),
+            extension
+        ))
     }
 
     #[test]
@@ -481,7 +711,9 @@ mod tests {
             let mut doc = prepare_pdf_page_doc(source_doc.clone(), page_num, 0)
                 .with_context(|| format!("prepare page {page_num}"))?;
             let output = save_doc_classic_for_test(&mut doc, &format!("prepared-page-{page_num}"))
-                .unwrap_or_else(|error| panic!("prepared page {page_num} failed to save: {error:#}"));
+                .unwrap_or_else(|error| {
+                    panic!("prepared page {page_num} failed to save: {error:#}")
+                });
             remove_temp_output(&output);
             docs.push(doc);
         }
@@ -534,7 +766,10 @@ mod tests {
         remove_temp_output(&output);
 
         assert_eq!(visible_pages, 14, "subset output should expose 14 pages");
-        assert_eq!(count, 14, "subset page tree /Count should match the visible pages");
+        assert_eq!(
+            count, 14,
+            "subset page tree /Count should match the visible pages"
+        );
         assert!(
             output_size <= input_size + (input_size / 10),
             "subset output unexpectedly inflated: input={} output={}",
@@ -542,6 +777,152 @@ mod tests {
             output_size
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn single_page_subset_of_fisio_fixture_drops_unused_images() -> anyhow::Result<()> {
+        let fixture = repo_fixture("fisio.pdf");
+        if !fixture.exists() {
+            return Ok(());
+        }
+
+        let input_size = fs::metadata(&fixture)?.len();
+        let mut doc =
+            prepare_pdf_subset_doc(PdfDoc::load(&fixture).context("load fixture")?, &[(3, 0)])?;
+
+        let output = save_doc_classic_for_test(&mut doc, "fisio-single-page")
+            .unwrap_or_else(|error| panic!("single-page subset failed to save: {error:#}"));
+        let output_size = fs::metadata(&output)?.len();
+        let output_doc = PdfDoc::load(&output).context("reload single-page output")?;
+
+        remove_temp_output(&output);
+
+        assert_eq!(output_doc.get_pages().len(), 1);
+        assert!(
+            output_size < input_size / 2,
+            "single-page subset kept too much payload: input={} output={}",
+            input_size,
+            output_size
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn merge_image_and_single_pdf_page_stays_smaller_than_full_fixture() -> anyhow::Result<()> {
+        let fixture = repo_fixture("fisio.pdf");
+        if !fixture.exists() {
+            return Ok(());
+        }
+
+        let input_size = fs::metadata(&fixture)?.len();
+        let image_path = std::env::temp_dir().join("fyler-merge-regression-image.png");
+        RgbImage::new(800, 400).save(&image_path)?;
+
+        let page_doc =
+            prepare_pdf_subset_doc(PdfDoc::load(&fixture).context("load fixture")?, &[(3, 0)])?;
+        let image_doc =
+            image_to_pdf_doc(image_path.to_string_lossy().as_ref(), "contain", 0, None)?;
+        let mut merged = merge_pdf_documents(vec![image_doc, page_doc]).context("merge docs")?;
+
+        let output = save_doc_classic_for_test(&mut merged, "image-plus-single-page")
+            .unwrap_or_else(|error| panic!("image+page merge failed to save: {error:#}"));
+        let output_size = fs::metadata(&output)?.len();
+        let output_doc = PdfDoc::load(&output).context("reload image+page output")?;
+
+        remove_temp_output(&output);
+        let _ = fs::remove_file(&image_path);
+
+        assert_eq!(output_doc.get_pages().len(), 2);
+        assert!(
+            output_size < input_size,
+            "image+page merge unexpectedly kept full fixture weight: input={} output={}",
+            input_size,
+            output_size
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn original_jpeg_input_stays_dct_encoded() -> anyhow::Result<()> {
+        let path = temp_image_path("original-jpeg", "jpg");
+        RgbImage::from_pixel(1200, 800, image::Rgb([96, 132, 184])).save(&path)?;
+
+        let doc = image_to_pdf_doc(path.to_string_lossy().as_ref(), "fit", 0, None)?;
+        let filter = page_image_filter(&doc, 0)?;
+
+        let _ = fs::remove_file(path);
+
+        assert_eq!(filter.as_deref(), Some(b"DCTDecode".as_slice()));
+        Ok(())
+    }
+
+    #[test]
+    fn original_png_input_stays_unfiltered_raw() -> anyhow::Result<()> {
+        let path = temp_image_path("original-png", "png");
+        RgbImage::from_pixel(1200, 800, image::Rgb([24, 48, 72])).save(&path)?;
+
+        let doc = image_to_pdf_doc(path.to_string_lossy().as_ref(), "fit", 0, None)?;
+        let filter = page_image_filter(&doc, 0)?;
+
+        let _ = fs::remove_file(path);
+
+        assert_eq!(filter, None);
+        Ok(())
+    }
+
+    #[test]
+    fn balanced_png_input_uses_jpeg_encoding() -> anyhow::Result<()> {
+        let path = temp_image_path("balanced-png", "png");
+        RgbImage::from_pixel(1200, 800, image::Rgb([24, 48, 72])).save(&path)?;
+
+        let doc = image_to_pdf_doc(
+            path.to_string_lossy().as_ref(),
+            "fit",
+            0,
+            Some(&OptimizeOptions {
+                jpeg_quality: None,
+                max_px: None,
+                target_dpi: Some(170),
+                image_fit: None,
+            }),
+        )?;
+        let filter = page_image_filter(&doc, 0)?;
+
+        let _ = fs::remove_file(path);
+
+        assert_eq!(filter.as_deref(), Some(b"DCTDecode".as_slice()));
+        Ok(())
+    }
+
+    #[test]
+    fn balanced_alpha_png_flattens_to_renderable_jpeg_page() -> anyhow::Result<()> {
+        let path = temp_image_path("balanced-alpha-png", "png");
+        RgbaImage::from_pixel(640, 360, image::Rgba([0, 64, 255, 128])).save(&path)?;
+
+        let mut doc = image_to_pdf_doc(
+            path.to_string_lossy().as_ref(),
+            "contain",
+            0,
+            Some(&OptimizeOptions {
+                jpeg_quality: None,
+                max_px: None,
+                target_dpi: Some(170),
+                image_fit: None,
+            }),
+        )?;
+        let filter = page_image_filter(&doc, 0)?;
+        let output = save_doc_classic_for_test(&mut doc, "balanced-alpha-png")
+            .unwrap_or_else(|error| panic!("balanced alpha png failed to save: {error:#}"));
+        let reloaded = PdfDoc::load(&output)?;
+
+        remove_temp_output(&output);
+        let _ = fs::remove_file(path);
+
+        assert_eq!(filter.as_deref(), Some(b"DCTDecode".as_slice()));
+        assert_eq!(reloaded.get_pages().len(), 1);
         Ok(())
     }
 

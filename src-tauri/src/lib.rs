@@ -6,8 +6,9 @@ mod export;
 mod models;
 mod optimize;
 mod pdf;
-mod source_registry;
+mod pdf_image;
 mod settings;
+mod source_registry;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

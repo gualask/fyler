@@ -6,7 +6,9 @@ use tauri::{AppHandle, Emitter};
 
 use crate::models::{FileEdits, MergeRequest};
 use crate::optimize;
-use crate::pdf::{image_to_pdf_doc, prepare_pdf_page_doc, prepare_pdf_subset_doc, quarter_turns_to_degrees};
+use crate::pdf::{
+    image_to_pdf_doc, prepare_pdf_page_doc, prepare_pdf_subset_doc, quarter_turns_to_degrees,
+};
 use crate::source_registry::SourceRegistry;
 
 #[derive(serde::Serialize, Clone)]
@@ -35,9 +37,7 @@ fn quarter_turns_for_image(edits: Option<&FileEdits>) -> anyhow::Result<u8> {
 }
 
 fn is_simple_pdf_run(page_numbers: &[u32]) -> bool {
-    page_numbers
-        .windows(2)
-        .all(|window| window[0] < window[1])
+    page_numbers.windows(2).all(|window| window[0] < window[1])
 }
 
 pub fn build_documents(
@@ -61,6 +61,7 @@ pub fn build_documents(
                 &source.original_path,
                 image_fit,
                 quarter_turns_for_image(edits)?,
+                req.optimize.as_ref(),
             )?);
             index += 1;
             continue;
@@ -85,9 +86,7 @@ pub fn build_documents(
         if is_simple_pdf_run(&run_pages) {
             let subset_pages = run_pages
                 .into_iter()
-                .map(|page_num| {
-                    Ok((page_num, quarter_turns_for_pdf_page(edits, page_num)?))
-                })
+                .map(|page_num| Ok((page_num, quarter_turns_for_pdf_page(edits, page_num)?)))
                 .collect::<anyhow::Result<Vec<_>>>()?;
             docs.push(prepare_pdf_subset_doc(source_doc, &subset_pages)?);
         } else {
@@ -106,7 +105,26 @@ pub fn build_documents(
     Ok(docs)
 }
 
-pub fn export_pdf(app: &AppHandle, registry: &SourceRegistry, req: MergeRequest) -> anyhow::Result<()> {
+pub fn export_pdf(
+    app: &AppHandle,
+    registry: &SourceRegistry,
+    req: MergeRequest,
+) -> anyhow::Result<()> {
+    #[cfg(debug_assertions)]
+    if std::env::var_os("FYLER_DEBUG_EXPORT").is_some() {
+        eprintln!(
+            "[fyler] export request: total_items={} optimize={}",
+            req.pages.len(),
+            req.optimize.is_some()
+        );
+        for (index, page) in req.pages.iter().enumerate() {
+            eprintln!(
+                "[fyler]   item[{index}] file_id={} page_num={}",
+                page.file_id, page.page_num
+            );
+        }
+    }
+
     let image_fit = req
         .optimize
         .as_ref()
@@ -128,7 +146,7 @@ pub fn export_pdf(app: &AppHandle, registry: &SourceRegistry, req: MergeRequest)
     };
 
     if let Some(options) = &req.optimize {
-        if options.jpeg_quality.is_some() || options.max_px.is_some() {
+        if optimize::has_optimization_work(options) {
             emit_progress(app, "optimizing-images", 80);
             optimize::optimize_images(&mut merged, options)?;
         }
@@ -138,8 +156,8 @@ pub fn export_pdf(app: &AppHandle, registry: &SourceRegistry, req: MergeRequest)
     if let Some(parent) = std::path::Path::new(&req.output_path).parent() {
         std::fs::create_dir_all(parent)?;
     }
-    merged.compress();
+    optimize::cleanup_document(&mut merged);
     let mut file = std::fs::File::create(&req.output_path)?;
-    merged.save_to(&mut file)?;
+    optimize::save_document(&mut merged, &mut file)?;
     Ok(())
 }

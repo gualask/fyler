@@ -19,9 +19,14 @@ fn sanitize_locale(locale: Option<String>) -> Option<String> {
 
 #[tauri::command]
 pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppError> {
-    let store = app.store("settings.json").context("impossibile aprire store")?;
+    let store = app
+        .store("settings.json")
+        .context("impossibile aprire store")?;
     Ok(StoredSettings {
-        is_dark: store.get("isDark").and_then(|v| v.as_bool()).unwrap_or(false),
+        is_dark: store
+            .get("isDark")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
         locale: sanitize_locale(
             store
                 .get("locale")
@@ -31,8 +36,13 @@ pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppE
 }
 
 #[tauri::command]
-pub async fn save_settings(app: tauri::AppHandle, settings: StoredSettings) -> Result<(), AppError> {
-    let store = app.store("settings.json").context("impossibile aprire store")?;
+pub async fn save_settings(
+    app: tauri::AppHandle,
+    settings: StoredSettings,
+) -> Result<(), AppError> {
+    let store = app
+        .store("settings.json")
+        .context("impossibile aprire store")?;
     store.set("isDark", settings.is_dark);
     if let Some(locale) = sanitize_locale(settings.locale) {
         store.set("locale", locale);

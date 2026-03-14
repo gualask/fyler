@@ -1,93 +1,122 @@
 use anyhow::{Context, Result};
-use image::{imageops, imageops::FilterType, GrayImage, RgbImage};
+use fast_image_resize::{images::Image, FilterType, PixelType, ResizeAlg, ResizeOptions, Resizer};
+use jpeg_decoder::{Decoder as JpegDecoder, PixelFormat};
 use lopdf::Stream;
 
-use crate::models::OptimizeOptions;
-
-use super::candidate::{ImageCandidate, SupportedColorSpace};
+use super::candidate::{ImageCandidate, SourceEncoding, SupportedColorSpace};
 
 #[derive(Debug)]
-pub enum DecodedRaster {
-    Rgb(RgbImage),
-    Gray(GrayImage),
+pub struct DecodedRaster {
+    width: u32,
+    height: u32,
+    color_space: SupportedColorSpace,
+    data: Vec<u8>,
 }
 
 impl DecodedRaster {
     pub fn decode(stream: &Stream, candidate: &ImageCandidate) -> Result<Self> {
-        let raw = stream.get_plain_content()?;
-        let expected_len = match candidate.color_space {
-            SupportedColorSpace::Rgb => candidate.width as usize * candidate.height as usize * 3,
-            SupportedColorSpace::Gray => candidate.width as usize * candidate.height as usize,
+        match candidate.source_encoding {
+            SourceEncoding::Raw => Self::decode_raw(stream, candidate),
+            SourceEncoding::Jpeg => Self::decode_jpeg(stream, candidate),
+        }
+    }
+
+    pub fn resize(self, dimensions: Option<(u32, u32)>) -> Result<Self> {
+        let Some((width, height)) = dimensions else {
+            return Ok(self);
+        };
+        if width == self.width && height == self.height {
+            return Ok(self);
+        }
+
+        let pixel_type = match self.color_space {
+            SupportedColorSpace::Gray => PixelType::U8,
+            SupportedColorSpace::Rgb => PixelType::U8x3,
+            SupportedColorSpace::Cmyk => PixelType::U8x4,
         };
 
+        let src_image = Image::from_vec_u8(self.width, self.height, self.data, pixel_type)
+            .context("failed to map source raster")?;
+        let mut dst_image = Image::new(width, height, pixel_type);
+        let options = ResizeOptions::new()
+            .resize_alg(ResizeAlg::Convolution(FilterType::Lanczos3))
+            .use_alpha(false);
+
+        Resizer::new()
+            .resize(&src_image, &mut dst_image, &options)
+            .context("failed to resize raster")?;
+
+        Ok(Self {
+            width,
+            height,
+            color_space: self.color_space,
+            data: dst_image.into_vec(),
+        })
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn color_space(&self) -> SupportedColorSpace {
+        self.color_space
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+
+    pub fn into_raw(self) -> Vec<u8> {
+        self.data
+    }
+
+    fn decode_raw(stream: &Stream, candidate: &ImageCandidate) -> Result<Self> {
+        let raw = stream.get_plain_content()?;
+        let expected_len = candidate.width as usize
+            * candidate.height as usize
+            * candidate.color_space.components();
         if raw.len() != expected_len {
             anyhow::bail!("decoded raster length mismatch");
         }
 
-        match candidate.color_space {
-            SupportedColorSpace::Rgb => Ok(Self::Rgb(
-                RgbImage::from_raw(candidate.width, candidate.height, raw)
-                    .context("failed to build RGB image")?,
-            )),
-            SupportedColorSpace::Gray => Ok(Self::Gray(
-                GrayImage::from_raw(candidate.width, candidate.height, raw)
-                    .context("failed to build grayscale image")?,
-            )),
+        Ok(Self {
+            width: candidate.width,
+            height: candidate.height,
+            color_space: candidate.color_space,
+            data: raw,
+        })
+    }
+
+    fn decode_jpeg(stream: &Stream, candidate: &ImageCandidate) -> Result<Self> {
+        let mut decoder = JpegDecoder::new(std::io::Cursor::new(stream.content.as_slice()));
+        let data = decoder.decode().context("failed to decode jpeg image")?;
+        let info = decoder
+            .info()
+            .context("jpeg headers missing after decode")?;
+        let color_space = match info.pixel_format {
+            PixelFormat::L8 => SupportedColorSpace::Gray,
+            PixelFormat::RGB24 => SupportedColorSpace::Rgb,
+            PixelFormat::CMYK32 => SupportedColorSpace::Cmyk,
+            _ => anyhow::bail!("unsupported jpeg pixel format"),
+        };
+
+        if color_space != candidate.color_space {
+            anyhow::bail!(
+                "jpeg decode color space mismatch: expected {:?}, got {:?}",
+                candidate.color_space,
+                color_space
+            );
         }
-    }
 
-    pub fn transform(self, opts: &OptimizeOptions) -> Self {
-        match self {
-            Self::Rgb(image) => Self::Rgb(resize_rgb(image, opts.max_px)),
-            Self::Gray(image) => Self::Gray(resize_gray(image, opts.max_px)),
-        }
-    }
-
-    pub fn width(&self) -> u32 {
-        match self {
-            Self::Rgb(image) => image.width(),
-            Self::Gray(image) => image.width(),
-        }
-    }
-
-    pub fn height(&self) -> u32 {
-        match self {
-            Self::Rgb(image) => image.height(),
-            Self::Gray(image) => image.height(),
-        }
-    }
-
-    pub fn into_raw(self) -> Vec<u8> {
-        match self {
-            Self::Rgb(image) => image.into_raw(),
-            Self::Gray(image) => image.into_raw(),
-        }
-    }
-}
-
-fn resize_dimensions(width: u32, height: u32, max_px: Option<u32>) -> Option<(u32, u32)> {
-    let max_px = max_px?;
-    let long_side = width.max(height);
-    if long_side <= max_px {
-        return None;
-    }
-
-    let scale = max_px as f64 / long_side as f64;
-    let next_width = ((width as f64 * scale).round() as u32).max(1);
-    let next_height = ((height as f64 * scale).round() as u32).max(1);
-    Some((next_width, next_height))
-}
-
-fn resize_rgb(image: RgbImage, max_px: Option<u32>) -> RgbImage {
-    match resize_dimensions(image.width(), image.height(), max_px) {
-        Some((width, height)) => imageops::resize(&image, width, height, FilterType::Lanczos3),
-        None => image,
-    }
-}
-
-fn resize_gray(image: GrayImage, max_px: Option<u32>) -> GrayImage {
-    match resize_dimensions(image.width(), image.height(), max_px) {
-        Some((width, height)) => imageops::resize(&image, width, height, FilterType::Lanczos3),
-        None => image,
+        Ok(Self {
+            width: info.width as u32,
+            height: info.height as u32,
+            color_space,
+            data,
+        })
     }
 }

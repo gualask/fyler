@@ -2,6 +2,7 @@ import {
     JPEG_QUALITY_OPTIONS,
     MAX_PX_OPTIONS,
     OPTIMIZATION_PRESETS,
+    TARGET_DPI_OPTIONS,
 } from '../../optimizationConfig';
 import type { ImageFit } from '../../domain';
 import { useTranslation } from '../../i18n';
@@ -82,6 +83,25 @@ export function ResizeTooltip() {
                 return {
                     title: value === undefined ? t('outputPanel.off') : `${value}px`,
                     description: t(`tooltips.resizeDescriptions.${key}`),
+                };
+            })}
+        />
+    );
+}
+
+export function DpiTooltip() {
+    const { t } = useTranslation();
+
+    return (
+        <TooltipContent
+            title={t('tooltips.dpiTitle')}
+            items={TARGET_DPI_OPTIONS.map(({ value }) => {
+                const key: 'off' | '220' | '170' | '120' = value === undefined
+                    ? 'off'
+                    : (String(value) as '220' | '170' | '120');
+                return {
+                    title: value === undefined ? t('outputPanel.off') : `${value} DPI`,
+                    description: t(`tooltips.dpiDescriptions.${key}`),
                 };
             })}
         />

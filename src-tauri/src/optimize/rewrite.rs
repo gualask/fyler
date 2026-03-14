@@ -1,68 +1,104 @@
 use anyhow::Result;
-use image::ExtendedColorType;
+use jpeg_encoder::{ColorType, Encoder};
 use lopdf::{Object, Stream};
 
-use crate::models::OptimizeOptions;
-
 use super::candidate::SupportedColorSpace;
+use super::plan::OutputEncoding;
 use super::raster::DecodedRaster;
 
-fn encode_jpeg(data: &[u8], width: u32, height: u32, color_type: ExtendedColorType, quality: u8) -> Result<Vec<u8>> {
-    use image::ImageEncoder;
-    use image::codecs::jpeg::JpegEncoder;
+fn encode_jpeg(raster: &DecodedRaster, quality: u8) -> Result<Vec<u8>> {
+    let mut buf = Vec::with_capacity((raster.width() as usize * raster.height() as usize) / 2);
+    let color_type = match raster.color_space() {
+        SupportedColorSpace::Gray => ColorType::Luma,
+        SupportedColorSpace::Rgb => ColorType::Rgb,
+        SupportedColorSpace::Cmyk => ColorType::CmykAsYcck,
+    };
 
-    let mut buf = Vec::with_capacity((width as usize * height as usize) / 8);
-    JpegEncoder::new_with_quality(&mut buf, quality).write_image(data, width, height, color_type)?;
+    Encoder::new(&mut buf, quality).encode(
+        raster.data(),
+        raster.width() as u16,
+        raster.height() as u16,
+        color_type,
+    )?;
     Ok(buf)
 }
 
-fn normalize_common_dict(stream: &mut Stream, width: u32, height: u32, color_space: SupportedColorSpace) {
-    stream.dict.set("Width", width as i64);
-    stream.dict.set("Height", height as i64);
+fn normalize_common_dict(stream: &mut Stream, raster: &DecodedRaster) {
+    stream.dict.set("Width", raster.width() as i64);
+    stream.dict.set("Height", raster.height() as i64);
     stream.dict.set("BitsPerComponent", 8);
     stream.dict.set(
         "ColorSpace",
-        match color_space {
-            SupportedColorSpace::Rgb => Object::Name(b"DeviceRGB".to_vec()),
+        match raster.color_space() {
             SupportedColorSpace::Gray => Object::Name(b"DeviceGray".to_vec()),
+            SupportedColorSpace::Rgb => Object::Name(b"DeviceRGB".to_vec()),
+            SupportedColorSpace::Cmyk => Object::Name(b"DeviceCMYK".to_vec()),
         },
     );
-}
-
-fn rewrite_raw(stream: &mut Stream, color_space: SupportedColorSpace, raster: DecodedRaster) {
-    let width = raster.width();
-    let height = raster.height();
-    stream.set_plain_content(raster.into_raw());
-    normalize_common_dict(stream, width, height, color_space);
-}
-
-fn rewrite_jpeg(stream: &mut Stream, color_space: SupportedColorSpace, raster: DecodedRaster, quality: u8) -> Result<()> {
-    let width = raster.width();
-    let height = raster.height();
-    let color_type = match color_space {
-        SupportedColorSpace::Rgb => ExtendedColorType::Rgb8,
-        SupportedColorSpace::Gray => ExtendedColorType::L8,
-    };
-    let jpeg = encode_jpeg(&raster.into_raw(), width, height, color_type, quality)?;
-
     stream.dict.remove(b"DecodeParms");
+}
+
+fn rewrite_raw(stream: &mut Stream, raster: DecodedRaster) {
+    let width = raster.width();
+    let height = raster.height();
+    let color_space = raster.color_space();
+    stream.dict.remove(b"Filter");
+    stream.set_plain_content(raster.into_raw());
+    let snapshot = DecodedRasterSnapshot {
+        width,
+        height,
+        color_space,
+    };
+    normalize_common_dict_from_parts(stream, snapshot);
+}
+
+fn rewrite_jpeg(stream: &mut Stream, raster: DecodedRaster, quality: u8) -> Result<()> {
+    let jpeg = encode_jpeg(&raster, quality)?;
+
     stream.dict.remove(b"Filter");
     stream.set_content(jpeg);
-    stream.dict.set("Filter", Object::Name(b"DCTDecode".to_vec()));
-    normalize_common_dict(stream, width, height, color_space);
+    stream
+        .dict
+        .set("Filter", Object::Name(b"DCTDecode".to_vec()));
+    normalize_common_dict(stream, &raster);
     Ok(())
 }
 
 pub fn rewrite_stream(
     stream: &mut Stream,
-    color_space: SupportedColorSpace,
     raster: DecodedRaster,
-    opts: &OptimizeOptions,
-) -> Result<()> {
-    if let Some(quality) = opts.jpeg_quality {
-        rewrite_jpeg(stream, color_space, raster, quality.clamp(1, 100))
-    } else {
-        rewrite_raw(stream, color_space, raster);
-        Ok(())
+    encoding: OutputEncoding,
+) -> Result<usize> {
+    match encoding {
+        OutputEncoding::Raw => {
+            rewrite_raw(stream, raster);
+            Ok(stream.content.len())
+        }
+        OutputEncoding::Jpeg(quality) => {
+            rewrite_jpeg(stream, raster, quality)?;
+            Ok(stream.content.len())
+        }
     }
+}
+
+#[derive(Clone, Copy)]
+struct DecodedRasterSnapshot {
+    width: u32,
+    height: u32,
+    color_space: SupportedColorSpace,
+}
+
+fn normalize_common_dict_from_parts(stream: &mut Stream, snapshot: DecodedRasterSnapshot) {
+    stream.dict.set("Width", snapshot.width as i64);
+    stream.dict.set("Height", snapshot.height as i64);
+    stream.dict.set("BitsPerComponent", 8);
+    stream.dict.set(
+        "ColorSpace",
+        match snapshot.color_space {
+            SupportedColorSpace::Gray => Object::Name(b"DeviceGray".to_vec()),
+            SupportedColorSpace::Rgb => Object::Name(b"DeviceRGB".to_vec()),
+            SupportedColorSpace::Cmyk => Object::Name(b"DeviceCMYK".to_vec()),
+        },
+    );
+    stream.dict.remove(b"DecodeParms");
 }

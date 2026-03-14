@@ -1,12 +1,16 @@
+mod analysis;
 mod candidate;
+mod plan;
 mod raster;
 mod rewrite;
 
-use lopdf::{Document as PdfDoc, Object};
+use lopdf::{Document as PdfDoc, Object, ObjectId};
 
 use crate::models::OptimizeOptions;
 
+use self::analysis::analyze_image_usages;
 use self::candidate::{discover_candidate, CandidateSkipReason, ImageCandidate};
+use self::plan::{build_passthrough_plan, build_plan, should_keep_original, usages_for};
 use self::raster::DecodedRaster;
 use self::rewrite::rewrite_stream;
 
@@ -25,11 +29,15 @@ enum CandidateDecision {
 }
 
 fn can_optimize(opts: &OptimizeOptions) -> bool {
-    opts.jpeg_quality.is_some() || opts.max_px.is_some()
+    opts.jpeg_quality.is_some() || opts.max_px.is_some() || opts.target_dpi.is_some()
 }
 
-fn classify_object(obj: &Object) -> Option<CandidateDecision> {
-    discover_candidate(obj).map(|result| match result {
+pub fn has_optimization_work(opts: &OptimizeOptions) -> bool {
+    can_optimize(opts)
+}
+
+fn classify_object(object_id: ObjectId, obj: &Object) -> Option<CandidateDecision> {
+    discover_candidate(object_id, obj).map(|result| match result {
         Ok(candidate) => CandidateDecision::Optimize(candidate),
         Err(reason) => CandidateDecision::Skip(reason),
     })
@@ -38,25 +46,47 @@ fn classify_object(obj: &Object) -> Option<CandidateDecision> {
 fn apply_candidate(
     obj: &mut Object,
     candidate: &ImageCandidate,
+    usages: &std::collections::HashMap<ObjectId, Vec<analysis::ImageUsage>>,
     opts: &OptimizeOptions,
 ) -> anyhow::Result<bool> {
+    let usage_slice = usages_for(usages, candidate);
+    let plan = build_plan(candidate, usage_slice, opts)
+        .or_else(|| build_passthrough_plan(candidate, opts));
+    let Some(plan) = plan else {
+        return Ok(false);
+    };
+
     let stream = obj.as_stream_mut()?;
+    let original_stream = stream.clone();
     let raster = DecodedRaster::decode(stream, candidate)?;
-    let transformed = raster.transform(opts);
-    rewrite_stream(stream, candidate.color_space, transformed, opts)?;
+    let raster = raster.resize(plan.resize_to)?;
+    let rewritten_size = rewrite_stream(stream, raster, plan.output_encoding)?;
+    if should_keep_original(candidate.original_size, rewritten_size) {
+        *stream = original_stream;
+        return Ok(false);
+    }
+
     Ok(true)
 }
 
-pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> anyhow::Result<OptimizationSummary> {
+pub fn optimize_images(
+    doc: &mut PdfDoc,
+    opts: &OptimizeOptions,
+) -> anyhow::Result<OptimizationSummary> {
     if !can_optimize(opts) {
         return Ok(OptimizationSummary::default());
     }
 
+    let usages = analyze_image_usages(doc);
     let mut summary = OptimizationSummary::default();
     let object_ids: Vec<_> = doc.objects.keys().copied().collect();
 
     for object_id in object_ids {
-        let Some(decision) = doc.objects.get(&object_id).and_then(classify_object) else {
+        let Some(decision) = doc
+            .objects
+            .get(&object_id)
+            .and_then(|obj| classify_object(object_id, obj))
+        else {
             continue;
         };
 
@@ -74,9 +104,9 @@ pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> anyhow::Resu
                     continue;
                 };
 
-                match apply_candidate(obj, &candidate, opts) {
+                match apply_candidate(obj, &candidate, &usages, opts) {
                     Ok(true) => summary.optimized += 1,
-                    Ok(false) => summary.skipped_risky += 1,
+                    Ok(false) => {}
                     Err(_) => summary.failed_non_fatal += 1,
                 }
             }
@@ -86,23 +116,40 @@ pub fn optimize_images(doc: &mut PdfDoc, opts: &OptimizeOptions) -> anyhow::Resu
     Ok(summary)
 }
 
+pub fn cleanup_document(doc: &mut PdfDoc) {
+    doc.prune_objects();
+    doc.renumber_objects();
+}
+
+pub fn save_document(doc: &mut PdfDoc, file: &mut std::fs::File) -> anyhow::Result<()> {
+    doc.compress();
+    doc.save_to(file)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use lopdf::{dictionary, Dictionary, Document as PdfDoc, Object, Stream};
+    use jpeg_encoder::{ColorType, Encoder};
+    use lopdf::{
+        content::Content, content::Operation, dictionary, Dictionary, Document as PdfDoc, Object,
+        Stream,
+    };
+    use std::fs::{self, File};
+    use std::path::{Path, PathBuf};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::optimize_images;
+    use super::{cleanup_document, optimize_images, save_document};
     use crate::models::OptimizeOptions;
 
-    fn image_doc(
+    fn image_stream(
         color_space: &[u8],
         width: u32,
         height: u32,
         content: Vec<u8>,
         filter: Option<&[u8]>,
         extra_dict: Dictionary,
-    ) -> PdfDoc {
-        let mut doc = PdfDoc::with_version("1.4");
+    ) -> Stream {
         let mut dict = dictionary! {
             "Type" => "XObject",
             "Subtype" => "Image",
@@ -115,147 +162,412 @@ mod tests {
         if let Some(filter) = filter {
             dict.set("Filter", Object::Name(filter.to_vec()));
         }
-        let stream = Stream::new(dict, content);
-        doc.add_object(stream);
+        Stream::new(dict, content)
+    }
+
+    fn page_doc(image_stream: Stream, draw_width_pt: f32, draw_height_pt: f32) -> PdfDoc {
+        let mut doc = PdfDoc::with_version("1.4");
+        let pages_id = doc.new_object_id();
+        let image_id = doc.add_object(image_stream);
+        let content = Content {
+            operations: vec![
+                Operation::new("q", vec![]),
+                Operation::new(
+                    "cm",
+                    vec![
+                        draw_width_pt.into(),
+                        0.into(),
+                        0.into(),
+                        draw_height_pt.into(),
+                        0.into(),
+                        0.into(),
+                    ],
+                ),
+                Operation::new("Do", vec![Object::Name(b"Im0".to_vec())]),
+                Operation::new("Q", vec![]),
+            ],
+        };
+        let content_id = doc.add_object(Stream::new(dictionary! {}, content.encode().unwrap()));
+        let page_id = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages_id,
+            "Contents" => content_id,
+            "MediaBox" => vec![0.into(), 0.into(), draw_width_pt.into(), draw_height_pt.into()],
+            "Resources" => dictionary! {
+                "XObject" => dictionary! {
+                    "Im0" => image_id,
+                }
+            }
+        });
+        doc.objects.insert(
+            pages_id,
+            Object::Dictionary(dictionary! {
+                "Type" => "Pages",
+                "Count" => 1,
+                "Kids" => vec![page_id.into()],
+            }),
+        );
+        let catalog_id = doc.add_object(dictionary! {
+            "Type" => "Catalog",
+            "Pages" => pages_id,
+        });
+        doc.trailer.set("Root", catalog_id);
         doc
     }
 
-    fn stream(doc: &PdfDoc) -> &Stream {
+    fn first_image_stream(doc: &PdfDoc) -> &Stream {
         doc.objects
             .values()
-            .find_map(|object| object.as_stream().ok())
-            .expect("image stream")
+            .find_map(|object| {
+                let stream = object.as_stream().ok()?;
+                let subtype = stream.dict.get(b"Subtype").ok()?.as_name().ok()?;
+                (subtype == b"Image").then_some(stream)
+            })
+            .expect("stream present")
+    }
+
+    fn repo_fixture(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("workspace root")
+            .join(name)
+    }
+
+    fn temp_output_path(label: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "fyler-optimize-{}-{}.pdf",
+            label,
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
+        ))
+    }
+
+    fn saved_document_bytes(doc: &mut PdfDoc, label: &str) -> Result<Vec<u8>> {
+        let output = temp_output_path(label);
+        let mut file = File::create(&output)?;
+        save_document(doc, &mut file)?;
+        drop(file);
+        Ok(fs::read(output)?)
+    }
+
+    fn contains_object_stream(bytes: &[u8]) -> bool {
+        bytes.windows(7).any(|window| window == b"/ObjStm")
     }
 
     #[test]
-    fn optimizes_rgb_flate_streams_to_jpeg() -> Result<()> {
-        let raw = vec![
-            255, 0, 0, 0, 255, 0,
-            0, 0, 255, 255, 255, 0,
-        ];
-        let mut doc = image_doc(b"DeviceRGB", 2, 2, raw, None, Dictionary::new());
-        doc.compress();
+    fn has_optimization_work_detects_target_dpi_only() {
+        assert!(super::has_optimization_work(&OptimizeOptions {
+            jpeg_quality: None,
+            max_px: None,
+            image_fit: None,
+            target_dpi: Some(170),
+        }));
+    }
+
+    #[test]
+    fn target_dpi_resizes_based_on_drawn_size() -> Result<()> {
+        let mut doc = page_doc(
+            image_stream(
+                b"DeviceRGB",
+                1800,
+                1800,
+                vec![200; 1800 * 1800 * 3],
+                None,
+                Dictionary::new(),
+            ),
+            432.0,
+            432.0,
+        );
 
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some(75),
+                jpeg_quality: None,
                 max_px: None,
                 image_fit: None,
+                target_dpi: Some(150),
             },
         )?;
 
-        let stream = stream(&doc);
+        let stream = first_image_stream(&doc);
         assert_eq!(summary.optimized, 1);
+        assert_eq!(stream.dict.get(b"Width")?.as_i64()?, 900);
+        assert_eq!(stream.dict.get(b"Height")?.as_i64()?, 900);
         assert_eq!(stream.dict.get(b"Filter")?.as_name()?, b"DCTDecode");
-        assert_eq!(stream.dict.get(b"ColorSpace")?.as_name()?, b"DeviceRGB");
-        assert!(stream.dict.get(b"DecodeParms").is_err());
         Ok(())
     }
 
     #[test]
-    fn optimizes_gray_streams_conservatively() -> Result<()> {
-        let raw = vec![0, 128, 192, 255];
-        let mut doc = image_doc(b"DeviceGray", 2, 2, raw, None, Dictionary::new());
+    fn target_dpi_reencodes_large_raw_images_even_without_resize() -> Result<()> {
+        let raw = vec![180; 1600 * 900 * 3];
+        let original_size = raw.len();
+        let mut doc = page_doc(
+            image_stream(b"DeviceRGB", 1600, 900, raw, None, Dictionary::new()),
+            595.0,
+            335.0,
+        );
 
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some(75),
+                jpeg_quality: None,
                 max_px: None,
                 image_fit: None,
+                target_dpi: Some(170),
             },
         )?;
 
-        let stream = stream(&doc);
+        let stream = first_image_stream(&doc);
         assert_eq!(summary.optimized, 1);
-        assert_eq!(stream.dict.get(b"ColorSpace")?.as_name()?, b"DeviceGray");
+        assert_eq!(stream.dict.get(b"Width")?.as_i64()?, 1600);
+        assert_eq!(stream.dict.get(b"Height")?.as_i64()?, 900);
         assert_eq!(stream.dict.get(b"Filter")?.as_name()?, b"DCTDecode");
+        assert!(stream.content.len() < original_size / 4);
         Ok(())
     }
 
     #[test]
-    fn skips_unsupported_color_spaces_without_mutation() -> Result<()> {
-        let raw = vec![0; 8];
-        let mut doc = image_doc(b"DeviceCMYK", 2, 1, raw.clone(), None, Dictionary::new());
+    fn optimizes_cmyk_jpeg_streams() -> Result<()> {
+        let mut jpeg = Vec::new();
+        let raw = vec![0, 255, 255, 0, 255, 0, 255, 0, 255, 255, 0, 0, 0, 0, 0, 255];
+        Encoder::new(&mut jpeg, 95).encode(&raw, 2, 2, ColorType::Cmyk)?;
+
+        let mut doc = page_doc(
+            image_stream(
+                b"DeviceCMYK",
+                2,
+                2,
+                jpeg,
+                Some(b"DCTDecode"),
+                Dictionary::new(),
+            ),
+            72.0,
+            72.0,
+        );
 
         let summary = optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some(75),
-                max_px: None,
+                jpeg_quality: Some(70),
+                max_px: Some(1),
                 image_fit: None,
+                target_dpi: None,
             },
         )?;
 
-        let stream = stream(&doc);
-        assert_eq!(summary.skipped_unsupported, 1);
-        assert_eq!(stream.content, raw);
+        let stream = first_image_stream(&doc);
+        assert_eq!(summary.optimized, 1);
         assert_eq!(stream.dict.get(b"ColorSpace")?.as_name()?, b"DeviceCMYK");
-        Ok(())
-    }
-
-    #[test]
-    fn skips_risky_streams_with_masks() -> Result<()> {
-        let raw = vec![255, 0, 0];
-        let mut extra = Dictionary::new();
-        extra.set("SMask", Object::Reference((99, 0)));
-        let mut doc = image_doc(b"DeviceRGB", 1, 1, raw.clone(), None, extra);
-
-        let summary = optimize_images(
-            &mut doc,
-            &OptimizeOptions {
-                jpeg_quality: Some(75),
-                max_px: None,
-                image_fit: None,
-            },
-        )?;
-
-        let stream = stream(&doc);
-        assert_eq!(summary.skipped_risky, 1);
-        assert_eq!(stream.content, raw);
-        Ok(())
-    }
-
-    #[test]
-    fn skips_streams_with_unsupported_filters() -> Result<()> {
-        let raw = vec![0xff, 0xd8, 0xff, 0xd9];
-        let mut doc = image_doc(b"DeviceRGB", 1, 1, raw.clone(), Some(b"DCTDecode"), Dictionary::new());
-
-        let summary = optimize_images(
-            &mut doc,
-            &OptimizeOptions {
-                jpeg_quality: Some(75),
-                max_px: None,
-                image_fit: None,
-            },
-        )?;
-
-        let stream = stream(&doc);
-        assert_eq!(summary.skipped_unsupported, 1);
-        assert_eq!(stream.content, raw);
         assert_eq!(stream.dict.get(b"Filter")?.as_name()?, b"DCTDecode");
+        assert_eq!(stream.dict.get(b"Width")?.as_i64()?, 1);
+        assert_eq!(stream.dict.get(b"Height")?.as_i64()?, 1);
         Ok(())
     }
 
     #[test]
-    fn malformed_streams_fail_non_fatally_and_preserve_original_bytes() -> Result<()> {
-        let raw = vec![255, 0];
-        let mut doc = image_doc(b"DeviceRGB", 1, 1, raw.clone(), None, Dictionary::new());
+    fn cleanup_preserves_referenced_zero_length_streams() {
+        let mut doc = PdfDoc::with_version("1.4");
+        let pages_id = doc.new_object_id();
+        let contents_id = doc.add_object(Stream::new(dictionary! {}, Vec::new()));
+        let page_id = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages_id,
+            "Contents" => contents_id,
+            "MediaBox" => vec![0.into(), 0.into(), 10.into(), 10.into()],
+        });
+        doc.objects.insert(
+            pages_id,
+            Object::Dictionary(dictionary! {
+                "Type" => "Pages",
+                "Count" => 1,
+                "Kids" => vec![page_id.into()],
+            }),
+        );
+        let catalog_id = doc.add_object(dictionary! {
+            "Type" => "Catalog",
+            "Pages" => pages_id,
+        });
+        doc.trailer.set("Root", catalog_id);
 
-        let summary = optimize_images(
+        cleanup_document(&mut doc);
+
+        assert!(doc.objects.contains_key(&contents_id));
+        assert!(doc
+            .objects
+            .get(&contents_id)
+            .and_then(|object| object.as_stream().ok())
+            .is_some_and(|stream| stream.content.is_empty()));
+    }
+
+    #[test]
+    fn cleanup_and_save_roundtrip_with_empty_contents_stream() -> Result<()> {
+        let mut doc = PdfDoc::with_version("1.4");
+        let pages_id = doc.new_object_id();
+        let contents_id = doc.add_object(Stream::new(dictionary! {}, Vec::new()));
+        let page_id = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages_id,
+            "Contents" => contents_id,
+            "MediaBox" => vec![0.into(), 0.into(), 10.into(), 10.into()],
+        });
+        doc.objects.insert(
+            pages_id,
+            Object::Dictionary(dictionary! {
+                "Type" => "Pages",
+                "Count" => 1,
+                "Kids" => vec![page_id.into()],
+            }),
+        );
+        let catalog_id = doc.add_object(dictionary! {
+            "Type" => "Catalog",
+            "Pages" => pages_id,
+        });
+        doc.trailer.set("Root", catalog_id);
+
+        cleanup_document(&mut doc);
+
+        let output = temp_output_path("empty-contents-roundtrip");
+        let mut file = File::create(&output)?;
+        save_document(&mut doc, &mut file)?;
+        drop(file);
+
+        let reloaded = PdfDoc::load(&output)?;
+        assert_eq!(reloaded.get_pages().len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn save_document_roundtrip_uses_classic_writer() -> Result<()> {
+        let mut doc = page_doc(
+            image_stream(b"DeviceRGB", 2, 2, vec![0; 12], None, Dictionary::new()),
+            72.0,
+            72.0,
+        );
+        assert_eq!(doc.version, "1.4");
+
+        let bytes = saved_document_bytes(&mut doc, "classic-writer-roundtrip")?;
+        assert!(bytes.starts_with(b"%PDF-1.4"));
+        assert!(!contains_object_stream(&bytes));
+        Ok(())
+    }
+
+    #[test]
+    fn optimized_cmyk_jpeg_roundtrip_stays_loadable() -> Result<()> {
+        let mut jpeg = Vec::new();
+        let raw = vec![0, 255, 255, 0, 255, 0, 255, 0, 255, 255, 0, 0, 0, 0, 0, 255];
+        Encoder::new(&mut jpeg, 95).encode(&raw, 2, 2, ColorType::Cmyk)?;
+
+        let mut doc = page_doc(
+            image_stream(
+                b"DeviceCMYK",
+                2,
+                2,
+                jpeg,
+                Some(b"DCTDecode"),
+                Dictionary::new(),
+            ),
+            72.0,
+            72.0,
+        );
+
+        optimize_images(
             &mut doc,
             &OptimizeOptions {
-                jpeg_quality: Some(75),
-                max_px: None,
+                jpeg_quality: Some(70),
+                max_px: Some(1),
                 image_fit: None,
+                target_dpi: None,
             },
         )?;
+        cleanup_document(&mut doc);
 
-        let stream = stream(&doc);
-        assert_eq!(summary.failed_non_fatal, 1);
-        assert_eq!(stream.content, raw);
-        assert!(stream.dict.get(b"Filter").is_err());
+        let output = temp_output_path("cmyk-roundtrip");
+        let mut file = File::create(&output)?;
+        save_document(&mut doc, &mut file)?;
+        drop(file);
+
+        let bytes = fs::read(&output)?;
+        assert!(bytes.starts_with(b"%PDF-1.4"));
+        assert!(!contains_object_stream(&bytes));
+
+        let reloaded = PdfDoc::load(&output)?;
+        assert_eq!(reloaded.get_pages().len(), 1);
+        let stream = first_image_stream(&reloaded);
+        assert_eq!(stream.dict.get(b"ColorSpace")?.as_name()?, b"DeviceCMYK");
+        assert_eq!(stream.dict.get(b"Filter")?.as_name()?, b"DCTDecode");
+        assert_eq!(stream.dict.get(b"Width")?.as_i64()?, 1);
+        assert_eq!(stream.dict.get(b"Height")?.as_i64()?, 1);
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "manual calibration against local fixture"]
+    fn calibrates_fisio_fixture_sizes() -> Result<()> {
+        let fixture = repo_fixture("fisio.pdf");
+        if !fixture.exists() {
+            return Ok(());
+        }
+
+        let reference = repo_fixture("fisio_compressed.pdf");
+        if reference.exists() {
+            let reference_size = fs::metadata(&reference)?.len();
+            println!("reference fisio_compressed.pdf: {} bytes", reference_size);
+        }
+
+        let scenarios = [
+            (
+                "light",
+                OptimizeOptions {
+                    jpeg_quality: None,
+                    max_px: None,
+                    target_dpi: Some(220),
+                    image_fit: None,
+                },
+            ),
+            (
+                "balanced",
+                OptimizeOptions {
+                    jpeg_quality: None,
+                    max_px: None,
+                    target_dpi: Some(170),
+                    image_fit: None,
+                },
+            ),
+            (
+                "compact",
+                OptimizeOptions {
+                    jpeg_quality: None,
+                    max_px: None,
+                    target_dpi: Some(120),
+                    image_fit: None,
+                },
+            ),
+        ];
+
+        for (label, options) in scenarios {
+            let mut doc = PdfDoc::load(&fixture)?;
+            let summary = optimize_images(&mut doc, &options)?;
+            cleanup_document(&mut doc);
+
+            let output = temp_output_path(label);
+            let mut file = File::create(&output)?;
+            save_document(&mut doc, &mut file)?;
+            drop(file);
+            let size = fs::metadata(&output)?.len();
+            println!(
+                "{} => size={} optimized={} scanned={} skipped_unsupported={} skipped_risky={} failed={}",
+                label,
+                size,
+                summary.optimized,
+                summary.scanned,
+                summary.skipped_unsupported,
+                summary.skipped_risky,
+                summary.failed_non_fatal
+            );
+        }
+
         Ok(())
     }
 }

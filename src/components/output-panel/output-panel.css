@@ -14,7 +14,7 @@
 }
 
 .output-panel-optimization {
-  flex: 0 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   max-width: min(100%, 58rem);
 }
@@ -22,18 +22,19 @@
 .output-panel-advanced-anchor {
   position: relative;
   min-width: 0;
+  width: 100%;
 }
 
 .output-panel-advanced-trigger-row {
   @apply flex items-center gap-2;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
 }
 
 .output-panel-preset-shell {
-  flex: 0 1 auto;
-  width: auto;
-  max-width: min(100%, 52rem);
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
 }
 
 .output-panel-advanced-panel {
@@ -57,8 +58,13 @@
   align-items: end;
 }
 
+.output-panel-advanced-span {
+  grid-column: 1 / -1;
+}
+
 .segmented-control {
   @apply flex min-w-0 flex-col gap-1;
+  width: 100%;
 }
 
 .segmented-control__label {
@@ -67,10 +73,16 @@
 
 .segmented-control__buttons {
   @apply flex min-w-0 rounded-lg bg-slate-100 p-1 dark:bg-zinc-800;
+  width: 100%;
 }
 
 .segmented-control__button {
-  @apply min-w-0 flex-1 rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap transition-all disabled:cursor-default;
+  @apply rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap transition-all disabled:cursor-default;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 4.75rem;
 }
 
 .segmented-control__button-active {
@@ -79,6 +91,11 @@
 
 .segmented-control__button-inactive {
   @apply text-ui-text-secondary hover:bg-ui-accent-soft-hover hover:text-ui-accent-on-soft;
+}
+
+.output-panel-page-fit {
+  flex: 0 0 20rem;
+  min-width: 20rem;
 }
 
 .info-tooltip {

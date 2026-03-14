@@ -1,5 +1,5 @@
-use tauri::State;
 use tauri::Emitter;
+use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
@@ -22,12 +22,15 @@ fn emit_import_warning(app: &tauri::AppHandle, skipped_errors: &[String]) {
         return;
     }
 
-    let _ = app.emit("app-status", ImportWarningPayload {
-        kind: "import-warning",
-        skipped_count: skipped_errors.len(),
-        preview: skipped_errors.iter().take(2).cloned().collect(),
-        has_more: skipped_errors.len() > 2,
-    });
+    let _ = app.emit(
+        "app-status",
+        ImportWarningPayload {
+            kind: "import-warning",
+            skipped_count: skipped_errors.len(),
+            preview: skipped_errors.iter().take(2).cloned().collect(),
+            has_more: skipped_errors.len() > 2,
+        },
+    );
 }
 
 #[tauri::command]
@@ -104,5 +107,9 @@ pub fn get_image_export_preview_layout(
     image_fit: String,
     quarter_turns: u8,
 ) -> Result<ImageExportPreviewLayout, AppError> {
-    Ok(image_export_preview_layout(&path, &image_fit, quarter_turns)?)
+    Ok(image_export_preview_layout(
+        &path,
+        &image_fit,
+        quarter_turns,
+    )?)
 }

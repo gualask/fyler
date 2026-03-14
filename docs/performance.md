@@ -1,166 +1,211 @@
-# Ottimizzazioni di performance in Fyler
+# Performance in Fyler
 
-Panoramica delle ottimizzazioni significative applicate nel backend Rust e nel frontend React.
+This note documents the current performance-relevant decisions in Fyler. It is
+meant to describe what the code actually does today, not past experiments or
+superseded implementations.
 
----
+## Scope
 
-## Backend (Rust / Tauri)
+Fyler has two different performance domains:
 
-### 1. Parallelismo con `rayon`
+- backend work during import and export
+- frontend work during preview, navigation, and page-heavy UI flows
 
-`rayon` viene importato in tre moduli (`commands.rs`, `optimize.rs`, `pdf.rs`) tramite `use rayon::prelude::*`.
+The main rule across both is the same:
 
-#### Apertura file in parallelo — `commands.rs:files_from_paths`
+- avoid unnecessary work first
+- parallelize only where the boundary is simple and safe
+- keep performance logic local instead of spreading it through the codebase
 
-```rust
-paths
-    .into_iter()
-    .collect::<Vec<_>>()
-    .into_par_iter()   // <-- rayon
-    .filter_map(|path| match path_to_file(path) { ... })
-    .collect()
-```
+## Backend
 
-`path_to_file` esegue I/O su disco (`PdfDoc::load` per contare le pagine) per ciascun file. Con `into_par_iter()` tutti i file vengono aperti concorrentemente sui core disponibili. Ordine preservato: `Vec::into_par_iter()` è un indexed iterator, rayon garantisce ordering nel `collect`.
+### Parallel source inspection
 
-#### Preparazione documenti in parallelo — `commands.rs:merge_pdfs_inner`
+File import work is parallelized in
+[source_registry.rs](/Users/blazar/Dev/fyler/src-tauri/src/source_registry.rs).
 
-```rust
-let docs = req.inputs.par_iter()
-    .map(|input| prepare_doc(&input.path, &input.page_spec, image_fit))
-    .collect::<anyhow::Result<Vec<_>>>()?;
-```
+`files_from_paths(...)` collects the input paths and processes them with Rayon:
 
-`prepare_doc` carica un PDF o converte un'immagine in `PdfDoc` in memoria. Con N file da unire, le N letture+decodifiche avvengono in parallelo. Il comportamento d'errore è identico al sequenziale: il primo errore vince.
+- file kind detection runs per path
+- PDF page counting runs per PDF
+- invalid files are isolated without blocking valid ones in the same batch
 
-#### Encoding immagini in parallelo — `optimize.rs:optimize_images`
+This is a good place for parallelism because each file can be inspected
+independently and the task is mostly I/O-bound.
 
-```rust
-let entries: Vec<&mut Object> = doc.objects
-    .iter_mut()
-    .filter_map(|(_, obj)| is_rgb_image_stream(obj).then_some(obj))
-    .collect();
+### Layout-aware PDF image optimization
 
-entries.into_par_iter().try_for_each(|obj| -> Result<()> {
-    // resize Lanczos3 + JPEG encode per ogni immagine
-})?;
-```
+Embedded PDF image optimization is implemented in
+[mod.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/mod.rs) and is split
+into:
 
-Resize con `FilterType::Lanczos3` e re-encoding JPEG sono le operazioni più CPU-bound dell'intera app. Raccogliendo `&mut Object` in un `Vec` e passando a `into_par_iter()`, ogni immagine viene processata su un thread separato. Le referenze mutabili a oggetti distinti della `BTreeMap` sono sicure da accedere in parallelo perché non si sovrappongono.
+1. analysis
+2. plan building
+3. decode / resize / rewrite
 
-#### Rinumerazione oggetti in parallelo — `pdf.rs:merge_pdf_documents`
+The main performance win here is not "more threads everywhere". It is avoiding
+work that is not justified.
 
-```rust
-// Pre-calcola offset cumulativi (sequenziale: O(N))
-let mut offset = base.max_id + 1;
-let offsets: Vec<u32> = docs.iter().map(|d| {
-    let o = offset;
-    offset += d.max_id + 1;
-    o
-}).collect();
+#### Analysis before rewrite
 
-// Rinumera tutti i doc in parallelo
-docs.par_iter_mut()
-    .zip(offsets.par_iter())
-    .for_each(|(doc, &off)| doc.renumber_objects_with(off));
-```
+[analysis.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/analysis.rs)
+walks page content streams and records how large each image is actually drawn on
+the page.
 
-`renumber_objects_with` itera su tutti gli oggetti di un documento per aggiornare i riferimenti interni — O(M) per documento. Con N file da unire l'operazione totale è O(N×M); pre-calcolando gli offset in anticipo si elimina la dipendenza sequenziale e le N rinumerazioni vengono eseguite in parallelo.
+That lets the optimizer reason about effective DPI instead of relying on blind
+pixel caps or fixed percentage reductions.
 
----
+The benefit is twofold:
 
-### 2. Pre-scan con early exit prima della decompressione — `optimize.rs:optimize_images`
+- large oversized images are reduced aggressively when appropriate
+- already small or layout-appropriate images are skipped early
 
-```rust
-if !doc.objects.values().any(is_rgb_image_stream) {
-    return Ok(());
-}
-doc.decompress();
-```
+#### Plan gating
 
-`doc.decompress()` è costosa (decomprime tutti gli stream FlateDecode del documento). La pre-scansione controlla i soli dizionari (non decomprime nulla) e restituisce immediatamente se non ci sono immagini RGB, evitando il costo di decompressione+ricompressione su PDF che non contengono immagini.
+[plan.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/plan.rs) decides
+whether an image should be:
 
----
+- resized
+- re-encoded
+- left untouched
 
-### 3. Selezione pagine in memoria — `pdf.rs:load_pdf_with_pages`
+This keeps expensive decode/resize/rewrite work off images that do not have a
+meaningful optimization path.
 
-```rust
-fn load_pdf_with_pages(path: &str, page_spec: &str) -> Result<PdfDoc> {
-    let mut doc = PdfDoc::load(path)?;
-    // ...
-    doc.delete_pages(&to_delete);
-    Ok(doc)
-}
-```
+The optimizer also keeps the original stream when the rewritten result does not
+beat a minimum reduction threshold. This avoids paying CPU cost for output that
+is not materially smaller.
 
-La selezione delle pagine avviene direttamente sul `PdfDoc` in memoria tramite `delete_pages`, senza scrivere file temporanei su disco. Tutto il pipeline di merge (selezione → rinumerazione → unione) opera esclusivamente in RAM.
+#### Fast resize path
 
----
+When resize is required, Fyler uses
+[`fast_image_resize`](https://docs.rs/fast_image_resize/) in
+[raster.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/raster.rs).
 
-### 4. Ottimizzazione immagini — `optimize.rs`
+Current characteristics:
 
-Tre parametri configurabili applicati durante il merge:
+- Lanczos3 convolution for quality-preserving downscale
+- RGB, grayscale, and CMYK support
+- Rayon-enabled crate features for maximum throughput on the resize path
 
-| Parametro | Effetto |
-|---|---|
-| `max_px` | Resize dell'immagine con `FilterType::Lanczos3` se il lato lungo supera la soglia |
-| `jpeg_quality` | Re-encoding lossy in JPEG (`high`=90, `medium`=75, `low`=55) |
-| `image_fit` | Modalità resa in pagina (`fit` / `contain` / `cover`) |
+The code does not parallelize the entire optimizer loop at the document level.
+Instead, it uses a specialized resize implementation that is already optimized
+for the hot path.
 
-Il resize usa Lanczos3 (filtro di alta qualità con anti-aliasing) e lo skip è selettivo: se né resize né JPEG si applicano a una data immagine, quella viene saltata senza toccarla.
+### Imported image files: cheap decisions before PDF construction
 
----
+The `image -> pdf` path has its own performance-sensitive split in
+[mod.rs](/Users/blazar/Dev/fyler/src-tauri/src/pdf_image/mod.rs):
 
-## Frontend (React / TypeScript)
+- [descriptor.rs](/Users/blazar/Dev/fyler/src-tauri/src/pdf_image/descriptor.rs)
+- [policy.rs](/Users/blazar/Dev/fyler/src-tauri/src/pdf_image/policy.rs)
+- [encode.rs](/Users/blazar/Dev/fyler/src-tauri/src/pdf_image/encode.rs)
 
-### 5. Thumbnail cache a due livelli — `useThumbnailCache.tsx`
+This helps performance indirectly:
 
-```
-cacheRef      → Map<url, Map<pageNum, dataUrl>>   // thumbnail 100px, JPEG 0.8
-largeCacheRef → Map<url, Map<pageNum, dataUrl>>   // anteprima large 900px, JPEG 0.92
-```
+- source classification is done once up front
+- the embed policy is chosen before building the PDF page
+- JPEG sources no longer inflate into large raw RGB payloads in `Original`
 
-Entrambe le cache sono `useRef` (non state) per evitare re-render durante il popolamento. Il rendering thumbnail avviene progressivamente: ogni pagina viene aggiunta alla cache appena pronta, triggerando un singolo `setCacheVersion` per aggiornare la UI senza attendere il completamento di tutte le pagine.
+That last point is both a correctness and performance win: it reduces memory and
+output-size blowups for common photo inputs.
 
-**Guard di deduplicazione**: `requestedRef: Set<string>` impedisce il doppio avvio del rendering per lo stesso PDF se `requestThumbnails` viene chiamato più volte (es. scroll veloce o re-mount).
+### Conservative save path
 
----
+Fyler saves PDFs with the classic writer in
+[mod.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/mod.rs).
 
-### 6. Rendering PDF in Web Worker — `useThumbnailCache.tsx`
+This is not the most aggressive size optimization strategy, but it is the right
+performance tradeoff for production:
 
-```ts
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;  // importato con ?url (Vite)
-```
+- the save path is predictable
+- compatibility issues do not force retries or fallbacks
+- compression effort is focused on image payloads, where the gain is real
 
-`pdfjs-dist` esegue il rendering delle pagine in un Web Worker dedicato, separato dal thread UI. Zoom, drag&drop e interazioni restano fluidi anche durante il rendering di PDF con molte pagine.
+The backend intentionally does not spend extra complexity budget on PDF
+container tricks that are fragile across viewers.
 
-La qualità è differenziata per contesto: `0.8` per i thumbnail nella sidebar (priorità dimensione), `0.92` per la preview large nel modal (priorità qualità).
+## Frontend
 
----
+### PDF rendering happens off the main thread
 
-### 7. Lazy loading con IntersectionObserver — `PreviewModal.tsx:PageSlot`
+PDF.js is configured with a worker in
+[pdfRender.ts](/Users/blazar/Dev/fyler/src/pdfRender.ts).
 
-```ts
-const io = new IntersectionObserver(
-    ([e]) => {
-        if (!e.isIntersecting) return;
-        io.disconnect();  // one-shot: non osserva più dopo il primo trigger
-        void renderPageLarge(getPreviewUrl(file.path), fp.pageNum).then(setSrc);
-    },
-    { rootMargin: '300px' },  // pre-carica 300px prima dell'entrata nel viewport
-);
-```
+This keeps page rendering work out of the UI thread, which matters for:
 
-Le pagine del modal non vengono caricate all'apertura ma solo quando stanno per diventare visibili (con 300px di anticipo per eliminare il flash di caricamento). Ogni observer è one-shot: dopo il primo trigger si disconnette, senza polling continuo.
+- scrolling long previews
+- drag and drop interactions
+- selection-heavy flows
 
----
+### Render cache with task deduplication
 
-### 8. Memoizzazione selettiva — `FinalDocument.tsx`, `PreviewModal.tsx`, `FileList.tsx`
+[PdfCacheProvider.tsx](/Users/blazar/Dev/fyler/src/hooks/PdfCacheProvider.tsx)
+maintains:
 
-| Punto | Tecnica | Scopo |
-|---|---|---|
-| `FinalPageRow` | `React.memo` | Evita re-render di tutte le righe durante drag&drop |
-| `fileMap` | `useMemo` | Lookup O(1) per id file, ricalcolato solo al cambio di `files` |
-| `sortableItems` | `useMemo` | Evita nuovi array ad ogni render nel contesto dnd-kit |
-| `pageCountByFile` | `useMemo` | Conteggio pagine per file, ricalcolato solo al cambio di `finalPages` |
-| `handleDragEnd`, `handleVisible` | `useCallback` | Referenze stabili per evitare re-subscription in hook dipendenti |
+- an in-memory render cache keyed by file and render profile
+- a map of in-flight page tasks
+- a map of in-flight PDF document loading tasks
+
+Important consequences:
+
+- the same PDF page variant is not rendered twice concurrently
+- PDF documents are reused across requests instead of reopened repeatedly
+- releasing a file clears cached renders and destroys the associated PDF.js task
+
+This is one of the main reasons the preview flow stays responsive even when the
+same source document is referenced in multiple UI areas.
+
+### Lazy preview rendering
+
+Preview slots are gated by `IntersectionObserver` in
+[useSlotState.ts](/Users/blazar/Dev/fyler/src/components/preview/hooks/useSlotState.ts).
+
+Two observers are used for different purposes:
+
+- one enables rendering only when a slot approaches the viewport
+- one updates the visible-page state for the modal
+
+This avoids eagerly rendering every preview page when the modal opens.
+
+### Targeted memoization in page-heavy UI
+
+Fyler uses `useMemo` and `useCallback` in the places where they remove repeated
+work with clear ownership:
+
+- file lookup maps in
+  [PreviewModal.tsx](/Users/blazar/Dev/fyler/src/components/preview/PreviewModal.tsx)
+  and
+  [List.tsx](/Users/blazar/Dev/fyler/src/components/final-document/components/List.tsx)
+- derived page counters in
+  [FileList.tsx](/Users/blazar/Dev/fyler/src/components/FileList.tsx)
+- reorder handlers and derived sortable items in the final document list
+
+The goal is not blanket memoization. The goal is to keep recalculation local to
+the data that actually changed.
+
+## What is intentionally not optimized
+
+Some things are intentionally conservative:
+
+- the backend does not parallelize every export step
+- imported images with alpha are flattened instead of using full PDF alpha masks
+- the save path prefers compatibility over maximum structural PDF compression
+
+These are deliberate tradeoffs. They reduce complexity in the most fragile parts
+of the codebase and keep performance work focused on the hotspots that matter.
+
+## Practical summary
+
+Today, Fyler gets most of its performance wins from:
+
+- parallel file inspection on import
+- avoiding unnecessary image rewrites
+- using layout-aware image optimization
+- using an optimized resize backend
+- deduplicated PDF preview rendering
+- lazy rendering in the preview modal
+
+That is the intended direction going forward as well: fewer wasted operations,
+clear boundaries, and performance improvements that do not make the export path
+harder to reason about.

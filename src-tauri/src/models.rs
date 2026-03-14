@@ -35,6 +35,8 @@ pub struct OptimizeOptions {
     pub jpeg_quality: Option<u8>, // 1..=100
     #[serde(rename = "maxPx")]
     pub max_px: Option<u32>,
+    #[serde(rename = "targetDpi")]
+    pub target_dpi: Option<u16>,
     #[serde(rename = "imageFit")]
     pub image_fit: Option<String>, // "fit" | "contain" | "cover"
 }

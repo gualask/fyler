@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { ImageFit, OptimizeOptions } from '../domain';
 import {
+    DEFAULT_OPTIMIZATION_PRESET,
     deriveOptimizationPreset,
     getOptimizationSettings,
     type BasicOptimizationPreset,
@@ -11,21 +12,25 @@ export type { ImageFit };
 export type { BasicOptimizationPreset, ImageOptimizationPreset } from '../optimizationConfig';
 
 export function useOptimize() {
-    const [jpegQuality, setJpegQuality] = useState<number | undefined>(undefined);
-    const [maxPx, setMaxPx] = useState<number | undefined>(undefined);
+    const defaultSettings = getOptimizationSettings(DEFAULT_OPTIMIZATION_PRESET);
+    const [jpegQuality, setJpegQuality] = useState<number | undefined>(defaultSettings.jpegQuality);
+    const [maxPx, setMaxPx] = useState<number | undefined>(defaultSettings.maxPx);
+    const [targetDpi, setTargetDpi] = useState<number | undefined>(defaultSettings.targetDpi);
     const [imageFit, setImageFit] = useState<ImageFit>('contain');
 
-    const optimizationPreset = deriveOptimizationPreset(jpegQuality, maxPx);
+    const optimizationPreset = deriveOptimizationPreset(jpegQuality, maxPx, targetDpi);
 
     const setOptimizationPreset = (preset: BasicOptimizationPreset) => {
         const settings = getOptimizationSettings(preset);
         setJpegQuality(settings.jpegQuality);
         setMaxPx(settings.maxPx);
+        setTargetDpi(settings.targetDpi);
     };
 
     const optimizeOptions: OptimizeOptions = {
         jpegQuality,
         maxPx,
+        targetDpi,
         imageFit,
     };
 
@@ -33,11 +38,13 @@ export function useOptimize() {
         imageFit,
         jpegQuality,
         maxPx,
+        targetDpi,
         optimizationPreset,
         optimizeOptions,
         setImageFit,
         setJpegQuality,
         setMaxPx,
+        setTargetDpi,
         setOptimizationPreset,
     };
 }

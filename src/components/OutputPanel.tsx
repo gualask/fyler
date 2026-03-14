@@ -9,6 +9,7 @@ import {
     JPEG_QUALITY_OPTIONS,
     MAX_PX_OPTIONS,
     OPTIMIZATION_PRESETS,
+    TARGET_DPI_OPTIONS,
 } from '../optimizationConfig';
 import type { ImageFit } from '../domain';
 import { useTranslation } from '../i18n';
@@ -16,6 +17,7 @@ import { useTranslation } from '../i18n';
 import { InfoTooltip } from './output-panel/InfoTooltip';
 import {
     ImageFitTooltip,
+    DpiTooltip,
     JpegTooltip,
     OptimizationTooltip,
     ResizeTooltip,
@@ -31,10 +33,12 @@ interface Props {
     imageFit: ImageFit;
     jpegQuality?: number;
     maxPx?: number;
+    targetDpi?: number;
     optimizationPreset: ImageOptimizationPreset;
     onImageFitChange: (v: ImageFit) => void;
     onJpegQualityChange: (v: number | undefined) => void;
     onMaxPxChange: (v: number | undefined) => void;
+    onTargetDpiChange: (v: number | undefined) => void;
     onOptimizationPresetChange: (v: BasicOptimizationPreset) => void;
 }
 
@@ -69,16 +73,24 @@ function decodeOptionalNumberOption(option: string): number | undefined {
 function OptimizationAdvancedPanel({
     jpegQuality,
     maxPx,
+    targetDpi,
     onJpegQualityChange,
     onMaxPxChange,
+    onTargetDpiChange,
 }: {
     jpegQuality?: number;
     maxPx?: number;
+    targetDpi?: number;
     onJpegQualityChange: (v: number | undefined) => void;
     onMaxPxChange: (v: number | undefined) => void;
+    onTargetDpiChange: (v: number | undefined) => void;
 }) {
     const { t } = useTranslation();
     const jpegOptions: SegmentOption<string>[] = JPEG_QUALITY_OPTIONS.map(({ value }) => ({
+        value: value === undefined ? 'off' : String(value),
+        label: value === undefined ? t('outputPanel.off') : String(value),
+    }));
+    const targetDpiOptions: SegmentOption<string>[] = TARGET_DPI_OPTIONS.map(({ value }) => ({
         value: value === undefined ? 'off' : String(value),
         label: value === undefined ? t('outputPanel.off') : String(value),
     }));
@@ -91,9 +103,18 @@ function OptimizationAdvancedPanel({
         <div className="output-panel-advanced-panel">
             <div className="output-panel-advanced-grid">
                 <SegmentedControl
+                    label={t('outputPanel.targetDpi')}
+                    helpContent={<DpiTooltip />}
+                    helpAlign="start"
+                    className="output-panel-group-fill"
+                    options={targetDpiOptions}
+                    value={encodeOptionalNumberOption(targetDpi)}
+                    onChange={(value) => onTargetDpiChange(decodeOptionalNumberOption(value))}
+                />
+                <SegmentedControl
                     label={t('outputPanel.jpegQuality')}
                     helpContent={<JpegTooltip />}
-                    helpAlign="start"
+                    helpAlign="center"
                     className="output-panel-group-fill"
                     options={jpegOptions}
                     value={encodeOptionalNumberOption(jpegQuality)}
@@ -103,7 +124,7 @@ function OptimizationAdvancedPanel({
                     label={t('outputPanel.maxLongSide')}
                     helpContent={<ResizeTooltip />}
                     helpAlign="end"
-                    className="output-panel-group-fill"
+                    className="output-panel-group-fill output-panel-advanced-span"
                     options={maxLongSideOptions}
                     value={encodeOptionalNumberOption(maxPx)}
                     onChange={(value) => onMaxPxChange(decodeOptionalNumberOption(value))}
@@ -117,10 +138,12 @@ export function OutputPanel({
     imageFit,
     jpegQuality,
     maxPx,
+    targetDpi,
     optimizationPreset,
     onImageFitChange,
     onJpegQualityChange,
     onMaxPxChange,
+    onTargetDpiChange,
     onOptimizationPresetChange,
 }: Props) {
     const { t } = useTranslation();
@@ -199,8 +222,10 @@ export function OutputPanel({
                         <OptimizationAdvancedPanel
                             jpegQuality={jpegQuality}
                             maxPx={maxPx}
+                            targetDpi={targetDpi}
                             onJpegQualityChange={onJpegQualityChange}
                             onMaxPxChange={onMaxPxChange}
+                            onTargetDpiChange={onTargetDpiChange}
                         />
                     ) : null}
                 </div>
@@ -212,7 +237,7 @@ export function OutputPanel({
                 label={t('outputPanel.pageFit')}
                 helpContent={<ImageFitTooltip />}
                 helpAlign="end"
-                className="shrink-0"
+                className="output-panel-page-fit"
                 options={imageFitOptions}
                 value={imageFit}
                 onChange={onImageFitChange}

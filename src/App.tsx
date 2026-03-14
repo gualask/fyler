@@ -66,10 +66,12 @@ function AppContent() {
         imageFit,
         jpegQuality,
         maxPx,
+        targetDpi,
         optimizationPreset,
         setImageFit,
         setJpegQuality,
         setMaxPx,
+        setTargetDpi,
         setOptimizationPreset,
         optimizeOptions,
     } = useOptimize();
@@ -172,10 +174,12 @@ function AppContent() {
                                         imageFit={imageFit}
                                         jpegQuality={jpegQuality}
                                         maxPx={maxPx}
+                                        targetDpi={targetDpi}
                                         optimizationPreset={optimizationPreset}
                                         onImageFitChange={setImageFit}
                                         onJpegQualityChange={setJpegQuality}
                                         onMaxPxChange={setMaxPx}
+                                        onTargetDpiChange={setTargetDpi}
                                         onOptimizationPresetChange={setOptimizationPreset}
                                     />
                                 </footer>

@@ -1,9 +1,11 @@
 export type BasicOptimizationPreset = 'original' | 'light' | 'balanced' | 'compact';
 export type ImageOptimizationPreset = BasicOptimizationPreset | 'custom';
+export const DEFAULT_OPTIMIZATION_PRESET: BasicOptimizationPreset = 'light';
 
 export type OptimizationSettings = {
     jpegQuality?: number;
     maxPx?: number;
+    targetDpi?: number;
 };
 
 type OptimizationPresetDefinition = OptimizationSettings & {
@@ -20,18 +22,15 @@ export const OPTIMIZATION_PRESETS: OptimizationPresetDefinition[] = [
     },
     {
         value: 'light',
-        jpegQuality: 95,
-        maxPx: 2500,
+        targetDpi: 220,
     },
     {
         value: 'balanced',
-        jpegQuality: 90,
-        maxPx: 2000,
+        targetDpi: 170,
     },
     {
         value: 'compact',
-        jpegQuality: 85,
-        maxPx: 1500,
+        targetDpi: 120,
     },
 ];
 
@@ -65,6 +64,21 @@ export const MAX_PX_OPTIONS: NumericOptionDefinition[] = [
     },
 ];
 
+export const TARGET_DPI_OPTIONS: NumericOptionDefinition[] = [
+    {
+        value: undefined,
+    },
+    {
+        value: 220,
+    },
+    {
+        value: 170,
+    },
+    {
+        value: 120,
+    },
+];
+
 export function getOptimizationSettings(preset: BasicOptimizationPreset): OptimizationSettings {
     const found = OPTIMIZATION_PRESETS.find((candidate) => candidate.value === preset);
     if (!found) {
@@ -73,15 +87,21 @@ export function getOptimizationSettings(preset: BasicOptimizationPreset): Optimi
     return {
         jpegQuality: found.jpegQuality,
         maxPx: found.maxPx,
+        targetDpi: found.targetDpi,
     };
 }
 
 export function deriveOptimizationPreset(
     jpegQuality: number | undefined,
     maxPx: number | undefined,
+    targetDpi: number | undefined,
 ): ImageOptimizationPreset {
     const matched = OPTIMIZATION_PRESETS.find(
-        (preset) => preset.jpegQuality === jpegQuality && preset.maxPx === maxPx,
+        (preset) => (
+            preset.jpegQuality === jpegQuality
+            && preset.maxPx === maxPx
+            && preset.targetDpi === targetDpi
+        ),
     );
     return matched?.value ?? 'custom';
 }
