@@ -136,7 +136,7 @@ mod tests {
         Stream,
     };
     use std::fs::{self, File};
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::{cleanup_document, optimize_images, save_document};
@@ -224,13 +224,6 @@ mod tests {
                 (subtype == b"Image").then_some(stream)
             })
             .expect("stream present")
-    }
-
-    fn repo_fixture(name: &str) -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .expect("workspace root")
-            .join(name)
     }
 
     fn temp_output_path(label: &str) -> PathBuf {
@@ -499,75 +492,6 @@ mod tests {
         assert_eq!(stream.dict.get(b"Filter")?.as_name()?, b"DCTDecode");
         assert_eq!(stream.dict.get(b"Width")?.as_i64()?, 1);
         assert_eq!(stream.dict.get(b"Height")?.as_i64()?, 1);
-        Ok(())
-    }
-
-    #[test]
-    #[ignore = "manual calibration against local fixture"]
-    fn calibrates_fisio_fixture_sizes() -> Result<()> {
-        let fixture = repo_fixture("fisio.pdf");
-        if !fixture.exists() {
-            return Ok(());
-        }
-
-        let reference = repo_fixture("fisio_compressed.pdf");
-        if reference.exists() {
-            let reference_size = fs::metadata(&reference)?.len();
-            println!("reference fisio_compressed.pdf: {} bytes", reference_size);
-        }
-
-        let scenarios = [
-            (
-                "light",
-                OptimizeOptions {
-                    jpeg_quality: None,
-                    max_px: None,
-                    target_dpi: Some(220),
-                    image_fit: None,
-                },
-            ),
-            (
-                "balanced",
-                OptimizeOptions {
-                    jpeg_quality: None,
-                    max_px: None,
-                    target_dpi: Some(170),
-                    image_fit: None,
-                },
-            ),
-            (
-                "compact",
-                OptimizeOptions {
-                    jpeg_quality: None,
-                    max_px: None,
-                    target_dpi: Some(120),
-                    image_fit: None,
-                },
-            ),
-        ];
-
-        for (label, options) in scenarios {
-            let mut doc = PdfDoc::load(&fixture)?;
-            let summary = optimize_images(&mut doc, &options)?;
-            cleanup_document(&mut doc);
-
-            let output = temp_output_path(label);
-            let mut file = File::create(&output)?;
-            save_document(&mut doc, &mut file)?;
-            drop(file);
-            let size = fs::metadata(&output)?.len();
-            println!(
-                "{} => size={} optimized={} scanned={} skipped_unsupported={} skipped_risky={} failed={}",
-                label,
-                size,
-                summary.optimized,
-                summary.scanned,
-                summary.skipped_unsupported,
-                summary.skipped_risky,
-                summary.failed_non_fatal
-            );
-        }
-
         Ok(())
     }
 }

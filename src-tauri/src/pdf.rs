@@ -601,10 +601,10 @@ mod tests {
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    fn repo_fixture(name: &str) -> PathBuf {
+    fn test_fixture(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .expect("workspace root")
+            .join("tests")
+            .join("fixtures")
             .join(name)
     }
 
@@ -700,10 +700,7 @@ mod tests {
 
     #[test]
     fn prepare_and_merge_preserves_valid_page_tree_for_fisio_fixture() -> anyhow::Result<()> {
-        let fixture = repo_fixture("fisio.pdf");
-        if !fixture.exists() {
-            return Ok(());
-        }
+        let fixture = test_fixture("fisio.pdf");
         let source_doc = PdfDoc::load(&fixture).context("load fixture")?;
         let mut docs = Vec::new();
 
@@ -745,10 +742,7 @@ mod tests {
 
     #[test]
     fn subset_export_of_fisio_fixture_stays_compact_and_valid() -> anyhow::Result<()> {
-        let fixture = repo_fixture("fisio.pdf");
-        if !fixture.exists() {
-            return Ok(());
-        }
+        let fixture = test_fixture("fisio.pdf");
         let mut doc = prepare_pdf_subset_doc(
             PdfDoc::load(&fixture).context("load fixture")?,
             &(2..=15).map(|page_num| (page_num, 0)).collect::<Vec<_>>(),
@@ -782,10 +776,7 @@ mod tests {
 
     #[test]
     fn single_page_subset_of_fisio_fixture_drops_unused_images() -> anyhow::Result<()> {
-        let fixture = repo_fixture("fisio.pdf");
-        if !fixture.exists() {
-            return Ok(());
-        }
+        let fixture = test_fixture("fisio.pdf");
 
         let input_size = fs::metadata(&fixture)?.len();
         let mut doc =
@@ -811,10 +802,7 @@ mod tests {
 
     #[test]
     fn merge_image_and_single_pdf_page_stays_smaller_than_full_fixture() -> anyhow::Result<()> {
-        let fixture = repo_fixture("fisio.pdf");
-        if !fixture.exists() {
-            return Ok(());
-        }
+        let fixture = test_fixture("fisio.pdf");
 
         let input_size = fs::metadata(&fixture)?.len();
         let image_path = std::env::temp_dir().join("fyler-merge-regression-image.png");
