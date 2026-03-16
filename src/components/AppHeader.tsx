@@ -1,4 +1,4 @@
-import { ArrowDownTrayIcon, ArrowsPointingInIcon, EyeIcon, MoonIcon, Squares2X2Icon, SunIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ArrowsPointingInIcon, EyeIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -18,9 +18,7 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
     return (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-6">
             <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-ui-accent text-white shadow-sm">
-                    <Squares2X2Icon className="h-5 w-5" />
-                </div>
+                <img src="/icon.svg" alt="Fyler" className="h-9 w-9" />
                 <div className="flex flex-col leading-none">
                     <span className="text-base font-bold">Fyler</span>
                     <span className="text-[10px] font-medium uppercase tracking-wider text-ui-text-muted">v0.1.0</span>
