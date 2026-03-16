@@ -33,3 +33,5 @@ rayon = "1"
 fast_image_resize = { version = "6", default-features = false, features = ["rayon"] }
 jpeg-decoder = { version = "0.3", default-features = false }
 jpeg-encoder = { version = "0.6", default-features = false, features = ["std"] }
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"

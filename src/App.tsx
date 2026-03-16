@@ -18,6 +18,7 @@ import { EmptyState } from './components/EmptyState';
 import { DragOverlay } from './components/DragOverlay';
 import { QuickDropView } from './components/QuickDropView';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
+import { UpdateDialog } from './components/UpdateDialog';
 import { AppPreferencesProvider, useTranslation } from './i18n';
 
 function AppContent() {
@@ -98,6 +99,7 @@ function AppContent() {
 
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
+            <UpdateDialog />
             {isQuickDrop ? (
                 <QuickDropView
                     files={files}

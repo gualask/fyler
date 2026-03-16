@@ -118,5 +118,11 @@
   "pageSpec.invalidToken": "Specifica pagine non valida: \"{token}\".",
   "pageSpec.pageMustBeGreaterThanZero": "Le pagine devono essere maggiori di 0.",
   "pageSpec.reversedRange": "Range invertito: {start}-{end}.",
-  "pageSpec.outOfRange": "Pagina {page} fuori intervallo: il file ha {total} pagine."
+  "pageSpec.outOfRange": "Pagina {page} fuori intervallo: il file ha {total} pagine.",
+  "update.title": "Aggiornamento disponibile",
+  "update.message": "La versione {version} è disponibile. Vuoi aggiornare ora?",
+  "update.install": "Aggiorna",
+  "update.notNow": "Non ora",
+  "update.installing": "Installazione in corso…",
+  "update.progress": "Download: {percent}%"
 }

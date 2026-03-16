@@ -118,5 +118,11 @@
   "pageSpec.invalidToken": "Invalid page spec: \"{token}\".",
   "pageSpec.pageMustBeGreaterThanZero": "Pages must be greater than 0.",
   "pageSpec.reversedRange": "Reversed range: {start}-{end}.",
-  "pageSpec.outOfRange": "Page {page} is out of range: the file has {total} pages."
+  "pageSpec.outOfRange": "Page {page} is out of range: the file has {total} pages.",
+  "update.title": "Update available",
+  "update.message": "Version {version} is available. Would you like to update now?",
+  "update.install": "Update",
+  "update.notNow": "Not now",
+  "update.installing": "Installing…",
+  "update.progress": "Download: {percent}%"
 }
