@@ -2,6 +2,8 @@
   "language.switcherLabel": "Change language",
   "language.switchTo.it": "Switch to Italian",
   "language.switchTo.en": "Switch to English",
+  "language.name.it": "Italiano",
+  "language.name.en": "English",
   "language.short.it": "IT",
   "language.short.en": "EN",
   "header.toggleTheme.light": "Switch to light theme",

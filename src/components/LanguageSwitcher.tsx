@@ -1,32 +1,90 @@
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { SUPPORTED_LOCALES } from '../locale';
 
 export function LanguageSwitcher() {
     const { locale, setLocale, t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        function handlePointerDown(event: MouseEvent) {
+            if (!rootRef.current?.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        }
+
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                setOpen(false);
+            }
+        }
+
+        window.addEventListener('mousedown', handlePointerDown);
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('mousedown', handlePointerDown);
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [open]);
+
+    function handleToggle() {
+        setOpen((current) => !current);
+    }
+
+    function handleSelect(nextLocale: (typeof SUPPORTED_LOCALES)[number]) {
+        setLocale(nextLocale);
+        setOpen(false);
+    }
 
     return (
         <div
+            ref={rootRef}
             className="language-switcher"
-            aria-label={t('language.switcherLabel')}
-            role="group"
         >
-            {SUPPORTED_LOCALES.map((option) => (
-                <button
-                    key={option}
-                    type="button"
-                    aria-pressed={locale === option}
-                    title={t(`language.switchTo.${option}`)}
-                    onClick={() => setLocale(option)}
-                    className={[
-                        'language-switcher__option',
-                        locale === option
-                            ? 'language-switcher__option-active'
-                            : 'language-switcher__option-inactive',
-                    ].join(' ')}
-                >
-                    {t(`language.short.${option}`)}
-                </button>
-            ))}
+            <button
+                type="button"
+                className="language-switcher__trigger"
+                aria-label={t('language.switcherLabel')}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                title={t('language.switcherLabel')}
+                onClick={handleToggle}
+            >
+                <span>{t(`language.short.${locale}`)}</span>
+                <ChevronDownIcon
+                    className={['language-switcher__chevron', open ? 'language-switcher__chevron-open' : ''].join(' ')}
+                />
+            </button>
+            {open ? (
+                <div className="language-switcher__menu" role="menu" aria-label={t('language.switcherLabel')}>
+                    {SUPPORTED_LOCALES.map((option) => (
+                        <button
+                            key={option}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={locale === option}
+                            title={t(`language.switchTo.${option}`)}
+                            onClick={() => handleSelect(option)}
+                            className={[
+                                'language-switcher__menu-option',
+                                locale === option
+                                    ? 'language-switcher__menu-option-active'
+                                    : 'language-switcher__menu-option-inactive',
+                            ].join(' ')}
+                        >
+                            <span className="language-switcher__menu-label">{t(`language.name.${option}`)}</span>
+                            <span className="language-switcher__menu-short">{t(`language.short.${option}`)}</span>
+                        </button>
+                    ))}
+                </div>
+            ) : null}
         </div>
     );
 }

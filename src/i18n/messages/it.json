@@ -2,6 +2,8 @@
   "language.switcherLabel": "Cambia lingua",
   "language.switchTo.it": "Passa all'italiano",
   "language.switchTo.en": "Passa all'inglese",
+  "language.name.it": "Italiano",
+  "language.name.en": "English",
   "language.short.it": "IT",
   "language.short.en": "EN",
   "header.toggleTheme.light": "Passa al tema chiaro",
