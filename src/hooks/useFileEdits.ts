@@ -17,9 +17,14 @@ export function useFileEdits() {
         });
     }, []);
 
+    const clearAllFileEdits = useCallback(() => {
+        setEditsByFile({});
+    }, []);
+
     return {
         editsByFile,
         setFileEdits,
         clearFileEdits,
+        clearAllFileEdits,
     };
 }

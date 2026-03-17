@@ -44,7 +44,7 @@ export function JpegTooltip() {
                     ? 'off'
                     : (String(value) as '95' | '90' | '85');
                 return {
-                    title: value === undefined ? t('outputPanel.off') : String(value),
+                    title: value === undefined ? t('outputPanel.auto') : String(value),
                     description: t(`tooltips.jpegDescriptions.${key}`),
                 };
             })}

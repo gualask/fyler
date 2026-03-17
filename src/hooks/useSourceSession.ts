@@ -17,8 +17,8 @@ interface Options {
 
 export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) {
     const { t } = useTranslation();
-    const { files, addFiles: addToList, removeFile: removeFileFromList, reorderFiles } = useFileList();
-    const { editsByFile, setFileEdits, clearFileEdits } = useFileEdits();
+    const { files, addFiles: addToList, removeFile: removeFileFromList, clearFiles, reorderFiles } = useFileList();
+    const { editsByFile, setFileEdits, clearFileEdits, clearAllFileEdits } = useFileEdits();
     const { requestRenders, releaseFile } = usePdfCache();
     const knownPathsRef = useRef<Set<string>>(new Set());
 
@@ -83,6 +83,20 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
         return removed;
     }, [clearFileEdits, files, onFileRemoved, releaseFile, removeFileFromList]);
 
+    const clearSourceFiles = useCallback(() => {
+        if (!files.length) return;
+
+        knownPathsRef.current = new Set();
+        for (const file of files) {
+            if (file.kind === 'pdf') {
+                releaseFile(file.id);
+            }
+        }
+        clearAllFileEdits();
+        void releaseSources(files.map((file) => file.id));
+        clearFiles();
+    }, [clearAllFileEdits, clearFiles, files, releaseFile]);
+
     const rotateSourcePage = useCallback(async (fileId: string, pageNum: number, direction: RotationDirection) => {
         const file = files.find((entry) => entry.id === fileId);
         if (!file) return;
@@ -100,6 +114,7 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
         addSourceFiles,
         openAndAddSourceFiles,
         removeSourceFile,
+        clearSourceFiles,
         rotateSourcePage,
         reorderFiles,
     };

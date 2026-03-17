@@ -14,7 +14,7 @@ export function useFiles({
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [focusedSource, setFocusedSource] = useState<{ fileId: string; pageNum: number; flashKey: number } | null>(null);
     const finalPagesApi = useFinalPages();
-    const { addAllPagesForFile, removePagesForFile } = finalPagesApi;
+    const { addAllPagesForFile, removePagesForFile, clearAllPages } = finalPagesApi;
 
     const handleSessionFilesAdded = useCallback((addedFiles: SourceFile[]) => {
         for (const file of addedFiles) {
@@ -34,6 +34,7 @@ export function useFiles({
         addSourceFiles,
         openAndAddSourceFiles,
         removeSourceFile,
+        clearSourceFiles,
         rotateSourcePage,
         reorderFiles,
     } = useSourceSession({
@@ -74,6 +75,14 @@ export function useFiles({
         removeSourceFile(id);
     }, [files, removeSourceFile, selectedId]);
 
+    const clearAllFiles = useCallback(() => {
+        if (!files.length) return;
+        setSelectedId(null);
+        setFocusedSource(null);
+        clearAllPages();
+        clearSourceFiles();
+    }, [clearAllPages, clearSourceFiles, files.length]);
+
     const rotatePage = useCallback(async (fileId: string, pageNum: number, direction: RotationDirection) => {
         await rotateSourcePage(fileId, pageNum, direction);
     }, [rotateSourcePage]);
@@ -98,6 +107,7 @@ export function useFiles({
         focusedSource,
         addFiles,
         removeFile,
+        clearAllFiles,
         rotatePage,
         focusFinalPageSource,
         reorderFiles,

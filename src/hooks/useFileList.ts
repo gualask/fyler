@@ -22,9 +22,13 @@ export function useFileList() {
         setFiles((prev) => prev.filter((f) => f.id !== id));
     }, []);
 
+    const clearFiles = useCallback(() => {
+        setFiles([]);
+    }, []);
+
     const reorderFiles = useCallback((fromId: string, toId: string) => {
         setFiles((prev) => reorderById(prev, fromId, toId));
     }, []);
 
-    return { files, addFiles, removeFile, reorderFiles };
+    return { files, addFiles, removeFile, clearFiles, reorderFiles };
 }

@@ -9,6 +9,7 @@ type CompositionState = {
 type CompositionAction =
     | { type: 'set-file-selection'; fileId: string; pages: number[] }
     | { type: 'remove-file'; fileId: string }
+    | { type: 'reset' }
     | { type: 'reorder'; fromId: string; toId: string }
     | { type: 'move-to-index'; id: string; targetIndex: number };
 
@@ -99,6 +100,8 @@ function compositionReducer(state: CompositionState, action: CompositionAction):
                 pageOrder: state.pageOrder.filter((id) => !id.startsWith(`${action.fileId}:`)),
             };
         }
+        case 'reset':
+            return initialState;
         case 'reorder':
             return {
                 ...state,
@@ -131,6 +134,10 @@ export function useFinalPages() {
 
     const removePagesForFile = useCallback((fileId: string) => {
         dispatch({ type: 'remove-file', fileId });
+    }, []);
+
+    const clearAllPages = useCallback(() => {
+        dispatch({ type: 'reset' });
     }, []);
 
     const togglePage = useCallback((fileId: string, pageNum: number) => {
@@ -184,6 +191,7 @@ export function useFinalPages() {
         selectedPagesByFile: state.selectedPagesByFile,
         addAllPagesForFile,
         removePagesForFile,
+        clearAllPages,
         togglePage,
         togglePageRange,
         setPagesForFile,

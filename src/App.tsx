@@ -44,6 +44,7 @@ function AppContent() {
         focusedSource,
         addFiles,
         removeFile,
+        clearAllFiles,
         isDragOver,
         finalPages,
         togglePage,
@@ -134,6 +135,7 @@ function AppContent() {
                                             onSelect={selectFile}
                                             onRemove={removeFile}
                                             onAddFiles={handleAddFiles}
+                                            onClearFiles={clearAllFiles}
                                         />
                                     </aside>
 

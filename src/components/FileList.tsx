@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ArrowUpTrayIcon, DocumentPlusIcon } from '@heroicons/react/24/outline';
+import { ArrowUpTrayIcon, DocumentPlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { SourceFile, FinalPage } from '../domain';
 import { useTranslation } from '../i18n';
 import { ColumnHeader } from './shared/layout/ColumnHeader';
@@ -12,9 +12,10 @@ interface Props {
     onSelect: (id: string) => void;
     onRemove: (id: string) => void;
     onAddFiles: () => void;
+    onClearFiles: () => void;
 }
 
-export function FileList({ files, finalPages, selectedId, onSelect, onRemove, onAddFiles }: Props) {
+export function FileList({ files, finalPages, selectedId, onSelect, onRemove, onAddFiles, onClearFiles }: Props) {
     const { t } = useTranslation();
     const pageCountByFile = useMemo(() => {
         const map = new Map<string, number>();
@@ -34,6 +35,15 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
                 >
                     <DocumentPlusIcon className="h-4 w-4" />
                     {t('fileList.add')}
+                </button>
+                <button
+                    onClick={onClearFiles}
+                    title={t('fileList.clearFilesTitle')}
+                    disabled={files.length === 0}
+                    className="btn-ghost-sm h-[34px]"
+                >
+                    <TrashIcon className="h-4 w-4" />
+                    {t('fileList.clear')}
                 </button>
             </ColumnHeader>
 

@@ -88,9 +88,8 @@ function OptimizationAdvancedPanel({
     onTargetDpiChange: (v: number | undefined) => void;
 }) {
     const { t } = useTranslation();
-    const offLabel = t('outputPanel.off');
-    const jpegOptions = buildOptionalNumberOptions(JPEG_QUALITY_OPTIONS, offLabel);
-    const targetDpiOptions = buildOptionalNumberOptions(TARGET_DPI_OPTIONS, offLabel);
+    const jpegOptions = buildOptionalNumberOptions(JPEG_QUALITY_OPTIONS, t('outputPanel.auto'));
+    const targetDpiOptions = buildOptionalNumberOptions(TARGET_DPI_OPTIONS, t('outputPanel.off'));
 
     return (
         <div className="output-panel-advanced-panel">
