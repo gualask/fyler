@@ -112,6 +112,15 @@ body {
     @apply inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg
            p-1.5 text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text-secondary;
   }
+  .btn-primary,
+  .btn-primary-lg,
+  .btn-ghost,
+  .btn-ghost-sm,
+  .btn-icon,
+  .language-switcher__option {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted
+           focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface disabled:cursor-not-allowed;
+  }
   .btn-icon-active {
     @apply bg-ui-accent-soft text-ui-accent-on-soft;
   }

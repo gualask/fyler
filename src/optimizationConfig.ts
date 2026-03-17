@@ -4,7 +4,6 @@ export const DEFAULT_OPTIMIZATION_PRESET: BasicOptimizationPreset = 'light';
 
 export type OptimizationSettings = {
     jpegQuality?: number;
-    maxPx?: number;
     targetDpi?: number;
 };
 
@@ -49,21 +48,6 @@ export const JPEG_QUALITY_OPTIONS: NumericOptionDefinition[] = [
     },
 ];
 
-export const MAX_PX_OPTIONS: NumericOptionDefinition[] = [
-    {
-        value: undefined,
-    },
-    {
-        value: 2500,
-    },
-    {
-        value: 2000,
-    },
-    {
-        value: 1500,
-    },
-];
-
 export const TARGET_DPI_OPTIONS: NumericOptionDefinition[] = [
     {
         value: undefined,
@@ -86,20 +70,17 @@ export function getOptimizationSettings(preset: BasicOptimizationPreset): Optimi
     }
     return {
         jpegQuality: found.jpegQuality,
-        maxPx: found.maxPx,
         targetDpi: found.targetDpi,
     };
 }
 
 export function deriveOptimizationPreset(
     jpegQuality: number | undefined,
-    maxPx: number | undefined,
     targetDpi: number | undefined,
 ): ImageOptimizationPreset {
     const matched = OPTIMIZATION_PRESETS.find(
         (preset) => (
             preset.jpegQuality === jpegQuality
-            && preset.maxPx === maxPx
             && preset.targetDpi === targetDpi
         ),
     );

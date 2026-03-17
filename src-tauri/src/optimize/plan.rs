@@ -17,12 +17,6 @@ pub enum OutputEncoding {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ResizeSource {
-    Manual,
-    Auto,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OptimizationPlan {
     pub resize_to: Option<(u32, u32)>,
     pub output_encoding: OutputEncoding,
@@ -64,16 +58,7 @@ fn choose_resize(
     usages: Option<&[ImageUsage]>,
     opts: &OptimizeOptions,
 ) -> Option<(u32, u32)> {
-    let manual = resize_by_max_px(candidate.width, candidate.height, opts.max_px)
-        .map(|dimensions| (dimensions, ResizeSource::Manual));
-    let auto = resize_by_target_dpi(candidate, usages, opts.target_dpi.map(f32::from))
-        .map(|dimensions| (dimensions, ResizeSource::Auto));
-
-    let (chosen, source) = match (manual, auto) {
-        (Some(left), Some(right)) => Some(smaller_dimensions(left, right)),
-        (Some(choice), None) | (None, Some(choice)) => Some(choice),
-        (None, None) => None,
-    }?;
+    let chosen = resize_by_target_dpi(candidate, usages, opts.target_dpi.map(f32::from))?;
 
     let original_area = u64::from(candidate.width) * u64::from(candidate.height);
     let next_area = u64::from(chosen.0) * u64::from(chosen.1);
@@ -81,25 +66,11 @@ fn choose_resize(
         return None;
     }
 
-    if matches!(source, ResizeSource::Auto) && chosen.0.max(chosen.1) < MIN_LONG_SIDE_PX {
+    if chosen.0.max(chosen.1) < MIN_LONG_SIDE_PX {
         return None;
     }
 
     Some(chosen)
-}
-
-fn resize_by_max_px(width: u32, height: u32, max_px: Option<u32>) -> Option<(u32, u32)> {
-    let max_px = max_px?;
-    let long_side = width.max(height);
-    if long_side <= max_px {
-        return None;
-    }
-
-    let scale = max_px as f64 / long_side as f64;
-    Some((
-        ((width as f64 * scale).round() as u32).max(1),
-        ((height as f64 * scale).round() as u32).max(1),
-    ))
 }
 
 fn resize_by_target_dpi(
@@ -178,19 +149,6 @@ fn auto_quality(candidate: &ImageCandidate, dimensions: (u32, u32)) -> u8 {
         s if s <= 0.90 => 76,
         _ if matches!(candidate.source_encoding, SourceEncoding::Jpeg) => 82,
         _ => 80,
-    }
-}
-
-fn smaller_dimensions(
-    left: ((u32, u32), ResizeSource),
-    right: ((u32, u32), ResizeSource),
-) -> ((u32, u32), ResizeSource) {
-    let left_area = u64::from((left.0).0) * u64::from((left.0).1);
-    let right_area = u64::from((right.0).0) * u64::from((right.0).1);
-    if left_area <= right_area {
-        left
-    } else {
-        right
     }
 }
 

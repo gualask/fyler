@@ -12,7 +12,7 @@ Desktop app for merging and rearranging PDF files and images, built with Tauri 2
 - Rotate individual pages directly from the preview
 - Preview any document before exporting
 - Export a single merged PDF
-- Optimize output: JPEG image compression (high / medium / low) and max-dimension resize
+- Optimize output: JPEG image compression and layout-aware image downscaling
 - Light / dark mode with persistent preference
 
 ## Tech stack

@@ -29,7 +29,7 @@ enum CandidateDecision {
 }
 
 fn can_optimize(opts: &OptimizeOptions) -> bool {
-    opts.jpeg_quality.is_some() || opts.max_px.is_some() || opts.target_dpi.is_some()
+    opts.jpeg_quality.is_some() || opts.target_dpi.is_some()
 }
 
 pub fn has_optimization_work(opts: &OptimizeOptions) -> bool {
@@ -253,7 +253,6 @@ mod tests {
     fn has_optimization_work_detects_target_dpi_only() {
         assert!(super::has_optimization_work(&OptimizeOptions {
             jpeg_quality: None,
-            max_px: None,
             image_fit: None,
             target_dpi: Some(170),
         }));
@@ -278,7 +277,6 @@ mod tests {
             &mut doc,
             &OptimizeOptions {
                 jpeg_quality: None,
-                max_px: None,
                 image_fit: None,
                 target_dpi: Some(150),
             },
@@ -306,7 +304,6 @@ mod tests {
             &mut doc,
             &OptimizeOptions {
                 jpeg_quality: None,
-                max_px: None,
                 image_fit: None,
                 target_dpi: Some(170),
             },
@@ -323,15 +320,18 @@ mod tests {
 
     #[test]
     fn optimizes_cmyk_jpeg_streams() -> Result<()> {
+        let width: u16 = 32;
+        let height: u16 = 32;
         let mut jpeg = Vec::new();
-        let raw = vec![0, 255, 255, 0, 255, 0, 255, 0, 255, 255, 0, 0, 0, 0, 0, 255];
-        Encoder::new(&mut jpeg, 95).encode(&raw, 2, 2, ColorType::Cmyk)?;
+        let raw = [0, 255, 255, 0, 255, 0, 255, 0]
+            .repeat(usize::from((width * height) / 2));
+        Encoder::new(&mut jpeg, 95).encode(&raw, width, height, ColorType::Cmyk)?;
 
         let mut doc = page_doc(
             image_stream(
                 b"DeviceCMYK",
-                2,
-                2,
+                u32::from(width),
+                u32::from(height),
                 jpeg,
                 Some(b"DCTDecode"),
                 Dictionary::new(),
@@ -344,7 +344,6 @@ mod tests {
             &mut doc,
             &OptimizeOptions {
                 jpeg_quality: Some(70),
-                max_px: Some(1),
                 image_fit: None,
                 target_dpi: None,
             },
@@ -354,8 +353,8 @@ mod tests {
         assert_eq!(summary.optimized, 1);
         assert_eq!(stream.dict.get(b"ColorSpace")?.as_name()?, b"DeviceCMYK");
         assert_eq!(stream.dict.get(b"Filter")?.as_name()?, b"DCTDecode");
-        assert_eq!(stream.dict.get(b"Width")?.as_i64()?, 1);
-        assert_eq!(stream.dict.get(b"Height")?.as_i64()?, 1);
+        assert_eq!(stream.dict.get(b"Width")?.as_i64()?, i64::from(width));
+        assert_eq!(stream.dict.get(b"Height")?.as_i64()?, i64::from(height));
         Ok(())
     }
 
@@ -448,15 +447,18 @@ mod tests {
 
     #[test]
     fn optimized_cmyk_jpeg_roundtrip_stays_loadable() -> Result<()> {
+        let width: u16 = 32;
+        let height: u16 = 32;
         let mut jpeg = Vec::new();
-        let raw = vec![0, 255, 255, 0, 255, 0, 255, 0, 255, 255, 0, 0, 0, 0, 0, 255];
-        Encoder::new(&mut jpeg, 95).encode(&raw, 2, 2, ColorType::Cmyk)?;
+        let raw = [0, 255, 255, 0, 255, 0, 255, 0]
+            .repeat(usize::from((width * height) / 2));
+        Encoder::new(&mut jpeg, 95).encode(&raw, width, height, ColorType::Cmyk)?;
 
         let mut doc = page_doc(
             image_stream(
                 b"DeviceCMYK",
-                2,
-                2,
+                u32::from(width),
+                u32::from(height),
                 jpeg,
                 Some(b"DCTDecode"),
                 Dictionary::new(),
@@ -469,7 +471,6 @@ mod tests {
             &mut doc,
             &OptimizeOptions {
                 jpeg_quality: Some(70),
-                max_px: Some(1),
                 image_fit: None,
                 target_dpi: None,
             },
@@ -490,8 +491,8 @@ mod tests {
         let stream = first_image_stream(&reloaded);
         assert_eq!(stream.dict.get(b"ColorSpace")?.as_name()?, b"DeviceCMYK");
         assert_eq!(stream.dict.get(b"Filter")?.as_name()?, b"DCTDecode");
-        assert_eq!(stream.dict.get(b"Width")?.as_i64()?, 1);
-        assert_eq!(stream.dict.get(b"Height")?.as_i64()?, 1);
+        assert_eq!(stream.dict.get(b"Width")?.as_i64()?, i64::from(width));
+        assert_eq!(stream.dict.get(b"Height")?.as_i64()?, i64::from(height));
         Ok(())
     }
 }

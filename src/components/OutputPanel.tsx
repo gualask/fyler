@@ -7,7 +7,6 @@ import type {
 } from '../optimizationConfig';
 import {
     JPEG_QUALITY_OPTIONS,
-    MAX_PX_OPTIONS,
     OPTIMIZATION_PRESETS,
     TARGET_DPI_OPTIONS,
 } from '../optimizationConfig';
@@ -20,7 +19,6 @@ import {
     DpiTooltip,
     JpegTooltip,
     OptimizationTooltip,
-    ResizeTooltip,
 } from './output-panel/helpContent';
 import {
     SegmentButtons,
@@ -32,12 +30,10 @@ import './output-panel/output-panel.css';
 interface Props {
     imageFit: ImageFit;
     jpegQuality?: number;
-    maxPx?: number;
     targetDpi?: number;
     optimizationPreset: ImageOptimizationPreset;
     onImageFitChange: (v: ImageFit) => void;
     onJpegQualityChange: (v: number | undefined) => void;
-    onMaxPxChange: (v: number | undefined) => void;
     onTargetDpiChange: (v: number | undefined) => void;
     onOptimizationPresetChange: (v: BasicOptimizationPreset) => void;
 }
@@ -70,34 +66,31 @@ function decodeOptionalNumberOption(option: string): number | undefined {
     return Number(option);
 }
 
+function buildOptionalNumberOptions(
+    options: ReadonlyArray<{ value: number | undefined }>,
+    offLabel: string,
+): SegmentOption<string>[] {
+    return options.map(({ value }) => ({
+        value: value === undefined ? 'off' : String(value),
+        label: value === undefined ? offLabel : String(value),
+    }));
+}
+
 function OptimizationAdvancedPanel({
     jpegQuality,
-    maxPx,
     targetDpi,
     onJpegQualityChange,
-    onMaxPxChange,
     onTargetDpiChange,
 }: {
     jpegQuality?: number;
-    maxPx?: number;
     targetDpi?: number;
     onJpegQualityChange: (v: number | undefined) => void;
-    onMaxPxChange: (v: number | undefined) => void;
     onTargetDpiChange: (v: number | undefined) => void;
 }) {
     const { t } = useTranslation();
-    const jpegOptions: SegmentOption<string>[] = JPEG_QUALITY_OPTIONS.map(({ value }) => ({
-        value: value === undefined ? 'off' : String(value),
-        label: value === undefined ? t('outputPanel.off') : String(value),
-    }));
-    const targetDpiOptions: SegmentOption<string>[] = TARGET_DPI_OPTIONS.map(({ value }) => ({
-        value: value === undefined ? 'off' : String(value),
-        label: value === undefined ? t('outputPanel.off') : String(value),
-    }));
-    const maxLongSideOptions: SegmentOption<string>[] = MAX_PX_OPTIONS.map(({ value }) => ({
-        value: value === undefined ? 'off' : String(value),
-        label: value === undefined ? t('outputPanel.off') : String(value),
-    }));
+    const offLabel = t('outputPanel.off');
+    const jpegOptions = buildOptionalNumberOptions(JPEG_QUALITY_OPTIONS, offLabel);
+    const targetDpiOptions = buildOptionalNumberOptions(TARGET_DPI_OPTIONS, offLabel);
 
     return (
         <div className="output-panel-advanced-panel">
@@ -120,15 +113,6 @@ function OptimizationAdvancedPanel({
                     value={encodeOptionalNumberOption(jpegQuality)}
                     onChange={(value) => onJpegQualityChange(decodeOptionalNumberOption(value))}
                 />
-                <SegmentedControl
-                    label={t('outputPanel.maxLongSide')}
-                    helpContent={<ResizeTooltip />}
-                    helpAlign="end"
-                    className="output-panel-group-fill output-panel-advanced-span"
-                    options={maxLongSideOptions}
-                    value={encodeOptionalNumberOption(maxPx)}
-                    onChange={(value) => onMaxPxChange(decodeOptionalNumberOption(value))}
-                />
             </div>
         </div>
     );
@@ -137,12 +121,10 @@ function OptimizationAdvancedPanel({
 export function OutputPanel({
     imageFit,
     jpegQuality,
-    maxPx,
     targetDpi,
     optimizationPreset,
     onImageFitChange,
     onJpegQualityChange,
-    onMaxPxChange,
     onTargetDpiChange,
     onOptimizationPresetChange,
 }: Props) {
@@ -163,18 +145,23 @@ export function OutputPanel({
     );
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const advancedRef = useRef<HTMLDivElement | null>(null);
+    const closeAdvancedPanel = () => setIsAdvancedOpen(false);
+    const toggleAdvancedPanel = () => setIsAdvancedOpen((current) => !current);
+    const handlePresetChange = (value: ImageOptimizationPreset) => {
+        if (value !== 'custom') onOptimizationPresetChange(value);
+    };
 
     useEffect(() => {
         if (!isAdvancedOpen) return;
 
         const handleMouseDown = (event: MouseEvent) => {
             if (!advancedRef.current?.contains(event.target as Node)) {
-                setIsAdvancedOpen(false);
+                closeAdvancedPanel();
             }
         };
 
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setIsAdvancedOpen(false);
+            if (event.key === 'Escape') closeAdvancedPanel();
         };
 
         window.addEventListener('mousedown', handleMouseDown);
@@ -200,15 +187,13 @@ export function OutputPanel({
                             className="output-panel-preset-shell"
                             options={presetOptions}
                             value={optimizationPreset}
-                            onChange={(value) => {
-                                if (value !== 'custom') onOptimizationPresetChange(value);
-                            }}
+                            onChange={handlePresetChange}
                         />
                         <button
                             type="button"
                             aria-label={t('outputPanel.advancedSettings')}
                             aria-expanded={isAdvancedOpen}
-                            onClick={() => setIsAdvancedOpen((current) => !current)}
+                            onClick={toggleAdvancedPanel}
                             className={[
                                 'btn-icon',
                                 isAdvancedOpen ? 'btn-icon-active' : '',
@@ -221,10 +206,8 @@ export function OutputPanel({
                     {isAdvancedOpen ? (
                         <OptimizationAdvancedPanel
                             jpegQuality={jpegQuality}
-                            maxPx={maxPx}
                             targetDpi={targetDpi}
                             onJpegQualityChange={onJpegQualityChange}
-                            onMaxPxChange={onMaxPxChange}
                             onTargetDpiChange={onTargetDpiChange}
                         />
                     ) : null}

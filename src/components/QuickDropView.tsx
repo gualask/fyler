@@ -57,7 +57,7 @@ export function QuickDropView({ files, quickDropFileIds, isDragOver, onRemove, o
                                     {file.kind === 'pdf' ? (
                                         <DocumentIcon className="h-4 w-4 shrink-0 text-ui-accent" />
                                     ) : (
-                                        <PhotoIcon className="h-4 w-4 shrink-0 text-slate-400" />
+                                        <PhotoIcon className="h-4 w-4 shrink-0 text-ui-text-muted" />
                                     )}
                                     <span className="flex-1 truncate text-xs">{file.name}</span>
                                     <button

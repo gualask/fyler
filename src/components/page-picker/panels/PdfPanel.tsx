@@ -61,7 +61,7 @@ function PdfThumbnailItem({
                         className="block h-full w-full bg-white object-contain"
                     />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-zinc-800">
+                    <div className="flex h-full w-full items-center justify-center bg-ui-surface-hover">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-ui-accent-muted border-t-transparent" />
                     </div>
                 )}

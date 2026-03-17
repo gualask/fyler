@@ -872,7 +872,6 @@ mod tests {
             0,
             Some(&OptimizeOptions {
                 jpeg_quality: None,
-                max_px: None,
                 target_dpi: Some(170),
                 image_fit: None,
             }),
@@ -896,7 +895,6 @@ mod tests {
             0,
             Some(&OptimizeOptions {
                 jpeg_quality: None,
-                max_px: None,
                 target_dpi: Some(170),
                 image_fit: None,
             }),

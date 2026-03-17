@@ -66,12 +66,10 @@ function AppContent() {
     const {
         imageFit,
         jpegQuality,
-        maxPx,
         targetDpi,
         optimizationPreset,
         setImageFit,
         setJpegQuality,
-        setMaxPx,
         setTargetDpi,
         setOptimizationPreset,
         optimizeOptions,
@@ -175,12 +173,10 @@ function AppContent() {
                                     <OutputPanel
                                         imageFit={imageFit}
                                         jpegQuality={jpegQuality}
-                                        maxPx={maxPx}
                                         targetDpi={targetDpi}
                                         optimizationPreset={optimizationPreset}
                                         onImageFitChange={setImageFit}
                                         onJpegQualityChange={setJpegQuality}
-                                        onMaxPxChange={setMaxPx}
                                         onTargetDpiChange={setTargetDpi}
                                         onOptimizationPresetChange={setOptimizationPreset}
                                     />

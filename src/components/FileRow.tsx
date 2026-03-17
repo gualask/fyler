@@ -25,7 +25,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
         >
             <div className="flex items-start gap-3">
                 {file.kind === 'image' ? (
-                    <PhotoIcon className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" />
+                    <PhotoIcon className="mt-0.5 h-5 w-5 shrink-0 text-ui-text-muted" />
                 ) : (
                     <DocumentIcon className="mt-0.5 h-5 w-5 shrink-0 text-ui-accent" />
                 )}

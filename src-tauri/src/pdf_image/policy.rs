@@ -103,12 +103,11 @@ fn preset_class(opts: Option<&OptimizeOptions>) -> ImagePresetClass {
         return ImagePresetClass::Custom;
     }
 
-    match (opts.max_px, opts.target_dpi) {
-        (None, None) => ImagePresetClass::Original,
-        (None, Some(dpi)) if dpi >= 200 => ImagePresetClass::Light,
-        (None, Some(dpi)) if dpi >= 145 => ImagePresetClass::Balanced,
-        (None, Some(_)) => ImagePresetClass::Compact,
-        _ => ImagePresetClass::Custom,
+    match opts.target_dpi {
+        None => ImagePresetClass::Original,
+        Some(dpi) if dpi >= 200 => ImagePresetClass::Light,
+        Some(dpi) if dpi >= 145 => ImagePresetClass::Balanced,
+        Some(_) => ImagePresetClass::Compact,
     }
 }
 
@@ -162,7 +161,6 @@ mod tests {
                 &descriptor(SourceCompressionClass::LosslessOrUnknown, false),
                 Some(&OptimizeOptions {
                     jpeg_quality: None,
-                    max_px: None,
                     target_dpi: Some(220),
                     image_fit: None,
                 }),
@@ -181,7 +179,6 @@ mod tests {
                 &descriptor(SourceCompressionClass::LosslessOrUnknown, true),
                 Some(&OptimizeOptions {
                     jpeg_quality: None,
-                    max_px: None,
                     target_dpi: Some(170),
                     image_fit: None,
                 }),
@@ -200,7 +197,6 @@ mod tests {
                 &descriptor(SourceCompressionClass::LosslessOrUnknown, true),
                 Some(&OptimizeOptions {
                     jpeg_quality: Some(77),
-                    max_px: None,
                     target_dpi: Some(220),
                     image_fit: None,
                 }),

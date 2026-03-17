@@ -1,6 +1,5 @@
 import {
     JPEG_QUALITY_OPTIONS,
-    MAX_PX_OPTIONS,
     OPTIMIZATION_PRESETS,
     TARGET_DPI_OPTIONS,
 } from '../../optimizationConfig';
@@ -15,22 +14,6 @@ function FitPreview({ mode }: { mode: ImageFit }) {
             <span className="fit-preview-overflow" />
             <span className="fit-preview-page">
                 <span className="fit-preview-media" />
-            </span>
-        </span>
-    );
-}
-
-function ResizeGuidePreview() {
-    const { t } = useTranslation();
-
-    return (
-        <span className="resize-guide" aria-hidden="true">
-            <span className="resize-guide-label">{t('tooltips.resizeGuideLabel')}</span>
-            <span className="resize-guide-rule" />
-            <span className="resize-guide-cap resize-guide-cap-start" />
-            <span className="resize-guide-cap resize-guide-cap-end" />
-            <span className="resize-guide-frame">
-                <span className="resize-guide-photo" />
             </span>
         </span>
     );
@@ -63,26 +46,6 @@ export function JpegTooltip() {
                 return {
                     title: value === undefined ? t('outputPanel.off') : String(value),
                     description: t(`tooltips.jpegDescriptions.${key}`),
-                };
-            })}
-        />
-    );
-}
-
-export function ResizeTooltip() {
-    const { t } = useTranslation();
-
-    return (
-        <TooltipContent
-            title={t('tooltips.resizeTitle')}
-            leadVisual={<ResizeGuidePreview />}
-            items={MAX_PX_OPTIONS.map(({ value }) => {
-                const key: 'off' | '2500' | '2000' | '1500' = value === undefined
-                    ? 'off'
-                    : (String(value) as '2500' | '2000' | '1500');
-                return {
-                    title: value === undefined ? t('outputPanel.off') : `${value}px`,
-                    description: t(`tooltips.resizeDescriptions.${key}`),
                 };
             })}
         />
