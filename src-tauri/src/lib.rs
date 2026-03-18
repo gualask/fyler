@@ -32,6 +32,8 @@ pub fn run() {
             commands::release_sources,
             commands::save_pdf_dialog,
             commands::merge_pdfs,
+            commands::get_app_metadata,
+            commands::open_external_url,
             commands::get_image_export_preview_layout,
             settings::load_settings,
             settings::save_settings,

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { useDiagnostics } from '../diagnostics/useDiagnostics';
 
 interface UpdateState {
     available: boolean;
@@ -16,6 +17,7 @@ function toErrorMessage(error: unknown): string {
 }
 
 export function useAppUpdater() {
+    const { record } = useDiagnostics();
     const [state, setState] = useState<UpdateState>({
         available: false,
         version: null,
@@ -60,6 +62,11 @@ export function useAppUpdater() {
 
             await relaunch();
         } catch (error) {
+            record({
+                category: 'update',
+                severity: 'error',
+                message: `Updater install failed: ${toErrorMessage(error)}`,
+            });
             setState((s) => ({
                 ...s,
                 installing: false,
@@ -67,7 +74,7 @@ export function useAppUpdater() {
                 error: toErrorMessage(error),
             }));
         }
-    }, [update]);
+    }, [record, update]);
 
     const dismiss = useCallback(() => {
         setState((s) => ({ ...s, dismissed: true, error: null }));

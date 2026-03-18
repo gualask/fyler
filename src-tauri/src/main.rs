@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    fyler_tmp_lib::run()
+    fyler_lib::run()
 }

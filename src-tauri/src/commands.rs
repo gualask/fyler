@@ -1,5 +1,7 @@
+use std::env::consts::{ARCH, OS};
 use tauri::Emitter;
 use tauri::State;
+use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
@@ -15,6 +17,16 @@ struct ImportWarningPayload {
     skipped_count: usize,
     preview: Vec<String>,
     has_more: bool,
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppMetadataPayload {
+    app_name: String,
+    version: String,
+    identifier: String,
+    platform: String,
+    arch: String,
 }
 
 fn emit_import_warning(app: &tauri::AppHandle, skipped_errors: &[String]) {
@@ -99,6 +111,26 @@ pub async fn merge_pdfs(
     req: MergeRequest,
 ) -> Result<MergeResult, AppError> {
     export_pdf(&app, &registry, req).map_err(Into::into)
+}
+
+#[tauri::command]
+pub fn get_app_metadata(app: tauri::AppHandle) -> AppMetadataPayload {
+    let package = app.package_info();
+    AppMetadataPayload {
+        app_name: package.name.clone(),
+        version: package.version.to_string(),
+        identifier: app.config().identifier.clone(),
+        platform: OS.to_string(),
+        arch: ARCH.to_string(),
+    }
+}
+
+#[tauri::command]
+pub fn open_external_url(app: tauri::AppHandle, url: String) -> Result<(), AppError> {
+    app.opener()
+        .open_url(url, None::<String>)
+        .map_err(anyhow::Error::from)?;
+    Ok(())
 }
 
 #[tauri::command]

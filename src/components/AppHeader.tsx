@@ -1,6 +1,7 @@
 import { ArrowDownTrayIcon, ArrowsPointingInIcon, EyeIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { HelpMenu } from './support/HelpMenu';
 
 interface Props {
     isDark: boolean;
@@ -10,20 +11,36 @@ interface Props {
     onPreview: () => void;
     canPreview: boolean;
     onQuickAdd: () => void;
+    onReportBug: () => void;
+    onCopyDiagnostics: () => void;
+    onOpenGitHubIssues: () => void;
+    onOpenAbout: () => void;
 }
 
-export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPreview, canPreview, onQuickAdd }: Props) {
+export function AppHeader({
+    isDark,
+    onToggleTheme,
+    onExport,
+    canExport,
+    onPreview,
+    canPreview,
+    onQuickAdd,
+    onReportBug,
+    onCopyDiagnostics,
+    onOpenGitHubIssues,
+    onOpenAbout,
+}: Props) {
     const { t } = useTranslation();
 
     return (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-6">
             <div className="flex items-center gap-3">
-                <img src="/icon.svg" alt="Fyler" className="h-9 w-9" />
-                <div className="flex flex-col leading-none">
-                    <span className="text-base font-bold">Fyler</span>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-ui-text-muted">v0.1.0</span>
+                <div className="flex items-center gap-2">
+                    <img src="/icon.svg" alt="Fyler" className="h-6 w-6" />
+                    <span className="text-sm font-semibold text-ui-text">Fyler</span>
                 </div>
-                <div className="ml-2 flex items-center gap-3">
+                <div className="mx-1 h-5 w-px bg-ui-border" />
+                <div className="flex items-center gap-2">
                     <button
                         onClick={onToggleTheme}
                         title={isDark ? t('header.toggleTheme.light') : t('header.toggleTheme.dark')}
@@ -39,6 +56,12 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                 </div>
             </div>
             <div className="flex items-center gap-3">
+                <HelpMenu
+                    onReportBug={onReportBug}
+                    onCopyDiagnostics={onCopyDiagnostics}
+                    onOpenGitHubIssues={onOpenGitHubIssues}
+                    onOpenAbout={onOpenAbout}
+                />
                 <button
                     disabled={!canPreview}
                     onClick={onPreview}

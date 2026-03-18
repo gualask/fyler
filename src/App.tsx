@@ -1,10 +1,15 @@
 import { useCallback, useState } from 'react';
 import { buildMergeRequest } from './domain';
-import { mergePDFs, savePDFDialog } from './platform';
+import { DiagnosticsProvider } from './diagnostics';
+import {
+    mergePDFs,
+    savePDFDialog,
+} from './platform';
 import { PdfCacheProvider } from './hooks/PdfCacheProvider';
 import { useFiles } from './hooks/useFiles';
 import { useAppNotifications } from './hooks/useAppNotifications';
 import { useQuickAdd } from './hooks/useQuickAdd';
+import { useDiagnostics } from './diagnostics/useDiagnostics';
 import { useTheme } from './hooks/useTheme';
 import { useOptimize } from './hooks/useOptimize';
 import { AppHeader } from './components/AppHeader';
@@ -19,6 +24,8 @@ import { DragOverlay } from './components/DragOverlay';
 import { QuickAddView } from './components/QuickAddView';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { UpdateDialog } from './components/UpdateDialog';
+import { SupportDialog } from './components/support/SupportDialog';
+import { useSupportDiagnostics } from './components/support/useSupportDiagnostics';
 import { AppPreferencesProvider, useTranslation } from './i18n';
 
 function AppContent() {
@@ -34,6 +41,7 @@ function AppContent() {
         clearLoading,
         showExportCompleted,
         showExportCompletedWithOptimizationWarning,
+        showError,
     } = useAppNotifications();
 
     const {
@@ -59,10 +67,6 @@ function AppContent() {
         moveFinalPageToIndex,
         focusFinalPageSource,
     } = useFiles({ onFilesAdded });
-    const handleAddFiles = useCallback(() => {
-        showOpeningFiles();
-        void addFiles().finally(() => clearLoading());
-    }, [addFiles, clearLoading, showOpeningFiles]);
 
     const { isDark, toggleTheme } = useTheme();
     const {
@@ -79,6 +83,33 @@ function AppContent() {
     const focusedSourceMatchesSelected = Boolean(focusedSource && focusedSource.fileId === selectedFile?.id);
     const focusedSourcePageNum = focusedSourceMatchesSelected ? focusedSource!.pageNum : null;
     const focusedSourceFlashKey = focusedSourceMatchesSelected ? focusedSource!.flashKey : undefined;
+    const {
+        supportDialogMode,
+        diagnosticsSnapshot,
+        openReportBug,
+        openAbout,
+        closeSupportDialog,
+        copyDiagnostics,
+        openGitHubIssues,
+        logFilesDialogStarted,
+        logFilesDialogResult,
+        logFilesDialogFailure,
+        logQuickAddSuccess,
+        logQuickAddFailure,
+        logExportStarted,
+        logExportCompleted,
+        logExportWarning,
+        logExportFailure,
+    } = useSupportDiagnostics({
+        isDark,
+        isQuickAdd,
+        fileCount: files.length,
+        finalPageCount: finalPages.length,
+        optimizationPreset,
+        imageFit,
+        targetDpi,
+        jpegQuality,
+    });
 
     const exportMerged = useCallback(async () => {
         if (finalPages.length === 0) return;
@@ -88,14 +119,20 @@ function AppContent() {
         );
         if (!outputPath) return;
         const req = buildMergeRequest(finalPages, editsByFile, outputPath, optimizeOptions);
+        logExportStarted(finalPages.length);
         showMergePreparing();
         try {
             const result = await mergePDFs(req);
             if (result.optimizationFailedCount > 0) {
+                logExportWarning(result.optimizationFailedCount);
                 showExportCompletedWithOptimizationWarning(result.optimizationFailedCount);
             } else {
+                logExportCompleted(finalPages.length);
                 showExportCompleted();
             }
+        } catch (error) {
+            logExportFailure(error);
+            showError(error);
         } finally {
             clearLoading();
         }
@@ -103,12 +140,53 @@ function AppContent() {
         clearLoading,
         editsByFile,
         finalPages,
+        logExportCompleted,
+        logExportFailure,
+        logExportStarted,
+        logExportWarning,
         optimizeOptions,
         showExportCompleted,
         showExportCompletedWithOptimizationWarning,
+        showError,
         showMergePreparing,
         t,
     ]);
+
+    const handleAddFiles = useCallback(() => {
+        logFilesDialogStarted();
+        showOpeningFiles();
+        void addFiles()
+            .then((addedFiles) => {
+                logFilesDialogResult(addedFiles.length);
+            })
+            .catch((error) => {
+                logFilesDialogFailure(error);
+                showError(error);
+            })
+            .finally(() => clearLoading());
+    }, [addFiles, clearLoading, logFilesDialogFailure, logFilesDialogResult, logFilesDialogStarted, showError, showOpeningFiles]);
+
+    const handleEnterQuickAdd = useCallback(() => {
+        void enterQuickAdd()
+            .then(() => {
+                logQuickAddSuccess('enter');
+            })
+            .catch((error) => {
+                logQuickAddFailure('enter', error);
+                showError(error);
+            });
+    }, [enterQuickAdd, logQuickAddFailure, logQuickAddSuccess, showError]);
+
+    const handleExitQuickAdd = useCallback(() => {
+        void exitQuickAdd()
+            .then(() => {
+                logQuickAddSuccess('exit');
+            })
+            .catch((error) => {
+                logQuickAddFailure('exit', error);
+                showError(error);
+            });
+    }, [exitQuickAdd, logQuickAddFailure, logQuickAddSuccess, showError]);
 
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
@@ -119,7 +197,7 @@ function AppContent() {
                     quickAddFileIds={quickAddFileIds}
                     isDragOver={isDragOver}
                     onRemove={removeFile}
-                    onExit={() => void exitQuickAdd()}
+                    onExit={handleExitQuickAdd}
                 />
             ) : (
                 <>
@@ -130,7 +208,11 @@ function AppContent() {
                         canExport={finalPages.length > 0}
                         onPreview={() => setShowFinalPreview(true)}
                         canPreview={finalPages.length > 0}
-                        onQuickAdd={() => void enterQuickAdd()}
+                        onQuickAdd={handleEnterQuickAdd}
+                        onReportBug={openReportBug}
+                        onCopyDiagnostics={() => void copyDiagnostics().catch(showError)}
+                        onOpenGitHubIssues={() => void openGitHubIssues().catch(showError)}
+                        onOpenAbout={openAbout}
                     />
 
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -211,6 +293,16 @@ function AppContent() {
 
             {loadingMessage && <ProgressModal message={loadingMessage} progress={loadingProgress} />}
 
+            <SupportDialog
+                key={supportDialogMode ?? 'closed'}
+                mode={supportDialogMode}
+                snapshot={diagnosticsSnapshot}
+                onClose={closeSupportDialog}
+                onCopyDiagnostics={copyDiagnostics}
+                onOpenGitHubIssues={openGitHubIssues}
+                onOpenReportBug={openReportBug}
+            />
+
             {showFinalPreview && (
                 <PreviewModal
                     finalPages={finalPages}
@@ -227,11 +319,19 @@ function AppContent() {
 
 function AppShell() {
     const { t } = useTranslation();
+    const { record } = useDiagnostics();
 
     return (
         <AppErrorBoundary
             title={t('errors.unhandled')}
             reloadLabel={t('errors.reload')}
+            onError={(message) => {
+                record({
+                    category: 'app',
+                    severity: 'error',
+                    message: `React error boundary caught an error: ${message}`,
+                });
+            }}
         >
             <PdfCacheProvider>
                 <AppContent />
@@ -243,7 +343,9 @@ function AppShell() {
 function App() {
     return (
         <AppPreferencesProvider>
-            <AppShell />
+            <DiagnosticsProvider>
+                <AppShell />
+            </DiagnosticsProvider>
         </AppPreferencesProvider>
     );
 }

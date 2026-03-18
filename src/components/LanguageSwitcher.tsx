@@ -1,38 +1,14 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from '../i18n';
+import { useDismissableMenu } from '../hooks/useDismissableMenu';
 import { SUPPORTED_LOCALES } from '../locale';
 
 export function LanguageSwitcher() {
     const { locale, setLocale, t } = useTranslation();
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        function handlePointerDown(event: MouseEvent) {
-            if (!rootRef.current?.contains(event.target as Node)) {
-                setOpen(false);
-            }
-        }
-
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === 'Escape') {
-                setOpen(false);
-            }
-        }
-
-        window.addEventListener('mousedown', handlePointerDown);
-        window.addEventListener('keydown', handleKeyDown);
-
-        return () => {
-            window.removeEventListener('mousedown', handlePointerDown);
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [open]);
+    useDismissableMenu({ open, rootRef, onClose: () => setOpen(false) });
 
     function handleToggle() {
         setOpen((current) => !current);

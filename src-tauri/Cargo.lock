@@ -1390,7 +1390,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fyler-tmp"
+name = "fyler"
 version = "0.1.0"
 dependencies = [
  "anyhow",

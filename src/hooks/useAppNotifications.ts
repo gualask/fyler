@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 
 import type { AppStatusPayload, MergeProgressStep } from '../appEvents';
+import { useDiagnostics } from '../diagnostics/useDiagnostics';
 import { formatImportWarning, useTranslation } from '../i18n';
 
 function toErrorMessage(value: unknown): string {
@@ -38,6 +39,7 @@ type LoadingState =
 
 export function useAppNotifications() {
     const { t, tp } = useTranslation();
+    const { record } = useDiagnostics();
     const [status, setStatus] = useState<StatusState | null>(null);
     const [loading, setLoading] = useState<LoadingState | null>(null);
 
@@ -50,11 +52,15 @@ export function useAppNotifications() {
     useEffect(() => {
         const handleError = (event: ErrorEvent) => {
             event.preventDefault();
-            setStatus({ kind: 'error', message: toErrorMessage(event.error ?? event.message) });
+            const message = toErrorMessage(event.error ?? event.message);
+            record({ category: 'app', severity: 'error', message: `Unhandled window error: ${message}` });
+            setStatus({ kind: 'error', message });
         };
         const handleRejection = (event: PromiseRejectionEvent) => {
             event.preventDefault();
-            setStatus({ kind: 'error', message: toErrorMessage(event.reason) });
+            const message = toErrorMessage(event.reason);
+            record({ category: 'app', severity: 'error', message: `Unhandled promise rejection: ${message}` });
+            setStatus({ kind: 'error', message });
         };
 
         window.addEventListener('error', handleError);
@@ -64,19 +70,29 @@ export function useAppNotifications() {
             window.removeEventListener('error', handleError);
             window.removeEventListener('unhandledrejection', handleRejection);
         };
-    }, []);
+    }, [record]);
 
     useEffect(() => {
         return attachEventListener<string>('app-error', (event) => {
+            record({ category: 'app', severity: 'error', message: `Rust panic: ${event.payload}` });
             setStatus({ kind: 'error', message: event.payload });
         });
-    }, []);
+    }, [record]);
 
     useEffect(() => {
         return attachEventListener<AppStatusPayload>('app-status', (event) => {
+            record({
+                category: 'files',
+                severity: 'warn',
+                message: 'Import warning received',
+                metadata: {
+                    skippedCount: event.payload.skippedCount,
+                    hasMore: event.payload.hasMore,
+                },
+            });
             setStatus({ kind: 'import-warning', payload: event.payload });
         });
-    }, []);
+    }, [record]);
 
     useEffect(() => {
         return attachEventListener<{ step: MergeProgressStep; progress: number }>('merge-progress', (event) => {
@@ -102,6 +118,10 @@ export function useAppNotifications() {
 
     const showExportCompletedWithOptimizationWarning = useCallback((count: number) => {
         setStatus({ kind: 'export-completed-with-optimization-warning', count });
+    }, []);
+
+    const showError = useCallback((error: unknown) => {
+        setStatus({ kind: 'error', message: toErrorMessage(error) });
     }, []);
 
     const statusMessage = useMemo(() => {
@@ -134,5 +154,6 @@ export function useAppNotifications() {
         clearLoading,
         showExportCompleted,
         showExportCompletedWithOptimizationWarning,
+        showError,
     };
 }
