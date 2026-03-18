@@ -17,9 +17,19 @@ Desktop app for merging PDF files and images into a single PDF, built with Tauri
 - Optimize output: JPEG image compression and layout-aware image downscaling
 - Light / dark mode with persistent preference
 
-<p align="center">
-  <img src="docs/assets/fyler-quick-add.png" alt="Fyler Quick Add mode" width="360" />
-</p>
+## Quick Add
+
+<table>
+  <tr>
+    <td valign="top" width="58%">
+      <p><strong>Quick Add</strong> opens a compact, always-on-top window for fast file collection.</p>
+      <p>Drag PDFs or images into it, review the files you just added, remove anything you do not want, then return to the main workspace when ready.</p>
+    </td>
+    <td valign="top" width="42%" align="center">
+      <img src="docs/assets/fyler-quick-add.png" alt="Fyler Quick Add mode" width="280" />
+    </td>
+  </tr>
+</table>
 
 ## Downloads
 
