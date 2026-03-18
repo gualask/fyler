@@ -4,7 +4,7 @@ import { mergePDFs, savePDFDialog } from './platform';
 import { PdfCacheProvider } from './hooks/PdfCacheProvider';
 import { useFiles } from './hooks/useFiles';
 import { useAppNotifications } from './hooks/useAppNotifications';
-import { useQuickDrop } from './hooks/useQuickDrop';
+import { useQuickAdd } from './hooks/useQuickAdd';
 import { useTheme } from './hooks/useTheme';
 import { useOptimize } from './hooks/useOptimize';
 import { AppHeader } from './components/AppHeader';
@@ -16,7 +16,7 @@ import { OutputPanel } from './components/OutputPanel';
 import { ProgressModal } from './components/ProgressModal';
 import { EmptyState } from './components/EmptyState';
 import { DragOverlay } from './components/DragOverlay';
-import { QuickDropView } from './components/QuickDropView';
+import { QuickAddView } from './components/QuickAddView';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { UpdateDialog } from './components/UpdateDialog';
 import { AppPreferencesProvider, useTranslation } from './i18n';
@@ -24,7 +24,7 @@ import { AppPreferencesProvider, useTranslation } from './i18n';
 function AppContent() {
     const { t } = useTranslation();
     const [showFinalPreview, setShowFinalPreview] = useState(false);
-    const { isQuickDrop, quickDropFileIds, isTransitioning, onFilesAdded, enterQuickDrop, exitQuickDrop } = useQuickDrop();
+    const { isQuickAdd, quickAddFileIds, isTransitioning, onFilesAdded, enterQuickAdd, exitQuickAdd } = useQuickAdd();
     const {
         statusMessage,
         loadingMessage,
@@ -99,13 +99,13 @@ function AppContent() {
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
             <UpdateDialog />
-            {isQuickDrop ? (
-                <QuickDropView
+            {isQuickAdd ? (
+                <QuickAddView
                     files={files}
-                    quickDropFileIds={quickDropFileIds}
+                    quickAddFileIds={quickAddFileIds}
                     isDragOver={isDragOver}
                     onRemove={removeFile}
-                    onExit={() => void exitQuickDrop()}
+                    onExit={() => void exitQuickAdd()}
                 />
             ) : (
                 <>
@@ -116,7 +116,7 @@ function AppContent() {
                         canExport={finalPages.length > 0}
                         onPreview={() => setShowFinalPreview(true)}
                         canPreview={finalPages.length > 0}
-                        onQuickDrop={() => void enterQuickDrop()}
+                        onQuickAdd={() => void enterQuickAdd()}
                     />
 
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">

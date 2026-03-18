@@ -9,10 +9,10 @@ interface Props {
     canExport: boolean;
     onPreview: () => void;
     canPreview: boolean;
-    onQuickDrop: () => void;
+    onQuickAdd: () => void;
 }
 
-export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPreview, canPreview, onQuickDrop }: Props) {
+export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPreview, canPreview, onQuickAdd }: Props) {
     const { t } = useTranslation();
 
     return (
@@ -32,9 +32,9 @@ export function AppHeader({ isDark, onToggleTheme, onExport, canExport, onPrevie
                         {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                     </button>
                     <LanguageSwitcher />
-                    <button onClick={onQuickDrop} className="btn-ghost" title={t('header.quickDrop')}>
+                    <button onClick={onQuickAdd} className="btn-ghost" title={t('header.quickAdd')}>
                         <ArrowsPointingInIcon className="h-4 w-4" />
-                        {t('header.quickDrop')}
+                        {t('header.quickAdd')}
                     </button>
                 </div>
             </div>
