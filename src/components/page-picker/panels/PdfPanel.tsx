@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckIcon } from '@heroicons/react/24/outline';
 
 import type { FileEdits, FinalPage, SourceFile } from '../../../domain';
 import type { RotationDirection } from '../../../fileEdits';
 import { emptyFileEdits } from '../../../fileEdits';
 import { usePdfControls } from '../hooks/usePdfControls';
-import { usePdfCache } from '../../../hooks/usePdfCache';
+import { useLazyPdfRender } from '../../../hooks/useLazyPdfRender';
 import { useTranslation } from '../../../i18n';
 import { buildThumbnailRenderRequest } from '../../../pdfRenderProfiles';
 import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
@@ -18,9 +18,10 @@ function scrollToPage(gridEl: HTMLDivElement | null, pageNum: number) {
 }
 
 function PdfThumbnailItem({
-    fileId,
+    file,
     pageNum,
     edits,
+    scrollRoot,
     isSelected,
     isFocused,
     focusFlashKey,
@@ -28,9 +29,10 @@ function PdfThumbnailItem({
     onPreview,
     onRotate,
 }: {
-    fileId: string;
+    file: SourceFile;
     pageNum: number;
     edits: FileEdits;
+    scrollRoot: HTMLDivElement | null;
     isSelected: boolean;
     isFocused: boolean;
     focusFlashKey?: number;
@@ -39,12 +41,16 @@ function PdfThumbnailItem({
     onRotate: (direction: RotationDirection) => void;
 }) {
     const { t } = useTranslation();
-    const { getRender } = usePdfCache();
-    const dataUrl = getRender(fileId, buildThumbnailRenderRequest(pageNum, edits));
+    const request = useMemo(
+        () => buildThumbnailRenderRequest(pageNum, edits),
+        [edits, pageNum],
+    );
+    const { dataUrl, setTargetEl } = useLazyPdfRender(file, request, scrollRoot);
 
     return (
         <div className="flex flex-col">
             <div
+                ref={setTargetEl}
                 data-page={pageNum}
                 onClick={onClick}
                 className={[
@@ -177,9 +183,10 @@ export function PdfPanel({
                     {Array.from({ length: file.pageCount }, (_, index) => index + 1).map((pageNum) => (
                         <PdfThumbnailItem
                             key={`${pageNum}:${focusedPageNum === pageNum ? focusFlashKey ?? 0 : 0}`}
-                            fileId={file.id}
+                            file={file}
                             pageNum={pageNum}
                             edits={editsByFile[file.id] ?? emptyFileEdits()}
+                            scrollRoot={gridEl}
                             isSelected={selectedPageNums.has(pageNum)}
                             isFocused={focusedPageNum === pageNum}
                             focusFlashKey={focusedPageNum === pageNum ? focusFlashKey : undefined}

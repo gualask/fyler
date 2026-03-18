@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 
 use rayon::prelude::*;
@@ -15,7 +15,13 @@ pub struct RegisteredSource {
 
 #[derive(Default)]
 pub struct SourceRegistry {
-    sources: RwLock<HashMap<String, RegisteredSource>>,
+    state: RwLock<RegistryState>,
+}
+
+#[derive(Default)]
+struct RegistryState {
+    sources_by_id: HashMap<String, RegisteredSource>,
+    id_by_original_path: HashMap<String, String>,
 }
 
 pub struct FilesFromPathsResult {
@@ -25,29 +31,45 @@ pub struct FilesFromPathsResult {
 
 impl SourceRegistry {
     pub fn insert_many(&self, entries: impl IntoIterator<Item = (String, RegisteredSource)>) {
-        let mut sources = self.sources.write().expect("source registry poisoned");
-        sources.extend(entries);
+        let mut state = self.state.write().expect("source registry poisoned");
+        for (file_id, registered) in entries {
+            state
+                .id_by_original_path
+                .insert(registered.original_path.clone(), file_id.clone());
+            state.sources_by_id.insert(file_id, registered);
+        }
     }
 
     pub fn get(&self, file_id: &str) -> Option<RegisteredSource> {
-        self.sources
+        self.state
             .read()
             .expect("source registry poisoned")
+            .sources_by_id
             .get(file_id)
             .cloned()
     }
 
+    pub fn contains_original_path(&self, path: &str) -> bool {
+        self.state
+            .read()
+            .expect("source registry poisoned")
+            .id_by_original_path
+            .contains_key(path)
+    }
+
     pub fn remove_many(&self, file_ids: &[String]) {
-        let mut sources = self.sources.write().expect("source registry poisoned");
+        let mut state = self.state.write().expect("source registry poisoned");
         for file_id in file_ids {
-            sources.remove(file_id);
+            if let Some(registered) = state.sources_by_id.remove(file_id) {
+                state.id_by_original_path.remove(&registered.original_path);
+            }
         }
     }
 }
 
 fn registered_file_from_path(
     path: String,
-) -> anyhow::Result<Option<(SourceFile, RegisteredSource)>> {
+) -> anyhow::Result<(SourceFile, RegisteredSource)> {
     let name = std::path::Path::new(&path)
         .file_name()
         .unwrap_or_default()
@@ -55,7 +77,7 @@ fn registered_file_from_path(
         .to_string();
 
     let Some(kind) = detect_kind_from_ext(&path) else {
-        return Ok(None);
+        anyhow::bail!("{name}: formato file non supportato");
     };
 
     let page_count = if kind == "pdf" {
@@ -78,20 +100,30 @@ fn registered_file_from_path(
         kind: kind.to_string(),
     };
 
-    Ok(Some((source, registered)))
+    Ok((source, registered))
 }
 
 pub fn files_from_paths(
     paths: impl IntoIterator<Item = String>,
     registry: &SourceRegistry,
 ) -> anyhow::Result<FilesFromPathsResult> {
-    let results = paths
-        .into_iter()
-        .collect::<Vec<_>>()
+    let mut accepted_paths = Vec::new();
+    let mut seen_paths = HashSet::new();
+
+    for path in paths {
+        if !seen_paths.insert(path.clone()) {
+            continue;
+        }
+        if registry.contains_original_path(&path) {
+            continue;
+        }
+        accepted_paths.push(path);
+    }
+
+    let results = accepted_paths
         .into_par_iter()
         .map(|path| match registered_file_from_path(path) {
-            Ok(Some(entry)) => Ok(Some(entry)),
-            Ok(None) => Ok(None),
+            Ok(entry) => Ok(entry),
             Err(error) => Err(error.to_string()),
         })
         .collect::<Vec<_>>();
@@ -100,14 +132,9 @@ pub fn files_from_paths(
     let mut skipped_errors = Vec::new();
     for result in results {
         match result {
-            Ok(Some(entry)) => entries.push(entry),
-            Ok(None) => {}
+            Ok(entry) => entries.push(entry),
             Err(error) => skipped_errors.push(error),
         }
-    }
-
-    if entries.is_empty() && !skipped_errors.is_empty() {
-        anyhow::bail!(skipped_errors.join("; "));
     }
 
     registry.insert_many(
@@ -161,6 +188,76 @@ mod tests {
 
         let _ = fs::remove_file(image_path);
         let _ = fs::remove_file(broken_pdf_path);
+        Ok(())
+    }
+
+    #[test]
+    fn unsupported_files_are_reported_as_skipped_without_failing_the_batch() -> anyhow::Result<()> {
+        let path = temp_path("notes", "txt");
+        fs::write(&path, b"hello")?;
+
+        let registry = SourceRegistry::default();
+        let result = files_from_paths(vec![path.to_string_lossy().to_string()], &registry)?;
+
+        assert!(result.files.is_empty());
+        assert_eq!(result.skipped_errors.len(), 1);
+        assert!(result.skipped_errors[0].contains("notes"));
+
+        let _ = fs::remove_file(path);
+        Ok(())
+    }
+
+    #[test]
+    fn duplicate_paths_already_in_registry_are_ignored_silently() -> anyhow::Result<()> {
+        let image_path = temp_path("duplicate-image", "png");
+        RgbImage::new(1, 1).save(&image_path)?;
+
+        let registry = SourceRegistry::default();
+        let first = files_from_paths(vec![image_path.to_string_lossy().to_string()], &registry)?;
+        assert_eq!(first.files.len(), 1);
+
+        let second = files_from_paths(vec![image_path.to_string_lossy().to_string()], &registry)?;
+        assert!(second.files.is_empty());
+        assert!(second.skipped_errors.is_empty());
+
+        registry.remove_many(&first.files.iter().map(|file| file.id.clone()).collect::<Vec<_>>());
+        let _ = fs::remove_file(image_path);
+        Ok(())
+    }
+
+    #[test]
+    fn mixed_batch_keeps_valid_files_and_reports_only_real_skips() -> anyhow::Result<()> {
+        let existing_path = temp_path("existing-image", "png");
+        let new_path = temp_path("new-image", "png");
+        let unsupported_path = temp_path("unsupported", "txt");
+        RgbImage::new(1, 1).save(&existing_path)?;
+        RgbImage::new(1, 1).save(&new_path)?;
+        fs::write(&unsupported_path, b"hello")?;
+
+        let registry = SourceRegistry::default();
+        let first = files_from_paths(vec![existing_path.to_string_lossy().to_string()], &registry)?;
+        assert_eq!(first.files.len(), 1);
+
+        let result = files_from_paths(
+            vec![
+                existing_path.to_string_lossy().to_string(),
+                new_path.to_string_lossy().to_string(),
+                unsupported_path.to_string_lossy().to_string(),
+            ],
+            &registry,
+        )?;
+
+        assert_eq!(result.files.len(), 1);
+        assert_eq!(result.files[0].original_path, new_path.to_string_lossy().to_string());
+        assert_eq!(result.skipped_errors.len(), 1);
+        assert!(result.skipped_errors[0].contains("unsupported"));
+
+        let mut ids = first.files.iter().map(|file| file.id.clone()).collect::<Vec<_>>();
+        ids.extend(result.files.iter().map(|file| file.id.clone()));
+        registry.remove_many(&ids);
+        let _ = fs::remove_file(existing_path);
+        let _ = fs::remove_file(new_path);
+        let _ = fs::remove_file(unsupported_path);
         Ok(())
     }
 }

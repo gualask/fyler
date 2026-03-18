@@ -32,6 +32,7 @@ export function FinalDocument({
 }: Props) {
     const { t } = useTranslation();
     const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
+    const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
@@ -39,12 +40,13 @@ export function FinalDocument({
                 <span className="column-toolbar-stat">{t('finalDocument.pageCount', { count: finalPages.length })}</span>
             </ColumnHeader>
 
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <div ref={setScrollRoot} className="min-h-0 flex-1 overflow-y-auto p-4">
                 <List
                     finalPages={finalPages}
                     files={files}
                     selectedPageId={selectedPageId}
                     editsByFile={editsByFile}
+                    scrollRoot={scrollRoot}
                     onReorder={onReorder}
                     onRemove={onRemove}
                     onSelectPage={onSelectPage}

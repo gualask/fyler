@@ -4,7 +4,7 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
 use crate::export::export_pdf;
-use crate::models::{MergeRequest, SourceFile};
+use crate::models::{MergeRequest, MergeResult, SourceFile};
 use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{files_from_paths, SourceRegistry};
 
@@ -97,7 +97,7 @@ pub async fn merge_pdfs(
     app: tauri::AppHandle,
     registry: State<'_, SourceRegistry>,
     req: MergeRequest,
-) -> Result<(), AppError> {
+) -> Result<MergeResult, AppError> {
     export_pdf(&app, &registry, req).map_err(Into::into)
 }
 

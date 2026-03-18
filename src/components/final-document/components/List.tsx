@@ -21,6 +21,7 @@ interface Props {
     files: SourceFile[];
     selectedPageId: string | null;
     editsByFile: Record<string, FileEdits>;
+    scrollRoot: HTMLDivElement | null;
     onReorder: (fromId: string, toId: string) => void;
     onRemove: (id: string) => void;
     onSelectPage: (fileId: string, pageNum: number) => void;
@@ -32,6 +33,7 @@ export function List({
     files,
     selectedPageId,
     editsByFile,
+    scrollRoot,
     onReorder,
     onRemove,
     onSelectPage,
@@ -82,6 +84,7 @@ export function List({
                         <ListRow
                             key={item.page.id}
                             item={item}
+                            scrollRoot={scrollRoot}
                             onRemove={onRemove}
                             onSelect={() => onSelectPage(item.page.fileId, item.page.pageNum)}
                             onPreview={() => onPreviewPage(item.page.id)}

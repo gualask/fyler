@@ -1,10 +1,10 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Bars3Icon, DocumentIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 import { getImageRotationDegrees } from '../../../fileEdits';
-import { usePdfCache } from '../../../hooks/usePdfCache';
+import { useLazyPdfRender } from '../../../hooks/useLazyPdfRender';
 import { useTranslation } from '../../../i18n';
 import { buildThumbnailRenderRequest } from '../../../pdfRenderProfiles';
 import { getPreviewUrl } from '../../../platform';
@@ -13,6 +13,7 @@ import type { ListItem } from '../models/listItem';
 
 interface Props {
     item: ListItem;
+    scrollRoot: HTMLDivElement | null;
     onRemove: (id: string) => void;
     onSelect: () => void;
     onPreview: () => void;
@@ -20,6 +21,7 @@ interface Props {
 
 export const ListRow = memo(function ListRow({
     item,
+    scrollRoot,
     onRemove,
     onSelect,
     onPreview,
@@ -28,7 +30,6 @@ export const ListRow = memo(function ListRow({
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: item.page.id,
     });
-    const { getRender } = usePdfCache();
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
@@ -36,9 +37,19 @@ export const ListRow = memo(function ListRow({
         zIndex: isDragging ? 10 : undefined,
     };
 
-    const thumbUrl = item.file?.kind === 'pdf'
-        ? getRender(item.page.fileId, buildThumbnailRenderRequest(item.page.pageNum, item.edits))
-        : null;
+    const thumbRequest = useMemo(
+        () => (
+            item.file?.kind === 'pdf'
+                ? buildThumbnailRenderRequest(item.page.pageNum, item.edits)
+                : null
+        ),
+        [item.edits, item.file, item.page.pageNum],
+    );
+    const { dataUrl: thumbUrl, setTargetEl } = useLazyPdfRender(
+        item.file?.kind === 'pdf' ? item.file : undefined,
+        thumbRequest,
+        scrollRoot,
+    );
     const imageUrl = item.file?.kind === 'image' ? getPreviewUrl(item.file.originalPath) : null;
     const imageRotation = item.file?.kind === 'image' ? getImageRotationDegrees(item.edits) : 0;
 
@@ -69,6 +80,7 @@ export const ListRow = memo(function ListRow({
                 </div>
 
                 <div
+                    ref={item.file?.kind === 'pdf' ? setTargetEl : undefined}
                     className="group relative shrink-0 overflow-hidden rounded bg-ui-surface-hover"
                     style={{ width: 60, height: 80 }}
                 >

@@ -22,7 +22,14 @@ export type PdfCacheContextType = {
 export const PdfCacheContext = createContext<PdfCacheContextType | null>(null);
 
 export function getPdfRenderCacheKey(request: PdfRenderRequest): string {
-    return `${request.variant}:${request.pageNum}:${request.quarterTurns}`;
+    return [
+        request.variant,
+        request.pageNum,
+        request.quarterTurns,
+        request.width,
+        request.quality,
+        request.density ?? 1,
+    ].join(':');
 }
 
 export function usePdfCache(): PdfCacheContextType {

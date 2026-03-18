@@ -8,6 +8,11 @@ interface UpdateState {
     installing: boolean;
     progress: number | null;
     dismissed: boolean;
+    error: string | null;
+}
+
+function toErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
 }
 
 export function useAppUpdater() {
@@ -17,6 +22,7 @@ export function useAppUpdater() {
         installing: false,
         progress: null,
         dismissed: false,
+        error: null,
     });
     const [update, setUpdate] = useState<Update | null>(null);
 
@@ -36,26 +42,35 @@ export function useAppUpdater() {
 
     const downloadAndInstall = useCallback(async () => {
         if (!update) return;
-        setState((s) => ({ ...s, installing: true, progress: 0 }));
+        setState((s) => ({ ...s, installing: true, progress: 0, error: null }));
 
         let totalBytes = 0;
         let downloadedBytes = 0;
 
-        await update.downloadAndInstall((event) => {
-            if (event.event === 'Started' && event.data.contentLength) {
-                totalBytes = event.data.contentLength;
-            } else if (event.event === 'Progress') {
-                downloadedBytes += event.data.chunkLength;
-                const pct = totalBytes > 0 ? Math.round((downloadedBytes / totalBytes) * 100) : null;
-                setState((s) => ({ ...s, progress: pct }));
-            }
-        });
+        try {
+            await update.downloadAndInstall((event) => {
+                if (event.event === 'Started' && event.data.contentLength) {
+                    totalBytes = event.data.contentLength;
+                } else if (event.event === 'Progress') {
+                    downloadedBytes += event.data.chunkLength;
+                    const pct = totalBytes > 0 ? Math.round((downloadedBytes / totalBytes) * 100) : null;
+                    setState((s) => ({ ...s, progress: pct }));
+                }
+            });
 
-        await relaunch();
+            await relaunch();
+        } catch (error) {
+            setState((s) => ({
+                ...s,
+                installing: false,
+                progress: null,
+                error: toErrorMessage(error),
+            }));
+        }
     }, [update]);
 
     const dismiss = useCallback(() => {
-        setState((s) => ({ ...s, dismissed: true }));
+        setState((s) => ({ ...s, dismissed: true, error: null }));
     }, []);
 
     return {
@@ -63,6 +78,7 @@ export function useAppUpdater() {
         updateVersion: state.version,
         installing: state.installing,
         progress: state.progress,
+        error: state.error,
         downloadAndInstall,
         dismiss,
     };

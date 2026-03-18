@@ -2,6 +2,7 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
     type ReactNode,
 } from 'react';
@@ -27,27 +28,28 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
         isDark: false,
         locale: 'en',
     });
-    const [loaded, setLoaded] = useState(false);
+    const [canPersistPreferences, setCanPersistPreferences] = useState(false);
+    const hasLocalChangesRef = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
 
         void loadSettings()
             .then((settings) => {
-                if (cancelled) return;
+                if (cancelled || hasLocalChangesRef.current) return;
                 setPreferences({
                     isDark: settings.isDark,
                     locale: resolveInitialLocale(settings.locale),
                 });
-                setLoaded(true);
+                setCanPersistPreferences(true);
             })
             .catch(() => {
-                if (cancelled) return;
+                if (cancelled || hasLocalChangesRef.current) return;
                 setPreferences({
                     isDark: false,
                     locale: detectPreferredLocale(navigator.languages),
                 });
-                setLoaded(true);
+                setCanPersistPreferences(false);
             });
 
         return () => {
@@ -61,25 +63,30 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     }, [preferences.isDark, preferences.locale]);
 
     useEffect(() => {
-        if (!loaded) return;
+        if (!canPersistPreferences) return;
         void saveSettings(preferences);
-    }, [loaded, preferences]);
+    }, [canPersistPreferences, preferences]);
+
+    const updatePreferences = useCallback((updater: (current: AppPreferencesState) => AppPreferencesState) => {
+        hasLocalChangesRef.current = true;
+        setCanPersistPreferences(true);
+        setPreferences((current) => updater(current));
+    }, []);
 
     const setLocale = useCallback((locale: Locale) => {
-        setPreferences((current) => current.locale === locale ? current : { ...current, locale });
-    }, []);
+        updatePreferences((current) => current.locale === locale ? current : { ...current, locale });
+    }, [updatePreferences]);
 
     const toggleTheme = useCallback(() => {
-        setPreferences((current) => ({ ...current, isDark: !current.isDark }));
-    }, []);
+        updatePreferences((current) => ({ ...current, isDark: !current.isDark }));
+    }, [updatePreferences]);
 
     const value = useMemo<AppPreferencesContextValue>(() => ({
-        loaded,
         isDark: preferences.isDark,
         locale: preferences.locale,
         setLocale,
         toggleTheme,
-    }), [loaded, preferences.isDark, preferences.locale, setLocale, toggleTheme]);
+    }), [preferences.isDark, preferences.locale, setLocale, toggleTheme]);
 
     return (
         <AppPreferencesContext.Provider value={value}>

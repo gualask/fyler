@@ -108,6 +108,8 @@
   "progress.steps.saving": "Saving...",
   "status.errorPrefix": "Error: {message}",
   "status.exportCompleted": "Export completed.",
+  "status.optimizationWarning.one": "Export completed, but {count} image could not be optimized.",
+  "status.optimizationWarning.other": "Export completed, but {count} images could not be optimized.",
   "status.importWarning.one": "{count} file skipped: {preview}{suffix}",
   "status.importWarning.other": "{count} files skipped: {preview}{suffix}",
   "errors.unhandled": "An unhandled error occurred.",

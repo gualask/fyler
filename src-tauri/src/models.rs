@@ -48,3 +48,9 @@ pub struct MergeRequest {
     pub output_path: String,
     pub optimize: Option<OptimizeOptions>,
 }
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct MergeResult {
+    #[serde(rename = "optimizationFailedCount")]
+    pub optimization_failed_count: usize,
+}

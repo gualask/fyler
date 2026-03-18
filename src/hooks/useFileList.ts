@@ -7,15 +7,7 @@ export function useFileList() {
     const [files, setFiles] = useState<SourceFile[]>([]);
 
     const addFiles = useCallback((newFiles: SourceFile[]) => {
-        setFiles((prev) => {
-            const existingPaths = new Set(prev.map((f) => f.originalPath));
-            const unique = newFiles.filter((f) => {
-                if (existingPaths.has(f.originalPath)) return false;
-                existingPaths.add(f.originalPath);
-                return true;
-            });
-            return unique.length ? [...prev, ...unique] : prev;
-        });
+        setFiles((prev) => newFiles.length ? [...prev, ...newFiles] : prev);
     }, []);
 
     const removeFile = useCallback((id: string) => {

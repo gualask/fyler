@@ -8,9 +8,28 @@ function toErrorMessage(value: unknown): string {
     return value instanceof Error ? value.message : String(value);
 }
 
+function attachEventListener<T>(eventName: string, listener: (event: { payload: T }) => void): () => void {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+
+    void listen<T>(eventName, listener).then((fn) => {
+        if (disposed) {
+            fn();
+        } else {
+            unlisten = fn;
+        }
+    });
+
+    return () => {
+        disposed = true;
+        unlisten?.();
+    };
+}
+
 type StatusState =
     | { kind: 'error'; message: string }
     | { kind: 'export-completed' }
+    | { kind: 'export-completed-with-optimization-warning'; count: number }
     | { kind: 'import-warning'; payload: AppStatusPayload };
 
 type LoadingState =
@@ -48,33 +67,21 @@ export function useAppNotifications() {
     }, []);
 
     useEffect(() => {
-        let unlisten: (() => void) | undefined;
-        void listen<string>('app-error', (event) => {
+        return attachEventListener<string>('app-error', (event) => {
             setStatus({ kind: 'error', message: event.payload });
-        }).then((fn) => {
-            unlisten = fn;
         });
-        return () => unlisten?.();
     }, []);
 
     useEffect(() => {
-        let unlisten: (() => void) | undefined;
-        void listen<AppStatusPayload>('app-status', (event) => {
+        return attachEventListener<AppStatusPayload>('app-status', (event) => {
             setStatus({ kind: 'import-warning', payload: event.payload });
-        }).then((fn) => {
-            unlisten = fn;
         });
-        return () => unlisten?.();
     }, []);
 
     useEffect(() => {
-        let unlisten: (() => void) | undefined;
-        void listen<{ step: MergeProgressStep; progress: number }>('merge-progress', (event) => {
+        return attachEventListener<{ step: MergeProgressStep; progress: number }>('merge-progress', (event) => {
             setLoading({ kind: 'merge-progress', step: event.payload.step, progress: event.payload.progress });
-        }).then((fn) => {
-            unlisten = fn;
         });
-        return () => unlisten?.();
     }, []);
 
     const showOpeningFiles = useCallback(() => {
@@ -93,6 +100,10 @@ export function useAppNotifications() {
         setStatus({ kind: 'export-completed' });
     }, []);
 
+    const showExportCompletedWithOptimizationWarning = useCallback((count: number) => {
+        setStatus({ kind: 'export-completed-with-optimization-warning', count });
+    }, []);
+
     const statusMessage = useMemo(() => {
         if (!status) return null;
         if (status.kind === 'error') {
@@ -100,6 +111,9 @@ export function useAppNotifications() {
         }
         if (status.kind === 'export-completed') {
             return t('status.exportCompleted');
+        }
+        if (status.kind === 'export-completed-with-optimization-warning') {
+            return tp('status.optimizationWarning', status.count);
         }
         return formatImportWarning(status.payload, tp);
     }, [status, t, tp]);
@@ -119,5 +133,6 @@ export function useAppNotifications() {
         showMergePreparing,
         clearLoading,
         showExportCompleted,
+        showExportCompletedWithOptimizationWarning,
     };
 }

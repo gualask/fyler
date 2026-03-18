@@ -4,7 +4,7 @@ use anyhow::{bail, Context};
 use lopdf::Document as PdfDoc;
 use tauri::{AppHandle, Emitter};
 
-use crate::models::{FileEdits, MergeRequest};
+use crate::models::{FileEdits, MergeRequest, MergeResult};
 use crate::optimize;
 use crate::pdf::{
     image_to_pdf_doc, prepare_pdf_page_doc, prepare_pdf_subset_doc, quarter_turns_to_degrees,
@@ -38,6 +38,25 @@ fn quarter_turns_for_image(edits: Option<&FileEdits>) -> anyhow::Result<u8> {
 
 fn is_simple_pdf_run(page_numbers: &[u32]) -> bool {
     page_numbers.windows(2).all(|window| window[0] < window[1])
+}
+
+fn split_monotonic_page_runs(page_numbers: &[u32]) -> Vec<&[u32]> {
+    if page_numbers.is_empty() {
+        return Vec::new();
+    }
+
+    let mut runs = Vec::new();
+    let mut run_start = 0;
+
+    for index in 1..page_numbers.len() {
+        if page_numbers[index - 1] >= page_numbers[index] {
+            runs.push(&page_numbers[run_start..index]);
+            run_start = index;
+        }
+    }
+
+    runs.push(&page_numbers[run_start..]);
+    runs
 }
 
 pub fn build_documents(
@@ -85,17 +104,29 @@ pub fn build_documents(
 
         if is_simple_pdf_run(&run_pages) {
             let subset_pages = run_pages
-                .into_iter()
+                .iter()
+                .copied()
                 .map(|page_num| Ok((page_num, quarter_turns_for_pdf_page(edits, page_num)?)))
                 .collect::<anyhow::Result<Vec<_>>>()?;
             docs.push(prepare_pdf_subset_doc(source_doc, &subset_pages)?);
         } else {
-            for page_num in run_pages {
-                docs.push(prepare_pdf_page_doc(
-                    source_doc.clone(),
-                    page_num,
-                    quarter_turns_for_pdf_page(edits, page_num)?,
-                )?);
+            for chunk in split_monotonic_page_runs(&run_pages) {
+                if chunk.len() == 1 {
+                    let page_num = chunk[0];
+                    docs.push(prepare_pdf_page_doc(
+                        source_doc.clone(),
+                        page_num,
+                        quarter_turns_for_pdf_page(edits, page_num)?,
+                    )?);
+                    continue;
+                }
+
+                let subset_pages = chunk
+                    .iter()
+                    .copied()
+                    .map(|page_num| Ok((page_num, quarter_turns_for_pdf_page(edits, page_num)?)))
+                    .collect::<anyhow::Result<Vec<_>>>()?;
+                docs.push(prepare_pdf_subset_doc(source_doc.clone(), &subset_pages)?);
             }
         }
 
@@ -105,11 +136,27 @@ pub fn build_documents(
     Ok(docs)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::split_monotonic_page_runs;
+
+    #[test]
+    fn split_monotonic_page_runs_keeps_increasing_chunks_together() {
+        let runs = split_monotonic_page_runs(&[1, 2, 4, 3, 5, 5, 7, 1]);
+        assert_eq!(runs, vec![&[1, 2, 4][..], &[3, 5][..], &[5, 7][..], &[1][..]]);
+    }
+
+    #[test]
+    fn split_monotonic_page_runs_handles_empty_input() {
+        assert!(split_monotonic_page_runs(&[]).is_empty());
+    }
+}
+
 pub fn export_pdf(
     app: &AppHandle,
     registry: &SourceRegistry,
     req: MergeRequest,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<MergeResult> {
     #[cfg(debug_assertions)]
     if std::env::var_os("FYLER_DEBUG_EXPORT").is_some() {
         eprintln!(
@@ -145,10 +192,11 @@ pub fn export_pdf(
         crate::pdf::merge_pdf_documents(docs)?
     };
 
+    let mut optimization_failed_count = 0;
     if let Some(options) = &req.optimize {
         if optimize::has_optimization_work(options) {
             emit_progress(app, "optimizing-images", 80);
-            optimize::optimize_images(&mut merged, options)?;
+            optimization_failed_count = optimize::optimize_images(&mut merged, options)?.failed_non_fatal;
         }
     }
 
@@ -159,5 +207,7 @@ pub fn export_pdf(
     optimize::cleanup_document(&mut merged);
     let mut file = std::fs::File::create(&req.output_path)?;
     optimize::save_document(&mut merged, &mut file)?;
-    Ok(())
+    Ok(MergeResult {
+        optimization_failed_count,
+    })
 }

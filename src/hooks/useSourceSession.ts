@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 
 import type { RotationDirection } from '../fileEdits';
-import { applyRotationToEdits, emptyFileEdits } from '../fileEdits';
+import { applyRotationToEdits } from '../fileEdits';
 import type { SourceFile } from '../domain';
 import { useTranslation } from '../i18n';
-import { buildThumbnailRenderRequest, buildThumbnailRenderRequests } from '../pdfRenderProfiles';
+import { buildThumbnailRenderRequest } from '../pdfRenderProfiles';
 import { openFilesDialog, releaseSources } from '../platform';
 import { usePdfCache } from './usePdfCache';
 import { useFileEdits } from './useFileEdits';
@@ -20,45 +20,14 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
     const { files, addFiles: addToList, removeFile: removeFileFromList, clearFiles, reorderFiles } = useFileList();
     const { editsByFile, setFileEdits, clearFileEdits, clearAllFileEdits } = useFileEdits();
     const { requestRenders, releaseFile } = usePdfCache();
-    const knownPathsRef = useRef<Set<string>>(new Set());
-
-    useEffect(() => {
-        knownPathsRef.current = new Set(files.map((file) => file.originalPath));
-    }, [files]);
 
     const addSourceFiles = useCallback((newFiles: SourceFile[]) => {
-        const knownPaths = new Set(knownPathsRef.current);
-        const duplicateIds: string[] = [];
-        const uniqueFiles = newFiles.filter((file) => {
-            if (knownPaths.has(file.originalPath)) {
-                duplicateIds.push(file.id);
-                return false;
-            }
-            knownPaths.add(file.originalPath);
-            return true;
-        });
-        knownPathsRef.current = knownPaths;
-        if (duplicateIds.length) {
-            void releaseSources(duplicateIds);
-        }
-        if (!uniqueFiles.length) return [];
+        if (!newFiles.length) return [];
 
-        addToList(uniqueFiles);
-        for (const file of uniqueFiles) {
-            if (file.kind === 'pdf') {
-                requestRenders(
-                    file,
-                    buildThumbnailRenderRequests(
-                        Array.from({ length: file.pageCount }, (_, index) => index + 1),
-                        emptyFileEdits(),
-                    ),
-                );
-            }
-        }
-
-        onFilesAdded?.(uniqueFiles);
-        return uniqueFiles;
-    }, [addToList, onFilesAdded, requestRenders]);
+        addToList(newFiles);
+        onFilesAdded?.(newFiles);
+        return newFiles;
+    }, [addToList, onFilesAdded]);
 
     const openAndAddSourceFiles = useCallback(async () => {
         const newFiles = await openFilesDialog(t('dialogs.filters.documentsAndImages'));
@@ -68,11 +37,6 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
 
     const removeSourceFile = useCallback((id: string) => {
         const removed = files.find((file) => file.id === id) ?? null;
-        if (removed) {
-            const knownPaths = new Set(knownPathsRef.current);
-            knownPaths.delete(removed.originalPath);
-            knownPathsRef.current = knownPaths;
-        }
         if (removed?.kind === 'pdf') {
             releaseFile(id);
         }
@@ -86,7 +50,6 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
     const clearSourceFiles = useCallback(() => {
         if (!files.length) return;
 
-        knownPathsRef.current = new Set();
         for (const file of files) {
             if (file.kind === 'pdf') {
                 releaseFile(file.id);

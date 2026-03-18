@@ -33,6 +33,7 @@ function AppContent() {
         showMergePreparing,
         clearLoading,
         showExportCompleted,
+        showExportCompletedWithOptimizationWarning,
     } = useAppNotifications();
 
     const {
@@ -89,12 +90,25 @@ function AppContent() {
         const req = buildMergeRequest(finalPages, editsByFile, outputPath, optimizeOptions);
         showMergePreparing();
         try {
-            await mergePDFs(req);
-            showExportCompleted();
+            const result = await mergePDFs(req);
+            if (result.optimizationFailedCount > 0) {
+                showExportCompletedWithOptimizationWarning(result.optimizationFailedCount);
+            } else {
+                showExportCompleted();
+            }
         } finally {
             clearLoading();
         }
-    }, [clearLoading, editsByFile, finalPages, optimizeOptions, showExportCompleted, showMergePreparing, t]);
+    }, [
+        clearLoading,
+        editsByFile,
+        finalPages,
+        optimizeOptions,
+        showExportCompleted,
+        showExportCompletedWithOptimizationWarning,
+        showMergePreparing,
+        t,
+    ]);
 
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>

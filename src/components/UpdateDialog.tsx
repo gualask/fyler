@@ -3,7 +3,15 @@ import { useAppUpdater } from '../hooks/useAppUpdater';
 
 export function UpdateDialog() {
     const { t } = useTranslation();
-    const { updateAvailable, updateVersion, installing, progress, downloadAndInstall, dismiss } = useAppUpdater();
+    const {
+        updateAvailable,
+        updateVersion,
+        installing,
+        progress,
+        error,
+        downloadAndInstall,
+        dismiss,
+    } = useAppUpdater();
 
     if (!updateAvailable) return null;
 
@@ -16,6 +24,12 @@ export function UpdateDialog() {
                 <p className="mt-2 text-sm text-ui-text-muted">
                     {t('update.message', { version: updateVersion ?? '' })}
                 </p>
+
+                {error && (
+                    <p className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-600">
+                        {t('status.errorPrefix', { message: error })}
+                    </p>
+                )}
 
                 {installing && (
                     <div className="mt-4">

@@ -108,6 +108,8 @@
   "progress.steps.saving": "Salvataggio...",
   "status.errorPrefix": "Errore: {message}",
   "status.exportCompleted": "Esportazione completata.",
+  "status.optimizationWarning.one": "Esportazione completata, ma {count} immagine non ha potuto essere ottimizzata.",
+  "status.optimizationWarning.other": "Esportazione completata, ma {count} immagini non hanno potuto essere ottimizzate.",
   "status.importWarning.one": "{count} file saltato: {preview}{suffix}",
   "status.importWarning.other": "{count} file saltati: {preview}{suffix}",
   "errors.unhandled": "Si è verificato un errore non gestito.",

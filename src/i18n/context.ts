@@ -3,7 +3,6 @@ import { createContext, useContext } from 'react';
 import type { Locale } from '../locale';
 
 export type AppPreferencesContextValue = {
-    loaded: boolean;
     isDark: boolean;
     locale: Locale;
     setLocale: (locale: Locale) => void;

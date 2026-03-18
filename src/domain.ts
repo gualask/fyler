@@ -53,6 +53,10 @@ export type MergeRequest = {
     optimize?: OptimizeOptions;
 };
 
+export type MergeResult = {
+    optimizationFailedCount: number;
+};
+
 export function buildMergeRequest(
     finalPages: FinalPage[],
     edits: Record<string, FileEdits>,
