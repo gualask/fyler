@@ -1,6 +1,7 @@
 import { ChevronRightIcon, DocumentIcon, PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { SourceFile } from '../domain';
 import { useTranslation } from '../i18n';
+import { Tooltip } from './shared/feedback/Tooltip';
 
 interface Props {
     file: SourceFile;
@@ -31,7 +32,29 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                 )}
 
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-ui-text">{file.name}</p>
+                    <Tooltip
+                        className="block min-w-0"
+                        panelClassName="w-max max-w-full px-2 py-1 text-xs font-medium text-ui-text"
+                        renderTrigger={({ ariaDescribedBy, ariaExpanded, onFocus, onBlur, onClick }) => (
+                            <button
+                                type="button"
+                                className="block w-full truncate bg-transparent p-0 text-left text-sm font-semibold text-ui-text"
+                                aria-describedby={ariaDescribedBy}
+                                aria-expanded={ariaExpanded}
+                                onFocus={onFocus}
+                                onBlur={onBlur}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onSelect();
+                                    onClick();
+                                }}
+                            >
+                                {file.name}
+                            </button>
+                        )}
+                    >
+                        <span className="block [overflow-wrap:anywhere]">{file.name}</span>
+                    </Tooltip>
                     <p className="mt-0.5 text-[11px] text-ui-text-muted">
                         {t('fileList.pageCount', { count: file.kind === 'image' ? 1 : file.pageCount })}
                     </p>
