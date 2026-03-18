@@ -1,13 +1,15 @@
 # Fyler
 
 ![version](https://img.shields.io/github/package-json/v/gualask/fyler)
-![build](https://img.shields.io/github/actions/workflow/status/gualask/fyler/build.yml)
 
-Desktop app for merging and rearranging PDF files and images, built with Tauri 2.
+Desktop app for merging PDF files and images into a single PDF, built with Tauri 2.
+
+![Fyler main window](docs/assets/fyler-main-window.png)
 
 ## Features
 
-- Add PDF files and images (JPG, PNG, and more), reorder via drag & drop
+- Add PDF files and images (JPG, PNG, WebP, and more)
+- Reorder content via drag & drop
 - Select specific page ranges per document (e.g. `1-3,5,8`)
 - Rotate individual pages directly from the preview
 - Preview any document before exporting
@@ -15,55 +17,48 @@ Desktop app for merging and rearranging PDF files and images, built with Tauri 2
 - Optimize output: JPEG image compression and layout-aware image downscaling
 - Light / dark mode with persistent preference
 
-## Tech stack
+![Fyler Quick Add mode](docs/assets/fyler-quick-add.png)
 
-| Layer | Technology |
-|---|---|
-| Shell | [Tauri 2](https://tauri.app) (Rust) |
-| Frontend | React 19 + TypeScript + Vite |
-| Styling | Tailwind CSS 4 |
-| PDF (frontend) | pdf.js |
-| PDF (backend) | lopdf |
-| Settings | tauri-plugin-store |
+## Downloads
+
+Prebuilt desktop packages are published on the
+[GitHub Releases page](https://github.com/gualask/fyler/releases).
+
+Current release targets:
+
+- macOS Apple Silicon
+- macOS Intel
+- Windows
+- Linux
 
 ## Getting started
 
 **Prerequisites:** [Rust](https://rustup.rs), [Node.js](https://nodejs.org), [pnpm](https://pnpm.io)
 
+Start the desktop app in development mode:
+
 ```bash
 pnpm install
-pnpm tauri dev
+pnpm tauri:dev
 ```
 
-To build a production bundle:
+Build the production desktop bundle:
 
 ```bash
-pnpm tauri build
+pnpm tauri:build
 ```
 
-## Project structure
+On Linux, Tauri also requires system packages. The release workflow installs:
 
-```
-src/                   React frontend
-├── components/        UI components
-├── hooks/             Custom React hooks
-├── platform/          Tauri invoke wrappers
-├── domain.ts          Shared types
-├── settings.ts        Persistent settings (store)
-└── main.css           Design tokens & Tailwind config
-src-tauri/             Rust backend
-├── src/commands.rs    Tauri commands (dialog, merge, rotate)
-├── src/pdf.rs         PDF/image processing
-├── src/optimize.rs    Output optimization (JPEG, resize)
-└── Cargo.toml
-docs/                  Project documentation
+```bash
+sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 ```
 
-## Theming
+## Documentation
 
-Colors are managed through CSS custom properties in `src/main.css`.
-Changing the accent color or dark theme requires editing only that file.
-See [docs/theming.md](docs/theming.md) for details.
+- [Theming](docs/theming.md)
+- [PDF export and image handling](docs/pdf-export.md)
+- [Performance notes](docs/performance.md)
 
 ## License
 

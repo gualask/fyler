@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { windowGetLogicalSize, windowSetAlwaysOnTop, windowSetSize } from '../platform';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -12,9 +12,7 @@ export function useQuickAdd() {
     const [quickAddFileIds, setQuickAddFileIds] = useState<Set<string>>(new Set());
     const [isTransitioning, setIsTransitioning] = useState(false);
     const savedSizeRef = useRef<{ width: number; height: number } | null>(null);
-    const isQuickAddRef = useRef(false);
-
-    useEffect(() => { isQuickAddRef.current = isQuickAdd; }, [isQuickAdd]);
+    const isQuickAddSessionRef = useRef(false);
 
     const withTransition = useCallback(async (fn: () => Promise<void>) => {
         setIsTransitioning(true);
@@ -25,30 +23,39 @@ export function useQuickAdd() {
     }, []);
 
     const onFilesAdded = useCallback((ids: string[]) => {
-        if (!isQuickAddRef.current) return;
+        if (!isQuickAddSessionRef.current) return;
         setQuickAddFileIds((prev) => new Set([...prev, ...ids]));
     }, []);
 
-    const enterQuickAdd = useCallback(() => withTransition(async () => {
-        try {
-            const logical = await windowGetLogicalSize();
-            savedSizeRef.current = { width: logical.width, height: logical.height };
-            await windowSetSize(QD_SIZE.width, QD_SIZE.height);
-            await windowSetAlwaysOnTop(true);
-        } catch { /* no-op in non-Tauri env */ }
-        setIsQuickAdd(true);
-    }), [withTransition]);
-
-    const exitQuickAdd = useCallback(() => withTransition(async () => {
-        setIsQuickAdd(false);
+    const enterQuickAdd = useCallback(() => {
+        isQuickAddSessionRef.current = true;
         setQuickAddFileIds(new Set());
-        try {
-            if (savedSizeRef.current) {
-                await windowSetSize(savedSizeRef.current.width, savedSizeRef.current.height);
-            }
-            await windowSetAlwaysOnTop(false);
-        } catch { /* no-op */ }
-    }), [withTransition]);
+
+        return withTransition(async () => {
+            try {
+                const logical = await windowGetLogicalSize();
+                savedSizeRef.current = { width: logical.width, height: logical.height };
+                await windowSetSize(QD_SIZE.width, QD_SIZE.height);
+                await windowSetAlwaysOnTop(true);
+            } catch { /* no-op in non-Tauri env */ }
+            setIsQuickAdd(true);
+        });
+    }, [withTransition]);
+
+    const exitQuickAdd = useCallback(() => {
+        isQuickAddSessionRef.current = false;
+
+        return withTransition(async () => {
+            setIsQuickAdd(false);
+            setQuickAddFileIds(new Set());
+            try {
+                if (savedSizeRef.current) {
+                    await windowSetSize(savedSizeRef.current.width, savedSizeRef.current.height);
+                }
+                await windowSetAlwaysOnTop(false);
+            } catch { /* no-op */ }
+        });
+    }, [withTransition]);
 
     return { isQuickAdd, quickAddFileIds, isTransitioning, onFilesAdded, enterQuickAdd, exitQuickAdd };
 }
