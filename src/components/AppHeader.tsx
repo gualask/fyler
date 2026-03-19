@@ -37,7 +37,7 @@ export function AppHeader({
             <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                     <img src="/icon.svg" alt="Fyler" className="h-6 w-6" />
-                    <span className="text-sm font-semibold text-ui-text">Fyler</span>
+                    <span className="text-base font-bold bg-gradient-to-r from-[#05BAFF] to-[#505FFF] bg-clip-text text-transparent">Fyler</span>
                 </div>
                 <div className="mx-1 h-5 w-px bg-ui-border" />
                 <div className="flex items-center gap-2">
