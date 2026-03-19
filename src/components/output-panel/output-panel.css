@@ -69,7 +69,7 @@
 }
 
 .segmented-control__buttons {
-  @apply flex min-w-0 rounded-lg bg-ui-surface-hover p-1;
+  @apply flex min-w-0 gap-0.5 rounded-lg bg-ui-surface-hover p-1;
   width: 100%;
 }
 
@@ -89,7 +89,7 @@
 }
 
 .segmented-control__button-active {
-  @apply bg-ui-accent text-white shadow-sm;
+  @apply text-white;
 }
 
 .segmented-control__button-inactive {

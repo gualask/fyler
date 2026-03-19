@@ -32,13 +32,13 @@
 
 .dark {
   /* superfici e testo */
-  --ui-bg:               #2a2b31;
-  --ui-surface:          #32343b;
-  --ui-surface-hover:    #3c3f47;
-  --ui-source:           #2f3138;
-  --ui-output:           #262930;
-  --ui-border:           rgba(255,255,255,0.1);
-  --ui-border-hover:     rgba(255,255,255,0.18);
+  --ui-bg:               #2e3039;
+  --ui-surface:          #383a44;
+  --ui-surface-hover:    #444752;
+  --ui-source:           #333541;
+  --ui-output:           #292b34;
+  --ui-border:           rgba(255,255,255,0.12);
+  --ui-border-hover:     rgba(255,255,255,0.20);
   --ui-text:             #f4f6fb;
   --ui-text-secondary:   #dde3ee;
   --ui-text-dim:         #b1bacb;
