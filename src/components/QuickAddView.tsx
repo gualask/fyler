@@ -1,4 +1,4 @@
-import { DocumentArrowDownIcon, DocumentIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { IconFile, IconFileDownload, IconPhoto, IconX } from '@tabler/icons-react';
 import type { SourceFile } from '../domain';
 import { useTranslation } from '../i18n';
 import { DragOverlay } from './DragOverlay';
@@ -28,7 +28,7 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                 <div className="flex items-center gap-2">
                     <LanguageSwitcher />
                     <button onClick={onExit} className="btn-icon" title={t('quickAdd.close')}>
-                        <XMarkIcon className="h-4 w-4" />
+                        <IconX className="h-4 w-4" />
                     </button>
                 </div>
             </header>
@@ -36,7 +36,7 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
             {/* Drop area */}
             <div className="flex flex-1 flex-col gap-3 overflow-hidden p-4">
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-ui-border bg-ui-surface min-h-28">
-                    <DocumentArrowDownIcon className="h-10 w-10 text-ui-text-muted" />
+                    <IconFileDownload className="h-10 w-10 text-ui-text-muted" />
                     <p className="text-center text-sm text-ui-text-muted">{t('quickAdd.dragFiles')}</p>
                 </div>
 
@@ -53,9 +53,9 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                                     className="flex items-center gap-2 px-3 py-2 hover:bg-ui-bg"
                                 >
                                     {file.kind === 'pdf' ? (
-                                        <DocumentIcon className="h-4 w-4 shrink-0 text-ui-accent" />
+                                        <IconFile className="h-4 w-4 shrink-0 text-ui-accent" />
                                     ) : (
-                                        <PhotoIcon className="h-4 w-4 shrink-0 text-ui-text-muted" />
+                                        <IconPhoto className="h-4 w-4 shrink-0 text-ui-text-muted" />
                                     )}
                                     <span className="flex-1 truncate text-xs">{file.name}</span>
                                     <button
@@ -63,7 +63,7 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                                         className="shrink-0 text-ui-text-muted transition-colors hover:text-red-500"
                                         title={t('quickAdd.remove')}
                                     >
-                                        <XMarkIcon className="h-3.5 w-3.5" />
+                                        <IconX className="h-3.5 w-3.5" />
                                     </button>
                                 </div>
                             ))}

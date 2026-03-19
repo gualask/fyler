@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckIcon } from '@heroicons/react/24/outline';
+import { IconCheck } from '@tabler/icons-react';
 
 import type { FileEdits, FinalPage, SourceFile } from '../../../domain';
 import type { RotationDirection } from '../../../fileEdits';
@@ -78,7 +78,7 @@ function PdfThumbnailItem({
 
                 {isSelected && (
                     <div className="absolute right-1.5 top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-ui-accent shadow-md">
-                        <CheckIcon className="h-3 w-3 text-white" />
+                        <IconCheck className="h-3 w-3 text-white" />
                     </div>
                 )}
 

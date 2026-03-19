@@ -1,4 +1,4 @@
-import { ChevronRightIcon, DocumentIcon, PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { IconChevronRight, IconFile, IconPhoto, IconTrash } from '@tabler/icons-react';
 import type { SourceFile } from '../domain';
 import { useTranslation } from '../i18n';
 import { Tooltip } from './shared/feedback/Tooltip';
@@ -26,9 +26,9 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
         >
             <div className="flex items-start gap-3">
                 {file.kind === 'image' ? (
-                    <PhotoIcon className="mt-0.5 h-5 w-5 shrink-0 text-ui-text-muted" />
+                    <IconPhoto className="mt-0.5 h-5 w-5 shrink-0 text-ui-text-muted" />
                 ) : (
-                    <DocumentIcon className="mt-0.5 h-5 w-5 shrink-0 text-ui-accent" />
+                    <IconFile className="mt-0.5 h-5 w-5 shrink-0 text-ui-accent" />
                 )}
 
                 <div className="min-w-0 flex-1">
@@ -71,7 +71,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = '')}
                     title={t('fileList.remove')}
                 >
-                    <TrashIcon className="h-3.5 w-3.5" />
+                    <IconTrash className="h-3.5 w-3.5" />
                 </button>
             </div>
 
@@ -84,7 +84,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                                 : t('fileList.imageNotIncluded')
                             : tp('fileList.usedPages', usedPages)}
                     </span>
-                    <ChevronRightIcon className="h-3.5 w-3.5" />
+                    <IconChevronRight className="h-3.5 w-3.5" />
                 </div>
             )}
         </div>

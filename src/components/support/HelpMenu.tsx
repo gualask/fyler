@@ -1,4 +1,4 @@
-import { ChevronDownIcon, LifebuoyIcon } from '@heroicons/react/24/outline';
+import { IconChevronDown, IconLifebuoy } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { useDismissableMenu } from '../../hooks/useDismissableMenu';
 import { useTranslation } from '../../i18n';
@@ -39,9 +39,9 @@ export function HelpMenu({
                 aria-expanded={open}
                 onClick={() => setOpen((current) => !current)}
             >
-                <LifebuoyIcon className="h-4 w-4" />
+                <IconLifebuoy className="h-4 w-4" />
                 {t('support.help')}
-                <ChevronDownIcon className={['h-4 w-4 transition-transform', open ? 'rotate-180' : ''].join(' ')} />
+                <IconChevronDown className={['h-4 w-4 transition-transform', open ? 'rotate-180' : ''].join(' ')} />
             </button>
             {open ? (
                 <div

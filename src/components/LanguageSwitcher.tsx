@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { IconChevronDown } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { useDismissableMenu } from '../hooks/useDismissableMenu';
@@ -34,7 +34,7 @@ export function LanguageSwitcher() {
                 onClick={handleToggle}
             >
                 <span>{t(`language.short.${locale}`)}</span>
-                <ChevronDownIcon
+                <IconChevronDown
                     className={['language-switcher__chevron', open ? 'language-switcher__chevron-open' : ''].join(' ')}
                 />
             </button>

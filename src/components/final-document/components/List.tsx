@@ -8,7 +8,7 @@ import {
     type DragEndEvent,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { DocumentIcon } from '@heroicons/react/24/outline';
+import { IconFile } from '@tabler/icons-react';
 
 import type { FileEdits, FinalPage, SourceFile } from '../../../domain';
 import { emptyFileEdits } from '../../../fileEdits';
@@ -66,7 +66,7 @@ export function List({
     if (items.length === 0) {
         return (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-ui-text-muted">
-                <DocumentIcon className="h-8 w-8 opacity-25" />
+                <IconFile className="h-8 w-8 opacity-25" />
                 <p className="text-center text-xs">{t('finalDocument.empty')}</p>
             </div>
         );

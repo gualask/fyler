@@ -1,8 +1,4 @@
-import {
-    ArrowUturnLeftIcon,
-    ArrowUturnRightIcon,
-    MagnifyingGlassPlusIcon,
-} from '@heroicons/react/24/outline';
+import { IconRotate2, IconRotateClockwise2, IconZoomIn } from '@tabler/icons-react';
 import type { ComponentType, SVGProps } from 'react';
 import { useTranslation } from '../../../i18n';
 
@@ -72,7 +68,7 @@ export function PageQuickActions({
                     <ActionButton
                         sizeClass={previewSize}
                         iconSizeClass={iconSize}
-                        icon={MagnifyingGlassPlusIcon}
+                        icon={IconZoomIn}
                         title={t('quickActions.preview')}
                         disabled={disabled}
                         toneClassName={previewButtonTone}
@@ -87,7 +83,7 @@ export function PageQuickActions({
                         <ActionButton
                             sizeClass={rotateSize}
                             iconSizeClass={iconSize}
-                            icon={ArrowUturnLeftIcon}
+                            icon={IconRotate2}
                             title={t('quickActions.rotateLeft')}
                             disabled={disabled}
                             toneClassName={rotateButtonTone}
@@ -98,7 +94,7 @@ export function PageQuickActions({
                         <ActionButton
                             sizeClass={rotateSize}
                             iconSizeClass={iconSize}
-                            icon={ArrowUturnRightIcon}
+                            icon={IconRotateClockwise2}
                             title={t('quickActions.rotateRight')}
                             disabled={disabled}
                             toneClassName={rotateButtonTone}

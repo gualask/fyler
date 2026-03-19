@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ArrowUpTrayIcon, DocumentPlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { IconFilePlus, IconTrash, IconUpload } from '@tabler/icons-react';
 import type { SourceFile, FinalPage } from '../domain';
 import { useTranslation } from '../i18n';
 import { ColumnHeader } from './shared/layout/ColumnHeader';
@@ -33,7 +33,7 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
                     title={t('fileList.addFilesTitle')}
                     className="btn-ghost-sm h-[34px]"
                 >
-                    <DocumentPlusIcon className="h-4 w-4" />
+                    <IconFilePlus className="h-4 w-4" />
                     {t('fileList.add')}
                 </button>
                 <button
@@ -42,7 +42,7 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
                     disabled={files.length === 0}
                     className="btn-ghost-sm h-[34px]"
                 >
-                    <TrashIcon className="h-4 w-4" />
+                    <IconTrash className="h-4 w-4" />
                     {t('fileList.clear')}
                 </button>
             </ColumnHeader>
@@ -50,7 +50,7 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
                 {files.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-2 text-ui-text-muted">
-                        <ArrowUpTrayIcon className="h-8 w-8 opacity-25" />
+                        <IconUpload className="h-8 w-8 opacity-25" />
                         <p className="text-center text-xs">{t('fileList.empty')}</p>
                     </div>
                 ) : (

@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import {
-    ArrowUturnLeftIcon,
-    ArrowUturnRightIcon,
-    ChevronDownIcon,
-    MagnifyingGlassMinusIcon,
-    MagnifyingGlassPlusIcon,
-    XMarkIcon,
-} from '@heroicons/react/24/outline';
+    IconChevronDown,
+    IconRotate2,
+    IconRotateClockwise2,
+    IconX,
+    IconZoomIn,
+    IconZoomOut,
+} from '@tabler/icons-react';
 
 import type { RotationDirection } from '../../../fileEdits';
 import { useTranslation } from '../../../i18n';
@@ -66,7 +66,7 @@ export function Toolbar({
                         className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                         title={t('preview.zoomOut')}
                     >
-                        <MagnifyingGlassMinusIcon className="h-4 w-4" />
+                        <IconZoomOut className="h-4 w-4" />
                     </button>
                     <span className="min-w-[3rem] text-center font-mono text-xs font-medium text-white/80">
                         {Math.round(zoomLevel * 100)}%
@@ -76,7 +76,7 @@ export function Toolbar({
                         className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                         title={t('preview.zoomIn')}
                     >
-                        <MagnifyingGlassPlusIcon className="h-4 w-4" />
+                        <IconZoomIn className="h-4 w-4" />
                     </button>
                     <button
                         onClick={onZoomReset}
@@ -101,7 +101,7 @@ export function Toolbar({
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
                             title={t('preview.rotateLeft')}
                         >
-                            <ArrowUturnLeftIcon className="h-4 w-4" />
+                            <IconRotate2 className="h-4 w-4" />
                         </button>
                         <button
                             onClick={() => onRotate('cw')}
@@ -109,7 +109,7 @@ export function Toolbar({
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
                             title={t('preview.rotateRight')}
                         >
-                            <ArrowUturnRightIcon className="h-4 w-4" />
+                            <IconRotateClockwise2 className="h-4 w-4" />
                         </button>
                     </div>
                 )}
@@ -134,7 +134,7 @@ export function Toolbar({
                                 </option>
                             ))}
                         </select>
-                        <ChevronDownIcon className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-white/75" />
+                        <IconChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-white/75" />
                     </div>
                 )}
 
@@ -143,7 +143,7 @@ export function Toolbar({
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
                     title={t('preview.close')}
                 >
-                    <XMarkIcon className="h-5 w-5" />
+                    <IconX className="h-5 w-5" />
                 </button>
             </div>
         </div>

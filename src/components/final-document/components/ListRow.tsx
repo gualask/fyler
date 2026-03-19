@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Bars3Icon, DocumentIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { IconFile, IconGripVertical, IconPhoto, IconX } from '@tabler/icons-react';
 
 import { getImageRotationDegrees } from '../../../fileEdits';
 import { useLazyPdfRender } from '../../../hooks/useLazyPdfRender';
@@ -76,7 +76,7 @@ export const ListRow = memo(function ListRow({
                     onClick={(event) => event.stopPropagation()}
                     className="shrink-0 cursor-grab text-ui-text-muted active:cursor-grabbing"
                 >
-                    <Bars3Icon className="h-3.5 w-3.5" />
+                    <IconGripVertical className="h-3.5 w-3.5" />
                 </div>
 
                 <div
@@ -96,9 +96,9 @@ export const ListRow = memo(function ListRow({
                     ) : (
                         <div className="flex h-full items-center justify-center">
                             {item.file?.kind === 'image' ? (
-                                <PhotoIcon className="h-5 w-5 text-ui-text-muted" />
+                                <IconPhoto className="h-5 w-5 text-ui-text-muted" />
                             ) : (
-                                <DocumentIcon className="h-5 w-5 text-ui-text-muted" />
+                                <IconFile className="h-5 w-5 text-ui-text-muted" />
                             )}
                         </div>
                     )}
@@ -122,7 +122,7 @@ export const ListRow = memo(function ListRow({
                     className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-colors hover:bg-red-600 group-hover:flex"
                     title={t('finalDocument.removePage')}
                 >
-                    <XMarkIcon className="h-3.5 w-3.5" />
+                    <IconX className="h-3.5 w-3.5" />
                 </button>
             </div>
         </div>

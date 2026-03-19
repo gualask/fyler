@@ -1,4 +1,4 @@
-import { ArrowDownTrayIcon, ArrowsPointingInIcon, EyeIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline';
+import { IconArrowsMinimize, IconDownload, IconEye, IconMoon, IconSun } from '@tabler/icons-react';
 import { useTranslation } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { HelpMenu } from './support/HelpMenu';
@@ -46,11 +46,11 @@ export function AppHeader({
                         title={isDark ? t('header.toggleTheme.light') : t('header.toggleTheme.dark')}
                         className="btn-icon"
                     >
-                        {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+                        {isDark ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
                     </button>
                     <LanguageSwitcher />
                     <button onClick={onQuickAdd} className="btn-ghost" title={t('header.quickAdd')}>
-                        <ArrowsPointingInIcon className="h-4 w-4" />
+                        <IconArrowsMinimize className="h-4 w-4" />
                         {t('header.quickAdd')}
                     </button>
                 </div>
@@ -67,7 +67,7 @@ export function AppHeader({
                     onClick={onPreview}
                     className="btn-ghost"
                 >
-                    <EyeIcon className="h-4 w-4" />
+                    <IconEye className="h-4 w-4" />
                     {t('header.preview')}
                 </button>
                 <button
@@ -75,7 +75,7 @@ export function AppHeader({
                     onClick={onExport}
                     className="btn-primary"
                 >
-                    <ArrowDownTrayIcon className="h-5 w-5" />
+                    <IconDownload className="h-5 w-5" />
                     {t('header.exportPdf')}
                 </button>
             </div>

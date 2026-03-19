@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import { IconInfoCircle } from '@tabler/icons-react';
 import { useTranslation } from '../../i18n';
 import { Tooltip, type TooltipAlign } from '../shared/feedback/Tooltip';
 
@@ -75,7 +75,7 @@ export function InfoTooltip({
                     onBlur={onBlur}
                     onClick={onClick}
                 >
-                    <InformationCircleIcon className="h-3.5 w-3.5" />
+                    <IconInfoCircle className="h-3.5 w-3.5" />
                 </button>
             )}
         >

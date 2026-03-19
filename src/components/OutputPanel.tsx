@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { IconSettings } from '@tabler/icons-react';
 
 import type {
     BasicOptimizationPreset,
@@ -198,7 +198,7 @@ export function OutputPanel({
                                 isAdvancedOpen ? 'btn-icon-active' : '',
                             ].filter(Boolean).join(' ')}
                         >
-                            <Cog6ToothIcon className="h-4 w-4" />
+                            <IconSettings className="h-4 w-4" />
                         </button>
                     </div>
 
