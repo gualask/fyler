@@ -68,7 +68,7 @@
   "fileList.imageNotIncluded": "Not included",
   "fileList.usedPages.one": "{count} page used",
   "fileList.usedPages.other": "{count} pages used",
-  "pagePicker.title": "Pages",
+  "pagePicker.title": "Content",
   "pagePicker.selectAFile": "Select a file",
   "pagePicker.singleImage": "Single image",
   "pagePicker.includedAutomatically": "Included automatically",
