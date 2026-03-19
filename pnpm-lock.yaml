@@ -17,9 +17,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.4)
-      '@fontsource-variable/public-sans':
-        specifier: ^5.2.7
-        version: 5.2.7
+      '@fontsource-variable/plus-jakarta-sans':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@tabler/icons-react':
         specifier: ^3.40.0
         version: 3.40.0(react@19.2.4)
@@ -398,8 +398,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@fontsource-variable/public-sans@5.2.7':
-    resolution: {integrity: sha512-4mvade2J3slKkvwRkS+p8T3szet/0vhWoSnuUJTVU81Uo2pRpSZY/Y8bSLRqpSwzIPxjVmRJ53oq6JKP/l/PSg==}
+  '@fontsource-variable/plus-jakarta-sans@5.2.8':
+    resolution: {integrity: sha512-iQecBizIdZxezODNHzOn4SvvRMrZL/S8k4MEXGDynCmUrImVW0VmX+tIAMqnADwH4haXlHSXqMgU6+kcfBQJdw==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -2278,7 +2278,7 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@fontsource-variable/public-sans@5.2.7': {}
+  '@fontsource-variable/plus-jakarta-sans@5.2.8': {}
 
   '@humanfs/core@0.19.1': {}
 
