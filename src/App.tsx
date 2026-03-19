@@ -20,6 +20,7 @@ import { PreviewModal } from './components/preview';
 import { OutputPanel } from './components/OutputPanel';
 import { ProgressModal } from './components/ProgressModal';
 import { EmptyState } from './components/EmptyState';
+import { Toast } from './components/Toast';
 import { DragOverlay } from './components/DragOverlay';
 import { QuickAddView } from './components/QuickAddView';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
@@ -34,6 +35,7 @@ function AppContent() {
     const { isQuickAdd, quickAddFileIds, isTransitioning, onFilesAdded, enterQuickAdd, exitQuickAdd } = useQuickAdd();
     const {
         statusMessage,
+        statusTone,
         loadingMessage,
         loadingProgress,
         showOpeningFiles,
@@ -285,10 +287,8 @@ function AppContent() {
                 </>
             )}
 
-            {statusMessage && (
-                <div className="absolute bottom-12 left-1/2 -translate-x-1/2 rounded-lg bg-ui-surface px-4 py-2 text-xs text-ui-text shadow-lg">
-                    {statusMessage}
-                </div>
+            {statusMessage && statusTone && (
+                <Toast key={statusMessage} message={statusMessage} tone={statusTone} />
             )}
 
             {loadingMessage && <ProgressModal message={loadingMessage} progress={loadingProgress} />}

@@ -138,6 +138,13 @@ export function useAppNotifications() {
         return formatImportWarning(status.payload, tp);
     }, [status, t, tp]);
 
+    const statusTone = useMemo<'success' | 'error' | 'warning' | null>(() => {
+        if (!status) return null;
+        if (status.kind === 'error') return 'error';
+        if (status.kind === 'export-completed') return 'success';
+        return 'warning';
+    }, [status]);
+
     const loadingMessage = useMemo(() => {
         if (!loading) return null;
         return loading.kind === 'opening-files'
@@ -147,6 +154,7 @@ export function useAppNotifications() {
 
     return {
         statusMessage,
+        statusTone,
         loadingMessage,
         loadingProgress: loading?.kind === 'merge-progress' ? loading.progress : undefined,
         showOpeningFiles,
