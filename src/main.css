@@ -205,6 +205,26 @@ body {
            focus:ring-1 focus:ring-ui-accent;
   }
 
+  /* ── Thumbnail cards (page picker) ─────────────────────────── */
+  .thumb-card {
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.25);
+  }
+  .thumb-card-idle:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+  .thumb-card-focused {
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+  }
+  :is(.dark, .dark *) .thumb-card {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.6);
+  }
+  :is(.dark, .dark *) .thumb-card-idle:hover {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 6px 18px rgba(0, 0, 0, 0.7);
+  }
+  :is(.dark, .dark *) .thumb-card-focused {
+    box-shadow: 0 0 0 1px var(--ui-accent-muted), 0 6px 18px rgba(0, 0, 0, 0.7);
+  }
+
   /* ── Label uppercase ───────────────────────────────────────── */
   .label-caps {
     @apply text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
