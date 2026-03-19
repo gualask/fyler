@@ -6,18 +6,16 @@ import { useDiagnostics } from '@/diagnostics/useDiagnostics';
 import { mergePDFs, savePDFDialog } from '@/platform';
 import type { useFiles } from '@/files/useFiles';
 import type { useAppNotifications } from './useAppNotifications';
-import type { useQuickAdd } from './useQuickAdd';
 import type { useOptimize } from './useOptimize';
 import { useTranslation } from '@/i18n';
 
-interface Deps {
+interface ExportActionDeps {
     files: ReturnType<typeof useFiles>;
     notifications: ReturnType<typeof useAppNotifications>;
-    quickAdd: ReturnType<typeof useQuickAdd>;
     optimize: ReturnType<typeof useOptimize>;
 }
 
-export function useAppActions({ files, notifications, quickAdd, optimize }: Deps) {
+export function useExportAction({ files, notifications, optimize }: ExportActionDeps) {
     const { t } = useTranslation();
     const { record } = useDiagnostics();
 
@@ -76,61 +74,5 @@ export function useAppActions({ files, notifications, quickAdd, optimize }: Deps
         }
     }, [files.editsByFile, files.finalPages, notifications, optimize.imageFit, optimize.optimizationPreset, optimize.optimizeOptions, record, t]);
 
-    const handleAddFiles = useCallback(() => {
-        record({ category: 'files', severity: 'info', message: 'Open files dialog started' });
-        notifications.showOpeningFiles();
-        void files.addFiles()
-            .then(({ files: addedFiles, skippedErrors }) => {
-                record({
-                    category: 'files',
-                    severity: 'info',
-                    message: addedFiles.length ? 'Files added to workspace' : 'Open files dialog canceled',
-                    metadata: { addedCount: addedFiles.length },
-                });
-                if (skippedErrors.length > 0 && addedFiles.length === 0) {
-                    notifications.showError(skippedErrors.join(', '));
-                }
-            })
-            .catch((error) => {
-                record({
-                    category: 'files',
-                    severity: 'error',
-                    message: `Open files failed: ${toDiagnosticMessage(error)}`,
-                });
-                notifications.showError(error);
-            })
-            .finally(() => notifications.clearLoading());
-    }, [files, notifications, record]);
-
-    const handleEnterQuickAdd = useCallback(() => {
-        void quickAdd.enterQuickAdd()
-            .then(() => {
-                record({ category: 'quick-add', severity: 'info', message: 'Entered Quick Add mode' });
-            })
-            .catch((error) => {
-                record({
-                    category: 'quick-add',
-                    severity: 'error',
-                    message: `Failed to enter Quick Add: ${toDiagnosticMessage(error)}`,
-                });
-                notifications.showError(error);
-            });
-    }, [notifications, quickAdd, record]);
-
-    const handleExitQuickAdd = useCallback(() => {
-        void quickAdd.exitQuickAdd()
-            .then(() => {
-                record({ category: 'quick-add', severity: 'info', message: 'Exited Quick Add mode' });
-            })
-            .catch((error) => {
-                record({
-                    category: 'quick-add',
-                    severity: 'error',
-                    message: `Failed to exit Quick Add: ${toDiagnosticMessage(error)}`,
-                });
-                notifications.showError(error);
-            });
-    }, [notifications, quickAdd, record]);
-
-    return { exportMerged, handleAddFiles, handleEnterQuickAdd, handleExitQuickAdd };
+    return exportMerged;
 }

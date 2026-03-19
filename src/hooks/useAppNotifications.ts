@@ -1,30 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
 
 import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics/appEvents';
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
 import { formatImportWarning, useTranslation } from '@/i18n';
+
+import { useGlobalErrorHandlers } from './useGlobalErrorHandlers';
+import { useTauriNotificationEvents } from './useTauriNotificationEvents';
 
 function toErrorMessage(value: unknown): string {
     return value instanceof Error ? value.message : String(value);
-}
-
-function attachEventListener<T>(eventName: string, listener: (event: { payload: T }) => void): () => void {
-    let disposed = false;
-    let unlisten: (() => void) | undefined;
-
-    void listen<T>(eventName, listener).then((fn) => {
-        if (disposed) {
-            fn();
-        } else {
-            unlisten = fn;
-        }
-    }).catch(() => { /* listener registration failed — swallowed intentionally */ });
-
-    return () => {
-        disposed = true;
-        unlisten?.();
-    };
 }
 
 type StatusState =
@@ -39,7 +22,6 @@ type LoadingState =
 
 export function useAppNotifications() {
     const { t, tp } = useTranslation();
-    const { record } = useDiagnostics();
     const [status, setStatus] = useState<StatusState | null>(null);
     const [loading, setLoading] = useState<LoadingState | null>(null);
 
@@ -49,56 +31,24 @@ export function useAppNotifications() {
         return () => window.clearTimeout(timeoutId);
     }, [status]);
 
-    useEffect(() => {
-        const handleError = (event: ErrorEvent) => {
-            event.preventDefault();
-            const message = toErrorMessage(event.error ?? event.message);
-            record({ category: 'app', severity: 'error', message: `Unhandled window error: ${message}` });
-            setStatus({ kind: 'error', message });
-        };
-        const handleRejection = (event: PromiseRejectionEvent) => {
-            event.preventDefault();
-            const message = toErrorMessage(event.reason);
-            record({ category: 'app', severity: 'error', message: `Unhandled promise rejection: ${message}` });
-            setStatus({ kind: 'error', message });
-        };
-
-        window.addEventListener('error', handleError);
-        window.addEventListener('unhandledrejection', handleRejection);
-
-        return () => {
-            window.removeEventListener('error', handleError);
-            window.removeEventListener('unhandledrejection', handleRejection);
-        };
-    }, [record]);
-
-    useEffect(() => {
-        return attachEventListener<string>('app-error', (event) => {
-            record({ category: 'app', severity: 'error', message: `Rust panic: ${event.payload}` });
-            setStatus({ kind: 'error', message: event.payload });
-        });
-    }, [record]);
-
-    useEffect(() => {
-        return attachEventListener<AppStatusPayload>('app-status', (event) => {
-            record({
-                category: 'files',
-                severity: 'warn',
-                message: 'Import warning received',
-                metadata: {
-                    skippedCount: event.payload.skippedCount,
-                    hasMore: event.payload.hasMore,
-                },
-            });
-            setStatus({ kind: 'import-warning', payload: event.payload });
-        });
-    }, [record]);
-
-    useEffect(() => {
-        return attachEventListener<{ step: MergeProgressStep; progress: number }>('merge-progress', (event) => {
-            setLoading({ kind: 'merge-progress', step: event.payload.step, progress: event.payload.progress });
-        });
+    const handleError = useCallback((message: string) => {
+        setStatus({ kind: 'error', message });
     }, []);
+
+    const handleImportWarning = useCallback((payload: AppStatusPayload) => {
+        setStatus({ kind: 'import-warning', payload });
+    }, []);
+
+    const handleMergeProgress = useCallback((step: MergeProgressStep, progress: number) => {
+        setLoading({ kind: 'merge-progress', step, progress });
+    }, []);
+
+    useGlobalErrorHandlers(handleError);
+    useTauriNotificationEvents({
+        onError: handleError,
+        onImportWarning: handleImportWarning,
+        onMergeProgress: handleMergeProgress,
+    });
 
     const showOpeningFiles = useCallback(() => {
         setLoading({ kind: 'opening-files' });

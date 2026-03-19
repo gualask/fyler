@@ -7,7 +7,9 @@ import { useQuickAdd } from '@/hooks/useQuickAdd';
 import { useDiagnostics } from '@/diagnostics/useDiagnostics';
 import { useTheme } from '@/i18n';
 import { useOptimize } from '@/hooks/useOptimize';
-import { useAppActions } from '@/hooks/useAppActions';
+import { useExportAction } from '@/hooks/useExportAction';
+import { useAddFilesAction } from '@/hooks/useAddFilesAction';
+import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import { AppHeader } from '@/components/AppHeader';
 import { FileList } from '@/components/FileList';
 import { PagePicker } from '@/components/page-picker';
@@ -56,12 +58,9 @@ function AppContent() {
         jpegQuality: optimize.jpegQuality,
     });
 
-    const { exportMerged, handleAddFiles, handleEnterQuickAdd, handleExitQuickAdd } = useAppActions({
-        files: filesApi,
-        notifications,
-        quickAdd,
-        optimize,
-    });
+    const exportMerged = useExportAction({ files: filesApi, notifications, optimize });
+    const handleAddFiles = useAddFilesAction({ files: filesApi, notifications });
+    const { handleEnterQuickAdd, handleExitQuickAdd } = useQuickAddActions({ quickAdd, notifications });
 
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>

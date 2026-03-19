@@ -1,25 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { IconSettings } from '@tabler/icons-react';
 
 import type {
     BasicOptimizationPreset,
     ImageOptimizationPreset,
 } from '@/domain/optimizationConfig';
-import {
-    JPEG_QUALITY_OPTIONS,
-    OPTIMIZATION_PRESETS,
-    TARGET_DPI_OPTIONS,
-} from '@/domain/optimizationConfig';
+import { OPTIMIZATION_PRESETS } from '@/domain/optimizationConfig';
 import type { ImageFit } from '@/domain';
 import { useTranslation } from '@/i18n';
+import { useDismiss } from '@/hooks/useDismiss';
 
 import { InfoTooltip } from './output-panel/InfoTooltip';
-import {
-    ImageFitTooltip,
-    DpiTooltip,
-    JpegTooltip,
-    OptimizationTooltip,
-} from './output-panel/helpContent';
+import { ImageFitTooltip, OptimizationTooltip } from './output-panel/helpContent';
+import { OptimizationAdvancedPanel } from './output-panel/OptimizationAdvancedPanel';
 import {
     SegmentButtons,
     SegmentedControl,
@@ -57,66 +50,6 @@ function buildPresetOptions(
     return [...baseOptions, { value: 'custom', label: customLabel, disabled: true }];
 }
 
-function encodeOptionalNumberOption(value: number | undefined) {
-    return value === undefined ? 'off' : String(value);
-}
-
-function decodeOptionalNumberOption(option: string): number | undefined {
-    if (option === 'off') return undefined;
-    return Number(option);
-}
-
-function buildOptionalNumberOptions(
-    options: ReadonlyArray<{ value: number | undefined }>,
-    offLabel: string,
-): SegmentOption<string>[] {
-    return options.map(({ value }) => ({
-        value: value === undefined ? 'off' : String(value),
-        label: value === undefined ? offLabel : String(value),
-    }));
-}
-
-function OptimizationAdvancedPanel({
-    jpegQuality,
-    targetDpi,
-    onJpegQualityChange,
-    onTargetDpiChange,
-}: {
-    jpegQuality?: number;
-    targetDpi?: number;
-    onJpegQualityChange: (v: number | undefined) => void;
-    onTargetDpiChange: (v: number | undefined) => void;
-}) {
-    const { t } = useTranslation();
-    const jpegOptions = buildOptionalNumberOptions(JPEG_QUALITY_OPTIONS, t('outputPanel.auto'));
-    const targetDpiOptions = buildOptionalNumberOptions(TARGET_DPI_OPTIONS, t('outputPanel.off'));
-
-    return (
-        <div className="output-panel-advanced-panel">
-            <div className="output-panel-advanced-grid">
-                <SegmentedControl
-                    label={t('outputPanel.targetDpi')}
-                    helpContent={<DpiTooltip />}
-                    helpAlign="start"
-                    className="output-panel-group-fill"
-                    options={targetDpiOptions}
-                    value={encodeOptionalNumberOption(targetDpi)}
-                    onChange={(value) => onTargetDpiChange(decodeOptionalNumberOption(value))}
-                />
-                <SegmentedControl
-                    label={t('outputPanel.jpegQuality')}
-                    helpContent={<JpegTooltip />}
-                    helpAlign="center"
-                    className="output-panel-group-fill"
-                    options={jpegOptions}
-                    value={encodeOptionalNumberOption(jpegQuality)}
-                    onChange={(value) => onJpegQualityChange(decodeOptionalNumberOption(value))}
-                />
-            </div>
-        </div>
-    );
-}
-
 export function OutputPanel({
     imageFit,
     jpegQuality,
@@ -144,32 +77,13 @@ export function OutputPanel({
     );
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const advancedRef = useRef<HTMLDivElement | null>(null);
-    const closeAdvancedPanel = () => setIsAdvancedOpen(false);
+    const closeAdvancedPanel = useCallback(() => setIsAdvancedOpen(false), []);
     const toggleAdvancedPanel = () => setIsAdvancedOpen((current) => !current);
     const handlePresetChange = (value: ImageOptimizationPreset) => {
         if (value !== 'custom') onOptimizationPresetChange(value);
     };
 
-    useEffect(() => {
-        if (!isAdvancedOpen) return;
-
-        const handleMouseDown = (event: MouseEvent) => {
-            if (!advancedRef.current?.contains(event.target as Node)) {
-                closeAdvancedPanel();
-            }
-        };
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') closeAdvancedPanel();
-        };
-
-        window.addEventListener('mousedown', handleMouseDown);
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('mousedown', handleMouseDown);
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isAdvancedOpen]);
+    useDismiss(isAdvancedOpen, advancedRef, closeAdvancedPanel);
 
     return (
         <div className="relative z-20 flex items-start gap-6 overflow-visible px-6 py-3">
