@@ -54,3 +54,10 @@ pub struct MergeResult {
     #[serde(rename = "optimizationFailedCount")]
     pub optimization_failed_count: usize,
 }
+
+#[derive(serde::Serialize)]
+pub struct OpenFilesResult {
+    pub files: Vec<SourceFile>,
+    #[serde(rename = "skippedErrors")]
+    pub skipped_errors: Vec<String>,
+}

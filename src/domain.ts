@@ -57,6 +57,11 @@ export type MergeResult = {
     optimizationFailedCount: number;
 };
 
+export type OpenFilesResult = {
+    files: SourceFile[];
+    skippedErrors: string[];
+};
+
 export function buildMergeRequest(
     finalPages: FinalPage[],
     edits: Record<string, FileEdits>,

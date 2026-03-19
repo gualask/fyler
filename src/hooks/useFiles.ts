@@ -56,10 +56,11 @@ export function useFiles({
     }, [addSourceFiles]);
 
     const addFiles = useCallback(async () => {
-        const addedFiles = await openAndAddSourceFiles();
-        if (!addedFiles.length) return [];
-        setSelectedId((prev) => prev ?? addedFiles[0].id);
-        return addedFiles;
+        const { files: addedFiles, skippedErrors } = await openAndAddSourceFiles();
+        if (addedFiles.length) {
+            setSelectedId((prev) => prev ?? addedFiles[0].id);
+        }
+        return { files: addedFiles, skippedErrors };
     }, [openAndAddSourceFiles]);
 
     const selectFile = useCallback((id: string) => {

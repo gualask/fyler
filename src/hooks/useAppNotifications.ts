@@ -19,7 +19,7 @@ function attachEventListener<T>(eventName: string, listener: (event: { payload: 
         } else {
             unlisten = fn;
         }
-    });
+    }).catch(() => { /* listener registration failed — swallowed intentionally */ });
 
     return () => {
         disposed = true;

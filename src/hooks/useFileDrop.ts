@@ -31,13 +31,13 @@ export function useFileDrop(
                 setIsDragOver(false);
                 const paths = e.payload.paths;
                 if (!paths?.length) return;
-                void openFilesFromPaths(paths).then((files) => {
-                    if (!files.length) return;
-                    void Promise.resolve(addFilesRef.current(files)).then((addedFiles) => {
+                void openFilesFromPaths(paths).then((result) => {
+                    if (!result.files.length) return;
+                    void Promise.resolve(addFilesRef.current(result.files)).then((addedFiles) => {
                         if (!addedFiles.length) return;
                         setSelectedIdRef.current(addedFiles[0].id);
                     });
-                });
+                }).catch(() => { /* drop import failed — error surfaces via global handler */ });
             }),
         ]).then((fns) => {
             if (active) {

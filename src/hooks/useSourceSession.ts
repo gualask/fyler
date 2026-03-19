@@ -30,9 +30,9 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
     }, [addToList, onFilesAdded]);
 
     const openAndAddSourceFiles = useCallback(async () => {
-        const newFiles = await openFilesDialog(t('dialogs.filters.documentsAndImages'));
-        if (!newFiles.length) return [];
-        return addSourceFiles(newFiles);
+        const result = await openFilesDialog(t('dialogs.filters.documentsAndImages'));
+        const added = result.files.length ? addSourceFiles(result.files) : [];
+        return { files: added, skippedErrors: result.skippedErrors };
     }, [addSourceFiles, t]);
 
     const removeSourceFile = useCallback((id: string) => {

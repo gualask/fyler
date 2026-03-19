@@ -158,8 +158,11 @@ function AppContent() {
         logFilesDialogStarted();
         showOpeningFiles();
         void addFiles()
-            .then((addedFiles) => {
+            .then(({ files: addedFiles, skippedErrors }) => {
                 logFilesDialogResult(addedFiles.length);
+                if (skippedErrors.length > 0 && addedFiles.length === 0) {
+                    showError(skippedErrors.join(', '));
+                }
             })
             .catch((error) => {
                 logFilesDialogFailure(error);

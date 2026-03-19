@@ -6,7 +6,7 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
 use crate::export::export_pdf;
-use crate::models::{MergeRequest, MergeResult, SourceFile};
+use crate::models::{MergeRequest, MergeResult, OpenFilesResult};
 use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{files_from_paths, SourceRegistry};
 
@@ -45,12 +45,26 @@ fn emit_import_warning(app: &tauri::AppHandle, skipped_errors: &[String]) {
     );
 }
 
+fn finalize_import(
+    app: &tauri::AppHandle,
+    result: crate::source_registry::FilesFromPathsResult,
+    extra_errors: Vec<String>,
+) -> OpenFilesResult {
+    let mut skipped_errors = extra_errors;
+    skipped_errors.extend(result.skipped_errors);
+    emit_import_warning(app, &skipped_errors);
+    OpenFilesResult {
+        files: result.files,
+        skipped_errors,
+    }
+}
+
 #[tauri::command]
 pub async fn open_files_dialog(
     app: tauri::AppHandle,
     filter_label: String,
     registry: State<'_, SourceRegistry>,
-) -> Result<Vec<SourceFile>, AppError> {
+) -> Result<OpenFilesResult, AppError> {
     let mut filter_exts = vec!["pdf"];
     filter_exts.extend_from_slice(IMAGE_EXTENSIONS);
 
@@ -61,14 +75,22 @@ pub async fn open_files_dialog(
         .blocking_pick_files()
         .unwrap_or_default();
 
+    let mut path_errors = Vec::new();
     let paths = files
         .into_iter()
-        .filter_map(|file| file.into_path().ok())
-        .map(|path| path.to_string_lossy().to_string());
+        .filter_map(|file| match file.into_path() {
+            Ok(path) => Some(path.to_string_lossy().to_string()),
+            Err(e) => {
+                let msg = format!("Failed to resolve file path: {e}");
+                eprintln!("[warn] {msg}");
+                path_errors.push(msg);
+                None
+            }
+        })
+        .collect::<Vec<_>>();
 
     let result = files_from_paths(paths, &registry)?;
-    emit_import_warning(&app, &result.skipped_errors);
-    Ok(result.files)
+    Ok(finalize_import(&app, result, path_errors))
 }
 
 #[tauri::command]
@@ -76,10 +98,9 @@ pub fn open_files_from_paths(
     app: tauri::AppHandle,
     paths: Vec<String>,
     registry: State<'_, SourceRegistry>,
-) -> Result<Vec<SourceFile>, AppError> {
+) -> Result<OpenFilesResult, AppError> {
     let result = files_from_paths(paths, &registry)?;
-    emit_import_warning(&app, &result.skipped_errors);
-    Ok(result.files)
+    Ok(finalize_import(&app, result, Vec::new()))
 }
 
 #[tauri::command]

@@ -1,9 +1,9 @@
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
-import type { ImageExportPreviewLayout, SourceFile, MergeRequest, MergeResult, ImageFit, QuarterTurn } from '../domain';
+import type { ImageExportPreviewLayout, OpenFilesResult, MergeRequest, MergeResult, ImageFit, QuarterTurn } from '../domain';
 import type { AppMetadata } from '../diagnostics';
 
-export const openFilesDialog = (filterLabel: string): Promise<SourceFile[]> =>
+export const openFilesDialog = (filterLabel: string): Promise<OpenFilesResult> =>
     invoke('open_files_dialog', { filterLabel });
 
 export const savePDFDialog = (defaultFilename: string, filterLabel: string): Promise<string> =>
@@ -18,7 +18,7 @@ export const getAppMetadata = (): Promise<AppMetadata> =>
 export const openExternalUrl = (url: string): Promise<void> =>
     invoke('open_external_url', { url });
 
-export const openFilesFromPaths = (paths: string[]): Promise<SourceFile[]> =>
+export const openFilesFromPaths = (paths: string[]): Promise<OpenFilesResult> =>
     invoke('open_files_from_paths', { paths });
 
 export const releaseSources = (fileIds: string[]): Promise<void> =>
