@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-import type { QuarterTurn, SourceFile } from '../domain';
+import type { QuarterTurn, SourceFile } from '@/domain';
 
 export type PdfRenderVariant = 'thumb' | 'preview';
 

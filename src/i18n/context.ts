@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-import type { Locale } from '../locale';
+import type { Locale } from './locale';
 
 export type AppPreferencesContextValue = {
     isDark: boolean;

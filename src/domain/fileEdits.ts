@@ -1,4 +1,4 @@
-import type { DocKind, FileEdits, QuarterTurn } from './domain';
+import type { DocKind, FileEdits, QuarterTurn } from '.';
 
 type RotationDirection = 'cw' | 'ccw';
 

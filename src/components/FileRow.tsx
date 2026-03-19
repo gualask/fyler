@@ -1,6 +1,6 @@
 import { IconChevronRight, IconFile, IconPhoto, IconTrash } from '@tabler/icons-react';
-import type { SourceFile } from '../domain';
-import { useTranslation } from '../i18n';
+import type { SourceFile } from '@/domain';
+import { useTranslation } from '@/i18n';
 import { Tooltip } from './shared/feedback/Tooltip';
 
 interface Props {

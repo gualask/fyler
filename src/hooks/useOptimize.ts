@@ -1,15 +1,15 @@
 import { useState } from 'react';
 
-import type { ImageFit, OptimizeOptions } from '../domain';
+import type { ImageFit, OptimizeOptions } from '@/domain';
 import {
     DEFAULT_OPTIMIZATION_PRESET,
     deriveOptimizationPreset,
     getOptimizationSettings,
     type BasicOptimizationPreset,
-} from '../optimizationConfig';
+} from '@/domain/optimizationConfig';
 
 export type { ImageFit };
-export type { BasicOptimizationPreset, ImageOptimizationPreset } from '../optimizationConfig';
+export type { BasicOptimizationPreset, ImageOptimizationPreset } from '@/domain/optimizationConfig';
 
 export function useOptimize() {
     const defaultSettings = getOptimizationSettings(DEFAULT_OPTIMIZATION_PRESET);

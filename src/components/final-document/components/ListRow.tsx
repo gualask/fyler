@@ -3,11 +3,11 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { IconFile, IconGripVertical, IconPhoto, IconX } from '@tabler/icons-react';
 
-import { getImageRotationDegrees } from '../../../fileEdits';
-import { useLazyPdfRender } from '../../../hooks/useLazyPdfRender';
-import { useTranslation } from '../../../i18n';
-import { buildThumbnailRenderRequest } from '../../../pdfRenderProfiles';
-import { getPreviewUrl } from '../../../platform';
+import { getImageRotationDegrees } from '@/domain/fileEdits';
+import { useLazyPdfRender } from '@/pdf/useLazyPdfRender';
+import { useTranslation } from '@/i18n';
+import { buildThumbnailRenderRequest } from '@/pdf/renderProfiles';
+import { getPreviewUrl } from '@/platform';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';
 import type { ListItem } from '../models/listItem';
 

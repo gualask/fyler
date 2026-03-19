@@ -1,7 +1,7 @@
 import { IconChevronDown, IconLifebuoy } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
-import { useDismissableMenu } from '../../hooks/useDismissableMenu';
-import { useTranslation } from '../../i18n';
+import { useDismissableMenu } from '@/hooks/useDismissableMenu';
+import { useTranslation } from '@/i18n';
 
 interface Props {
     onReportBug: () => void;

@@ -1,5 +1,5 @@
 import { IconArrowsMinimize, IconDownload, IconEye, IconMoon, IconSun } from '@tabler/icons-react';
-import { useTranslation } from '../i18n';
+import { useTranslation } from '@/i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { HelpMenu } from './support/HelpMenu';
 

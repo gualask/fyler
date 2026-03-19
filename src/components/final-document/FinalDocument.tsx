@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-import type { FileEdits, FinalPage, SourceFile } from '../../domain';
-import type { RotationDirection } from '../../fileEdits';
-import { useTranslation } from '../../i18n';
+import type { FileEdits, FinalPage, SourceFile } from '@/domain';
+import type { RotationDirection } from '@/domain/fileEdits';
+import { useTranslation } from '@/i18n';
 import { ColumnHeader } from '../shared/layout/ColumnHeader';
 import { List } from './components/List';
 import { Preview } from './components/Preview';

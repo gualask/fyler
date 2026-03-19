@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
-import type { FileEdits, SourceFile } from '../../../domain';
-import type { RotationDirection } from '../../../fileEdits';
-import { getImageQuarterTurn, getImageRotationDegrees } from '../../../fileEdits';
-import { useElementWidth } from '../../../hooks/useElementWidth';
-import { useTranslation } from '../../../i18n';
-import { getPreviewUrl } from '../../../platform';
+import type { FileEdits, SourceFile } from '@/domain';
+import type { RotationDirection } from '@/domain/fileEdits';
+import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/fileEdits';
+import { useElementWidth } from '../hooks/useElementWidth';
+import { useTranslation } from '@/i18n';
+import { getPreviewUrl } from '@/platform';
 import { ColumnHeader } from '../../shared/layout/ColumnHeader';
 import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';

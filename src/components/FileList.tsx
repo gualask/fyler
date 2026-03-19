@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { IconFilePlus, IconTrash, IconUpload } from '@tabler/icons-react';
-import type { SourceFile, FinalPage } from '../domain';
-import { useTranslation } from '../i18n';
+import type { SourceFile, FinalPage } from '@/domain';
+import { useTranslation } from '@/i18n';
 import { ColumnHeader } from './shared/layout/ColumnHeader';
 import { FileRow } from './FileRow';
 

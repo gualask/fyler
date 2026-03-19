@@ -1,93 +1,42 @@
-import { useCallback, useState } from 'react';
-import { buildMergeRequest } from './domain';
-import { DiagnosticsProvider } from './diagnostics';
-import {
-    mergePDFs,
-    savePDFDialog,
-} from './platform';
-import { PdfCacheProvider } from './hooks/PdfCacheProvider';
-import { useFiles } from './hooks/useFiles';
-import { useAppNotifications } from './hooks/useAppNotifications';
-import { useQuickAdd } from './hooks/useQuickAdd';
-import { useDiagnostics } from './diagnostics/useDiagnostics';
-import { useTheme } from './hooks/useTheme';
-import { useOptimize } from './hooks/useOptimize';
-import { useFileLogger } from './hooks/useFileLogger';
-import { useExportLogger } from './hooks/useExportLogger';
-import { useQuickAddLogger } from './hooks/useQuickAddLogger';
-import { AppHeader } from './components/AppHeader';
-import { FileList } from './components/FileList';
-import { PagePicker } from './components/page-picker';
-import { FinalDocument } from './components/final-document';
-import { PreviewModal } from './components/preview';
-import { OutputPanel } from './components/OutputPanel';
-import { ProgressModal } from './components/ProgressModal';
-import { EmptyState } from './components/EmptyState';
-import { Toast } from './components/Toast';
-import { DragOverlay } from './components/DragOverlay';
-import { QuickAddView } from './components/QuickAddView';
-import { AppErrorBoundary } from './components/AppErrorBoundary';
-import { UpdateDialog } from './components/UpdateDialog';
-import { SupportDialog } from './components/support/SupportDialog';
-import { useSupportDiagnostics } from './components/support/useSupportDiagnostics';
-import { AppPreferencesProvider, useTranslation } from './i18n';
+import { useState } from 'react';
+import { DiagnosticsProvider } from '@/diagnostics';
+import { PdfCacheProvider } from '@/pdf/PdfCacheProvider';
+import { useFiles } from '@/files/useFiles';
+import { useAppNotifications } from '@/hooks/useAppNotifications';
+import { useQuickAdd } from '@/hooks/useQuickAdd';
+import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import { useTheme } from '@/i18n';
+import { useOptimize } from '@/hooks/useOptimize';
+import { useAppActions } from '@/hooks/useAppActions';
+import { AppHeader } from '@/components/AppHeader';
+import { FileList } from '@/components/FileList';
+import { PagePicker } from '@/components/page-picker';
+import { FinalDocument } from '@/components/final-document';
+import { PreviewModal } from '@/components/preview';
+import { OutputPanel } from '@/components/OutputPanel';
+import { ProgressModal } from '@/components/ProgressModal';
+import { EmptyState } from '@/components/EmptyState';
+import { Toast } from '@/components/Toast';
+import { DragOverlay } from '@/components/DragOverlay';
+import { QuickAddView } from '@/components/QuickAddView';
+import { AppErrorBoundary } from '@/components/AppErrorBoundary';
+import { UpdateDialog } from '@/components/UpdateDialog';
+import { SupportDialog } from '@/components/support/SupportDialog';
+import { useSupportDiagnostics } from '@/components/support/useSupportDiagnostics';
+import { AppPreferencesProvider, useTranslation } from '@/i18n';
 
 function AppContent() {
-    const { t } = useTranslation();
     const [showFinalPreview, setShowFinalPreview] = useState(false);
-    const { isQuickAdd, quickAddFileIds, isTransitioning, onFilesAdded, enterQuickAdd, exitQuickAdd } = useQuickAdd();
-    const {
-        statusMessage,
-        statusTone,
-        loadingMessage,
-        loadingProgress,
-        showOpeningFiles,
-        showMergePreparing,
-        clearLoading,
-        showExportCompleted,
-        showExportCompletedWithOptimizationWarning,
-        showError,
-    } = useAppNotifications();
-
-    const {
-        files,
-        editsByFile,
-        selectedId,
-        selectedFile,
-        selectFile,
-        focusedSource,
-        addFiles,
-        removeFile,
-        clearAllFiles,
-        isDragOver,
-        finalPages,
-        togglePage,
-        togglePageRange,
-        setPagesForFile,
-        selectAll,
-        deselectAll,
-        rotatePage,
-        removeFinalPage,
-        reorderFinalPages,
-        moveFinalPageToIndex,
-        focusFinalPageSource,
-    } = useFiles({ onFilesAdded });
-
+    const quickAdd = useQuickAdd();
+    const notifications = useAppNotifications();
+    const filesApi = useFiles({ onFilesAdded: quickAdd.onFilesAdded });
     const { isDark, toggleTheme } = useTheme();
-    const {
-        imageFit,
-        jpegQuality,
-        targetDpi,
-        optimizationPreset,
-        setImageFit,
-        setJpegQuality,
-        setTargetDpi,
-        setOptimizationPreset,
-        optimizeOptions,
-    } = useOptimize();
-    const focusedSourceMatchesSelected = Boolean(focusedSource && focusedSource.fileId === selectedFile?.id);
-    const focusedSourcePageNum = focusedSourceMatchesSelected ? focusedSource!.pageNum : null;
-    const focusedSourceFlashKey = focusedSourceMatchesSelected ? focusedSource!.flashKey : undefined;
+    const optimize = useOptimize();
+
+    const focusedSourceMatchesSelected = Boolean(filesApi.focusedSource && filesApi.focusedSource.fileId === filesApi.selectedFile?.id);
+    const focusedSourcePageNum = focusedSourceMatchesSelected ? filesApi.focusedSource!.pageNum : null;
+    const focusedSourceFlashKey = focusedSourceMatchesSelected ? filesApi.focusedSource!.flashKey : undefined;
+
     const {
         supportDialogMode,
         diagnosticsSnapshot,
@@ -98,104 +47,31 @@ function AppContent() {
         openGitHubIssues,
     } = useSupportDiagnostics({
         isDark,
-        isQuickAdd,
-        fileCount: files.length,
-        finalPageCount: finalPages.length,
-        optimizationPreset,
-        imageFit,
-        targetDpi,
-        jpegQuality,
+        isQuickAdd: quickAdd.isQuickAdd,
+        fileCount: filesApi.files.length,
+        finalPageCount: filesApi.finalPages.length,
+        optimizationPreset: optimize.optimizationPreset,
+        imageFit: optimize.imageFit,
+        targetDpi: optimize.targetDpi,
+        jpegQuality: optimize.jpegQuality,
     });
-    const fileLog = useFileLogger();
-    const exportLog = useExportLogger(optimizationPreset, imageFit);
-    const quickAddLog = useQuickAddLogger();
 
-    const exportMerged = useCallback(async () => {
-        if (finalPages.length === 0) return;
-        try {
-            const outputPath = await savePDFDialog(
-                t('header.defaultExportFilename'),
-                t('dialogs.filters.pdf'),
-            );
-            if (!outputPath) return;
-            const req = buildMergeRequest(finalPages, editsByFile, outputPath, optimizeOptions);
-            exportLog.logStarted(finalPages.length);
-            showMergePreparing();
-            const result = await mergePDFs(req);
-            if (result.optimizationFailedCount > 0) {
-                exportLog.logWarning(result.optimizationFailedCount);
-                showExportCompletedWithOptimizationWarning(result.optimizationFailedCount);
-            } else {
-                exportLog.logCompleted(finalPages.length);
-                showExportCompleted();
-            }
-        } catch (error) {
-            exportLog.logFailure(error);
-            showError(error);
-        } finally {
-            clearLoading();
-        }
-    }, [
-        clearLoading,
-        editsByFile,
-        exportLog,
-        finalPages,
-        optimizeOptions,
-        showExportCompleted,
-        showExportCompletedWithOptimizationWarning,
-        showError,
-        showMergePreparing,
-        t,
-    ]);
-
-    const handleAddFiles = useCallback(() => {
-        fileLog.logStarted();
-        showOpeningFiles();
-        void addFiles()
-            .then(({ files: addedFiles, skippedErrors }) => {
-                fileLog.logResult(addedFiles.length);
-                if (skippedErrors.length > 0 && addedFiles.length === 0) {
-                    showError(skippedErrors.join(', '));
-                }
-            })
-            .catch((error) => {
-                fileLog.logFailure(error);
-                showError(error);
-            })
-            .finally(() => clearLoading());
-    }, [addFiles, clearLoading, fileLog, showError, showOpeningFiles]);
-
-    const handleEnterQuickAdd = useCallback(() => {
-        void enterQuickAdd()
-            .then(() => {
-                quickAddLog.logSuccess('enter');
-            })
-            .catch((error) => {
-                quickAddLog.logFailure('enter', error);
-                showError(error);
-            });
-    }, [enterQuickAdd, quickAddLog, showError]);
-
-    const handleExitQuickAdd = useCallback(() => {
-        void exitQuickAdd()
-            .then(() => {
-                quickAddLog.logSuccess('exit');
-            })
-            .catch((error) => {
-                quickAddLog.logFailure('exit', error);
-                showError(error);
-            });
-    }, [exitQuickAdd, quickAddLog, showError]);
+    const { exportMerged, handleAddFiles, handleEnterQuickAdd, handleExitQuickAdd } = useAppActions({
+        files: filesApi,
+        notifications,
+        quickAdd,
+        optimize,
+    });
 
     return (
-        <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
+        <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
             <UpdateDialog />
-            {isQuickAdd ? (
+            {quickAdd.isQuickAdd ? (
                 <QuickAddView
-                    files={files}
-                    quickAddFileIds={quickAddFileIds}
-                    isDragOver={isDragOver}
-                    onRemove={removeFile}
+                    files={filesApi.files}
+                    quickAddFileIds={quickAdd.quickAddFileIds}
+                    isDragOver={filesApi.isDragOver}
+                    onRemove={filesApi.removeFile}
                     onExit={handleExitQuickAdd}
                 />
             ) : (
@@ -204,46 +80,46 @@ function AppContent() {
                         isDark={isDark}
                         onToggleTheme={toggleTheme}
                         onExport={() => void exportMerged()}
-                        canExport={finalPages.length > 0}
+                        canExport={filesApi.finalPages.length > 0}
                         onPreview={() => setShowFinalPreview(true)}
-                        canPreview={finalPages.length > 0}
+                        canPreview={filesApi.finalPages.length > 0}
                         onQuickAdd={handleEnterQuickAdd}
                         onReportBug={openReportBug}
                         onOpenAbout={openAbout}
                     />
 
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-                        {isDragOver && <DragOverlay />}
+                        {filesApi.isDragOver && <DragOverlay />}
 
-                        {files.length === 0 ? (
+                        {filesApi.files.length === 0 ? (
                             <EmptyState onAddFiles={handleAddFiles} />
                         ) : (
                             <>
                                 <div className="grid min-h-0 flex-1 overflow-hidden" style={{ gridTemplateColumns: 'minmax(200px, 30fr) minmax(200px, 40fr) minmax(200px, 30fr)' }}>
                                     <aside className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                                         <FileList
-                                            files={files}
-                                            finalPages={finalPages}
-                                            selectedId={selectedId}
-                                            onSelect={selectFile}
-                                            onRemove={removeFile}
+                                            files={filesApi.files}
+                                            finalPages={filesApi.finalPages}
+                                            selectedId={filesApi.selectedId}
+                                            onSelect={filesApi.selectFile}
+                                            onRemove={filesApi.removeFile}
                                             onAddFiles={handleAddFiles}
-                                            onClearFiles={clearAllFiles}
+                                            onClearFiles={filesApi.clearAllFiles}
                                         />
                                     </aside>
 
                                     <section className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                                         <PagePicker
-                                            key={selectedFile?.id}
-                                            file={selectedFile}
-                                            finalPages={finalPages}
-                                            onTogglePage={togglePage}
-                                            onToggleRange={togglePageRange}
-                                            onSetPages={setPagesForFile}
-                                            onSelectAll={selectAll}
-                                            onDeselectAll={deselectAll}
-                                            onRotatePage={rotatePage}
-                                            editsByFile={editsByFile}
+                                            key={filesApi.selectedFile?.id}
+                                            file={filesApi.selectedFile}
+                                            finalPages={filesApi.finalPages}
+                                            onTogglePage={filesApi.togglePage}
+                                            onToggleRange={filesApi.togglePageRange}
+                                            onSetPages={filesApi.setPagesForFile}
+                                            onSelectAll={filesApi.selectAll}
+                                            onDeselectAll={filesApi.deselectAll}
+                                            onRotatePage={filesApi.rotatePage}
+                                            editsByFile={filesApi.editsByFile}
                                             focusedPageNum={focusedSourcePageNum}
                                             focusFlashKey={focusedSourceFlashKey}
                                         />
@@ -251,29 +127,29 @@ function AppContent() {
 
                                     <section className="min-w-0 overflow-hidden bg-ui-output">
                                         <FinalDocument
-                                            finalPages={finalPages}
-                                            files={files}
-                                            selectedPageId={focusedSource ? `${focusedSource.fileId}:${focusedSource.pageNum}` : null}
-                                            onReorder={reorderFinalPages}
-                                            onMovePageToIndex={moveFinalPageToIndex}
-                                            onRemove={removeFinalPage}
-                                            onSelectPage={focusFinalPageSource}
-                                            onRotatePage={rotatePage}
-                                            editsByFile={editsByFile}
+                                            finalPages={filesApi.finalPages}
+                                            files={filesApi.files}
+                                            selectedPageId={filesApi.focusedSource ? `${filesApi.focusedSource.fileId}:${filesApi.focusedSource.pageNum}` : null}
+                                            onReorder={filesApi.reorderFinalPages}
+                                            onMovePageToIndex={filesApi.moveFinalPageToIndex}
+                                            onRemove={filesApi.removeFinalPage}
+                                            onSelectPage={filesApi.focusFinalPageSource}
+                                            onRotatePage={filesApi.rotatePage}
+                                            editsByFile={filesApi.editsByFile}
                                         />
                                     </section>
                                 </div>
 
                                 <footer className="shrink-0 border-t border-ui-border bg-ui-surface">
                                     <OutputPanel
-                                        imageFit={imageFit}
-                                        jpegQuality={jpegQuality}
-                                        targetDpi={targetDpi}
-                                        optimizationPreset={optimizationPreset}
-                                        onImageFitChange={setImageFit}
-                                        onJpegQualityChange={setJpegQuality}
-                                        onTargetDpiChange={setTargetDpi}
-                                        onOptimizationPresetChange={setOptimizationPreset}
+                                        imageFit={optimize.imageFit}
+                                        jpegQuality={optimize.jpegQuality}
+                                        targetDpi={optimize.targetDpi}
+                                        optimizationPreset={optimize.optimizationPreset}
+                                        onImageFitChange={optimize.setImageFit}
+                                        onJpegQualityChange={optimize.setJpegQuality}
+                                        onTargetDpiChange={optimize.setTargetDpi}
+                                        onOptimizationPresetChange={optimize.setOptimizationPreset}
                                     />
                                 </footer>
                             </>
@@ -282,11 +158,11 @@ function AppContent() {
                 </>
             )}
 
-            {statusMessage && statusTone && (
-                <Toast key={statusMessage} message={statusMessage} tone={statusTone} />
+            {notifications.statusMessage && notifications.statusTone && (
+                <Toast key={notifications.statusMessage} message={notifications.statusMessage} tone={notifications.statusTone} />
             )}
 
-            {loadingMessage && <ProgressModal message={loadingMessage} progress={loadingProgress} />}
+            {notifications.loadingMessage && <ProgressModal message={notifications.loadingMessage} progress={notifications.loadingProgress} />}
 
             <SupportDialog
                 key={supportDialogMode ?? 'closed'}
@@ -300,10 +176,10 @@ function AppContent() {
 
             {showFinalPreview && (
                 <PreviewModal
-                    finalPages={finalPages}
-                    files={files}
-                    editsByFile={editsByFile}
-                    imageFit={imageFit}
+                    finalPages={filesApi.finalPages}
+                    files={filesApi.files}
+                    editsByFile={filesApi.editsByFile}
+                    imageFit={optimize.imageFit}
                     matchExportedImages
                     onClose={() => setShowFinalPreview(false)}
                 />

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { FileEdits } from '../domain';
+import type { FileEdits } from '@/domain';
 
 export function useFileEdits() {
     const [editsByFile, setEditsByFile] = useState<Record<string, FileEdits>>({});

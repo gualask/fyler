@@ -1,6 +1,6 @@
 import { IconFile, IconFileDownload, IconPhoto, IconX } from '@tabler/icons-react';
-import type { SourceFile } from '../domain';
-import { useTranslation } from '../i18n';
+import type { SourceFile } from '@/domain';
+import { useTranslation } from '@/i18n';
 import { DragOverlay } from './DragOverlay';
 import { LanguageSwitcher } from './LanguageSwitcher';
 

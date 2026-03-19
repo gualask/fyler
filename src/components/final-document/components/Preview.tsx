@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
-import type { FileEdits, FinalPage, SourceFile } from '../../../domain';
-import type { RotationDirection } from '../../../fileEdits';
+import type { FileEdits, FinalPage, SourceFile } from '@/domain';
+import type { RotationDirection } from '@/domain/fileEdits';
 import { PreviewModal } from '../../preview/PreviewModal';
 
 interface Props {

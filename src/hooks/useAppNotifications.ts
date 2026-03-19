@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 
-import type { AppStatusPayload, MergeProgressStep } from '../appEvents';
-import { useDiagnostics } from '../diagnostics/useDiagnostics';
-import { formatImportWarning, useTranslation } from '../i18n';
+import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics/appEvents';
+import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import { formatImportWarning, useTranslation } from '@/i18n';
 
 function toErrorMessage(value: unknown): string {
     return value instanceof Error ? value.message : String(value);

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { openFilesFromPaths } from '../platform';
-import type { SourceFile } from '../domain';
+import { openFilesFromPaths } from '@/platform';
+import type { SourceFile } from '@/domain';
 
 interface DragDropPayload {
     paths: string[];

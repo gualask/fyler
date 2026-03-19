@@ -1,8 +1,8 @@
 import { IconChevronDown } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
-import { useTranslation } from '../i18n';
-import { useDismissableMenu } from '../hooks/useDismissableMenu';
-import { SUPPORTED_LOCALES } from '../locale';
+import { useTranslation } from '@/i18n';
+import { useDismissableMenu } from '@/hooks/useDismissableMenu';
+import { SUPPORTED_LOCALES } from '@/i18n/locale';
 
 export function LanguageSwitcher() {
     const { locale, setLocale, t } = useTranslation();

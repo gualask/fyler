@@ -1,5 +1,5 @@
 import { IconFileUpload, IconPlus } from '@tabler/icons-react';
-import { useTranslation } from '../i18n';
+import { useTranslation } from '@/i18n';
 
 interface EmptyStateProps {
     onAddFiles: () => void;

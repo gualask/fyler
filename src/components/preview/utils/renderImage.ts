@@ -1,4 +1,4 @@
-import type { ImageExportPreviewLayout } from '../../../domain';
+import type { ImageExportPreviewLayout } from '@/domain';
 
 const EXPORT_PREVIEW_WIDTH = 900;
 

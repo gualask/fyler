@@ -1,6 +1,6 @@
 import { IconRotate2, IconRotateClockwise2, IconZoomIn } from '@tabler/icons-react';
 import type { ComponentType, SVGProps } from 'react';
-import { useTranslation } from '../../../i18n';
+import { useTranslation } from '@/i18n';
 
 interface Props {
     onPreview?: () => void;

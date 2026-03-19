@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { emptyFileEdits } from '../../fileEdits';
-import type { RotationDirection } from '../../fileEdits';
+import { emptyFileEdits } from '@/domain/fileEdits';
+import type { RotationDirection } from '@/domain/fileEdits';
 import { PageSlot } from './components/PageSlot';
 import { Toolbar } from './components/Toolbar';
 import type { PreviewModalProps } from './types';

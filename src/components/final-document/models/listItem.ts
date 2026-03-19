@@ -1,4 +1,4 @@
-import type { FileEdits, FinalPage, SourceFile } from '../../../domain';
+import type { FileEdits, FinalPage, SourceFile } from '@/domain';
 
 export interface ListItem {
     page: FinalPage;

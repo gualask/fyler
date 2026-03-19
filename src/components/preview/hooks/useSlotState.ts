@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { getImageQuarterTurn, getImageRotationDegrees } from '../../../fileEdits';
-import { buildPreviewRenderRequest } from '../../../pdfRenderProfiles';
-import { getImageExportPreviewLayout, getPreviewUrl } from '../../../platform';
+import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/fileEdits';
+import { buildPreviewRenderRequest } from '@/pdf/renderProfiles';
+import { getImageExportPreviewLayout, getPreviewUrl } from '@/platform';
 import { renderExportMatchedImage, renderRotatedImage } from '../utils/renderImage';
 import type { SlotContext, SlotPage } from '../models/slotModel';
-import { usePdfCache } from '../../../hooks/usePdfCache';
+import { usePdfCache } from '@/pdf/usePdfCache';
 
 export function useSlotState(page: SlotPage, context: SlotContext) {
     const slotRef = useRef<HTMLDivElement>(null);

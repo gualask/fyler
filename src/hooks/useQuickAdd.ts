@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { windowGetLogicalSize, windowSetAlwaysOnTop, windowSetSize } from '../platform';
+import { windowGetLogicalSize, windowSetAlwaysOnTop, windowSetSize } from '@/platform';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 

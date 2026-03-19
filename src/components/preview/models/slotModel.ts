@@ -1,4 +1,4 @@
-import type { FileEdits, FinalPage, ImageFit, SourceFile } from '../../../domain';
+import type { FileEdits, FinalPage, ImageFit, SourceFile } from '@/domain';
 
 export interface SlotPage {
     fp: FinalPage;

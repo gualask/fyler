@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { SourceFile } from '../domain';
+import type { SourceFile } from '@/domain';
 import { usePdfCache, type PdfRenderRequest } from './usePdfCache';
 
 export function useLazyPdfRender(

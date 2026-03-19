@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { FinalPage, SourceFile } from '../../../domain';
-import { formatPageSpecError, useTranslation } from '../../../i18n';
-import { parseSelectedPagesFromSpec } from '../../../pageSpec';
+import type { FinalPage, SourceFile } from '@/domain';
+import { formatPageSpecError, useTranslation } from '@/i18n';
+import { parseSelectedPagesFromSpec } from '@/domain/pageSpec';
 
 const PAGE_INPUT_DEBOUNCE_MS = 600;
 

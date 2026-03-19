@@ -8,8 +8,8 @@ import {
     IconZoomOut,
 } from '@tabler/icons-react';
 
-import type { RotationDirection } from '../../../fileEdits';
-import { useTranslation } from '../../../i18n';
+import type { RotationDirection } from '@/domain/fileEdits';
+import { useTranslation } from '@/i18n';
 import type { MoveControl } from '../types';
 
 interface Props {

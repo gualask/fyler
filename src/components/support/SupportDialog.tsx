@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type { DiagnosticsSnapshot } from '../../diagnostics';
-import { useTranslation } from '../../i18n';
+import type { DiagnosticsSnapshot } from '@/diagnostics';
+import { useTranslation } from '@/i18n';
 
 type SupportDialogMode = 'report' | 'about';
 type ActionState = {

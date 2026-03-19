@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useReducer } from 'react';
-import type { SourceFile, FinalPage } from '../domain';
+import type { SourceFile, FinalPage } from '@/domain';
 
 type CompositionState = {
     selectedPagesByFile: Record<string, number[]>;

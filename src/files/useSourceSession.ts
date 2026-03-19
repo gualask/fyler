@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 
-import type { RotationDirection } from '../fileEdits';
-import { applyRotationToEdits } from '../fileEdits';
-import type { SourceFile } from '../domain';
-import { useTranslation } from '../i18n';
-import { buildThumbnailRenderRequest } from '../pdfRenderProfiles';
-import { openFilesDialog, releaseSources } from '../platform';
-import { usePdfCache } from './usePdfCache';
+import type { RotationDirection } from '@/domain/fileEdits';
+import { applyRotationToEdits } from '@/domain/fileEdits';
+import type { SourceFile } from '@/domain';
+import { useTranslation } from '@/i18n';
+import { buildThumbnailRenderRequest } from '@/pdf/renderProfiles';
+import { openFilesDialog, releaseSources } from '@/platform';
+import { usePdfCache } from '@/pdf/usePdfCache';
 import { useFileEdits } from './useFileEdits';
 import { useFileList } from './useFileList';
 

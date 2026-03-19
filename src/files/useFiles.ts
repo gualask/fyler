@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import type { RotationDirection } from '../fileEdits';
-import type { SourceFile } from '../domain';
+import type { RotationDirection } from '@/domain/fileEdits';
+import type { SourceFile } from '@/domain';
 import { useFileDrop } from './useFileDrop';
 import { useFinalPages } from './useFinalPages';
 import { useSourceSession } from './useSourceSession';

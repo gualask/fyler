@@ -2,9 +2,9 @@ import {
     JPEG_QUALITY_OPTIONS,
     OPTIMIZATION_PRESETS,
     TARGET_DPI_OPTIONS,
-} from '../../optimizationConfig';
-import type { ImageFit } from '../../domain';
-import { useTranslation } from '../../i18n';
+} from '@/domain/optimizationConfig';
+import type { ImageFit } from '@/domain';
+import { useTranslation } from '@/i18n';
 
 import { TooltipContent, type TooltipItem } from './InfoTooltip';
 

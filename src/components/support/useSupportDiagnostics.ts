@@ -5,10 +5,10 @@ import {
     toDiagnosticMessage,
     type AppMetadata,
     type DiagnosticsSnapshot,
-} from '../../diagnostics';
-import { useDiagnostics } from '../../diagnostics/useDiagnostics';
-import { useTranslation } from '../../i18n';
-import { getAppMetadata, openExternalUrl } from '../../platform';
+} from '@/diagnostics';
+import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import { useTranslation } from '@/i18n';
+import { getAppMetadata, openExternalUrl } from '@/platform';
 
 const FALLBACK_APP_METADATA: AppMetadata = {
     appName: 'Fyler',

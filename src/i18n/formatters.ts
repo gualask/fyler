@@ -1,5 +1,5 @@
-import type { AppStatusPayload } from '../appEvents';
-import type { PageSpecError } from '../pageSpec';
+import type { AppStatusPayload } from '@/diagnostics/appEvents';
+import type { PageSpecError } from '@/domain/pageSpec';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from './resources';
 
 type Translator = (key: TranslationKey, values?: InterpolationValues) => string;

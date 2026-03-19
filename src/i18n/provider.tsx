@@ -7,8 +7,8 @@ import {
     type ReactNode,
 } from 'react';
 
-import { detectPreferredLocale, isLocale, type Locale } from '../locale';
-import { loadSettings, saveSettings } from '../settings';
+import { detectPreferredLocale, isLocale, type Locale } from './locale';
+import { loadSettings, saveSettings } from './settings';
 import { AppPreferencesContext, type AppPreferencesContextValue } from './context';
 
 type AppPreferencesState = {

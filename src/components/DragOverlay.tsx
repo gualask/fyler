@@ -1,5 +1,5 @@
 import { IconFileDownload } from '@tabler/icons-react';
-import { useTranslation } from '../i18n';
+import { useTranslation } from '@/i18n';
 
 export function DragOverlay() {
     const { t } = useTranslation();

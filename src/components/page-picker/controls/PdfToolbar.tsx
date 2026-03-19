@@ -1,5 +1,5 @@
 import { ColumnHeader } from '../../shared/layout/ColumnHeader';
-import { useTranslation } from '../../../i18n';
+import { useTranslation } from '@/i18n';
 
 interface Props {
     fileId: string;
