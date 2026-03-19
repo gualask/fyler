@@ -113,29 +113,32 @@ body {
   /* ── Pulsanti ──────────────────────────────────────────────── */
   .btn-primary {
     @apply flex items-center gap-2 rounded-lg bg-ui-accent px-5 py-2
-           text-sm font-semibold text-white shadow-md transition-colors
-           hover:bg-ui-accent-hover disabled:opacity-40;
+           text-sm font-semibold text-white shadow-md transition-[colors,transform]
+           hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
   }
   .btn-primary-lg {
     @apply flex items-center gap-2 rounded-lg bg-ui-accent px-6 py-3
-           text-base font-semibold text-white shadow-md transition-colors
-           hover:bg-ui-accent-hover disabled:opacity-40;
+           text-base font-semibold text-white shadow-md transition-[colors,transform]
+           hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
   }
   .btn-ghost {
     @apply flex items-center gap-2 rounded-lg bg-ui-surface-hover
            px-4 py-2 text-sm font-medium text-ui-text-secondary
-           transition-colors hover:bg-ui-accent-soft hover:text-ui-accent-on-soft
-           disabled:opacity-40 disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
+           transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft
+           active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100
+           disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
   }
   .btn-ghost-sm {
     @apply flex items-center gap-1 rounded-md bg-ui-surface-hover
            px-2.5 py-1.5 text-sm font-medium text-ui-text-secondary
-           transition-colors hover:bg-ui-accent-soft hover:text-ui-accent-on-soft
-           disabled:opacity-40 disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
+           transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft
+           active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100
+           disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
   }
   .btn-icon {
     @apply inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg
-           p-1.5 text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text-secondary;
+           p-1.5 text-ui-text-muted transition-[colors,transform] hover:bg-ui-surface-hover hover:text-ui-text-secondary
+           active:scale-[0.93];
   }
   .btn-primary,
   .btn-primary-lg,

@@ -54,7 +54,7 @@ function PdfThumbnailItem({
                 data-page={pageNum}
                 onClick={onClick}
                 className={[
-                    'group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-lg border-2 transition-all active:scale-95',
+                    'group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-lg border-2 transition-all active:scale-[0.97]',
                     isFocused
                         ? 'border-[3px] border-ui-accent shadow-sm'
                         : 'border-transparent hover:border-ui-accent/50 hover:shadow-md',
