@@ -10,7 +10,7 @@ import { usePdfCache } from '../../../hooks/usePdfCache';
 export function useSlotState(page: SlotPage, context: SlotContext) {
     const slotRef = useRef<HTMLDivElement>(null);
     const [shouldRender, setShouldRender] = useState(false);
-    const [exportMatchedImage, setExportMatchedImage] = useState<{ key: string; src: string } | null>(null);
+    const [exportMatchedImage, setExportMatchedImage] = useState<{ key: string; src: string | null } | null>(null);
     const [rotatedImagePreview, setRotatedImagePreview] = useState<{ key: string; src: string } | null>(null);
     const { requestRenders, getRender } = usePdfCache();
     const { fp, file, edits, index } = page;
@@ -33,7 +33,8 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
     const exportPreviewKey = matchExportedImages && imageSrc && imageOriginalPath
         ? `${imageOriginalPath}:${imageFit}:${imageQuarterTurns}`
         : null;
-    const exportMatchedImageSrc = exportMatchedImage?.key === exportPreviewKey ? exportMatchedImage.src : null;
+    const exportSettled = exportMatchedImage?.key === exportPreviewKey;
+    const exportMatchedImageSrc = exportSettled && exportMatchedImage?.src ? exportMatchedImage.src : null;
     const rotatedImagePreviewSrc = rotatedImagePreview?.key === rotatedImagePreviewKey ? rotatedImagePreview.src : null;
 
     useEffect(() => {
@@ -105,7 +106,7 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
             })
             .catch(() => {
                 if (active) {
-                    setExportMatchedImage((current) => (current?.key === exportPreviewKey ? null : current));
+                    setExportMatchedImage({ key: exportPreviewKey!, src: null });
                 }
             });
 
@@ -123,6 +124,6 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
         useA4Container,
         imageFitMode: imageFit === 'cover' ? 'cover' : 'contain',
         exportMatchedImageSrc,
-        isExportMatchedImagePending: Boolean(exportPreviewKey) && !exportMatchedImageSrc,
+        isExportMatchedImagePending: Boolean(exportPreviewKey) && !exportSettled,
     };
 }

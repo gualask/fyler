@@ -96,82 +96,6 @@ export function useSupportDiagnostics({
     const openAbout = useCallback(() => setSupportDialogMode('about'), []);
     const closeSupportDialog = useCallback(() => setSupportDialogMode(null), []);
 
-    const logFilesDialogStarted = useCallback(() => {
-        record({ category: 'files', severity: 'info', message: 'Open files dialog started' });
-    }, [record]);
-
-    const logFilesDialogResult = useCallback((addedCount: number) => {
-        record({
-            category: 'files',
-            severity: 'info',
-            message: addedCount ? 'Files added to workspace' : 'Open files dialog canceled',
-            metadata: { addedCount },
-        });
-    }, [record]);
-
-    const logFilesDialogFailure = useCallback((error: unknown) => {
-        record({
-            category: 'files',
-            severity: 'error',
-            message: `Open files failed: ${toDiagnosticMessage(error)}`,
-        });
-    }, [record]);
-
-    const logQuickAddSuccess = useCallback((action: 'enter' | 'exit') => {
-        record({
-            category: 'quick-add',
-            severity: 'info',
-            message: action === 'enter' ? 'Entered Quick Add mode' : 'Exited Quick Add mode',
-        });
-    }, [record]);
-
-    const logQuickAddFailure = useCallback((action: 'enter' | 'exit', error: unknown) => {
-        record({
-            category: 'quick-add',
-            severity: 'error',
-            message: `${action === 'enter' ? 'Failed to enter' : 'Failed to exit'} Quick Add: ${toDiagnosticMessage(error)}`,
-        });
-    }, [record]);
-
-    const logExportStarted = useCallback((pageCount: number) => {
-        record({
-            category: 'export',
-            severity: 'info',
-            message: 'PDF export started',
-            metadata: {
-                pageCount,
-                optimizationPreset,
-                imageFit,
-            },
-        });
-    }, [imageFit, optimizationPreset, record]);
-
-    const logExportCompleted = useCallback((pageCount: number) => {
-        record({
-            category: 'export',
-            severity: 'info',
-            message: 'PDF export completed successfully',
-            metadata: { pageCount },
-        });
-    }, [record]);
-
-    const logExportWarning = useCallback((optimizationFailedCount: number) => {
-        record({
-            category: 'export',
-            severity: 'warn',
-            message: 'PDF export completed with optimization warnings',
-            metadata: { optimizationFailedCount },
-        });
-    }, [record]);
-
-    const logExportFailure = useCallback((error: unknown) => {
-        record({
-            category: 'export',
-            severity: 'error',
-            message: `PDF export failed: ${toDiagnosticMessage(error)}`,
-        });
-    }, [record]);
-
     const copyDiagnostics = useCallback(async () => {
         try {
             await navigator.clipboard.writeText(diagnosticsReport);
@@ -208,14 +132,5 @@ export function useSupportDiagnostics({
         closeSupportDialog,
         copyDiagnostics,
         openGitHubIssues,
-        logFilesDialogStarted,
-        logFilesDialogResult,
-        logFilesDialogFailure,
-        logQuickAddSuccess,
-        logQuickAddFailure,
-        logExportStarted,
-        logExportCompleted,
-        logExportWarning,
-        logExportFailure,
     };
 }

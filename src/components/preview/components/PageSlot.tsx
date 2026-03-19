@@ -39,7 +39,14 @@ export function PageSlot({ page, context }: Props) {
                         <div className="flex w-full items-center justify-center bg-white" style={{ aspectRatio: useA4Container ? '595/842' : '210/297' }}>
                             <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
                         </div>
-                    ) : null
+                    ) : (
+                        <img
+                            src={imageSrc}
+                            draggable={false}
+                            className="block h-auto w-full select-none bg-white"
+                            style={{ transform: `rotate(${imageRotation}deg)` }}
+                        />
+                    )
                 ) : useA4Container ? (
                     <div
                         className="relative w-full overflow-hidden bg-white"

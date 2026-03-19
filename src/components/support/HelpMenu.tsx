@@ -5,15 +5,11 @@ import { useTranslation } from '../../i18n';
 
 interface Props {
     onReportBug: () => void;
-    onCopyDiagnostics: () => void;
-    onOpenGitHubIssues: () => void;
     onOpenAbout: () => void;
 }
 
 export function HelpMenu({
     onReportBug,
-    onCopyDiagnostics,
-    onOpenGitHubIssues,
     onOpenAbout,
 }: Props) {
     const { t } = useTranslation();
@@ -56,22 +52,6 @@ export function HelpMenu({
                         onClick={() => handleAction(onReportBug)}
                     >
                         {t('support.reportBug')}
-                    </button>
-                    <button
-                        type="button"
-                        role="menuitem"
-                        className="flex w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-ui-text-secondary transition-colors hover:bg-ui-surface-hover hover:text-ui-text"
-                        onClick={() => handleAction(onCopyDiagnostics)}
-                    >
-                        {t('support.copyDiagnostics')}
-                    </button>
-                    <button
-                        type="button"
-                        role="menuitem"
-                        className="flex w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-ui-text-secondary transition-colors hover:bg-ui-surface-hover hover:text-ui-text"
-                        onClick={() => handleAction(onOpenGitHubIssues)}
-                    >
-                        {t('support.githubIssues')}
                     </button>
                     <div className="my-1 h-px bg-ui-border" />
                     <button

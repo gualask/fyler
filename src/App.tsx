@@ -12,6 +12,9 @@ import { useQuickAdd } from './hooks/useQuickAdd';
 import { useDiagnostics } from './diagnostics/useDiagnostics';
 import { useTheme } from './hooks/useTheme';
 import { useOptimize } from './hooks/useOptimize';
+import { useFileLogger } from './hooks/useFileLogger';
+import { useExportLogger } from './hooks/useExportLogger';
+import { useQuickAddLogger } from './hooks/useQuickAddLogger';
 import { AppHeader } from './components/AppHeader';
 import { FileList } from './components/FileList';
 import { PagePicker } from './components/page-picker';
@@ -93,15 +96,6 @@ function AppContent() {
         closeSupportDialog,
         copyDiagnostics,
         openGitHubIssues,
-        logFilesDialogStarted,
-        logFilesDialogResult,
-        logFilesDialogFailure,
-        logQuickAddSuccess,
-        logQuickAddFailure,
-        logExportStarted,
-        logExportCompleted,
-        logExportWarning,
-        logExportFailure,
     } = useSupportDiagnostics({
         isDark,
         isQuickAdd,
@@ -112,28 +106,31 @@ function AppContent() {
         targetDpi,
         jpegQuality,
     });
+    const fileLog = useFileLogger();
+    const exportLog = useExportLogger(optimizationPreset, imageFit);
+    const quickAddLog = useQuickAddLogger();
 
     const exportMerged = useCallback(async () => {
         if (finalPages.length === 0) return;
-        const outputPath = await savePDFDialog(
-            t('header.defaultExportFilename'),
-            t('dialogs.filters.pdf'),
-        );
-        if (!outputPath) return;
-        const req = buildMergeRequest(finalPages, editsByFile, outputPath, optimizeOptions);
-        logExportStarted(finalPages.length);
-        showMergePreparing();
         try {
+            const outputPath = await savePDFDialog(
+                t('header.defaultExportFilename'),
+                t('dialogs.filters.pdf'),
+            );
+            if (!outputPath) return;
+            const req = buildMergeRequest(finalPages, editsByFile, outputPath, optimizeOptions);
+            exportLog.logStarted(finalPages.length);
+            showMergePreparing();
             const result = await mergePDFs(req);
             if (result.optimizationFailedCount > 0) {
-                logExportWarning(result.optimizationFailedCount);
+                exportLog.logWarning(result.optimizationFailedCount);
                 showExportCompletedWithOptimizationWarning(result.optimizationFailedCount);
             } else {
-                logExportCompleted(finalPages.length);
+                exportLog.logCompleted(finalPages.length);
                 showExportCompleted();
             }
         } catch (error) {
-            logExportFailure(error);
+            exportLog.logFailure(error);
             showError(error);
         } finally {
             clearLoading();
@@ -141,11 +138,8 @@ function AppContent() {
     }, [
         clearLoading,
         editsByFile,
+        exportLog,
         finalPages,
-        logExportCompleted,
-        logExportFailure,
-        logExportStarted,
-        logExportWarning,
         optimizeOptions,
         showExportCompleted,
         showExportCompletedWithOptimizationWarning,
@@ -155,43 +149,43 @@ function AppContent() {
     ]);
 
     const handleAddFiles = useCallback(() => {
-        logFilesDialogStarted();
+        fileLog.logStarted();
         showOpeningFiles();
         void addFiles()
             .then(({ files: addedFiles, skippedErrors }) => {
-                logFilesDialogResult(addedFiles.length);
+                fileLog.logResult(addedFiles.length);
                 if (skippedErrors.length > 0 && addedFiles.length === 0) {
                     showError(skippedErrors.join(', '));
                 }
             })
             .catch((error) => {
-                logFilesDialogFailure(error);
+                fileLog.logFailure(error);
                 showError(error);
             })
             .finally(() => clearLoading());
-    }, [addFiles, clearLoading, logFilesDialogFailure, logFilesDialogResult, logFilesDialogStarted, showError, showOpeningFiles]);
+    }, [addFiles, clearLoading, fileLog, showError, showOpeningFiles]);
 
     const handleEnterQuickAdd = useCallback(() => {
         void enterQuickAdd()
             .then(() => {
-                logQuickAddSuccess('enter');
+                quickAddLog.logSuccess('enter');
             })
             .catch((error) => {
-                logQuickAddFailure('enter', error);
+                quickAddLog.logFailure('enter', error);
                 showError(error);
             });
-    }, [enterQuickAdd, logQuickAddFailure, logQuickAddSuccess, showError]);
+    }, [enterQuickAdd, quickAddLog, showError]);
 
     const handleExitQuickAdd = useCallback(() => {
         void exitQuickAdd()
             .then(() => {
-                logQuickAddSuccess('exit');
+                quickAddLog.logSuccess('exit');
             })
             .catch((error) => {
-                logQuickAddFailure('exit', error);
+                quickAddLog.logFailure('exit', error);
                 showError(error);
             });
-    }, [exitQuickAdd, logQuickAddFailure, logQuickAddSuccess, showError]);
+    }, [exitQuickAdd, quickAddLog, showError]);
 
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
@@ -215,8 +209,6 @@ function AppContent() {
                         canPreview={finalPages.length > 0}
                         onQuickAdd={handleEnterQuickAdd}
                         onReportBug={openReportBug}
-                        onCopyDiagnostics={() => void copyDiagnostics().catch(showError)}
-                        onOpenGitHubIssues={() => void openGitHubIssues().catch(showError)}
                         onOpenAbout={openAbout}
                     />
 

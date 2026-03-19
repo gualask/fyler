@@ -12,8 +12,6 @@ interface Props {
     canPreview: boolean;
     onQuickAdd: () => void;
     onReportBug: () => void;
-    onCopyDiagnostics: () => void;
-    onOpenGitHubIssues: () => void;
     onOpenAbout: () => void;
 }
 
@@ -26,8 +24,6 @@ export function AppHeader({
     canPreview,
     onQuickAdd,
     onReportBug,
-    onCopyDiagnostics,
-    onOpenGitHubIssues,
     onOpenAbout,
 }: Props) {
     const { t } = useTranslation();
@@ -58,8 +54,6 @@ export function AppHeader({
             <div className="flex items-center gap-3">
                 <HelpMenu
                     onReportBug={onReportBug}
-                    onCopyDiagnostics={onCopyDiagnostics}
-                    onOpenGitHubIssues={onOpenGitHubIssues}
                     onOpenAbout={onOpenAbout}
                 />
                 <button
