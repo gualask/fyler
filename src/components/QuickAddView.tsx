@@ -2,7 +2,7 @@ import { IconFile, IconFileDownload, IconPhoto, IconX } from '@tabler/icons-reac
 import type { SourceFile } from '@/domain';
 import { useTranslation } from '@/i18n';
 import { DragOverlay } from './DragOverlay';
-import { LanguageSwitcher } from './LanguageSwitcher';
+
 
 interface Props {
     files: SourceFile[];
@@ -22,11 +22,10 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
             {/* Header */}
             <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-4">
                 <div className="flex items-center gap-2">
-                    <img src="/icon.svg" alt="Fyler" className="h-7 w-7" />
+                    <img src="/icon.svg" alt="Fyler" className="h-6 w-6" />
                     <span className="text-sm font-semibold">{t('header.quickAdd')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <LanguageSwitcher />
                     <button onClick={onExit} className="btn-icon" title={t('quickAdd.close')}>
                         <IconX className="h-4 w-4" />
                     </button>
