@@ -1,7 +1,14 @@
 import { memo, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { IconFile, IconGripVertical, IconPhoto, IconX } from '@tabler/icons-react';
+import {
+    IconChevronDown,
+    IconChevronUp,
+    IconFile,
+    IconGripVertical,
+    IconPhoto,
+    IconX,
+} from '@tabler/icons-react';
 
 import { getImageRotationDegrees } from '@/domain/fileEdits';
 import { useLazyPdfRender } from '@/pdf/useLazyPdfRender';
@@ -13,7 +20,11 @@ import type { ListItem } from '../models/listItem';
 
 interface Props {
     item: ListItem;
+    isFirst: boolean;
+    isLast: boolean;
     scrollRoot: HTMLDivElement | null;
+    onMoveUp: () => void;
+    onMoveDown: () => void;
     onRemove: (id: string) => void;
     onSelect: () => void;
     onPreview: () => void;
@@ -21,7 +32,11 @@ interface Props {
 
 export const ListRow = memo(function ListRow({
     item,
+    isFirst,
+    isLast,
     scrollRoot,
+    onMoveUp,
+    onMoveDown,
     onRemove,
     onSelect,
     onPreview,
@@ -60,9 +75,25 @@ export const ListRow = memo(function ListRow({
             {...attributes}
             className={['flex min-w-0 items-center gap-3', isDragging ? 'opacity-50' : ''].join(' ')}
         >
-            <span className="w-4 shrink-0 text-center text-xs font-bold text-ui-text-muted">
-                {item.index + 1}
-            </span>
+            <div className="flex shrink-0 flex-col items-center gap-0.5">
+                <button
+                    onClick={onMoveUp}
+                    disabled={isFirst}
+                    className="cursor-pointer rounded p-0.5 text-ui-text-muted transition-colors hover:text-ui-text disabled:invisible"
+                >
+                    <IconChevronUp className="h-4 w-4" />
+                </button>
+                <span className="text-xs font-bold text-ui-text-muted">
+                    {item.index + 1}
+                </span>
+                <button
+                    onClick={onMoveDown}
+                    disabled={isLast}
+                    className="cursor-pointer rounded p-0.5 text-ui-text-muted transition-colors hover:text-ui-text disabled:invisible"
+                >
+                    <IconChevronDown className="h-4 w-4" />
+                </button>
+            </div>
 
             <div
                 onClick={onSelect}
@@ -73,10 +104,10 @@ export const ListRow = memo(function ListRow({
             >
                 <div
                     {...listeners}
-                    onClick={(event) => event.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                     className="shrink-0 cursor-grab text-ui-text-muted active:cursor-grabbing"
                 >
-                    <IconGripVertical className="h-3.5 w-3.5" />
+                    <IconGripVertical className="h-5 w-5" />
                 </div>
 
                 <div

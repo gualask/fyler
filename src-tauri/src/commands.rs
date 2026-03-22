@@ -68,12 +68,25 @@ pub async fn open_files_dialog(
     let mut filter_exts = vec!["pdf"];
     filter_exts.extend_from_slice(IMAGE_EXTENSIONS);
 
-    let files = app
+    let Some(files) = app
         .dialog()
         .file()
         .add_filter(&filter_label, &filter_exts)
         .blocking_pick_files()
-        .unwrap_or_default();
+    else {
+        // User cancelled or dialog returned no selection
+        return Ok(OpenFilesResult {
+            files: vec![],
+            skipped_errors: vec![],
+        });
+    };
+
+    if files.is_empty() {
+        return Ok(OpenFilesResult {
+            files: vec![],
+            skipped_errors: vec![],
+        });
+    }
 
     let mut path_skipped = Vec::new();
     let paths = files

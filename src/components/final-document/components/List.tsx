@@ -80,11 +80,15 @@ export function List({
         >
             <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
                 <div className="flex flex-col gap-3">
-                    {items.map((item) => (
+                    {items.map((item, i) => (
                         <ListRow
                             key={item.page.id}
                             item={item}
+                            isFirst={i === 0}
+                            isLast={i === items.length - 1}
                             scrollRoot={scrollRoot}
+                            onMoveUp={() => onReorder(item.page.id, items[i - 1].page.id)}
+                            onMoveDown={() => onReorder(item.page.id, items[i + 1].page.id)}
                             onRemove={onRemove}
                             onSelect={() => onSelectPage(item.page.fileId, item.page.pageNum)}
                             onPreview={() => onPreviewPage(item.page.id)}
