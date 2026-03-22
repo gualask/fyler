@@ -35,7 +35,7 @@ function AppContent() {
         onFilesAdded: quickAdd.onFilesAdded,
         onDropError: notifications.showError,
     });
-    const { isDark, toggleTheme } = useTheme();
+    const { isDark, toggleTheme, accent, setAccent } = useTheme();
     const optimize = useOptimize();
 
     const focusedSourceMatchesSelected = Boolean(filesApi.focusedSource && filesApi.focusedSource.fileId === filesApi.selectedFile?.id);
@@ -87,7 +87,9 @@ function AppContent() {
                     <AppHeader
                         settings={{
                             isDark,
+                            accent,
                             onToggleTheme: toggleTheme,
+                            onSetAccent: setAccent,
                             onReportBug: openReportBug,
                             onOpenAbout: openAbout,
                         }}

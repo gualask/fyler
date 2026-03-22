@@ -8,11 +8,19 @@ use crate::error::AppError;
 pub struct StoredSettings {
     is_dark: bool,
     locale: Option<String>,
+    accent: Option<String>,
 }
 
 fn sanitize_locale(locale: Option<String>) -> Option<String> {
     match locale.as_deref() {
         Some("it" | "en") => locale,
+        _ => None,
+    }
+}
+
+fn sanitize_accent(accent: Option<String>) -> Option<String> {
+    match accent.as_deref() {
+        Some("indigo" | "teal" | "amber" | "blue") => accent,
         _ => None,
     }
 }
@@ -32,6 +40,11 @@ pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppE
                 .get("locale")
                 .and_then(|v| v.as_str().map(|locale| locale.to_owned())),
         ),
+        accent: sanitize_accent(
+            store
+                .get("accent")
+                .and_then(|v| v.as_str().map(|a| a.to_owned())),
+        ),
     })
 }
 
@@ -46,6 +59,11 @@ pub async fn save_settings(
     store.set("isDark", settings.is_dark);
     if let Some(locale) = sanitize_locale(settings.locale) {
         store.set("locale", locale);
+    }
+    if let Some(accent) = sanitize_accent(settings.accent) {
+        store.set("accent", accent);
+    } else {
+        store.delete("accent");
     }
     store.save().context("impossibile salvare store")?;
     Ok(())

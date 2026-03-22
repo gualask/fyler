@@ -8,12 +8,13 @@ import {
 } from 'react';
 
 import { detectPreferredLocale, isLocale, type Locale } from './locale';
-import { loadSettings, saveSettings } from './settings';
+import { ACCENT_COLORS, loadSettings, saveSettings, type AccentColor } from './settings';
 import { AppPreferencesContext, type AppPreferencesContextValue } from './context';
 
 type AppPreferencesState = {
     isDark: boolean;
     locale: Locale;
+    accent: AccentColor;
 };
 function resolveInitialLocale(storedLocale: Locale | undefined): Locale {
     if (isLocale(storedLocale)) {
@@ -27,6 +28,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     const [preferences, setPreferences] = useState<AppPreferencesState>({
         isDark: false,
         locale: 'en',
+        accent: 'indigo',
     });
     const [canPersistPreferences, setCanPersistPreferences] = useState(false);
     const hasLocalChangesRef = useRef(false);
@@ -40,6 +42,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
                 setPreferences({
                     isDark: settings.isDark,
                     locale: resolveInitialLocale(settings.locale),
+                    accent: settings.accent ?? 'indigo',
                 });
                 setCanPersistPreferences(true);
             })
@@ -48,6 +51,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
                 setPreferences({
                     isDark: false,
                     locale: detectPreferredLocale(navigator.languages),
+                    accent: 'indigo',
                 });
                 setCanPersistPreferences(false);
             });
@@ -60,7 +64,14 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         document.documentElement.classList.toggle('dark', preferences.isDark);
         document.documentElement.lang = preferences.locale;
-    }, [preferences.isDark, preferences.locale]);
+
+        for (const color of ACCENT_COLORS) {
+            document.documentElement.classList.remove(`accent-${color}`);
+        }
+        if (preferences.accent !== 'indigo') {
+            document.documentElement.classList.add(`accent-${preferences.accent}`);
+        }
+    }, [preferences.isDark, preferences.locale, preferences.accent]);
 
     useEffect(() => {
         if (!canPersistPreferences) return;
@@ -81,12 +92,18 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
         updatePreferences((current) => ({ ...current, isDark: !current.isDark }));
     }, [updatePreferences]);
 
+    const setAccent = useCallback((accent: AccentColor) => {
+        updatePreferences((current) => current.accent === accent ? current : { ...current, accent });
+    }, [updatePreferences]);
+
     const value = useMemo<AppPreferencesContextValue>(() => ({
         isDark: preferences.isDark,
         locale: preferences.locale,
+        accent: preferences.accent,
         setLocale,
         toggleTheme,
-    }), [preferences.isDark, preferences.locale, setLocale, toggleTheme]);
+        setAccent,
+    }), [preferences.isDark, preferences.locale, preferences.accent, setLocale, toggleTheme, setAccent]);
 
     return (
         <AppPreferencesContext.Provider value={value}>

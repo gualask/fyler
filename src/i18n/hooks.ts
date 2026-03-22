@@ -6,8 +6,8 @@ import { resources } from './resources';
 import { translate, translatePlural } from './translate';
 
 export function useTheme() {
-    const { isDark, toggleTheme } = useAppPreferences();
-    return { isDark, toggleTheme };
+    const { isDark, toggleTheme, accent, setAccent } = useAppPreferences();
+    return { isDark, toggleTheme, accent, setAccent };
 }
 
 export function useTranslation() {

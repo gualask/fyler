@@ -20,7 +20,7 @@
   --ui-text-dim:         #475569;
   --ui-text-muted:       #64748b;
 
-  /* accent — cambia solo questi per cambiare il colore brand */
+  /* accent — default indigo, overridden by accent-* classes below */
   --ui-accent:           #6366f1;
   --ui-accent-hover:     #4f46e5;
   --ui-accent-text:      #6366f1;
@@ -44,12 +44,68 @@
   --ui-text-dim:         #b1bacb;
   --ui-text-muted:       #8994a8;
 
-  /* accent in dark */
+  /* accent in dark — indigo default */
   --ui-accent-text:      #a5b4fc;
   --ui-accent-muted:     #818cf8;
   --ui-accent-soft:      rgba(99,102,241,0.15);
   --ui-accent-soft-hover: rgba(99,102,241,0.25);
   --ui-accent-on-soft:   #a5b4fc;
+}
+
+/* ── Accent color palettes ─────────────────────────────────────────────── */
+
+/* Teal */
+.accent-teal {
+  --ui-accent:           #14b8a6;
+  --ui-accent-hover:     #0d9488;
+  --ui-accent-text:      #0d9488;
+  --ui-accent-muted:     #5eead4;
+  --ui-accent-soft:      #f0fdfa;
+  --ui-accent-soft-hover: #ccfbf1;
+  --ui-accent-on-soft:   #0f766e;
+}
+.dark.accent-teal, .dark .accent-teal {
+  --ui-accent-text:      #5eead4;
+  --ui-accent-muted:     #2dd4bf;
+  --ui-accent-soft:      rgba(20,184,166,0.15);
+  --ui-accent-soft-hover: rgba(20,184,166,0.25);
+  --ui-accent-on-soft:   #5eead4;
+}
+
+/* Amber */
+.accent-amber {
+  --ui-accent:           #f59e0b;
+  --ui-accent-hover:     #d97706;
+  --ui-accent-text:      #d97706;
+  --ui-accent-muted:     #fcd34d;
+  --ui-accent-soft:      #fffbeb;
+  --ui-accent-soft-hover: #fef3c7;
+  --ui-accent-on-soft:   #b45309;
+}
+.dark.accent-amber, .dark .accent-amber {
+  --ui-accent-text:      #fcd34d;
+  --ui-accent-muted:     #fbbf24;
+  --ui-accent-soft:      rgba(245,158,11,0.15);
+  --ui-accent-soft-hover: rgba(245,158,11,0.25);
+  --ui-accent-on-soft:   #fcd34d;
+}
+
+/* Blue */
+.accent-blue {
+  --ui-accent:           #3b82f6;
+  --ui-accent-hover:     #2563eb;
+  --ui-accent-text:      #2563eb;
+  --ui-accent-muted:     #93c5fd;
+  --ui-accent-soft:      #eff6ff;
+  --ui-accent-soft-hover: #dbeafe;
+  --ui-accent-on-soft:   #1d4ed8;
+}
+.dark.accent-blue, .dark .accent-blue {
+  --ui-accent-text:      #93c5fd;
+  --ui-accent-muted:     #60a5fa;
+  --ui-accent-soft:      rgba(59,130,246,0.15);
+  --ui-accent-soft-hover: rgba(59,130,246,0.25);
+  --ui-accent-on-soft:   #93c5fd;
 }
 
 @keyframes ui-thumb-flash {

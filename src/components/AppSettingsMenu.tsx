@@ -1,5 +1,6 @@
 import {
     IconAdjustments,
+    IconCheck,
     IconChevronDown,
     IconChevronRight,
     IconMoon,
@@ -9,12 +10,22 @@ import { useRef, useState } from 'react';
 import { useDismissableMenu } from '@/hooks/useDismissableMenu';
 import { useTranslation } from '@/i18n';
 import { SUPPORTED_LOCALES } from '@/i18n/locale';
+import { ACCENT_COLORS, type AccentColor } from '@/i18n/settings';
 
 type Submenu = 'language' | 'theme' | null;
 
+const ACCENT_SWATCHES: Record<AccentColor, string> = {
+    indigo: '#6366f1',
+    teal: '#14b8a6',
+    amber: '#f59e0b',
+    blue: '#3b82f6',
+};
+
 export interface AppSettingsMenuProps {
     isDark: boolean;
+    accent: AccentColor;
     onToggleTheme: () => void;
+    onSetAccent: (accent: AccentColor) => void;
     onReportBug: () => void;
     onOpenAbout: () => void;
 }
@@ -25,7 +36,7 @@ const menuItemClass =
 const submenuPanelClass =
     'absolute left-full top-0 z-30 ml-1 min-w-[11rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg';
 
-export function AppSettingsMenu({ isDark, onToggleTheme, onReportBug, onOpenAbout }: AppSettingsMenuProps) {
+export function AppSettingsMenu({ isDark, accent, onToggleTheme, onSetAccent, onReportBug, onOpenAbout }: AppSettingsMenuProps) {
     const { locale, setLocale, t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [activeSubmenu, setActiveSubmenu] = useState<Submenu>(null);
@@ -156,7 +167,32 @@ export function AppSettingsMenu({ isDark, onToggleTheme, onReportBug, onOpenAbou
                                     )}
                                     {isDark ? t('header.toggleTheme.light') : t('header.toggleTheme.dark')}
                                 </button>
-                                {/* TODO: Accent color picker (Indigo, Teal, Amber, Blue) */}
+                                <div className="my-1 h-px bg-ui-border" />
+                                {ACCENT_COLORS.map((color) => (
+                                    <button
+                                        key={color}
+                                        type="button"
+                                        role="menuitemradio"
+                                        aria-checked={accent === color}
+                                        className={[
+                                            menuItemClass,
+                                            accent === color ? 'text-ui-text' : '',
+                                        ].join(' ')}
+                                        onClick={() => {
+                                            onSetAccent(color);
+                                            closeAll();
+                                        }}
+                                    >
+                                        <span
+                                            className="h-3.5 w-3.5 shrink-0 rounded-full border border-ui-border"
+                                            style={{ backgroundColor: ACCENT_SWATCHES[color] }}
+                                        />
+                                        {t(`header.accent.${color}`)}
+                                        {accent === color ? (
+                                            <IconCheck className="ml-auto h-3.5 w-3.5 text-ui-accent-text" />
+                                        ) : null}
+                                    </button>
+                                ))}
                             </div>
                         ) : null}
                     </div>
