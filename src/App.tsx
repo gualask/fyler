@@ -31,7 +31,10 @@ function AppContent() {
     const [showFinalPreview, setShowFinalPreview] = useState(false);
     const quickAdd = useQuickAdd();
     const notifications = useAppNotifications();
-    const filesApi = useFiles({ onFilesAdded: quickAdd.onFilesAdded });
+    const filesApi = useFiles({
+        onFilesAdded: quickAdd.onFilesAdded,
+        onDropError: notifications.showError,
+    });
     const { isDark, toggleTheme } = useTheme();
     const optimize = useOptimize();
 

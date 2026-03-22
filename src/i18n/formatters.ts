@@ -1,16 +1,26 @@
-import type { AppStatusPayload } from '@/diagnostics/appEvents';
+import type { AppStatusPayload, ImportWarningSkippedFile } from '@/diagnostics/appEvents';
 import type { PageSpecError } from '@/domain/pageSpec';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from './resources';
 
 type Translator = (key: TranslationKey, values?: InterpolationValues) => string;
 type PluralTranslator = (baseKey: PluralBaseKey, count: number, values?: InterpolationValues) => string;
 
+export function formatSkippedFile(
+    skipped: ImportWarningSkippedFile,
+    t: Translator,
+): string {
+    const key = `errors.skipped.${skipped.reason}` as TranslationKey;
+    return t(key, { name: skipped.name, detail: skipped.detail ?? '' });
+}
+
 export function formatImportWarning(
     payload: AppStatusPayload,
+    t: Translator,
     tp: PluralTranslator,
 ): string {
+    const preview = payload.preview.map((s) => formatSkippedFile(s, t)).join('; ');
     return tp('status.importWarning', payload.skippedCount, {
-        preview: payload.preview.join('; '),
+        preview,
         suffix: payload.hasMore ? ' ...' : '',
     });
 }

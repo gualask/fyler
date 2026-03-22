@@ -17,13 +17,13 @@ pub struct SourceImageDescriptor {
 
 pub fn load_source_image(path: &str) -> Result<(DynamicImage, SourceImageDescriptor)> {
     let mut reader =
-        ImageReader::open(path).with_context(|| format!("Errore apertura immagine '{path}'"))?;
+        ImageReader::open(path).with_context(|| format!("Failed to open image '{path}'"))?;
     reader = reader
         .with_guessed_format()
-        .context("Errore rilevamento formato immagine")?;
+        .context("Failed to detect image format")?;
 
     let format = reader.format();
-    let img = reader.decode().context("Errore decoding immagine")?;
+    let img = reader.decode().context("Failed to decode image")?;
     let (width, height) = img.dimensions();
     let compression_class = compression_class(path, format)?;
     let has_alpha = img.color().has_alpha();

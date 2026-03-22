@@ -57,9 +57,15 @@ export type MergeResult = {
     optimizationFailedCount: number;
 };
 
+export type SkippedFile = {
+    name: string;
+    reason: string;
+    detail?: string;
+};
+
 export type OpenFilesResult = {
     files: SourceFile[];
-    skippedErrors: string[];
+    skippedErrors: SkippedFile[];
 };
 
 export function buildMergeRequest(

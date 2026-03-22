@@ -4,10 +4,16 @@ export type MergeProgressStep =
     | 'optimizing-images'
     | 'saving';
 
+export type ImportWarningSkippedFile = {
+    name: string;
+    reason: string;
+    detail?: string;
+};
+
 export type ImportWarningStatus = {
     kind: 'import-warning';
     skippedCount: number;
-    preview: string[];
+    preview: ImportWarningSkippedFile[];
     hasMore: boolean;
 };
 

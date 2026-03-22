@@ -55,9 +55,18 @@ pub struct MergeResult {
     pub optimization_failed_count: usize,
 }
 
+#[derive(serde::Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SkippedFile {
+    pub name: String,
+    pub reason: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+
 #[derive(serde::Serialize)]
 pub struct OpenFilesResult {
     pub files: Vec<SourceFile>,
     #[serde(rename = "skippedErrors")]
-    pub skipped_errors: Vec<String>,
+    pub skipped_errors: Vec<SkippedFile>,
 }

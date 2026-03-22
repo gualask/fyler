@@ -85,7 +85,7 @@ export function useAppNotifications() {
         if (status.kind === 'export-completed-with-optimization-warning') {
             return tp('status.optimizationWarning', status.count);
         }
-        return formatImportWarning(status.payload, tp);
+        return formatImportWarning(status.payload, t, tp);
     }, [status, t, tp]);
 
     const statusTone = useMemo<'success' | 'error' | 'warning' | null>(() => {

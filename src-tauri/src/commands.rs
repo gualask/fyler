@@ -6,7 +6,7 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
 use crate::export::export_pdf;
-use crate::models::{MergeRequest, MergeResult, OpenFilesResult};
+use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile};
 use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{files_from_paths, SourceRegistry};
 
@@ -15,7 +15,7 @@ use crate::source_registry::{files_from_paths, SourceRegistry};
 struct ImportWarningPayload {
     kind: &'static str,
     skipped_count: usize,
-    preview: Vec<String>,
+    preview: Vec<SkippedFile>,
     has_more: bool,
 }
 
@@ -29,8 +29,8 @@ pub struct AppMetadataPayload {
     arch: String,
 }
 
-fn emit_import_warning(app: &tauri::AppHandle, skipped_errors: &[String]) {
-    if skipped_errors.is_empty() {
+fn emit_import_warning(app: &tauri::AppHandle, skipped: &[SkippedFile]) {
+    if skipped.is_empty() {
         return;
     }
 
@@ -38,9 +38,9 @@ fn emit_import_warning(app: &tauri::AppHandle, skipped_errors: &[String]) {
         "app-status",
         ImportWarningPayload {
             kind: "import-warning",
-            skipped_count: skipped_errors.len(),
-            preview: skipped_errors.iter().take(2).cloned().collect(),
-            has_more: skipped_errors.len() > 2,
+            skipped_count: skipped.len(),
+            preview: skipped.iter().take(2).cloned().collect(),
+            has_more: skipped.len() > 2,
         },
     );
 }
@@ -48,14 +48,14 @@ fn emit_import_warning(app: &tauri::AppHandle, skipped_errors: &[String]) {
 fn finalize_import(
     app: &tauri::AppHandle,
     result: crate::source_registry::FilesFromPathsResult,
-    extra_errors: Vec<String>,
+    extra_skipped: Vec<SkippedFile>,
 ) -> OpenFilesResult {
-    let mut skipped_errors = extra_errors;
-    skipped_errors.extend(result.skipped_errors);
-    emit_import_warning(app, &skipped_errors);
+    let mut skipped = extra_skipped;
+    skipped.extend(result.skipped);
+    emit_import_warning(app, &skipped);
     OpenFilesResult {
         files: result.files,
-        skipped_errors,
+        skipped_errors: skipped,
     }
 }
 
@@ -75,22 +75,25 @@ pub async fn open_files_dialog(
         .blocking_pick_files()
         .unwrap_or_default();
 
-    let mut path_errors = Vec::new();
+    let mut path_skipped = Vec::new();
     let paths = files
         .into_iter()
         .filter_map(|file| match file.into_path() {
             Ok(path) => Some(path.to_string_lossy().to_string()),
             Err(e) => {
-                let msg = format!("Failed to resolve file path: {e}");
-                eprintln!("[warn] {msg}");
-                path_errors.push(msg);
+                eprintln!("[warn] Failed to resolve file path: {e}");
+                path_skipped.push(SkippedFile {
+                    name: String::new(),
+                    reason: "path_error".into(),
+                    detail: Some(e.to_string()),
+                });
                 None
             }
         })
         .collect::<Vec<_>>();
 
     let result = files_from_paths(paths, &registry)?;
-    Ok(finalize_import(&app, result, path_errors))
+    Ok(finalize_import(&app, result, path_skipped))
 }
 
 #[tauri::command]
@@ -100,7 +103,7 @@ pub fn open_files_from_paths(
     registry: State<'_, SourceRegistry>,
 ) -> Result<OpenFilesResult, AppError> {
     let result = files_from_paths(paths, &registry)?;
-    Ok(finalize_import(&app, result, Vec::new()))
+    Ok(finalize_import(&app, result, vec![]))
 }
 
 #[tauri::command]

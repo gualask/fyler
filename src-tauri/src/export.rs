@@ -72,7 +72,7 @@ pub fn build_documents(
         let page = &req.pages[index];
         let source = registry
             .get(&page.file_id)
-            .with_context(|| format!("Sorgente '{}' non trovato", page.file_id))?;
+            .with_context(|| format!("Source '{}' not found", page.file_id))?;
         let edits = req.edits.get(&page.file_id);
 
         if source.kind == "image" {
@@ -90,7 +90,7 @@ pub fn build_documents(
             doc.clone()
         } else {
             let doc = PdfDoc::load(&source.original_path)
-                .with_context(|| format!("Errore apertura PDF '{}'", source.name))?;
+                .with_context(|| format!("Failed to open PDF '{}'", source.name))?;
             pdf_cache.insert(page.file_id.clone(), doc.clone());
             doc
         };
@@ -181,7 +181,7 @@ pub fn export_pdf(
     emit_progress(app, "preparing-documents", 0);
     let docs = build_documents(&req, registry, image_fit)?;
     if docs.is_empty() {
-        bail!("Nessun documento da unire");
+        bail!("No documents to merge");
     }
 
     emit_progress(app, "merging-pages", 60);

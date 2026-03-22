@@ -123,7 +123,7 @@ pub fn image_export_preview_layout(
     quarter_turns: u8,
 ) -> Result<ImageExportPreviewLayout> {
     let (width_px, height_px) =
-        image::image_dimensions(path).context("Errore apertura immagine")?;
+        image::image_dimensions(path).context("Failed to open image")?;
     let (rotated_width_px, rotated_height_px) =
         rotated_dimensions(width_px, height_px, quarter_turns)?;
     Ok(compute_image_export_layout(

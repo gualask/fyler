@@ -8,8 +8,10 @@ import { useSourceSession } from './useSourceSession';
 
 export function useFiles({
     onFilesAdded,
+    onDropError,
 }: {
     onFilesAdded?: (ids: string[]) => void;
+    onDropError?: (error: unknown) => void;
 } = {}) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [focusedSource, setFocusedSource] = useState<{ fileId: string; pageNum: number; flashKey: number } | null>(null);
@@ -98,7 +100,11 @@ export function useFiles({
         setFocusedSource({ fileId, pageNum, flashKey: Date.now() });
     }, []);
 
-    const { isDragOver } = useFileDrop(acceptFiles, selectIfNone);
+    const handleDropError = useCallback((error: unknown) => {
+        onDropError?.(error);
+    }, [onDropError]);
+
+    const { isDragOver } = useFileDrop(acceptFiles, selectIfNone, handleDropError);
 
     return {
         files,

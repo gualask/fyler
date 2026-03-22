@@ -3,7 +3,7 @@ use std::sync::RwLock;
 
 use rayon::prelude::*;
 
-use crate::models::SourceFile;
+use crate::models::{SkippedFile, SourceFile};
 use crate::pdf::{count_pages, detect_kind_from_ext};
 
 #[derive(Clone)]
@@ -26,7 +26,7 @@ struct RegistryState {
 
 pub struct FilesFromPathsResult {
     pub files: Vec<SourceFile>,
-    pub skipped_errors: Vec<String>,
+    pub skipped: Vec<SkippedFile>,
 }
 
 impl SourceRegistry {
@@ -69,7 +69,7 @@ impl SourceRegistry {
 
 fn registered_file_from_path(
     path: String,
-) -> anyhow::Result<(SourceFile, RegisteredSource)> {
+) -> Result<(SourceFile, RegisteredSource), SkippedFile> {
     let name = std::path::Path::new(&path)
         .file_name()
         .unwrap_or_default()
@@ -77,11 +77,19 @@ fn registered_file_from_path(
         .to_string();
 
     let Some(kind) = detect_kind_from_ext(&path) else {
-        anyhow::bail!("{name}: formato file non supportato");
+        return Err(SkippedFile {
+            name,
+            reason: "unsupported_format".into(),
+            detail: None,
+        });
     };
 
     let page_count = if kind == "pdf" {
-        count_pages(&path).map_err(|error| anyhow::anyhow!("{}: {}", name, error))?
+        count_pages(&path).map_err(|error| SkippedFile {
+            name: name.clone(),
+            reason: "read_error".into(),
+            detail: Some(error.to_string()),
+        })?
     } else {
         1
     };
@@ -122,18 +130,15 @@ pub fn files_from_paths(
 
     let results = accepted_paths
         .into_par_iter()
-        .map(|path| match registered_file_from_path(path) {
-            Ok(entry) => Ok(entry),
-            Err(error) => Err(error.to_string()),
-        })
+        .map(registered_file_from_path)
         .collect::<Vec<_>>();
 
     let mut entries = Vec::new();
-    let mut skipped_errors = Vec::new();
+    let mut skipped = Vec::new();
     for result in results {
         match result {
             Ok(entry) => entries.push(entry),
-            Err(error) => skipped_errors.push(error),
+            Err(skip) => skipped.push(skip),
         }
     }
 
@@ -144,7 +149,7 @@ pub fn files_from_paths(
     );
     Ok(FilesFromPathsResult {
         files: entries.into_iter().map(|(source, _)| source).collect(),
-        skipped_errors,
+        skipped,
     })
 }
 
@@ -183,8 +188,9 @@ mod tests {
 
         assert_eq!(result.files.len(), 1);
         assert_eq!(result.files[0].kind, "image");
-        assert_eq!(result.skipped_errors.len(), 1);
-        assert!(result.skipped_errors[0].contains("broken-pdf"));
+        assert_eq!(result.skipped.len(), 1);
+        assert!(result.skipped[0].name.contains("broken-pdf"));
+        assert_eq!(result.skipped[0].reason, "read_error");
 
         let _ = fs::remove_file(image_path);
         let _ = fs::remove_file(broken_pdf_path);
@@ -200,8 +206,9 @@ mod tests {
         let result = files_from_paths(vec![path.to_string_lossy().to_string()], &registry)?;
 
         assert!(result.files.is_empty());
-        assert_eq!(result.skipped_errors.len(), 1);
-        assert!(result.skipped_errors[0].contains("notes"));
+        assert_eq!(result.skipped.len(), 1);
+        assert!(result.skipped[0].name.contains("notes"));
+        assert_eq!(result.skipped[0].reason, "unsupported_format");
 
         let _ = fs::remove_file(path);
         Ok(())
@@ -218,7 +225,7 @@ mod tests {
 
         let second = files_from_paths(vec![image_path.to_string_lossy().to_string()], &registry)?;
         assert!(second.files.is_empty());
-        assert!(second.skipped_errors.is_empty());
+        assert!(second.skipped.is_empty());
 
         registry.remove_many(&first.files.iter().map(|file| file.id.clone()).collect::<Vec<_>>());
         let _ = fs::remove_file(image_path);
@@ -249,8 +256,9 @@ mod tests {
 
         assert_eq!(result.files.len(), 1);
         assert_eq!(result.files[0].original_path, new_path.to_string_lossy().to_string());
-        assert_eq!(result.skipped_errors.len(), 1);
-        assert!(result.skipped_errors[0].contains("unsupported"));
+        assert_eq!(result.skipped.len(), 1);
+        assert!(result.skipped[0].name.contains("unsupported"));
+        assert_eq!(result.skipped[0].reason, "unsupported_format");
 
         let mut ids = first.files.iter().map(|file| file.id.clone()).collect::<Vec<_>>();
         ids.extend(result.files.iter().map(|file| file.id.clone()));
