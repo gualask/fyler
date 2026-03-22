@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { DiagnosticsProvider } from '@/diagnostics';
 import { PdfCacheProvider } from '@/pdf/PdfCacheProvider';
 import { useFiles } from '@/files/useFiles';
@@ -65,6 +65,12 @@ function AppContent() {
     const handleAddFiles = useAddFilesAction({ files: filesApi, notifications });
     const { handleEnterQuickAdd, handleExitQuickAdd } = useQuickAddActions({ quickAdd, notifications });
 
+    // TODO: Implement tutorial wizard — step-by-step guided tour
+    // showing the user the workflow: add files → select pages → reorder → export
+    const handleHelp = useCallback(() => {
+        // Launch tutorial wizard here
+    }, []);
+
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
             <UpdateDialog />
@@ -79,15 +85,18 @@ function AppContent() {
             ) : (
                 <>
                     <AppHeader
-                        isDark={isDark}
-                        onToggleTheme={toggleTheme}
+                        settings={{
+                            isDark,
+                            onToggleTheme: toggleTheme,
+                            onReportBug: openReportBug,
+                            onOpenAbout: openAbout,
+                        }}
                         onExport={() => void exportMerged()}
                         canExport={filesApi.finalPages.length > 0}
                         onPreview={() => setShowFinalPreview(true)}
                         canPreview={filesApi.finalPages.length > 0}
                         onQuickAdd={handleEnterQuickAdd}
-                        onReportBug={openReportBug}
-                        onOpenAbout={openAbout}
+                        onHelp={handleHelp}
                     />
 
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">

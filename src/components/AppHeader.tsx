@@ -1,30 +1,25 @@
-import { IconArrowsMinimize, IconDownload, IconEye, IconMoon, IconSun } from '@tabler/icons-react';
+import { IconArrowsMinimize, IconDownload, IconEye, IconHelp } from '@tabler/icons-react';
 import { useTranslation } from '@/i18n';
-import { LanguageSwitcher } from './LanguageSwitcher';
-import { HelpMenu } from './support/HelpMenu';
+import { AppSettingsMenu, type AppSettingsMenuProps } from './AppSettingsMenu';
 
 interface Props {
-    isDark: boolean;
-    onToggleTheme: () => void;
+    settings: AppSettingsMenuProps;
     onExport: () => void;
     canExport: boolean;
     onPreview: () => void;
     canPreview: boolean;
     onQuickAdd: () => void;
-    onReportBug: () => void;
-    onOpenAbout: () => void;
+    onHelp: () => void;
 }
 
 export function AppHeader({
-    isDark,
-    onToggleTheme,
+    settings,
     onExport,
     canExport,
     onPreview,
     canPreview,
     onQuickAdd,
-    onReportBug,
-    onOpenAbout,
+    onHelp,
 }: Props) {
     const { t } = useTranslation();
 
@@ -37,14 +32,7 @@ export function AppHeader({
                 </div>
                 <div className="mx-1 h-5 w-px bg-ui-border" />
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={onToggleTheme}
-                        title={isDark ? t('header.toggleTheme.light') : t('header.toggleTheme.dark')}
-                        className="btn-icon"
-                    >
-                        {isDark ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
-                    </button>
-                    <LanguageSwitcher />
+                    <AppSettingsMenu {...settings} />
                     <button onClick={onQuickAdd} className="btn-ghost" title={t('header.quickAdd')}>
                         <IconArrowsMinimize className="h-4 w-4" />
                         {t('header.quickAdd')}
@@ -52,10 +40,10 @@ export function AppHeader({
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                <HelpMenu
-                    onReportBug={onReportBug}
-                    onOpenAbout={onOpenAbout}
-                />
+                <button onClick={onHelp} className="btn-ghost">
+                    <IconHelp className="h-4 w-4" />
+                    {t('header.help')}
+                </button>
                 <button
                     disabled={!canPreview}
                     onClick={onPreview}
