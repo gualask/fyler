@@ -1,6 +1,8 @@
-export { DiagnosticsProvider } from './provider';
-export { formatDiagnosticsReport } from './report';
-export { toDiagnosticMessage } from './sanitize';
+export { DiagnosticsProvider } from './diagnostics.provider';
+export { useDiagnostics } from './diagnostics.hook';
+export { formatDiagnosticsReport } from './diagnostics.report';
+export { toDiagnosticMessage } from './diagnostics.sanitize';
+export type { AppStatusPayload, ImportWarningSkippedFile, MergeProgressStep } from './app-events.types';
 export type {
     AppMetadata,
     DiagnosticCategory,
@@ -8,4 +10,4 @@ export type {
     DiagnosticMetadataValue,
     DiagnosticsSnapshot,
     DiagnosticSeverity,
-} from './types';
+} from './diagnostics.types';

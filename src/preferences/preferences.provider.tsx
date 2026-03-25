@@ -9,7 +9,7 @@ import {
 
 import { detectPreferredLocale, isLocale, type Locale } from './locale';
 import { ACCENT_COLORS, loadSettings, saveSettings, type AccentColor } from './settings';
-import { PreferencesContext, type PreferencesContextValue } from './context';
+import { PreferencesContext, type PreferencesContextValue } from './preferences.context';
 
 type PreferencesState = {
     isDark: boolean;

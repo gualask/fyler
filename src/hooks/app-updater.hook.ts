@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import { useDiagnostics } from '@/diagnostics';
 import { getErrorMessage } from '@/errors';
 
 interface UpdateState {

@@ -1,5 +1,5 @@
-import { useSlotState } from '../hooks/useSlotState';
-import type { SlotContext, SlotPage } from '../models/slotModel';
+import { useSlotState } from '../hooks/slot-state.hook';
+import type { SlotContext, SlotPage } from '../models/slot-model';
 
 const BASE_WIDTH = 680;
 

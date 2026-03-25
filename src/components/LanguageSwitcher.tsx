@@ -1,7 +1,7 @@
 import { IconChevronDown } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from '@/i18n';
-import { useDismissableMenu } from '@/hooks/useDismissableMenu';
+import { useDismissableMenu } from '@/hooks';
 import { SUPPORTED_LOCALES } from '@/preferences';
 
 export function LanguageSwitcher() {

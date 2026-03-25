@@ -4,7 +4,7 @@ import {
     getTooltipBoundaryElement,
     resolveTooltipPlacement,
     type TooltipPlacement,
-} from './tooltipPlacement';
+} from './tooltip-placement';
 
 type TooltipPlacementDeps = {
     open: boolean;

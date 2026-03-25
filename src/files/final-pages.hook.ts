@@ -6,7 +6,7 @@ import {
     compositionReducer,
     fromFinalPageId,
     initialCompositionState,
-} from './compositionReducer';
+} from './composition.reducer';
 
 export function useFinalPages() {
     const [state, dispatch] = useReducer(compositionReducer, initialCompositionState);

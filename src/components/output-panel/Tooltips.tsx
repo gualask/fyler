@@ -2,7 +2,7 @@ import {
     JPEG_QUALITY_OPTIONS,
     OPTIMIZATION_PRESETS,
     TARGET_DPI_OPTIONS,
-} from '@/domain/optimizationConfig';
+} from '@/domain/optimization-config';
 import type { ImageFit } from '@/domain';
 import { useTranslation } from '@/i18n';
 

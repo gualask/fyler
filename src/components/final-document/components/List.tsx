@@ -11,10 +11,10 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { IconFile } from '@tabler/icons-react';
 
 import type { FileEdits, FinalPage, SourceFile } from '@/domain';
-import { emptyFileEdits } from '@/domain/fileEdits';
+import { emptyFileEdits } from '@/domain/file-edits';
 import { useTranslation } from '@/i18n';
 import { ListRow } from './ListRow';
-import type { ListItem } from '../models/listItem';
+import type { ListItem } from '../models/list-item';
 
 interface Props {
     finalPages: FinalPage[];

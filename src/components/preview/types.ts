@@ -1,5 +1,5 @@
 import type { FileEdits, FinalPage, ImageFit, SourceFile } from '@/domain';
-import type { RotationDirection } from '@/domain/fileEdits';
+import type { RotationDirection } from '@/domain/file-edits';
 
 export type PageIndicator = {
     current?: number;

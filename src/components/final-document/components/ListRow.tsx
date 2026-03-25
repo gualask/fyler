@@ -10,13 +10,12 @@ import {
     IconX,
 } from '@tabler/icons-react';
 
-import { getImageRotationDegrees } from '@/domain/fileEdits';
-import { useLazyPdfRender } from '@/pdf/useLazyPdfRender';
+import { getImageRotationDegrees } from '@/domain/file-edits';
+import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/pdf';
 import { useTranslation } from '@/i18n';
-import { buildThumbnailRenderRequest } from '@/pdf/renderProfiles';
 import { getPreviewUrl } from '@/platform';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';
-import type { ListItem } from '../models/listItem';
+import type { ListItem } from '../models/list-item';
 
 interface Props {
     item: ListItem;

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { emptyFileEdits } from '@/domain/fileEdits';
-import type { RotationDirection } from '@/domain/fileEdits';
+import { emptyFileEdits } from '@/domain/file-edits';
+import type { RotationDirection } from '@/domain/file-edits';
 import { PageSlot } from './components/PageSlot';
 import { Toolbar } from './components/Toolbar';
 import type { PreviewModalProps } from './types';
-import type { SlotContext } from './models/slotModel';
+import type { SlotContext } from './models/slot-model';
 
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 3;

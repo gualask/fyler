@@ -1,6 +1,6 @@
 import type { FileEdits, QuarterTurn } from '@/domain';
-import { emptyFileEdits, getPdfPageQuarterTurn } from '@/domain/fileEdits';
-import type { PdfRenderRequest } from './usePdfCache';
+import { emptyFileEdits, getPdfPageQuarterTurn } from '@/domain/file-edits';
+import type { PdfRenderRequest } from './pdf-cache.hook';
 
 const THUMB_DENSITY = typeof window === 'undefined'
     ? 1

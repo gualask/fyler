@@ -4,14 +4,14 @@ import { IconSettings } from '@tabler/icons-react';
 import type {
     BasicOptimizationPreset,
     ImageOptimizationPreset,
-} from '@/domain/optimizationConfig';
-import { OPTIMIZATION_PRESETS } from '@/domain/optimizationConfig';
+} from '@/domain/optimization-config';
+import { OPTIMIZATION_PRESETS } from '@/domain/optimization-config';
 import type { ImageFit } from '@/domain';
 import { useTranslation } from '@/i18n';
-import { useDismiss } from '@/hooks/useDismiss';
+import { useDismiss } from '@/hooks';
 
 import { InfoTooltip } from './output-panel/InfoTooltip';
-import { ImageFitTooltip, OptimizationTooltip } from './output-panel/helpContent';
+import { ImageFitTooltip, OptimizationTooltip } from './output-panel/Tooltips';
 import { OptimizationAdvancedPanel } from './output-panel/OptimizationAdvancedPanel';
 import {
     SegmentButtons,

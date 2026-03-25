@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { formatPageSpecError, useTranslation } from '@/i18n';
-import { parseSelectedPagesFromSpec } from '@/domain/pageSpec';
+import { parseSelectedPagesFromSpec } from '@/domain/page-spec';
 
 const PAGE_INPUT_DEBOUNCE_MS = 600;
 

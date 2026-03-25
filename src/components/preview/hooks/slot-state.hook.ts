@@ -1,13 +1,12 @@
 import { useEffect, useMemo } from 'react';
 
-import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/fileEdits';
-import { buildPreviewRenderRequest } from '@/pdf/renderProfiles';
+import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/file-edits';
+import { buildPreviewRenderRequest, usePdfCache } from '@/pdf';
 import { getPreviewUrl } from '@/platform';
-import type { SlotContext, SlotPage } from '../models/slotModel';
-import { usePdfCache } from '@/pdf/usePdfCache';
-import { useSlotVisibility } from './useSlotVisibility';
-import { useRotatedImagePreview } from './useRotatedImagePreview';
-import { useExportMatchedImage } from './useExportMatchedImage';
+import type { SlotContext, SlotPage } from '../models/slot-model';
+import { useSlotVisibility } from './slot-visibility.hook';
+import { useRotatedImagePreview } from './rotated-image-preview.hook';
+import { useExportMatchedImage } from './export-matched-image.hook';
 
 export function useSlotState(page: SlotPage, context: SlotContext) {
     const { fp, file, edits, index } = page;

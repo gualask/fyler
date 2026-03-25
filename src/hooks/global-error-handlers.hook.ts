@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import { useDiagnostics } from '@/diagnostics';
 import { getErrorMessage } from '@/errors';
 
 export function useGlobalErrorHandlers(onError: (message: string) => void) {

@@ -1,14 +1,13 @@
 import { useCallback } from 'react';
 
-import type { RotationDirection } from '@/domain/fileEdits';
-import { applyRotationToEdits } from '@/domain/fileEdits';
+import type { RotationDirection } from '@/domain/file-edits';
+import { applyRotationToEdits } from '@/domain/file-edits';
 import type { SourceFile } from '@/domain';
 import { useTranslation } from '@/i18n';
-import { buildThumbnailRenderRequest } from '@/pdf/renderProfiles';
+import { buildThumbnailRenderRequest, usePdfCache } from '@/pdf';
 import { openFilesDialog, releaseSources } from '@/platform';
-import { usePdfCache } from '@/pdf/usePdfCache';
-import { useFileEdits } from './useFileEdits';
-import { useFileList } from './useFileList';
+import { useFileEdits } from './file-edits.hook';
+import { useFileList } from './file-list.hook';
 
 interface Options {
     onFilesAdded?: (files: SourceFile[]) => void;

@@ -2,11 +2,11 @@ import { useCallback } from 'react';
 
 import { buildMergeRequest } from '@/domain';
 import { toDiagnosticMessage } from '@/diagnostics';
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import { useDiagnostics } from '@/diagnostics';
 import { mergePDFs, savePDFDialog } from '@/platform';
-import type { useFiles } from '@/files/useFiles';
-import type { useAppNotifications } from './useAppNotifications';
-import type { useOptimize } from './useOptimize';
+import type { useFiles } from '@/files';
+import type { useAppNotifications } from './app-notifications.hook';
+import type { useOptimize } from './optimize.hook';
 import { useTranslation } from '@/i18n';
 
 interface ExportActionDeps {

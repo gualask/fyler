@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import { DiagnosticsContext } from './context';
+import { DiagnosticsContext } from './diagnostics.context';
 
 export function useDiagnostics() {
     const context = useContext(DiagnosticsContext);

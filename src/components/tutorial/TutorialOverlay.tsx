@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from 'react';
 import { useTranslation } from '@/i18n';
 import { TUTORIAL_STEPS } from './steps';
-import { TUTORIAL_DATA_ATTR } from './targetProps';
+import { TUTORIAL_DATA_ATTR } from './target-props';
 
 interface Props {
     currentStep: number;

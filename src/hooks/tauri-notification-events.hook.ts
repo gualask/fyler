@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 
-import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics/appEvents';
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics';
+import { useDiagnostics } from '@/diagnostics';
 
 function attachEventListener<T>(eventName: string, listener: (event: { payload: T }) => void): () => void {
     let disposed = false;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import type { FileEdits, FinalPage, SourceFile } from '@/domain';
-import type { RotationDirection } from '@/domain/fileEdits';
+import type { RotationDirection } from '@/domain/file-edits';
 import { useTranslation } from '@/i18n';
 import { ColumnHeader } from '../shared/layout/ColumnHeader';
 import { ImagePanel } from './panels/ImagePanel';

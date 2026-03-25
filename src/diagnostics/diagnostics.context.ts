@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-import type { DiagnosticEntry } from './types';
+import type { DiagnosticEntry } from './diagnostics.types';
 
 export interface DiagnosticsContextValue {
     entries: DiagnosticEntry[];

@@ -6,7 +6,7 @@ import {
     type AppMetadata,
     type DiagnosticsSnapshot,
 } from '@/diagnostics';
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import { useDiagnostics } from '@/diagnostics';
 import { useTranslation } from '@/i18n';
 import { getAppMetadata, openExternalUrl } from '@/platform';
 

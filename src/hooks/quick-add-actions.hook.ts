@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 
 import { toDiagnosticMessage } from '@/diagnostics';
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
-import type { useQuickAdd } from './useQuickAdd';
-import type { useAppNotifications } from './useAppNotifications';
+import { useDiagnostics } from '@/diagnostics';
+import type { useQuickAdd } from './quick-add.hook';
+import type { useAppNotifications } from './app-notifications.hook';
 
 interface QuickAddActionsDeps {
     quickAdd: ReturnType<typeof useQuickAdd>;

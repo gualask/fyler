@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import type { FinalPage, SourceFile } from '@/domain';
 
-import { usePageSpecInput } from './usePageSpecInput';
+import { usePageSpecInput } from './page-spec-input.hook';
 
 interface Props {
     file: SourceFile;

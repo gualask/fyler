@@ -7,7 +7,7 @@ import {
     IconSun,
 } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
-import { useDismissableMenu } from '@/hooks/useDismissableMenu';
+import { useDismissableMenu } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { ACCENT_COLORS, type AccentColor } from '@/preferences';
 import { SUPPORTED_LOCALES } from '@/preferences';

@@ -6,10 +6,10 @@ import {
     deriveOptimizationPreset,
     getOptimizationSettings,
     type BasicOptimizationPreset,
-} from '@/domain/optimizationConfig';
+} from '@/domain/optimization-config';
 
 export type { ImageFit };
-export type { BasicOptimizationPreset, ImageOptimizationPreset } from '@/domain/optimizationConfig';
+export type { BasicOptimizationPreset, ImageOptimizationPreset } from '@/domain/optimization-config';
 
 export function useOptimize() {
     const defaultSettings = getOptimizationSettings(DEFAULT_OPTIMIZATION_PRESET);

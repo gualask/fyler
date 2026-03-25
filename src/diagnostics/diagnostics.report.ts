@@ -1,4 +1,4 @@
-import type { DiagnosticMetadataValue, DiagnosticsSnapshot } from './types';
+import type { DiagnosticMetadataValue, DiagnosticsSnapshot } from './diagnostics.types';
 
 function formatMetadata(metadata: Record<string, DiagnosticMetadataValue> | undefined): string {
     if (!metadata) return '';

@@ -1,5 +1,5 @@
-import type { AppStatusPayload, ImportWarningSkippedFile } from '@/diagnostics/appEvents';
-import type { PageSpecError } from '@/domain/pageSpec';
+import type { AppStatusPayload, ImportWarningSkippedFile } from '@/diagnostics';
+import type { PageSpecError } from '@/domain/page-spec';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from './resources';
 
 type Translator = (key: TranslationKey, values?: InterpolationValues) => string;

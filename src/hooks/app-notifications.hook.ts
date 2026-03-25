@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics/appEvents';
+import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics';
 import { formatImportWarning, useTranslation } from '@/i18n';
 import { formatUserFacingError } from '@/errors';
 
-import { useGlobalErrorHandlers } from './useGlobalErrorHandlers';
-import { useTauriNotificationEvents } from './useTauriNotificationEvents';
+import { useGlobalErrorHandlers } from './global-error-handlers.hook';
+import { useTauriNotificationEvents } from './tauri-notification-events.hook';
 
 type StatusState =
     | { kind: 'error'; message: string }

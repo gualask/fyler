@@ -5,9 +5,9 @@ import {
     type ReactNode,
 } from 'react';
 
-import { DiagnosticsContext, type DiagnosticsContextValue } from './context';
-import { sanitizeMetadata, sanitizeText } from './sanitize';
-import type { DiagnosticEntry } from './types';
+import { DiagnosticsContext, type DiagnosticsContextValue } from './diagnostics.context';
+import { sanitizeMetadata, sanitizeText } from './diagnostics.sanitize';
+import type { DiagnosticEntry } from './diagnostics.types';
 const MAX_ENTRIES = 50;
 
 export function DiagnosticsProvider({ children }: { children: ReactNode }) {

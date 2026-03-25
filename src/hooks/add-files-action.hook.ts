@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
 
 import { toDiagnosticMessage } from '@/diagnostics';
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
-import type { useFiles } from '@/files/useFiles';
+import { useDiagnostics } from '@/diagnostics';
+import type { useFiles } from '@/files';
 import { formatSkippedFile, useTranslation } from '@/i18n';
-import type { useAppNotifications } from './useAppNotifications';
+import type { useAppNotifications } from './app-notifications.hook';
 
 interface AddFilesActionDeps {
     files: ReturnType<typeof useFiles>;

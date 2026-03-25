@@ -1,15 +1,10 @@
 import { useState } from 'react';
 import { DiagnosticsProvider } from '@/diagnostics';
-import { PdfCacheProvider } from '@/pdf/PdfCacheProvider';
-import { useFiles } from '@/files/useFiles';
-import { useAppNotifications } from '@/hooks/useAppNotifications';
-import { useQuickAdd } from '@/hooks/useQuickAdd';
-import { useDiagnostics } from '@/diagnostics/useDiagnostics';
+import { PdfCacheProvider } from '@/pdf';
+import { useFiles } from '@/files';
+import { useAddFilesAction, useAppNotifications, useExportAction, useOptimize, useQuickAdd, useQuickAddActions } from '@/hooks';
+import { useDiagnostics } from '@/diagnostics';
 import { PreferencesProvider, useTheme } from '@/preferences';
-import { useOptimize } from '@/hooks/useOptimize';
-import { useExportAction } from '@/hooks/useExportAction';
-import { useAddFilesAction } from '@/hooks/useAddFilesAction';
-import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import { AppHeader } from '@/components/AppHeader';
 import { FileList } from '@/components/FileList';
 import { PagePicker } from '@/components/page-picker';
@@ -24,7 +19,7 @@ import { QuickAddView } from '@/components/QuickAddView';
 import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { UpdateDialog } from '@/components/UpdateDialog';
 import { SupportDialog } from '@/components/support/SupportDialog';
-import { useSupportDiagnostics } from '@/components/support/useSupportDiagnostics';
+import { useSupportDiagnostics } from '@/components/support/support-diagnostics.hook';
 import { TutorialOverlay, useTutorial, useTutorialFilesAddedHandler, tutorialTargetProps, TUTORIAL_TARGETS } from '@/components/tutorial';
 import { useTranslation } from '@/i18n';
 

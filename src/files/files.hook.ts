@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import type { RotationDirection } from '@/domain/fileEdits';
+import type { RotationDirection } from '@/domain/file-edits';
 import type { SourceFile } from '@/domain';
-import { useFileDrop } from './useFileDrop';
-import { useFinalPages } from './useFinalPages';
-import { useSourceSession } from './useSourceSession';
+import { useFileDrop } from './file-drop.hook';
+import { useFinalPages } from './final-pages.hook';
+import { useSourceSession } from './source-session.hook';
 
 export function useFiles({
     onFilesAdded,

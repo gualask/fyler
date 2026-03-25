@@ -2,12 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { IconCheck } from '@tabler/icons-react';
 
 import type { FileEdits, FinalPage, SourceFile } from '@/domain';
-import type { RotationDirection } from '@/domain/fileEdits';
-import { emptyFileEdits } from '@/domain/fileEdits';
-import { usePdfControls } from '../hooks/usePdfControls';
-import { useLazyPdfRender } from '@/pdf/useLazyPdfRender';
+import type { RotationDirection } from '@/domain/file-edits';
+import { emptyFileEdits } from '@/domain/file-edits';
+import { usePdfControls } from '../hooks/pdf-controls.hook';
+import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/pdf';
 import { useTranslation } from '@/i18n';
-import { buildThumbnailRenderRequest } from '@/pdf/renderProfiles';
 import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';
 import { PdfToolbar } from '../controls/PdfToolbar';

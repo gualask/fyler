@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n';
-import { useAppUpdater } from '@/hooks/useAppUpdater';
+import { useAppUpdater } from '@/hooks';
 
 export function UpdateDialog() {
     const { t } = useTranslation();

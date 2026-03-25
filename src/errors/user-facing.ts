@@ -1,5 +1,5 @@
 import type { TranslationKey, InterpolationValues } from '@/i18n';
-import { getErrorMessage, parseAppErrorPayload, toInterpolationValues } from './appError';
+import { getErrorMessage, parseAppErrorPayload, toInterpolationValues } from './app-error';
 
 const APP_ERROR_CODE_TO_I18N_KEY: Record<string, TranslationKey> = {
     no_pages_selected: 'errors.no_pages_selected',

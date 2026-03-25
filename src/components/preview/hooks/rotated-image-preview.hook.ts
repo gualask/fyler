@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { QuarterTurn } from '@/domain';
-import { renderRotatedImage } from '../utils/renderImage';
+import { renderRotatedImage } from '../utils/render-image';
 
 export function useRotatedImagePreview(imageSrc: string | undefined, imageQuarterTurns: QuarterTurn, useA4Container: boolean) {
     const [rotatedImagePreview, setRotatedImagePreview] = useState<{ key: string; src: string } | null>(null);

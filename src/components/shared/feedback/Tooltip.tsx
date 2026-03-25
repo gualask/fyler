@@ -1,11 +1,11 @@
 import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 
-import type { TooltipPlacement } from './tooltipPlacement';
-import { useResolvedTooltipPlacement } from './useResolvedTooltipPlacement';
+import type { TooltipPlacement } from './tooltip-placement';
+import { useResolvedTooltipPlacement } from './resolved-tooltip-placement.hook';
 
 import './tooltip.css';
 
-export type { TooltipAlign, TooltipSide } from './tooltipPlacement';
+export type { TooltipAlign, TooltipSide } from './tooltip-placement';
 
 export type TooltipTriggerRenderProps = {
     open: boolean;

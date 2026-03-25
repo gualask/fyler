@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
 import type { FileEdits, SourceFile } from '@/domain';
-import type { RotationDirection } from '@/domain/fileEdits';
-import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/fileEdits';
-import { useElementWidth } from '../hooks/useElementWidth';
+import type { RotationDirection } from '@/domain/file-edits';
+import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/file-edits';
+import { useElementWidth } from '../hooks/element-width.hook';
 import { useTranslation } from '@/i18n';
 import { getPreviewUrl } from '@/platform';
 import { ColumnHeader } from '../../shared/layout/ColumnHeader';

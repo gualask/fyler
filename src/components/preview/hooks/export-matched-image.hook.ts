@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { ImageFit, QuarterTurn } from '@/domain';
 import { getImageExportPreviewLayout } from '@/platform';
-import { renderExportMatchedImage } from '../utils/renderImage';
+import { renderExportMatchedImage } from '../utils/render-image';
 
 export function useExportMatchedImage(
     imageSrc: string | undefined,

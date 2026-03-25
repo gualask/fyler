@@ -1,1 +1,1 @@
-export { useFiles } from './useFiles';
+export { useFiles } from './files.hook';

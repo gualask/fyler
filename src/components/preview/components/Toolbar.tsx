@@ -8,7 +8,7 @@ import {
     IconZoomOut,
 } from '@tabler/icons-react';
 
-import type { RotationDirection } from '@/domain/fileEdits';
+import type { RotationDirection } from '@/domain/file-edits';
 import { useTranslation } from '@/i18n';
 import type { MoveControl } from '../types';
 

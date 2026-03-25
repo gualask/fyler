@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 
-import { quarterTurnsToDegrees } from '@/domain/fileEdits';
+import { quarterTurnsToDegrees } from '@/domain/file-edits';
 import { getPreviewUrl } from '@/platform';
 import { pdfjsLib, renderPdfPage } from './render';
-import { PdfCacheContext, getPdfRenderCacheKey, type PdfRenderRequest } from './usePdfCache';
+import { PdfCacheContext, getPdfRenderCacheKey, type PdfRenderRequest } from './pdf-cache.hook';
 import type { SourceFile } from '@/domain';
 
 export function PdfCacheProvider({ children }: { children: ReactNode }) {

@@ -1,2 +1,2 @@
-export { getErrorMessage, parseAppErrorPayload, toInterpolationValues, type AppErrorPayload } from './appError';
-export { formatUserFacingError } from './userFacing';
+export { getErrorMessage, parseAppErrorPayload, toInterpolationValues, type AppErrorPayload } from './app-error';
+export { formatUserFacingError } from './user-facing';
