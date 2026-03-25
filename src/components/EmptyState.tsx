@@ -1,6 +1,5 @@
 import { IconFileUpload, IconPlus } from '@tabler/icons-react';
 import { useTranslation } from '@/i18n';
-import { TUTORIAL_TARGETS } from '@/components/tutorial';
 
 interface EmptyStateProps {
     onAddFiles: () => void;
@@ -12,7 +11,6 @@ export function EmptyState({ onAddFiles }: EmptyStateProps) {
     return (
         <button
             type="button"
-            data-tutorial={TUTORIAL_TARGETS.fileList}
             onClick={onAddFiles}
             className="group flex min-h-0 flex-1 bg-ui-bg p-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent"
         >
@@ -26,7 +24,10 @@ export function EmptyState({ onAddFiles }: EmptyStateProps) {
                 <p className="empty-state-enter max-w-md text-sm text-ui-text-muted" style={{ animationDelay: '160ms' }}>
                     {t('emptyState.description')}
                 </p>
-                <span className="empty-state-enter mt-2 inline-flex items-center gap-2 text-sm font-medium text-ui-accent-on-soft transition-colors group-hover:text-ui-accent" style={{ animationDelay: '240ms' }}>
+                <span
+                    className="empty-state-enter mt-2 inline-flex items-center gap-2 text-sm font-medium text-ui-accent-on-soft transition-colors group-hover:text-ui-accent"
+                    style={{ animationDelay: '240ms' }}
+                >
                     <IconPlus className="h-4 w-4" />
                     {t('emptyState.addFiles')}
                 </span>

@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from 'react';
 import { useTranslation } from '@/i18n';
 import { TUTORIAL_STEPS } from './steps';
+import { TUTORIAL_DATA_ATTR } from './targetProps';
 
 interface Props {
     currentStep: number;
@@ -71,7 +72,7 @@ function TutorialCard({
 const PADDING = 8;
 
 function getTargetRect(target: string): TargetRect | null {
-    const el = document.querySelector(`[data-tutorial="${target}"]`);
+    const el = document.querySelector(`[${TUTORIAL_DATA_ATTR}="${target}"]`);
     if (!el) return null;
     const r = el.getBoundingClientRect();
     return {

@@ -1,6 +1,6 @@
 import { IconArrowsMinimize, IconDownload, IconEye, IconHelp } from '@tabler/icons-react';
 import { useTranslation } from '@/i18n';
-import { TUTORIAL_TARGETS } from '@/components/tutorial';
+import { TUTORIAL_TARGETS, tutorialTargetProps } from '@/components/tutorial';
 import { AppSettingsMenu, type AppSettingsMenuProps } from './AppSettingsMenu';
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
     canPreview: boolean;
     onQuickAdd: () => void;
     onHelp: () => void;
+    canHelp: boolean;
 }
 
 export function AppHeader({
@@ -21,6 +22,7 @@ export function AppHeader({
     canPreview,
     onQuickAdd,
     onHelp,
+    canHelp,
 }: Props) {
     const { t } = useTranslation();
 
@@ -34,30 +36,30 @@ export function AppHeader({
                 <div className="mx-1 h-5 w-px bg-ui-border" />
                 <div className="flex items-center gap-2">
                     <AppSettingsMenu {...settings} />
-                    <button onClick={onQuickAdd} className="btn-ghost" title={t('header.quickAdd')}>
+                    <button onClick={onQuickAdd} className="btn-ghost btn-toolbar" title={t('header.quickAdd')}>
                         <IconArrowsMinimize className="h-4 w-4" />
                         {t('header.quickAdd')}
                     </button>
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                <button onClick={onHelp} className="btn-ghost">
+                <button disabled={!canHelp} onClick={onHelp} className="btn-ghost btn-toolbar">
                     <IconHelp className="h-4 w-4" />
                     {t('header.help')}
                 </button>
                 <button
                     disabled={!canPreview}
                     onClick={onPreview}
-                    className="btn-ghost"
+                    className="btn-ghost btn-toolbar"
                 >
                     <IconEye className="h-4 w-4" />
                     {t('header.preview')}
                 </button>
                 <button
-                    data-tutorial={TUTORIAL_TARGETS.export}
+                    {...tutorialTargetProps(TUTORIAL_TARGETS.export)}
                     disabled={!canExport}
                     onClick={onExport}
-                    className="btn-primary"
+                    className="btn-primary btn-toolbar"
                 >
                     <IconDownload className="h-5 w-5" />
                     {t('header.exportPdf')}

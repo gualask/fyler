@@ -196,17 +196,20 @@ body {
            p-1.5 text-ui-text-muted transition-[colors,transform] hover:bg-ui-surface-hover hover:text-ui-text-secondary
            active:scale-[0.93];
   }
-  .btn-primary,
-  .btn-primary-lg,
-  .btn-ghost,
-  .btn-ghost-sm,
-  .btn-icon {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted
-           focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface disabled:cursor-not-allowed;
-  }
-  .btn-icon-active {
-    @apply bg-ui-accent-soft text-ui-accent-on-soft;
-  }
+	  .btn-primary,
+	  .btn-primary-lg,
+	  .btn-ghost,
+	  .btn-ghost-sm,
+	  .btn-icon {
+	    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted
+	           focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface disabled:cursor-not-allowed;
+	  }
+	  .btn-toolbar {
+	    @apply h-9;
+	  }
+	  .btn-icon-active {
+	    @apply bg-ui-accent-soft text-ui-accent-on-soft;
+	  }
   /* ── Toggle (pulsante "Tutti/Nessuna" e opzioni SegmentedControl) ── */
   .toggle-on {
     @apply bg-ui-accent border-ui-accent text-white;

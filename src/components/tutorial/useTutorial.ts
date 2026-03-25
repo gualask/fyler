@@ -39,8 +39,8 @@ export function useTutorial() {
         });
     }, []);
 
-    // Called when first files are added — triggers tutorial if not seen
-    const onFirstFilesAdded = useCallback(() => {
+    // Called when files are first added — triggers tutorial if not seen
+    const maybeAutoStartAfterFilesAdded = useCallback(() => {
         if (tutorialSeen) return;
         if (currentStep !== null) return;
         if (startTimeoutRef.current !== null) return;
@@ -66,5 +66,5 @@ export function useTutorial() {
         markTutorialSeen();
     }, [currentStep, markTutorialSeen]);
 
-    return { currentStep, isActive, start, next, skip: complete, onFirstFilesAdded };
+    return { currentStep, isActive, start, next, skip: complete, maybeAutoStartAfterFilesAdded };
 }

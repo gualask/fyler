@@ -60,7 +60,7 @@ export function AppSettingsMenu({ isDark, accent, onToggleTheme, onSetAccent, on
             <button
                 type="button"
                 className={[
-                    'btn-ghost',
+                    'btn-ghost btn-toolbar',
                     open ? 'bg-ui-accent-soft text-ui-accent-on-soft' : '',
                 ].filter(Boolean).join(' ')}
                 aria-label={t('header.settings')}

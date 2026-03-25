@@ -25,7 +25,7 @@ import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { UpdateDialog } from '@/components/UpdateDialog';
 import { SupportDialog } from '@/components/support/SupportDialog';
 import { useSupportDiagnostics } from '@/components/support/useSupportDiagnostics';
-import { TutorialOverlay, useTutorial, TUTORIAL_TARGETS } from '@/components/tutorial';
+import { TutorialOverlay, useTutorial, useTutorialFilesAddedHandler, tutorialTargetProps, TUTORIAL_TARGETS } from '@/components/tutorial';
 import { useTranslation } from '@/i18n';
 
 function AppContent() {
@@ -33,13 +33,9 @@ function AppContent() {
     const quickAdd = useQuickAdd();
     const notifications = useAppNotifications();
     const tutorial = useTutorial();
+    const onFilesAdded = useTutorialFilesAddedHandler({ quickAdd, tutorial });
     const filesApi = useFiles({
-        onFilesAdded: (ids) => {
-            quickAdd.onFilesAdded(ids);
-            if (!quickAdd.isQuickAdd && !quickAdd.isTransitioning) {
-                tutorial.onFirstFilesAdded();
-            }
-        },
+        onFilesAdded,
         onDropError: notifications.showError,
     });
     const { isDark, toggleTheme, accent, setAccent } = useTheme();
@@ -100,6 +96,7 @@ function AppContent() {
                         canPreview={filesApi.finalPages.length > 0}
                         onQuickAdd={handleEnterQuickAdd}
                         onHelp={tutorial.start}
+                        canHelp={filesApi.files.length > 0}
                     />
 
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -110,7 +107,7 @@ function AppContent() {
                         ) : (
                             <>
                                 <div className="grid min-h-0 flex-1 overflow-hidden" style={{ gridTemplateColumns: 'minmax(200px, 30fr) minmax(200px, 40fr) minmax(200px, 30fr)' }}>
-                                    <aside data-tutorial={TUTORIAL_TARGETS.fileList} className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
+                                    <aside {...tutorialTargetProps(TUTORIAL_TARGETS.fileList)} className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                                         <FileList
                                             files={filesApi.files}
                                             finalPages={filesApi.finalPages}
@@ -122,7 +119,7 @@ function AppContent() {
                                         />
                                     </aside>
 
-                                    <section data-tutorial={TUTORIAL_TARGETS.pagePicker} className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
+                                    <section {...tutorialTargetProps(TUTORIAL_TARGETS.pagePicker)} className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                                         <PagePicker
                                             key={filesApi.selectedFile?.id}
                                             file={filesApi.selectedFile}
@@ -139,7 +136,7 @@ function AppContent() {
                                         />
                                     </section>
 
-                                    <section data-tutorial={TUTORIAL_TARGETS.finalDocument} className="min-w-0 overflow-hidden bg-ui-output">
+                                    <section {...tutorialTargetProps(TUTORIAL_TARGETS.finalDocument)} className="min-w-0 overflow-hidden bg-ui-output">
                                         <FinalDocument
                                             finalPages={filesApi.finalPages}
                                             files={filesApi.files}
