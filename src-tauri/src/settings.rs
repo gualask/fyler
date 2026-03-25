@@ -9,6 +9,7 @@ pub struct StoredSettings {
     is_dark: bool,
     locale: Option<String>,
     accent: Option<String>,
+    tutorial_seen: Option<bool>,
 }
 
 fn sanitize_locale(locale: Option<String>) -> Option<String> {
@@ -45,6 +46,9 @@ pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppE
                 .get("accent")
                 .and_then(|v| v.as_str().map(|a| a.to_owned())),
         ),
+        tutorial_seen: store
+            .get("tutorialSeen")
+            .and_then(|v| v.as_bool()),
     })
 }
 
@@ -64,6 +68,9 @@ pub async fn save_settings(
         store.set("accent", accent);
     } else {
         store.delete("accent");
+    }
+    if let Some(seen) = settings.tutorial_seen {
+        store.set("tutorialSeen", seen);
     }
     store.save().context("impossibile salvare store")?;
     Ok(())

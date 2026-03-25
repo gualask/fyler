@@ -169,5 +169,12 @@
   "update.install": "Aggiorna",
   "update.notNow": "Non ora",
   "update.installing": "Installazione in corso…",
-  "update.progress": "Download: {percent}%"
+  "update.progress": "Download: {percent}%",
+  "tutorial.step1": "Qui trovi i tuoi file. Puoi aggiungerne altri o rimuoverli.",
+  "tutorial.step2": "Seleziona le pagine che vuoi includere nel documento finale.",
+  "tutorial.step3": "Riordina le pagine con le frecce o trascinandole. Rimuovi quelle che non servono.",
+  "tutorial.step4": "Quando sei pronto, esporta il tuo PDF!",
+  "tutorial.next": "Avanti",
+  "tutorial.finish": "Fatto",
+  "tutorial.skip": "Salta"
 }

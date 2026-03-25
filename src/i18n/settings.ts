@@ -10,6 +10,7 @@ export interface AppSettings {
     isDark: boolean;
     locale?: Locale;
     accent?: AccentColor;
+    tutorialSeen?: boolean;
 }
 
 export async function loadSettings(): Promise<AppSettings> {

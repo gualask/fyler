@@ -1,5 +1,6 @@
 import { IconFileUpload, IconPlus } from '@tabler/icons-react';
 import { useTranslation } from '@/i18n';
+import { TUTORIAL_TARGETS } from '@/components/tutorial';
 
 interface EmptyStateProps {
     onAddFiles: () => void;
@@ -11,6 +12,7 @@ export function EmptyState({ onAddFiles }: EmptyStateProps) {
     return (
         <button
             type="button"
+            data-tutorial={TUTORIAL_TARGETS.fileList}
             onClick={onAddFiles}
             className="group flex min-h-0 flex-1 bg-ui-bg p-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent"
         >

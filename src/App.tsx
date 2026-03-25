@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { DiagnosticsProvider } from '@/diagnostics';
 import { PdfCacheProvider } from '@/pdf/PdfCacheProvider';
 import { useFiles } from '@/files/useFiles';
@@ -25,14 +25,21 @@ import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { UpdateDialog } from '@/components/UpdateDialog';
 import { SupportDialog } from '@/components/support/SupportDialog';
 import { useSupportDiagnostics } from '@/components/support/useSupportDiagnostics';
+import { TutorialOverlay, useTutorial, TUTORIAL_TARGETS } from '@/components/tutorial';
 import { AppPreferencesProvider, useTranslation } from '@/i18n';
 
 function AppContent() {
     const [showFinalPreview, setShowFinalPreview] = useState(false);
     const quickAdd = useQuickAdd();
     const notifications = useAppNotifications();
+    const tutorial = useTutorial();
     const filesApi = useFiles({
-        onFilesAdded: quickAdd.onFilesAdded,
+        onFilesAdded: (ids) => {
+            quickAdd.onFilesAdded(ids);
+            if (!quickAdd.isQuickAdd && !quickAdd.isTransitioning) {
+                tutorial.onFirstFilesAdded();
+            }
+        },
         onDropError: notifications.showError,
     });
     const { isDark, toggleTheme, accent, setAccent } = useTheme();
@@ -65,12 +72,6 @@ function AppContent() {
     const handleAddFiles = useAddFilesAction({ files: filesApi, notifications });
     const { handleEnterQuickAdd, handleExitQuickAdd } = useQuickAddActions({ quickAdd, notifications });
 
-    // TODO: Implement tutorial wizard — step-by-step guided tour
-    // showing the user the workflow: add files → select pages → reorder → export
-    const handleHelp = useCallback(() => {
-        // Launch tutorial wizard here
-    }, []);
-
     return (
         <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
             <UpdateDialog />
@@ -98,7 +99,7 @@ function AppContent() {
                         onPreview={() => setShowFinalPreview(true)}
                         canPreview={filesApi.finalPages.length > 0}
                         onQuickAdd={handleEnterQuickAdd}
-                        onHelp={handleHelp}
+                        onHelp={tutorial.start}
                     />
 
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -109,7 +110,7 @@ function AppContent() {
                         ) : (
                             <>
                                 <div className="grid min-h-0 flex-1 overflow-hidden" style={{ gridTemplateColumns: 'minmax(200px, 30fr) minmax(200px, 40fr) minmax(200px, 30fr)' }}>
-                                    <aside className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
+                                    <aside data-tutorial={TUTORIAL_TARGETS.fileList} className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                                         <FileList
                                             files={filesApi.files}
                                             finalPages={filesApi.finalPages}
@@ -121,7 +122,7 @@ function AppContent() {
                                         />
                                     </aside>
 
-                                    <section className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
+                                    <section data-tutorial={TUTORIAL_TARGETS.pagePicker} className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
                                         <PagePicker
                                             key={filesApi.selectedFile?.id}
                                             file={filesApi.selectedFile}
@@ -138,7 +139,7 @@ function AppContent() {
                                         />
                                     </section>
 
-                                    <section className="min-w-0 overflow-hidden bg-ui-output">
+                                    <section data-tutorial={TUTORIAL_TARGETS.finalDocument} className="min-w-0 overflow-hidden bg-ui-output">
                                         <FinalDocument
                                             finalPages={filesApi.finalPages}
                                             files={filesApi.files}
@@ -186,6 +187,14 @@ function AppContent() {
                 onOpenGitHubIssues={openGitHubIssues}
                 onOpenReportBug={openReportBug}
             />
+
+            {tutorial.isActive && tutorial.currentStep !== null && (
+                <TutorialOverlay
+                    currentStep={tutorial.currentStep}
+                    onNext={tutorial.next}
+                    onSkip={tutorial.skip}
+                />
+            )}
 
             {showFinalPreview && (
                 <PreviewModal

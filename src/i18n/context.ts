@@ -7,9 +7,11 @@ export type AppPreferencesContextValue = {
     isDark: boolean;
     locale: Locale;
     accent: AccentColor;
+    tutorialSeen: boolean;
     setLocale: (locale: Locale) => void;
     toggleTheme: () => void;
     setAccent: (accent: AccentColor) => void;
+    markTutorialSeen: () => void;
 };
 
 export const AppPreferencesContext = createContext<AppPreferencesContextValue | null>(null);

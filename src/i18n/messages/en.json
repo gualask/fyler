@@ -169,5 +169,12 @@
   "update.install": "Update",
   "update.notNow": "Not now",
   "update.installing": "Installing…",
-  "update.progress": "Download: {percent}%"
+  "update.progress": "Download: {percent}%",
+  "tutorial.step1": "Here you'll find your files. You can add more or remove them.",
+  "tutorial.step2": "Select the pages you want to include in the final document.",
+  "tutorial.step3": "Reorder pages with the arrows or by dragging. Remove the ones you don't need.",
+  "tutorial.step4": "When you're ready, export your PDF!",
+  "tutorial.next": "Next",
+  "tutorial.finish": "Done",
+  "tutorial.skip": "Skip"
 }

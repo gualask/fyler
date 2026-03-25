@@ -15,6 +15,7 @@ type AppPreferencesState = {
     isDark: boolean;
     locale: Locale;
     accent: AccentColor;
+    tutorialSeen: boolean;
 };
 function resolveInitialLocale(storedLocale: Locale | undefined): Locale {
     if (isLocale(storedLocale)) {
@@ -29,6 +30,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
         isDark: false,
         locale: 'en',
         accent: 'indigo',
+        tutorialSeen: false,
     });
     const [canPersistPreferences, setCanPersistPreferences] = useState(false);
     const hasLocalChangesRef = useRef(false);
@@ -43,6 +45,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
                     isDark: settings.isDark,
                     locale: resolveInitialLocale(settings.locale),
                     accent: settings.accent ?? 'indigo',
+                    tutorialSeen: settings.tutorialSeen ?? false,
                 });
                 setCanPersistPreferences(true);
             })
@@ -52,6 +55,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
                     isDark: false,
                     locale: detectPreferredLocale(navigator.languages),
                     accent: 'indigo',
+                    tutorialSeen: false,
                 });
                 setCanPersistPreferences(false);
             });
@@ -96,14 +100,20 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
         updatePreferences((current) => current.accent === accent ? current : { ...current, accent });
     }, [updatePreferences]);
 
+    const markTutorialSeen = useCallback(() => {
+        updatePreferences((current) => current.tutorialSeen ? current : { ...current, tutorialSeen: true });
+    }, [updatePreferences]);
+
     const value = useMemo<AppPreferencesContextValue>(() => ({
         isDark: preferences.isDark,
         locale: preferences.locale,
         accent: preferences.accent,
+        tutorialSeen: preferences.tutorialSeen,
         setLocale,
         toggleTheme,
         setAccent,
-    }), [preferences.isDark, preferences.locale, preferences.accent, setLocale, toggleTheme, setAccent]);
+        markTutorialSeen,
+    }), [preferences.isDark, preferences.locale, preferences.accent, preferences.tutorialSeen, setLocale, toggleTheme, setAccent, markTutorialSeen]);
 
     return (
         <AppPreferencesContext.Provider value={value}>

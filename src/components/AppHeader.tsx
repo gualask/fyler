@@ -1,5 +1,6 @@
 import { IconArrowsMinimize, IconDownload, IconEye, IconHelp } from '@tabler/icons-react';
 import { useTranslation } from '@/i18n';
+import { TUTORIAL_TARGETS } from '@/components/tutorial';
 import { AppSettingsMenu, type AppSettingsMenuProps } from './AppSettingsMenu';
 
 interface Props {
@@ -53,6 +54,7 @@ export function AppHeader({
                     {t('header.preview')}
                 </button>
                 <button
+                    data-tutorial={TUTORIAL_TARGETS.export}
                     disabled={!canExport}
                     onClick={onExport}
                     className="btn-primary"
