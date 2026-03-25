@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAppPreferences } from '@/i18n/context';
+import { usePreferences } from '@/preferences';
 import { TUTORIAL_STEPS } from './steps';
 
 export function useTutorial() {
-    const { tutorialSeen, markTutorialSeen } = useAppPreferences();
+    const { tutorialSeen, markTutorialSeen } = usePreferences();
     const [currentStep, setCurrentStep] = useState<number | null>(null);
     const startTimeoutRef = useRef<number | null>(null);
     const markSeenOnCloseRef = useRef(false);

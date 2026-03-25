@@ -3,7 +3,7 @@ import { createContext, useContext } from 'react';
 import type { Locale } from './locale';
 import type { AccentColor } from './settings';
 
-export type AppPreferencesContextValue = {
+export type PreferencesContextValue = {
     isDark: boolean;
     locale: Locale;
     accent: AccentColor;
@@ -14,12 +14,12 @@ export type AppPreferencesContextValue = {
     markTutorialSeen: () => void;
 };
 
-export const AppPreferencesContext = createContext<AppPreferencesContextValue | null>(null);
+export const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 
-export function useAppPreferences() {
-    const context = useContext(AppPreferencesContext);
+export function usePreferences() {
+    const context = useContext(PreferencesContext);
     if (!context) {
-        throw new Error('AppPreferencesProvider not found');
+        throw new Error('PreferencesProvider not found');
     }
 
     return context;

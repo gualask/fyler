@@ -9,9 +9,9 @@ import {
 
 import { detectPreferredLocale, isLocale, type Locale } from './locale';
 import { ACCENT_COLORS, loadSettings, saveSettings, type AccentColor } from './settings';
-import { AppPreferencesContext, type AppPreferencesContextValue } from './context';
+import { PreferencesContext, type PreferencesContextValue } from './context';
 
-type AppPreferencesState = {
+type PreferencesState = {
     isDark: boolean;
     locale: Locale;
     accent: AccentColor;
@@ -25,8 +25,8 @@ function resolveInitialLocale(storedLocale: Locale | undefined): Locale {
     return detectPreferredLocale(navigator.languages);
 }
 
-export function AppPreferencesProvider({ children }: { children: ReactNode }) {
-    const [preferences, setPreferences] = useState<AppPreferencesState>({
+export function PreferencesProvider({ children }: { children: ReactNode }) {
+    const [preferences, setPreferences] = useState<PreferencesState>({
         isDark: false,
         locale: 'en',
         accent: 'indigo',
@@ -82,7 +82,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
         void saveSettings(preferences);
     }, [canPersistPreferences, preferences]);
 
-    const updatePreferences = useCallback((updater: (current: AppPreferencesState) => AppPreferencesState) => {
+    const updatePreferences = useCallback((updater: (current: PreferencesState) => PreferencesState) => {
         hasLocalChangesRef.current = true;
         setCanPersistPreferences(true);
         setPreferences((current) => updater(current));
@@ -104,7 +104,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
         updatePreferences((current) => current.tutorialSeen ? current : { ...current, tutorialSeen: true });
     }, [updatePreferences]);
 
-    const value = useMemo<AppPreferencesContextValue>(() => ({
+    const value = useMemo<PreferencesContextValue>(() => ({
         isDark: preferences.isDark,
         locale: preferences.locale,
         accent: preferences.accent,
@@ -116,8 +116,8 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     }), [preferences.isDark, preferences.locale, preferences.accent, preferences.tutorialSeen, setLocale, toggleTheme, setAccent, markTutorialSeen]);
 
     return (
-        <AppPreferencesContext.Provider value={value}>
+        <PreferencesContext.Provider value={value}>
             {children}
-        </AppPreferencesContext.Provider>
+        </PreferencesContext.Provider>
     );
 }

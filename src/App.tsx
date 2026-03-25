@@ -5,7 +5,7 @@ import { useFiles } from '@/files/useFiles';
 import { useAppNotifications } from '@/hooks/useAppNotifications';
 import { useQuickAdd } from '@/hooks/useQuickAdd';
 import { useDiagnostics } from '@/diagnostics/useDiagnostics';
-import { useTheme } from '@/i18n';
+import { PreferencesProvider, useTheme } from '@/preferences';
 import { useOptimize } from '@/hooks/useOptimize';
 import { useExportAction } from '@/hooks/useExportAction';
 import { useAddFilesAction } from '@/hooks/useAddFilesAction';
@@ -26,7 +26,7 @@ import { UpdateDialog } from '@/components/UpdateDialog';
 import { SupportDialog } from '@/components/support/SupportDialog';
 import { useSupportDiagnostics } from '@/components/support/useSupportDiagnostics';
 import { TutorialOverlay, useTutorial, TUTORIAL_TARGETS } from '@/components/tutorial';
-import { AppPreferencesProvider, useTranslation } from '@/i18n';
+import { useTranslation } from '@/i18n';
 
 function AppContent() {
     const [showFinalPreview, setShowFinalPreview] = useState(false);
@@ -235,11 +235,11 @@ function AppShell() {
 
 function App() {
     return (
-        <AppPreferencesProvider>
+        <PreferencesProvider>
             <DiagnosticsProvider>
                 <AppShell />
             </DiagnosticsProvider>
-        </AppPreferencesProvider>
+        </PreferencesProvider>
     );
 }
 

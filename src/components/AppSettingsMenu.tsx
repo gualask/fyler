@@ -9,8 +9,8 @@ import {
 import { useRef, useState } from 'react';
 import { useDismissableMenu } from '@/hooks/useDismissableMenu';
 import { useTranslation } from '@/i18n';
-import { SUPPORTED_LOCALES } from '@/i18n/locale';
-import { ACCENT_COLORS, type AccentColor } from '@/i18n/settings';
+import { ACCENT_COLORS, type AccentColor } from '@/preferences';
+import { SUPPORTED_LOCALES } from '@/preferences';
 
 type Submenu = 'language' | 'theme' | null;
 

@@ -1,5 +1,4 @@
-export { AppPreferencesProvider } from './provider';
-export { useTheme, useTranslation } from './hooks';
+export { useTranslation } from './hooks';
 export { formatImportWarning, formatSkippedFile, formatPageSpecError } from './formatters';
 export type {
     InterpolationValues,

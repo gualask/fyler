@@ -6,17 +6,17 @@ export type AccentColor = 'indigo' | 'teal' | 'amber' | 'blue';
 
 export const ACCENT_COLORS: AccentColor[] = ['indigo', 'teal', 'amber', 'blue'];
 
-export interface AppSettings {
+export interface PreferencesSettings {
     isDark: boolean;
     locale?: Locale;
     accent?: AccentColor;
     tutorialSeen?: boolean;
 }
 
-export async function loadSettings(): Promise<AppSettings> {
-    return invoke<AppSettings>('load_settings');
+export async function loadSettings(): Promise<PreferencesSettings> {
+    return invoke<PreferencesSettings>('load_settings');
 }
 
-export async function saveSettings(settings: AppSettings): Promise<void> {
+export async function saveSettings(settings: PreferencesSettings): Promise<void> {
     await invoke('save_settings', { settings });
 }

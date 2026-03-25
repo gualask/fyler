@@ -1,17 +1,12 @@
 import { useCallback } from 'react';
 
-import { useAppPreferences } from './context';
+import { usePreferences } from '@/preferences';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from './resources';
 import { resources } from './resources';
 import { translate, translatePlural } from './translate';
 
-export function useTheme() {
-    const { isDark, toggleTheme, accent, setAccent } = useAppPreferences();
-    return { isDark, toggleTheme, accent, setAccent };
-}
-
 export function useTranslation() {
-    const { locale, setLocale } = useAppPreferences();
+    const { locale, setLocale } = usePreferences();
     const dictionary = resources[locale];
 
     const t = useCallback((
