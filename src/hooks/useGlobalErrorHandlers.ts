@@ -1,10 +1,7 @@
 import { useEffect } from 'react';
 
 import { useDiagnostics } from '@/diagnostics/useDiagnostics';
-
-function toErrorMessage(value: unknown): string {
-    return value instanceof Error ? value.message : String(value);
-}
+import { getErrorMessage } from '@/errors';
 
 export function useGlobalErrorHandlers(onError: (message: string) => void) {
     const { record } = useDiagnostics();
@@ -12,13 +9,13 @@ export function useGlobalErrorHandlers(onError: (message: string) => void) {
     useEffect(() => {
         const handleError = (event: ErrorEvent) => {
             event.preventDefault();
-            const message = toErrorMessage(event.error ?? event.message);
+            const message = getErrorMessage(event.error ?? event.message);
             record({ category: 'app', severity: 'error', message: `Unhandled window error: ${message}` });
             onError(message);
         };
         const handleRejection = (event: PromiseRejectionEvent) => {
             event.preventDefault();
-            const message = toErrorMessage(event.reason);
+            const message = getErrorMessage(event.reason);
             record({ category: 'app', severity: 'error', message: `Unhandled promise rejection: ${message}` });
             onError(message);
         };

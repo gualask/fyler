@@ -4,6 +4,7 @@ use anyhow::{bail, Context, Result};
 use image::DynamicImage;
 use lopdf::{Document as PdfDoc, Object};
 
+use crate::error::UserFacingError;
 use crate::models::OptimizeOptions;
 use crate::pdf_image::{decide_image_embed, load_source_image, prepare_pdf_image};
 
@@ -258,10 +259,14 @@ pub fn detect_kind_from_ext(path: &str) -> Option<&'static str> {
 fn apply_pdf_rotation(doc: &mut PdfDoc, page_num: u32, quarter_turns: u8) -> Result<()> {
     let page_obj_id = {
         let pages = doc.get_pages();
+        let total = pages.len() as u32;
         pages
             .get(&page_num)
             .copied()
-            .with_context(|| format!("Pagina {page_num} non trovata"))?
+            .ok_or_else(|| anyhow::Error::new(UserFacingError::with_meta(
+                "page_out_of_range",
+                serde_json::json!({ "pageNum": page_num, "total": total }),
+            )))?
     };
 
     let page_dict = doc.get_dictionary_mut(page_obj_id)?;
@@ -278,7 +283,10 @@ pub fn prepare_pdf_page_doc(mut doc: PdfDoc, page_num: u32, quarter_turns: u8) -
     let all_pages: Vec<u32> = doc.get_pages().keys().copied().collect();
     let total = all_pages.len() as u32;
     if page_num == 0 || page_num > total {
-        bail!("Pagina {page_num} non esiste ({total} pagine totali)");
+        return Err(anyhow::Error::new(UserFacingError::with_meta(
+            "page_out_of_range",
+            serde_json::json!({ "pageNum": page_num, "total": total }),
+        )));
     }
 
     if quarter_turns != 0 {
@@ -303,7 +311,7 @@ pub fn prepare_pdf_page_doc(mut doc: PdfDoc, page_num: u32, quarter_turns: u8) -
 
 pub fn prepare_pdf_subset_doc(mut doc: PdfDoc, pages: &[(u32, u8)]) -> Result<PdfDoc> {
     if pages.is_empty() {
-        bail!("Nessuna pagina selezionata");
+        return Err(anyhow::Error::new(UserFacingError::new("no_pages_selected")));
     }
 
     let all_pages: Vec<u32> = doc.get_pages().keys().copied().collect();
@@ -313,10 +321,13 @@ pub fn prepare_pdf_subset_doc(mut doc: PdfDoc, pages: &[(u32, u8)]) -> Result<Pd
 
     for (page_num, quarter_turns) in pages {
         if *page_num == 0 || *page_num > total {
-            bail!("Pagina {page_num} non esiste ({total} pagine totali)");
+            return Err(anyhow::Error::new(UserFacingError::with_meta(
+                "page_out_of_range",
+                serde_json::json!({ "pageNum": page_num, "total": total }),
+            )));
         }
         if *page_num <= previous_page {
-            bail!("Le pagine del subset devono essere in ordine crescente senza duplicati");
+            return Err(anyhow::Error::new(UserFacingError::new("subset_invalid_order")));
         }
         previous_page = *page_num;
         selected.insert(*page_num);

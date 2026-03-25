@@ -1,4 +1,5 @@
 import type { DiagnosticMetadataValue } from './types';
+import { getErrorMessage } from '@/errors';
 
 const UNIX_PATH_PATTERN = /(^|[\s("'`])\/(?:[^/\s"'`]+\/)*[^/\s"'`]+/g;
 const WINDOWS_PATH_PATTERN = /(^|[\s("'`])[A-Za-z]:\\(?:[^\\\s"'`]+\\)*[^\\\s"'`]+/g;
@@ -25,5 +26,5 @@ export function sanitizeMetadata(
 }
 
 export function toDiagnosticMessage(error: unknown): string {
-    return sanitizeText(error instanceof Error ? error.message : String(error));
+    return sanitizeText(getErrorMessage(error));
 }

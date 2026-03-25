@@ -2,13 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics/appEvents';
 import { formatImportWarning, useTranslation } from '@/i18n';
+import { formatUserFacingError } from '@/errors';
 
 import { useGlobalErrorHandlers } from './useGlobalErrorHandlers';
 import { useTauriNotificationEvents } from './useTauriNotificationEvents';
-
-function toErrorMessage(value: unknown): string {
-    return value instanceof Error ? value.message : String(value);
-}
 
 type StatusState =
     | { kind: 'error'; message: string }
@@ -71,8 +68,8 @@ export function useAppNotifications() {
     }, []);
 
     const showError = useCallback((error: unknown) => {
-        setStatus({ kind: 'error', message: toErrorMessage(error) });
-    }, []);
+        setStatus({ kind: 'error', message: formatUserFacingError(error, t) });
+    }, [t]);
 
     const statusMessage = useMemo(() => {
         if (!status) return null;

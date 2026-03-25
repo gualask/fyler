@@ -55,7 +55,7 @@ fn compression_class(path: &str, format: Option<ImageFormat>) -> Result<SourceCo
 }
 
 fn sniff_webp_compression_class(path: &str) -> Result<SourceCompressionClass> {
-    let bytes = std::fs::read(path).with_context(|| format!("Errore lettura immagine '{path}'"))?;
+    let bytes = std::fs::read(path).with_context(|| format!("Failed to read image '{path}'"))?;
     if bytes.len() < 16 || &bytes[0..4] != b"RIFF" || &bytes[8..12] != b"WEBP" {
         return Ok(SourceCompressionClass::LosslessOrUnknown);
     }

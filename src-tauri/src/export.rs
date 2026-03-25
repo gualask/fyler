@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use anyhow::{bail, Context};
 use lopdf::Document as PdfDoc;
 use tauri::{AppHandle, Emitter};
 
@@ -9,6 +8,7 @@ use crate::optimize;
 use crate::pdf::{
     image_to_pdf_doc, prepare_pdf_page_doc, prepare_pdf_subset_doc, quarter_turns_to_degrees,
 };
+use crate::error::UserFacingError;
 use crate::source_registry::SourceRegistry;
 
 #[derive(serde::Serialize, Clone)]
@@ -72,7 +72,10 @@ pub fn build_documents(
         let page = &req.pages[index];
         let source = registry
             .get(&page.file_id)
-            .with_context(|| format!("Source '{}' not found", page.file_id))?;
+            .ok_or_else(|| anyhow::Error::new(UserFacingError::with_meta(
+                "source_not_found",
+                serde_json::json!({ "fileId": page.file_id }),
+            )))?;
         let edits = req.edits.get(&page.file_id);
 
         if source.kind == "image" {
@@ -89,8 +92,12 @@ pub fn build_documents(
         let source_doc = if let Some(doc) = pdf_cache.get(&page.file_id) {
             doc.clone()
         } else {
-            let doc = PdfDoc::load(&source.original_path)
-                .with_context(|| format!("Failed to open PDF '{}'", source.name))?;
+            let doc = PdfDoc::load(&source.original_path).map_err(|_| {
+                anyhow::Error::new(UserFacingError::with_meta(
+                    "open_pdf_failed",
+                    serde_json::json!({ "name": source.name }),
+                ))
+            })?;
             pdf_cache.insert(page.file_id.clone(), doc.clone());
             doc
         };
@@ -181,7 +188,7 @@ pub fn export_pdf(
     emit_progress(app, "preparing-documents", 0);
     let docs = build_documents(&req, registry, image_fit)?;
     if docs.is_empty() {
-        bail!("No documents to merge");
+        return Err(anyhow::Error::new(UserFacingError::new("no_documents_to_merge")));
     }
 
     emit_progress(app, "merging-pages", 60);

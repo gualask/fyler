@@ -3,6 +3,12 @@ use tauri_plugin_store::StoreExt;
 
 use crate::error::AppError;
 
+const SETTINGS_STORE_FILE: &str = "settings.json";
+const KEY_IS_DARK: &str = "isDark";
+const KEY_LOCALE: &str = "locale";
+const KEY_ACCENT: &str = "accent";
+const KEY_TUTORIAL_SEEN: &str = "tutorialSeen";
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoredSettings {
@@ -29,25 +35,25 @@ fn sanitize_accent(accent: Option<String>) -> Option<String> {
 #[tauri::command]
 pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppError> {
     let store = app
-        .store("settings.json")
-        .context("impossibile aprire store")?;
+        .store(SETTINGS_STORE_FILE)
+        .context("failed to open settings store")?;
     Ok(StoredSettings {
         is_dark: store
-            .get("isDark")
+            .get(KEY_IS_DARK)
             .and_then(|v| v.as_bool())
             .unwrap_or(false),
         locale: sanitize_locale(
             store
-                .get("locale")
+                .get(KEY_LOCALE)
                 .and_then(|v| v.as_str().map(|locale| locale.to_owned())),
         ),
         accent: sanitize_accent(
             store
-                .get("accent")
+                .get(KEY_ACCENT)
                 .and_then(|v| v.as_str().map(|a| a.to_owned())),
         ),
         tutorial_seen: store
-            .get("tutorialSeen")
+            .get(KEY_TUTORIAL_SEEN)
             .and_then(|v| v.as_bool()),
     })
 }
@@ -58,20 +64,27 @@ pub async fn save_settings(
     settings: StoredSettings,
 ) -> Result<(), AppError> {
     let store = app
-        .store("settings.json")
-        .context("impossibile aprire store")?;
-    store.set("isDark", settings.is_dark);
+        .store(SETTINGS_STORE_FILE)
+        .context("failed to open settings store")?;
+    store.set(KEY_IS_DARK, settings.is_dark);
+
     if let Some(locale) = sanitize_locale(settings.locale) {
-        store.set("locale", locale);
-    }
-    if let Some(accent) = sanitize_accent(settings.accent) {
-        store.set("accent", accent);
+        store.set(KEY_LOCALE, locale);
     } else {
-        store.delete("accent");
+        store.delete(KEY_LOCALE);
     }
+
+    if let Some(accent) = sanitize_accent(settings.accent) {
+        store.set(KEY_ACCENT, accent);
+    } else {
+        store.delete(KEY_ACCENT);
+    }
+
     if let Some(seen) = settings.tutorial_seen {
-        store.set("tutorialSeen", seen);
+        store.set(KEY_TUTORIAL_SEEN, seen);
+    } else {
+        store.delete(KEY_TUTORIAL_SEEN);
     }
-    store.save().context("impossibile salvare store")?;
+    store.save().context("failed to save settings store")?;
     Ok(())
 }
