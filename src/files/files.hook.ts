@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-
-import type { RotationDirection } from '@/domain/file-edits';
 import type { SourceFile } from '@/domain';
+import type { RotationDirection } from '@/domain/file-edits';
 import { useFileDrop } from './file-drop.hook';
 import { useFinalPages } from './final-pages.hook';
 import { useSourceSession } from './source-session.hook';
@@ -14,21 +13,31 @@ export function useFiles({
     onDropError?: (error: unknown) => void;
 } = {}) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [focusedSource, setFocusedSource] = useState<{ fileId: string; pageNum: number; flashKey: number } | null>(null);
+    const [focusedSource, setFocusedSource] = useState<{
+        fileId: string;
+        pageNum: number;
+        flashKey: number;
+    } | null>(null);
     const finalPagesApi = useFinalPages();
     const { addAllPagesForFile, removePagesForFile, clearAllPages } = finalPagesApi;
 
-    const handleSessionFilesAdded = useCallback((addedFiles: SourceFile[]) => {
-        for (const file of addedFiles) {
-            addAllPagesForFile(file);
-        }
-        onFilesAdded?.(addedFiles.map((file) => file.id));
-    }, [addAllPagesForFile, onFilesAdded]);
+    const handleSessionFilesAdded = useCallback(
+        (addedFiles: SourceFile[]) => {
+            for (const file of addedFiles) {
+                addAllPagesForFile(file);
+            }
+            onFilesAdded?.(addedFiles.map((file) => file.id));
+        },
+        [addAllPagesForFile, onFilesAdded],
+    );
 
-    const handleSessionFileRemoved = useCallback((file: SourceFile | null) => {
-        if (!file) return;
-        removePagesForFile(file.id);
-    }, [removePagesForFile]);
+    const handleSessionFileRemoved = useCallback(
+        (file: SourceFile | null) => {
+            if (!file) return;
+            removePagesForFile(file.id);
+        },
+        [removePagesForFile],
+    );
 
     const {
         files,
@@ -49,13 +58,16 @@ export function useFiles({
         [files, selectedId],
     );
 
-    const acceptFiles = useCallback(async (newFiles: typeof files) => {
-        const addedFiles = addSourceFiles(newFiles);
-        if (addedFiles.length) {
-            setSelectedId((prev) => prev ?? addedFiles[0].id);
-        }
-        return addedFiles;
-    }, [addSourceFiles]);
+    const acceptFiles = useCallback(
+        async (newFiles: typeof files) => {
+            const addedFiles = addSourceFiles(newFiles);
+            if (addedFiles.length) {
+                setSelectedId((prev) => prev ?? addedFiles[0].id);
+            }
+            return addedFiles;
+        },
+        [addSourceFiles],
+    );
 
     const addFiles = useCallback(async () => {
         const { files: addedFiles, skippedErrors } = await openAndAddSourceFiles();
@@ -70,14 +82,17 @@ export function useFiles({
         setFocusedSource(null);
     }, []);
 
-    const removeFile = useCallback((id: string) => {
-        if (id === selectedId) {
-            const remaining = files.filter((file) => file.id !== id);
-            setSelectedId(remaining.length ? remaining[0].id : null);
-        }
-        setFocusedSource((prev) => (prev?.fileId === id ? null : prev));
-        removeSourceFile(id);
-    }, [files, removeSourceFile, selectedId]);
+    const removeFile = useCallback(
+        (id: string) => {
+            if (id === selectedId) {
+                const remaining = files.filter((file) => file.id !== id);
+                setSelectedId(remaining.length ? remaining[0].id : null);
+            }
+            setFocusedSource((prev) => (prev?.fileId === id ? null : prev));
+            removeSourceFile(id);
+        },
+        [files, removeSourceFile, selectedId],
+    );
 
     const clearAllFiles = useCallback(() => {
         if (!files.length) return;
@@ -87,9 +102,12 @@ export function useFiles({
         clearSourceFiles();
     }, [clearAllPages, clearSourceFiles, files.length]);
 
-    const rotatePage = useCallback(async (fileId: string, pageNum: number, direction: RotationDirection) => {
-        await rotateSourcePage(fileId, pageNum, direction);
-    }, [rotateSourcePage]);
+    const rotatePage = useCallback(
+        async (fileId: string, pageNum: number, direction: RotationDirection) => {
+            await rotateSourcePage(fileId, pageNum, direction);
+        },
+        [rotateSourcePage],
+    );
 
     const selectIfNone = useCallback((id: string) => {
         setSelectedId((prev) => prev ?? id);
@@ -100,9 +118,12 @@ export function useFiles({
         setFocusedSource({ fileId, pageNum, flashKey: Date.now() });
     }, []);
 
-    const handleDropError = useCallback((error: unknown) => {
-        onDropError?.(error);
-    }, [onDropError]);
+    const handleDropError = useCallback(
+        (error: unknown) => {
+            onDropError?.(error);
+        },
+        [onDropError],
+    );
 
     const { isDragOver } = useFileDrop(acceptFiles, selectIfNone, handleDropError);
 

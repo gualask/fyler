@@ -51,14 +51,14 @@ export function SupportDialog({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [mode, onClose]);
 
-    const recentEvents = useMemo(() => [...snapshot.recentEvents].reverse(), [snapshot.recentEvents]);
+    const recentEvents = useMemo(
+        () => [...snapshot.recentEvents].reverse(),
+        [snapshot.recentEvents],
+    );
 
     if (!mode) return null;
 
-    async function runAction(
-        action: () => Promise<void>,
-        successMessage: string,
-    ) {
+    async function runAction(action: () => Promise<void>, successMessage: string) {
         try {
             await action();
             setActionState({ tone: 'success', message: successMessage });
@@ -84,52 +84,106 @@ export function SupportDialog({
             <div className="w-full max-w-2xl rounded-2xl border border-ui-border bg-ui-surface shadow-2xl">
                 <div className="border-b border-ui-border px-6 py-5">
                     <h2 className="text-lg font-semibold text-ui-text">
-                        {isReport ? t('support.dialog.reportTitle') : t('support.dialog.aboutTitle')}
+                        {isReport
+                            ? t('support.dialog.reportTitle')
+                            : t('support.dialog.aboutTitle')}
                     </h2>
                     <p className="mt-1 text-sm text-ui-text-muted">
-                        {isReport ? t('support.dialog.reportDescription') : t('support.dialog.aboutDescription')}
+                        {isReport
+                            ? t('support.dialog.reportDescription')
+                            : t('support.dialog.aboutDescription')}
                     </p>
                 </div>
 
                 <div className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
                     <section className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
                         <div className="mb-2 flex items-center justify-between gap-3">
-                            <h3 className="text-sm font-semibold text-ui-text">{snapshot.app.appName}</h3>
+                            <h3 className="text-sm font-semibold text-ui-text">
+                                {snapshot.app.appName}
+                            </h3>
                             <span className="rounded-full bg-ui-accent-soft px-2.5 py-1 text-xs font-semibold text-ui-accent-on-soft">
                                 v{snapshot.app.version}
                             </span>
                         </div>
-                        <SummaryRow label={t('support.dialog.identifier')} value={snapshot.app.identifier} />
-                        <SummaryRow label={t('support.dialog.platform')} value={`${snapshot.app.platform} (${snapshot.app.arch})`} />
-                        <SummaryRow label={t('support.dialog.generatedAt')} value={snapshot.generatedAt} />
+                        <SummaryRow
+                            label={t('support.dialog.identifier')}
+                            value={snapshot.app.identifier}
+                        />
+                        <SummaryRow
+                            label={t('support.dialog.platform')}
+                            value={`${snapshot.app.platform} (${snapshot.app.arch})`}
+                        />
+                        <SummaryRow
+                            label={t('support.dialog.generatedAt')}
+                            value={snapshot.generatedAt}
+                        />
                     </section>
 
                     {isReport ? (
                         <>
                             <section className="grid gap-4 md:grid-cols-2">
                                 <div className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-                                    <h3 className="mb-2 text-sm font-semibold text-ui-text">{t('support.dialog.preferences')}</h3>
-                                    <SummaryRow label={t('support.dialog.locale')} value={snapshot.preferences.locale} />
-                                    <SummaryRow label={t('support.dialog.theme')} value={snapshot.preferences.theme} />
+                                    <h3 className="mb-2 text-sm font-semibold text-ui-text">
+                                        {t('support.dialog.preferences')}
+                                    </h3>
+                                    <SummaryRow
+                                        label={t('support.dialog.locale')}
+                                        value={snapshot.preferences.locale}
+                                    />
+                                    <SummaryRow
+                                        label={t('support.dialog.theme')}
+                                        value={snapshot.preferences.theme}
+                                    />
                                 </div>
                                 <div className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-                                    <h3 className="mb-2 text-sm font-semibold text-ui-text">{t('support.dialog.session')}</h3>
-                                    <SummaryRow label={t('support.dialog.quickAdd')} value={snapshot.session.quickAdd ? t('support.on') : t('support.off')} />
-                                    <SummaryRow label={t('support.dialog.fileCount')} value={snapshot.session.fileCount} />
-                                    <SummaryRow label={t('support.dialog.finalPageCount')} value={snapshot.session.finalPageCount} />
+                                    <h3 className="mb-2 text-sm font-semibold text-ui-text">
+                                        {t('support.dialog.session')}
+                                    </h3>
+                                    <SummaryRow
+                                        label={t('support.dialog.quickAdd')}
+                                        value={
+                                            snapshot.session.quickAdd
+                                                ? t('support.on')
+                                                : t('support.off')
+                                        }
+                                    />
+                                    <SummaryRow
+                                        label={t('support.dialog.fileCount')}
+                                        value={snapshot.session.fileCount}
+                                    />
+                                    <SummaryRow
+                                        label={t('support.dialog.finalPageCount')}
+                                        value={snapshot.session.finalPageCount}
+                                    />
                                 </div>
                             </section>
 
                             <section className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-                                <h3 className="mb-2 text-sm font-semibold text-ui-text">{t('support.dialog.outputSettings')}</h3>
-                                <SummaryRow label={t('support.dialog.optimizationPreset')} value={snapshot.session.optimizationPreset} />
-                                <SummaryRow label={t('support.dialog.imageFit')} value={snapshot.session.imageFit} />
-                                <SummaryRow label={t('support.dialog.targetDpi')} value={snapshot.session.targetDpi ?? t('support.off')} />
-                                <SummaryRow label={t('support.dialog.jpegQuality')} value={snapshot.session.jpegQuality ?? t('support.auto')} />
+                                <h3 className="mb-2 text-sm font-semibold text-ui-text">
+                                    {t('support.dialog.outputSettings')}
+                                </h3>
+                                <SummaryRow
+                                    label={t('support.dialog.optimizationPreset')}
+                                    value={snapshot.session.optimizationPreset}
+                                />
+                                <SummaryRow
+                                    label={t('support.dialog.imageFit')}
+                                    value={snapshot.session.imageFit}
+                                />
+                                <SummaryRow
+                                    label={t('support.dialog.targetDpi')}
+                                    value={snapshot.session.targetDpi ?? t('support.off')}
+                                />
+                                <SummaryRow
+                                    label={t('support.dialog.jpegQuality')}
+                                    value={snapshot.session.jpegQuality ?? t('support.auto')}
+                                />
                             </section>
 
                             <section className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-                                <h3 className="mb-3 text-sm font-semibold text-ui-text">{t('support.dialog.recentEvents')}</h3>
+                                <h3 className="mb-3 text-sm font-semibold text-ui-text">
+                                    {t('support.dialog.recentEvents')}
+                                </h3>
                                 {recentEvents.length ? (
                                     <div className="space-y-2">
                                         {recentEvents.map((entry) => (
@@ -141,20 +195,28 @@ export function SupportDialog({
                                                     <span className="font-semibold uppercase tracking-wide text-ui-text-muted">
                                                         {entry.severity} · {entry.category}
                                                     </span>
-                                                    <span className="text-ui-text-muted">{entry.timestamp}</span>
+                                                    <span className="text-ui-text-muted">
+                                                        {entry.timestamp}
+                                                    </span>
                                                 </div>
-                                                <p className="mt-1 text-sm text-ui-text">{entry.message}</p>
+                                                <p className="mt-1 text-sm text-ui-text">
+                                                    {entry.message}
+                                                </p>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-ui-text-muted">{t('support.dialog.noEvents')}</p>
+                                    <p className="text-sm text-ui-text-muted">
+                                        {t('support.dialog.noEvents')}
+                                    </p>
                                 )}
                             </section>
                         </>
                     ) : (
                         <section className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-                            <h3 className="mb-2 text-sm font-semibold text-ui-text">{t('support.dialog.aboutSection')}</h3>
+                            <h3 className="mb-2 text-sm font-semibold text-ui-text">
+                                {t('support.dialog.aboutSection')}
+                            </h3>
                             <p className="text-sm leading-6 text-ui-text-secondary">
                                 {t('support.dialog.aboutCopy')}
                             </p>
@@ -181,32 +243,34 @@ export function SupportDialog({
                             <button
                                 type="button"
                                 className="btn-ghost"
-                                onClick={() => void runAction(onCopyDiagnostics, t('support.feedback.copySuccess'))}
+                                onClick={() =>
+                                    void runAction(
+                                        onCopyDiagnostics,
+                                        t('support.feedback.copySuccess'),
+                                    )
+                                }
                             >
                                 {t('support.copyDiagnostics')}
                             </button>
                         ) : (
-                            <button
-                                type="button"
-                                className="btn-ghost"
-                                onClick={onOpenReportBug}
-                            >
+                            <button type="button" className="btn-ghost" onClick={onOpenReportBug}>
                                 {t('support.reportBug')}
                             </button>
                         )}
                         <button
                             type="button"
                             className="btn-ghost"
-                            onClick={() => void runAction(onOpenGitHubIssues, t('support.feedback.issuesOpened'))}
+                            onClick={() =>
+                                void runAction(
+                                    onOpenGitHubIssues,
+                                    t('support.feedback.issuesOpened'),
+                                )
+                            }
                         >
                             {t('support.githubIssues')}
                         </button>
                     </div>
-                    <button
-                        type="button"
-                        className="btn-primary"
-                        onClick={onClose}
-                    >
+                    <button type="button" className="btn-primary" onClick={onClose}>
                         {t('support.close')}
                     </button>
                 </div>

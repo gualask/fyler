@@ -3,7 +3,6 @@ import type { SourceFile } from '@/domain';
 import { useTranslation } from '@/i18n';
 import { DragOverlay } from './DragOverlay';
 
-
 interface Props {
     files: SourceFile[];
     quickAddFileIds: Set<string>;
@@ -26,7 +25,12 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                     <span className="text-sm font-semibold">{t('header.quickAdd')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={onExit} className="btn-icon" title={t('quickAdd.close')}>
+                    <button
+                        type="button"
+                        onClick={onExit}
+                        className="btn-icon"
+                        title={t('quickAdd.close')}
+                    >
                         <IconX className="h-4 w-4" />
                     </button>
                 </div>
@@ -36,7 +40,9 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
             <div className="flex flex-1 flex-col gap-3 overflow-hidden p-4">
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-ui-border bg-ui-surface min-h-28">
                     <IconFileDownload className="h-10 w-10 text-ui-text-muted" />
-                    <p className="text-center text-sm text-ui-text-muted">{t('quickAdd.dragFiles')}</p>
+                    <p className="text-center text-sm text-ui-text-muted">
+                        {t('quickAdd.dragFiles')}
+                    </p>
                 </div>
 
                 {/* File list */}
@@ -58,6 +64,7 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                                     )}
                                     <span className="flex-1 truncate text-xs">{file.name}</span>
                                     <button
+                                        type="button"
                                         onClick={() => onRemove(file.id)}
                                         className="shrink-0 text-ui-text-muted transition-colors hover:text-red-500"
                                         title={t('quickAdd.remove')}
@@ -71,7 +78,11 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                 )}
 
                 {/* Done button */}
-                <button onClick={onExit} className="btn-primary w-full justify-center py-3">
+                <button
+                    type="button"
+                    onClick={onExit}
+                    className="btn-primary w-full justify-center py-3"
+                >
                     {t('quickAdd.done')}
                 </button>
             </div>

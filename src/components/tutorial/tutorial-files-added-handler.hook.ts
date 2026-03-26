@@ -20,11 +20,13 @@ export function useTutorialFilesAddedHandler({
     const { onFilesAdded: onQuickAddFilesAdded, isQuickAdd, isTransitioning } = quickAdd;
     const { maybeAutoStartAfterFilesAdded } = tutorial;
 
-    return useCallback((ids: string[]) => {
-        onQuickAddFilesAdded(ids);
-        if (!isQuickAdd && !isTransitioning) {
-            maybeAutoStartAfterFilesAdded();
-        }
-    }, [isQuickAdd, isTransitioning, maybeAutoStartAfterFilesAdded, onQuickAddFilesAdded]);
+    return useCallback(
+        (ids: string[]) => {
+            onQuickAddFilesAdded(ids);
+            if (!isQuickAdd && !isTransitioning) {
+                maybeAutoStartAfterFilesAdded();
+            }
+        },
+        [isQuickAdd, isTransitioning, maybeAutoStartAfterFilesAdded, onQuickAddFilesAdded],
+    );
 }
-

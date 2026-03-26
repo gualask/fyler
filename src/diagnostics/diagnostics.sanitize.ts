@@ -1,5 +1,5 @@
-import type { DiagnosticMetadataValue } from './diagnostics.types';
 import { getErrorMessage } from '@/errors';
+import type { DiagnosticMetadataValue } from './diagnostics.types';
 
 const UNIX_PATH_PATTERN = /(^|[\s("'`])\/(?:[^/\s"'`]+\/)*[^/\s"'`]+/g;
 const WINDOWS_PATH_PATTERN = /(^|[\s("'`])[A-Za-z]:\\(?:[^\\\s"'`]+\\)*[^\\\s"'`]+/g;

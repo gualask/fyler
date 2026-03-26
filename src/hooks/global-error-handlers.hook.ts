@@ -10,13 +10,21 @@ export function useGlobalErrorHandlers(onError: (message: string) => void) {
         const handleError = (event: ErrorEvent) => {
             event.preventDefault();
             const message = getErrorMessage(event.error ?? event.message);
-            record({ category: 'app', severity: 'error', message: `Unhandled window error: ${message}` });
+            record({
+                category: 'app',
+                severity: 'error',
+                message: `Unhandled window error: ${message}`,
+            });
             onError(message);
         };
         const handleRejection = (event: PromiseRejectionEvent) => {
             event.preventDefault();
             const message = getErrorMessage(event.reason);
-            record({ category: 'app', severity: 'error', message: `Unhandled promise rejection: ${message}` });
+            record({
+                category: 'app',
+                severity: 'error',
+                message: `Unhandled promise rejection: ${message}`,
+            });
             onError(message);
         };
 

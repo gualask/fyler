@@ -53,7 +53,7 @@ function getTooltipOverflowScore(
 ) {
     const left = getTooltipLeftEdge(triggerRect, panelWidth, align);
     const right = left + panelWidth;
-    const overflowLeft = Math.max(0, (boundaryRect.left + VIEWPORT_PADDING) - left);
+    const overflowLeft = Math.max(0, boundaryRect.left + VIEWPORT_PADDING - left);
     const overflowRight = Math.max(0, right - (boundaryRect.right - VIEWPORT_PADDING));
     return overflowLeft + overflowRight;
 }
@@ -81,7 +81,7 @@ function getTooltipVerticalOverflowScoreWithinBoundary(
 ) {
     const top = getTooltipTopEdge(triggerRect, panelHeight, side);
     const bottom = top + panelHeight;
-    const overflowTop = Math.max(0, (boundaryRect.top + VIEWPORT_PADDING) - top);
+    const overflowTop = Math.max(0, boundaryRect.top + VIEWPORT_PADDING - top);
     const overflowBottom = Math.max(0, bottom - (boundaryRect.bottom - VIEWPORT_PADDING));
     return overflowTop + overflowBottom;
 }
@@ -100,12 +100,24 @@ function resolveTooltipSide(
 ): TooltipSide {
     const candidates = getTooltipSideCandidates(preferredPlacement.side);
 
-    return candidates.reduce((bestSide, candidate) => (
-        getTooltipVerticalOverflowScoreWithinBoundary(triggerRect, panelHeight, candidate, boundaryRect)
-            < getTooltipVerticalOverflowScoreWithinBoundary(triggerRect, panelHeight, bestSide, boundaryRect)
-            ? candidate
-            : bestSide
-    ), candidates[0]);
+    return candidates.reduce(
+        (bestSide, candidate) =>
+            getTooltipVerticalOverflowScoreWithinBoundary(
+                triggerRect,
+                panelHeight,
+                candidate,
+                boundaryRect,
+            ) <
+            getTooltipVerticalOverflowScoreWithinBoundary(
+                triggerRect,
+                panelHeight,
+                bestSide,
+                boundaryRect,
+            )
+                ? candidate
+                : bestSide,
+        candidates[0],
+    );
 }
 
 function resolveTooltipAlign(
@@ -116,12 +128,14 @@ function resolveTooltipAlign(
 ): TooltipAlign {
     const candidates = getTooltipCandidates(preferredPlacement.align);
 
-    return candidates.reduce((bestAlign, candidate) => (
-        getTooltipOverflowScore(triggerRect, panelWidth, candidate, boundaryRect)
-            < getTooltipOverflowScore(triggerRect, panelWidth, bestAlign, boundaryRect)
-            ? candidate
-            : bestAlign
-    ), candidates[0]);
+    return candidates.reduce(
+        (bestAlign, candidate) =>
+            getTooltipOverflowScore(triggerRect, panelWidth, candidate, boundaryRect) <
+            getTooltipOverflowScore(triggerRect, panelWidth, bestAlign, boundaryRect)
+                ? candidate
+                : bestAlign,
+        candidates[0],
+    );
 }
 
 export function resolveTooltipPlacement(

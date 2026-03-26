@@ -37,7 +37,9 @@ export function FinalDocument({
     return (
         <div className="flex h-full flex-col overflow-hidden">
             <ColumnHeader title={t('finalDocument.title')}>
-                <span className="column-toolbar-stat">{t('finalDocument.pageCount', { count: finalPages.length })}</span>
+                <span className="column-toolbar-stat">
+                    {t('finalDocument.pageCount', { count: finalPages.length })}
+                </span>
             </ColumnHeader>
 
             <div ref={setScrollRoot} className="min-h-0 flex-1 overflow-y-auto p-4">

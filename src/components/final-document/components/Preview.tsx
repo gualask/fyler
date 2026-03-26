@@ -24,11 +24,17 @@ export function Preview({
     onClose,
 }: Props) {
     const resolvedPreviewTarget = useMemo(
-        () => (previewTargetId ? finalPages.find((page) => page.id === previewTargetId) ?? null : null),
+        () =>
+            previewTargetId
+                ? (finalPages.find((page) => page.id === previewTargetId) ?? null)
+                : null,
         [finalPages, previewTargetId],
     );
     const previewTargetPosition = useMemo(
-        () => (resolvedPreviewTarget ? finalPages.findIndex((page) => page.id === resolvedPreviewTarget.id) + 1 : 0),
+        () =>
+            resolvedPreviewTarget
+                ? finalPages.findIndex((page) => page.id === resolvedPreviewTarget.id) + 1
+                : 0,
         [finalPages, resolvedPreviewTarget],
     );
 
@@ -45,7 +51,8 @@ export function Preview({
             moveControl={{
                 currentPosition: previewTargetPosition,
                 totalPositions: finalPages.length,
-                onMoveToPosition: (targetIndex) => onMovePageToIndex(resolvedPreviewTarget.id, targetIndex),
+                onMoveToPosition: (targetIndex) =>
+                    onMovePageToIndex(resolvedPreviewTarget.id, targetIndex),
             }}
             onRotatePage={onRotatePage}
             onClose={onClose}

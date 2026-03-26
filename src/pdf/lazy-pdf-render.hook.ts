@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import type { SourceFile } from '@/domain';
-import { usePdfCache, type PdfRenderRequest } from './pdf-cache.hook';
+import { type PdfRenderRequest, usePdfCache } from './pdf-cache.hook';
 
 export function useLazyPdfRender(
     file: SourceFile | undefined,

@@ -28,7 +28,10 @@ export function SegmentButtons<T extends string>({
         const container = containerRef.current;
         if (!container) return;
         const active = container.querySelector<HTMLElement>('[data-active="true"]');
-        if (!active) { setPillStyle({ opacity: 0 }); return; }
+        if (!active) {
+            setPillStyle({ opacity: 0 });
+            return;
+        }
 
         const shouldAnimate = hasAnimated.current;
         hasAnimated.current = true;
@@ -57,7 +60,7 @@ export function SegmentButtons<T extends string>({
     useEffect(() => {
         const id = requestAnimationFrame(sync);
         return () => cancelAnimationFrame(id);
-    }, [value, sync]);
+    }, [sync]);
 
     return (
         <div

@@ -1,5 +1,5 @@
-export { PreferencesProvider } from './preferences.provider';
+export { detectPreferredLocale, isLocale, type Locale, SUPPORTED_LOCALES } from './locale';
 export { usePreferences } from './preferences.context';
-export { useTheme } from './theme.hook';
+export { PreferencesProvider } from './preferences.provider';
 export { ACCENT_COLORS, type AccentColor, type PreferencesSettings } from './settings';
-export { SUPPORTED_LOCALES, type Locale, isLocale, detectPreferredLocale } from './locale';
+export { useTheme } from './theme.hook';

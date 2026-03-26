@@ -15,4 +15,3 @@ export function detectPreferredLocale(languages: readonly string[] | undefined):
 
     return 'en';
 }
-

@@ -3,10 +3,10 @@ import { useState } from 'react';
 import type { FileEdits, FinalPage, SourceFile } from '@/domain';
 import type { RotationDirection } from '@/domain/file-edits';
 import { useTranslation } from '@/i18n';
+import { PreviewModal } from '../preview/PreviewModal';
 import { ColumnHeader } from '../shared/layout/ColumnHeader';
 import { ImagePanel } from './panels/ImagePanel';
 import { PdfPanel } from './panels/PdfPanel';
-import { PreviewModal } from '../preview/PreviewModal';
 
 interface Props {
     file: SourceFile | null;
@@ -58,7 +58,9 @@ export function PagePicker({
                     focusedPageNum={focusedPageNum}
                     focusFlashKey={focusFlashKey}
                     onRotatePage={onRotatePage}
-                    onPreview={() => setPreviewTarget({ id: `${file.id}:0`, fileId: file.id, pageNum: 0 })}
+                    onPreview={() =>
+                        setPreviewTarget({ id: `${file.id}:0`, fileId: file.id, pageNum: 0 })
+                    }
                 />
 
                 {previewTarget && (
@@ -89,7 +91,9 @@ export function PagePicker({
                 editsByFile={editsByFile}
                 focusedPageNum={focusedPageNum}
                 focusFlashKey={focusFlashKey}
-                onPreview={(pageNum) => setPreviewTarget({ id: `${file.id}:${pageNum}`, fileId: file.id, pageNum })}
+                onPreview={(pageNum) =>
+                    setPreviewTarget({ id: `${file.id}:${pageNum}`, fileId: file.id, pageNum })
+                }
             />
 
             {previewTarget && (

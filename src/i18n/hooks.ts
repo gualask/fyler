@@ -9,16 +9,16 @@ export function useTranslation() {
     const { locale, setLocale } = usePreferences();
     const dictionary = resources[locale];
 
-    const t = useCallback((
-        key: TranslationKey,
-        values?: InterpolationValues,
-    ) => translate(dictionary, key, values), [dictionary]);
+    const t = useCallback(
+        (key: TranslationKey, values?: InterpolationValues) => translate(dictionary, key, values),
+        [dictionary],
+    );
 
-    const tp = useCallback((
-        key: PluralBaseKey,
-        count: number,
-        values?: InterpolationValues,
-    ) => translatePlural(dictionary, key, count, values), [dictionary]);
+    const tp = useCallback(
+        (key: PluralBaseKey, count: number, values?: InterpolationValues) =>
+            translatePlural(dictionary, key, count, values),
+        [dictionary],
+    );
 
     return { locale, setLocale, t, tp };
 }

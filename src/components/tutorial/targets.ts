@@ -5,5 +5,4 @@ export const TUTORIAL_TARGETS = {
     export: 'export',
 } as const;
 
-export type TutorialTarget = typeof TUTORIAL_TARGETS[keyof typeof TUTORIAL_TARGETS];
-
+export type TutorialTarget = (typeof TUTORIAL_TARGETS)[keyof typeof TUTORIAL_TARGETS];

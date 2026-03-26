@@ -20,6 +20,7 @@ export async function renderPdfPage(
     const canvas = document.createElement('canvas');
     canvas.width = Math.floor(viewport.width);
     canvas.height = Math.floor(viewport.height);
+    // biome-ignore lint/style/noNonNullAssertion: canvas 2d context is always available
     const ctx = canvas.getContext('2d')!;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);

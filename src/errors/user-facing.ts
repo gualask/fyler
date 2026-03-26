@@ -1,4 +1,4 @@
-import type { TranslationKey, InterpolationValues } from '@/i18n';
+import type { InterpolationValues, TranslationKey } from '@/i18n';
 import { getErrorMessage, parseAppErrorPayload, toInterpolationValues } from './app-error';
 
 const APP_ERROR_CODE_TO_I18N_KEY: Record<string, TranslationKey> = {

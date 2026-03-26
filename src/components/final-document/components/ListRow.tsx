@@ -1,4 +1,3 @@
-import { memo, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -9,10 +8,11 @@ import {
     IconPhoto,
     IconX,
 } from '@tabler/icons-react';
+import { memo, useMemo } from 'react';
 
 import { getImageRotationDegrees } from '@/domain/file-edits';
-import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/pdf';
 import { useTranslation } from '@/i18n';
+import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/pdf';
 import { getPreviewUrl } from '@/platform';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';
 import type { ListItem } from '../models/list-item';
@@ -52,11 +52,10 @@ export const ListRow = memo(function ListRow({
     };
 
     const thumbRequest = useMemo(
-        () => (
+        () =>
             item.file?.kind === 'pdf'
                 ? buildThumbnailRenderRequest(item.page.pageNum, item.edits)
-                : null
-        ),
+                : null,
         [item.edits, item.file, item.page.pageNum],
     );
     const { dataUrl: thumbUrl, setTargetEl } = useLazyPdfRender(
@@ -72,20 +71,22 @@ export const ListRow = memo(function ListRow({
             ref={setNodeRef}
             style={style}
             {...attributes}
-            className={['flex min-w-0 items-center gap-3', isDragging ? 'opacity-50' : ''].join(' ')}
+            className={['flex min-w-0 items-center gap-3', isDragging ? 'opacity-50' : ''].join(
+                ' ',
+            )}
         >
             <div className="flex shrink-0 flex-col items-center gap-0.5">
                 <button
+                    type="button"
                     onClick={onMoveUp}
                     disabled={isFirst}
                     className="cursor-pointer rounded p-0.5 text-ui-text-muted transition-colors hover:text-ui-text disabled:invisible"
                 >
                     <IconChevronUp className="h-4 w-4" />
                 </button>
-                <span className="text-xs font-bold text-ui-text-muted">
-                    {item.index + 1}
-                </span>
+                <span className="text-xs font-bold text-ui-text-muted">{item.index + 1}</span>
                 <button
+                    type="button"
                     onClick={onMoveDown}
                     disabled={isLast}
                     className="cursor-pointer rounded p-0.5 text-ui-text-muted transition-colors hover:text-ui-text disabled:invisible"
@@ -98,7 +99,9 @@ export const ListRow = memo(function ListRow({
                 onClick={onSelect}
                 className={[
                     'group relative flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-colors',
-                    item.isSelected ? 'border-ui-accent bg-ui-surface' : 'border-ui-border bg-ui-surface',
+                    item.isSelected
+                        ? 'border-ui-accent bg-ui-surface'
+                        : 'border-ui-border bg-ui-surface',
                 ].join(' ')}
             >
                 <div
@@ -136,7 +139,9 @@ export const ListRow = memo(function ListRow({
                 </div>
 
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-bold text-ui-text">{item.file?.name ?? '—'}</p>
+                    <p className="truncate text-xs font-bold text-ui-text">
+                        {item.file?.name ?? '—'}
+                    </p>
                     {item.file?.kind === 'pdf' && (
                         <p className="mt-0.5 text-[11px] font-semibold text-ui-accent-text">
                             {t('finalDocument.pageLabel', { pageNum: item.page.pageNum })}
@@ -145,6 +150,7 @@ export const ListRow = memo(function ListRow({
                 </div>
 
                 <button
+                    type="button"
                     onClick={(event) => {
                         event.stopPropagation();
                         onRemove(item.page.id);

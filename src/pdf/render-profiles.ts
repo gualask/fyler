@@ -2,11 +2,13 @@ import type { FileEdits, QuarterTurn } from '@/domain';
 import { emptyFileEdits, getPdfPageQuarterTurn } from '@/domain/file-edits';
 import type { PdfRenderRequest } from './pdf-cache.hook';
 
-const THUMB_DENSITY = typeof window === 'undefined'
-    ? 1
-    : Math.min(window.devicePixelRatio || 1, 2);
+const THUMB_DENSITY = typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
 
-function withRotation(pageNum: number, quarterTurns: QuarterTurn, request: Omit<PdfRenderRequest, 'pageNum' | 'quarterTurns'>): PdfRenderRequest {
+function withRotation(
+    pageNum: number,
+    quarterTurns: QuarterTurn,
+    request: Omit<PdfRenderRequest, 'pageNum' | 'quarterTurns'>,
+): PdfRenderRequest {
     return {
         pageNum,
         quarterTurns,
@@ -14,7 +16,10 @@ function withRotation(pageNum: number, quarterTurns: QuarterTurn, request: Omit<
     };
 }
 
-export function buildThumbnailRenderRequest(pageNum: number, edits: FileEdits | undefined): PdfRenderRequest {
+export function buildThumbnailRenderRequest(
+    pageNum: number,
+    edits: FileEdits | undefined,
+): PdfRenderRequest {
     return withRotation(pageNum, getPdfPageQuarterTurn(edits ?? emptyFileEdits(), pageNum), {
         variant: 'thumb',
         width: 120,
@@ -23,11 +28,17 @@ export function buildThumbnailRenderRequest(pageNum: number, edits: FileEdits | 
     });
 }
 
-export function buildThumbnailRenderRequests(pageNums: number[], edits: FileEdits | undefined): PdfRenderRequest[] {
+export function buildThumbnailRenderRequests(
+    pageNums: number[],
+    edits: FileEdits | undefined,
+): PdfRenderRequest[] {
     return pageNums.map((pageNum) => buildThumbnailRenderRequest(pageNum, edits));
 }
 
-export function buildPreviewRenderRequest(pageNum: number, edits: FileEdits | undefined): PdfRenderRequest {
+export function buildPreviewRenderRequest(
+    pageNum: number,
+    edits: FileEdits | undefined,
+): PdfRenderRequest {
     return withRotation(pageNum, getPdfPageQuarterTurn(edits ?? emptyFileEdits(), pageNum), {
         variant: 'preview',
         width: 900,

@@ -1,23 +1,22 @@
-import { useCallback, useRef, useState } from 'react';
 import { IconSettings } from '@tabler/icons-react';
-
+import { useCallback, useRef, useState } from 'react';
+import type { ImageFit } from '@/domain';
 import type {
     BasicOptimizationPreset,
     ImageOptimizationPreset,
 } from '@/domain/optimization-config';
 import { OPTIMIZATION_PRESETS } from '@/domain/optimization-config';
-import type { ImageFit } from '@/domain';
-import { useTranslation } from '@/i18n';
 import { useDismiss } from '@/hooks';
+import { useTranslation } from '@/i18n';
 
 import { InfoTooltip } from './output-panel/InfoTooltip';
-import { ImageFitTooltip, OptimizationTooltip } from './output-panel/Tooltips';
 import { OptimizationAdvancedPanel } from './output-panel/OptimizationAdvancedPanel';
 import {
     SegmentButtons,
     SegmentedControl,
     type SegmentOption,
 } from './output-panel/SegmentedControl';
+import { ImageFitTooltip, OptimizationTooltip } from './output-panel/Tooltips';
 import './output-panel/output-panel.css';
 
 interface Props {
@@ -42,10 +41,12 @@ function buildPresetOptions(
     presetLabels: Record<BasicOptimizationPreset, string>,
     customLabel: string,
 ): SegmentOption<ImageOptimizationPreset>[] {
-    const baseOptions: SegmentOption<ImageOptimizationPreset>[] = OPTIMIZATION_PRESETS.map(({ value }) => ({
-        value,
-        label: presetLabels[value],
-    }));
+    const baseOptions: SegmentOption<ImageOptimizationPreset>[] = OPTIMIZATION_PRESETS.map(
+        ({ value }) => ({
+            value,
+            label: presetLabels[value],
+        }),
+    );
     if (preset !== 'custom') return baseOptions;
     return [...baseOptions, { value: 'custom', label: customLabel, disabled: true }];
 }
@@ -107,10 +108,9 @@ export function OutputPanel({
                             aria-label={t('outputPanel.advancedSettings')}
                             aria-expanded={isAdvancedOpen}
                             onClick={toggleAdvancedPanel}
-                            className={[
-                                'btn-icon',
-                                isAdvancedOpen ? 'btn-icon-active' : '',
-                            ].filter(Boolean).join(' ')}
+                            className={['btn-icon', isAdvancedOpen ? 'btn-icon-active' : '']
+                                .filter(Boolean)
+                                .join(' ')}
                         >
                             <IconSettings className="h-4 w-4" />
                         </button>

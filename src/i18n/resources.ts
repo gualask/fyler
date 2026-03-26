@@ -1,6 +1,6 @@
+import type { Locale } from '@/preferences';
 import enMessages from './messages/en.json';
 import itMessages from './messages/it.json';
-import type { Locale } from '@/preferences';
 
 export type TranslationDictionary = typeof itMessages;
 export type TranslationKey = keyof TranslationDictionary;

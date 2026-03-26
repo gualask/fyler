@@ -1,20 +1,27 @@
-import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { useEffect } from 'react';
 
 import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics';
 import { useDiagnostics } from '@/diagnostics';
 
-function attachEventListener<T>(eventName: string, listener: (event: { payload: T }) => void): () => void {
+function attachEventListener<T>(
+    eventName: string,
+    listener: (event: { payload: T }) => void,
+): () => void {
     let disposed = false;
     let unlisten: (() => void) | undefined;
 
-    void listen<T>(eventName, listener).then((fn) => {
-        if (disposed) {
-            fn();
-        } else {
-            unlisten = fn;
-        }
-    }).catch(() => { /* listener registration failed — swallowed intentionally */ });
+    void listen<T>(eventName, listener)
+        .then((fn) => {
+            if (disposed) {
+                fn();
+            } else {
+                unlisten = fn;
+            }
+        })
+        .catch(() => {
+            /* listener registration failed — swallowed intentionally */
+        });
 
     return () => {
         disposed = true;
@@ -28,7 +35,11 @@ interface TauriNotificationCallbacks {
     onMergeProgress: (step: MergeProgressStep, progress: number) => void;
 }
 
-export function useTauriNotificationEvents({ onError, onImportWarning, onMergeProgress }: TauriNotificationCallbacks) {
+export function useTauriNotificationEvents({
+    onError,
+    onImportWarning,
+    onMergeProgress,
+}: TauriNotificationCallbacks) {
     const { record } = useDiagnostics();
 
     useEffect(() => {
@@ -54,8 +65,11 @@ export function useTauriNotificationEvents({ onError, onImportWarning, onMergePr
     }, [onImportWarning, record]);
 
     useEffect(() => {
-        return attachEventListener<{ step: MergeProgressStep; progress: number }>('merge-progress', (event) => {
-            onMergeProgress(event.payload.step, event.payload.progress);
-        });
+        return attachEventListener<{ step: MergeProgressStep; progress: number }>(
+            'merge-progress',
+            (event) => {
+                onMergeProgress(event.payload.step, event.payload.progress);
+            },
+        );
     }, [onMergeProgress]);
 }

@@ -1,9 +1,9 @@
+import type { ImageFit } from '@/domain';
 import {
     JPEG_QUALITY_OPTIONS,
     OPTIMIZATION_PRESETS,
     TARGET_DPI_OPTIONS,
 } from '@/domain/optimization-config';
-import type { ImageFit } from '@/domain';
 import { useTranslation } from '@/i18n';
 
 import { TooltipContent, type TooltipItem } from './InfoTooltip';
@@ -40,9 +40,8 @@ export function JpegTooltip() {
         <TooltipContent
             title={t('tooltips.jpegTitle')}
             items={JPEG_QUALITY_OPTIONS.map(({ value }) => {
-                const key: 'off' | '95' | '90' | '85' = value === undefined
-                    ? 'off'
-                    : (String(value) as '95' | '90' | '85');
+                const key: 'off' | '95' | '90' | '85' =
+                    value === undefined ? 'off' : (String(value) as '95' | '90' | '85');
                 return {
                     title: value === undefined ? t('outputPanel.auto') : String(value),
                     description: t(`tooltips.jpegDescriptions.${key}`),
@@ -59,9 +58,8 @@ export function DpiTooltip() {
         <TooltipContent
             title={t('tooltips.dpiTitle')}
             items={TARGET_DPI_OPTIONS.map(({ value }) => {
-                const key: 'off' | '220' | '170' | '120' = value === undefined
-                    ? 'off'
-                    : (String(value) as '220' | '170' | '120');
+                const key: 'off' | '220' | '170' | '120' =
+                    value === undefined ? 'off' : (String(value) as '220' | '170' | '120');
                 return {
                     title: value === undefined ? t('outputPanel.off') : `${value} DPI`,
                     description: t(`tooltips.dpiDescriptions.${key}`),
@@ -73,16 +71,13 @@ export function DpiTooltip() {
 
 export function ImageFitTooltip() {
     const { t } = useTranslation();
-    const imageFitTooltipItems: TooltipItem[] = (['contain', 'fit', 'cover'] as ImageFit[]).map((mode) => ({
-        title: t(`tooltips.imageFitItems.${mode}.title`),
-        description: t(`tooltips.imageFitItems.${mode}.description`),
-        visual: <FitPreview mode={mode} />,
-    }));
-
-    return (
-        <TooltipContent
-            title={t('tooltips.imageFitTitle')}
-            items={imageFitTooltipItems}
-        />
+    const imageFitTooltipItems: TooltipItem[] = (['contain', 'fit', 'cover'] as ImageFit[]).map(
+        (mode) => ({
+            title: t(`tooltips.imageFitItems.${mode}.title`),
+            description: t(`tooltips.imageFitItems.${mode}.description`),
+            visual: <FitPreview mode={mode} />,
+        }),
     );
+
+    return <TooltipContent title={t('tooltips.imageFitTitle')} items={imageFitTooltipItems} />;
 }

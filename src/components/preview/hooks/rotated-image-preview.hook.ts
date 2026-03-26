@@ -3,12 +3,20 @@ import { useEffect, useState } from 'react';
 import type { QuarterTurn } from '@/domain';
 import { renderRotatedImage } from '../utils/render-image';
 
-export function useRotatedImagePreview(imageSrc: string | undefined, imageQuarterTurns: QuarterTurn, useA4Container: boolean) {
-    const [rotatedImagePreview, setRotatedImagePreview] = useState<{ key: string; src: string } | null>(null);
+export function useRotatedImagePreview(
+    imageSrc: string | undefined,
+    imageQuarterTurns: QuarterTurn,
+    useA4Container: boolean,
+) {
+    const [rotatedImagePreview, setRotatedImagePreview] = useState<{
+        key: string;
+        src: string;
+    } | null>(null);
 
-    const rotatedImagePreviewKey = imageSrc && !useA4Container && imageQuarterTurns !== 0
-        ? `${imageSrc}:${imageQuarterTurns}`
-        : null;
+    const rotatedImagePreviewKey =
+        imageSrc && !useA4Container && imageQuarterTurns !== 0
+            ? `${imageSrc}:${imageQuarterTurns}`
+            : null;
 
     useEffect(() => {
         if (!rotatedImagePreviewKey || !imageSrc) {
@@ -24,7 +32,9 @@ export function useRotatedImagePreview(imageSrc: string | undefined, imageQuarte
             })
             .catch(() => {
                 if (active) {
-                    setRotatedImagePreview((current) => (current?.key === rotatedImagePreviewKey ? null : current));
+                    setRotatedImagePreview((current) =>
+                        current?.key === rotatedImagePreviewKey ? null : current,
+                    );
                 }
             });
 
@@ -33,7 +43,8 @@ export function useRotatedImagePreview(imageSrc: string | undefined, imageQuarte
         };
     }, [imageQuarterTurns, imageSrc, rotatedImagePreviewKey]);
 
-    const src = rotatedImagePreview?.key === rotatedImagePreviewKey ? rotatedImagePreview.src : null;
+    const src =
+        rotatedImagePreview?.key === rotatedImagePreviewKey ? rotatedImagePreview.src : null;
 
     return src;
 }

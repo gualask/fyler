@@ -1,6 +1,11 @@
 export function getErrorMessage(value: unknown): string {
     if (value instanceof Error) return value.message;
-    if (value && typeof value === 'object' && 'message' in value && typeof (value as { message?: unknown }).message === 'string') {
+    if (
+        value &&
+        typeof value === 'object' &&
+        'message' in value &&
+        typeof (value as { message?: unknown }).message === 'string'
+    ) {
         return (value as { message: string }).message;
     }
     return String(value);
@@ -12,7 +17,9 @@ export type AppErrorPayload = {
     meta?: Record<string, unknown>;
 };
 
-export function toInterpolationValues(meta: Record<string, unknown> | undefined): Record<string, string | number> | undefined {
+export function toInterpolationValues(
+    meta: Record<string, unknown> | undefined,
+): Record<string, string | number> | undefined {
     if (!meta) return undefined;
     const out: Record<string, string | number> = {};
     for (const [key, value] of Object.entries(meta)) {
@@ -30,7 +37,10 @@ function parseAppErrorObject(value: unknown): AppErrorPayload | null {
     return {
         code: maybe.code,
         message: typeof maybe.message === 'string' ? maybe.message : undefined,
-        meta: (maybe.meta && typeof maybe.meta === 'object' ? (maybe.meta as Record<string, unknown>) : undefined),
+        meta:
+            maybe.meta && typeof maybe.meta === 'object'
+                ? (maybe.meta as Record<string, unknown>)
+                : undefined,
     };
 }
 

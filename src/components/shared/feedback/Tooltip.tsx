@@ -1,7 +1,6 @@
-import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
-
-import type { TooltipPlacement } from './tooltip-placement';
+import { type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import { useResolvedTooltipPlacement } from './resolved-tooltip-placement.hook';
+import type { TooltipPlacement } from './tooltip-placement';
 
 import './tooltip.css';
 
@@ -36,7 +35,10 @@ export function Tooltip({
     const tooltipId = useId();
     const anchorRef = useRef<HTMLSpanElement | null>(null);
     const panelRef = useRef<HTMLSpanElement | null>(null);
-    const preferredPlacement = useMemo(() => ({ align, side } satisfies TooltipPlacement), [align, side]);
+    const preferredPlacement = useMemo(
+        () => ({ align, side }) satisfies TooltipPlacement,
+        [align, side],
+    );
     const { resolvedPlacement, resetResolvedPlacement } = useResolvedTooltipPlacement({
         open,
         preferredPlacement,
@@ -85,7 +87,9 @@ export function Tooltip({
                         `tooltip-panel-${resolvedPlacement.align}`,
                         `tooltip-panel-side-${resolvedPlacement.side}`,
                         panelClassName,
-                    ].filter(Boolean).join(' ')}
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
                 >
                     {children}
                 </span>

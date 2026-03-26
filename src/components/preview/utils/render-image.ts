@@ -62,7 +62,10 @@ export async function renderExportMatchedImage(
     const rotated = buildRotatedImageCanvas(img, quarterTurns);
     const canvas = document.createElement('canvas');
     canvas.width = EXPORT_PREVIEW_WIDTH;
-    canvas.height = Math.max(1, Math.round((EXPORT_PREVIEW_WIDTH * layout.pageHeightPt) / layout.pageWidthPt));
+    canvas.height = Math.max(
+        1,
+        Math.round((EXPORT_PREVIEW_WIDTH * layout.pageHeightPt) / layout.pageWidthPt),
+    );
 
     const ctx = canvas.getContext('2d');
     if (!ctx) {

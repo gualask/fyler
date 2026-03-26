@@ -4,9 +4,9 @@ import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/file-edit
 import { buildPreviewRenderRequest, usePdfCache } from '@/pdf';
 import { getPreviewUrl } from '@/platform';
 import type { SlotContext, SlotPage } from '../models/slot-model';
-import { useSlotVisibility } from './slot-visibility.hook';
-import { useRotatedImagePreview } from './rotated-image-preview.hook';
 import { useExportMatchedImage } from './export-matched-image.hook';
+import { useRotatedImagePreview } from './rotated-image-preview.hook';
+import { useSlotVisibility } from './slot-visibility.hook';
 
 export function useSlotState(page: SlotPage, context: SlotContext) {
     const { fp, file, edits, index } = page;
@@ -31,7 +31,11 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
         requestRenders(file, [previewRequest]);
     }, [file, previewRequest, requestRenders, shouldRender]);
 
-    const rotatedImagePreviewSrc = useRotatedImagePreview(imageSrc, imageQuarterTurns, useA4Container);
+    const rotatedImagePreviewSrc = useRotatedImagePreview(
+        imageSrc,
+        imageQuarterTurns,
+        useA4Container,
+    );
 
     const { exportMatchedImageSrc, isExportMatchedImagePending } = useExportMatchedImage(
         imageSrc,

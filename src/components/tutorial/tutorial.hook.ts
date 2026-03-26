@@ -52,12 +52,15 @@ export function useTutorial() {
         }, 300);
     }, [currentStep, tutorialSeen]);
 
-    useEffect(() => () => {
-        if (startTimeoutRef.current !== null) {
-            window.clearTimeout(startTimeoutRef.current);
-            startTimeoutRef.current = null;
-        }
-    }, []);
+    useEffect(
+        () => () => {
+            if (startTimeoutRef.current !== null) {
+                window.clearTimeout(startTimeoutRef.current);
+                startTimeoutRef.current = null;
+            }
+        },
+        [],
+    );
 
     useEffect(() => {
         if (currentStep !== null) return;

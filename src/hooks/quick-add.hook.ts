@@ -37,7 +37,9 @@ export function useQuickAdd() {
                 savedSizeRef.current = { width: logical.width, height: logical.height };
                 await windowSetSize(QD_SIZE.width, QD_SIZE.height);
                 await windowSetAlwaysOnTop(true);
-            } catch { /* no-op in non-Tauri env */ }
+            } catch {
+                /* no-op in non-Tauri env */
+            }
             setIsQuickAdd(true);
         });
     }, [withTransition]);
@@ -53,9 +55,18 @@ export function useQuickAdd() {
                     await windowSetSize(savedSizeRef.current.width, savedSizeRef.current.height);
                 }
                 await windowSetAlwaysOnTop(false);
-            } catch { /* no-op */ }
+            } catch {
+                /* no-op */
+            }
         });
     }, [withTransition]);
 
-    return { isQuickAdd, quickAddFileIds, isTransitioning, onFilesAdded, enterQuickAdd, exitQuickAdd };
+    return {
+        isQuickAdd,
+        quickAddFileIds,
+        isTransitioning,
+        onFilesAdded,
+        enterQuickAdd,
+        exitQuickAdd,
+    };
 }

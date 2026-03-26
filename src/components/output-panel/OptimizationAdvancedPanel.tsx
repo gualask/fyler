@@ -1,11 +1,7 @@
-import {
-    JPEG_QUALITY_OPTIONS,
-    TARGET_DPI_OPTIONS,
-} from '@/domain/optimization-config';
+import { JPEG_QUALITY_OPTIONS, TARGET_DPI_OPTIONS } from '@/domain/optimization-config';
 import { useTranslation } from '@/i18n';
-
-import { DpiTooltip, JpegTooltip } from './Tooltips';
 import { SegmentedControl, type SegmentOption } from './SegmentedControl';
+import { DpiTooltip, JpegTooltip } from './Tooltips';
 
 function encodeOptionalNumberOption(value: number | undefined) {
     return value === undefined ? 'off' : String(value);

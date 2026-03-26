@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type RefObject } from 'react';
+import { type RefObject, useLayoutEffect, useState } from 'react';
 
 import {
     getTooltipBoundaryElement,
@@ -19,7 +19,8 @@ export function useResolvedTooltipPlacement({
     anchorRef,
     panelRef,
 }: TooltipPlacementDeps) {
-    const [resolvedPlacement, setResolvedPlacement] = useState<TooltipPlacement>(preferredPlacement);
+    const [resolvedPlacement, setResolvedPlacement] =
+        useState<TooltipPlacement>(preferredPlacement);
 
     useLayoutEffect(() => {
         if (!open) return;
@@ -42,11 +43,11 @@ export function useResolvedTooltipPlacement({
                 boundaryRect,
             );
 
-            setResolvedPlacement((current) => (
+            setResolvedPlacement((current) =>
                 current.align === nextPlacement.align && current.side === nextPlacement.side
                     ? current
-                    : nextPlacement
-            ));
+                    : nextPlacement,
+            );
         };
 
         const boundaryEl = anchorRef.current ? getTooltipBoundaryElement(anchorRef.current) : null;

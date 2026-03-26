@@ -5,7 +5,10 @@ export type PageSpecError =
     | { kind: 'reversed-range'; start: number; end: number }
     | { kind: 'out-of-range'; page: number; total: number };
 
-export function parseSelectedPagesFromSpec(spec: string, total: number): { pages: number[]; error: null } | { pages: null; error: PageSpecError } {
+export function parseSelectedPagesFromSpec(
+    spec: string,
+    total: number,
+): { pages: number[]; error: null } | { pages: null; error: PageSpecError } {
     if (!spec.trim()) {
         return {
             pages: Array.from({ length: total }, (_, i) => i + 1),

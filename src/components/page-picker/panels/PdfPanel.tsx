@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
 import { IconCheck } from '@tabler/icons-react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { FileEdits, FinalPage, SourceFile } from '@/domain';
 import type { RotationDirection } from '@/domain/file-edits';
 import { emptyFileEdits } from '@/domain/file-edits';
-import { usePdfControls } from '../hooks/pdf-controls.hook';
-import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/pdf';
 import { useTranslation } from '@/i18n';
-import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
+import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/pdf';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';
+import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
 import { PdfToolbar } from '../controls/PdfToolbar';
+import { usePdfControls } from '../hooks/pdf-controls.hook';
 
 function scrollToPage(gridEl: HTMLDivElement | null, pageNum: number) {
     const el = gridEl?.querySelector(`[data-page="${pageNum}"]`);
@@ -40,10 +40,7 @@ function PdfThumbnailItem({
     onRotate: (direction: RotationDirection) => void;
 }) {
     const { t } = useTranslation();
-    const request = useMemo(
-        () => buildThumbnailRenderRequest(pageNum, edits),
-        [edits, pageNum],
-    );
+    const request = useMemo(() => buildThumbnailRenderRequest(pageNum, edits), [edits, pageNum]);
     const { dataUrl, setTargetEl } = useLazyPdfRender(file, request, scrollRoot);
 
     return (
@@ -138,7 +135,6 @@ export function PdfPanel({
         handleThumbClick,
         applyPageInput,
         appliedPageNum,
-        appliedPageSignal,
         handleToggleAll,
         handlePageInputChange,
     } = usePdfControls({
@@ -154,12 +150,12 @@ export function PdfPanel({
     useEffect(() => {
         if (focusedPageNum === null) return;
         scrollToPage(gridEl, focusedPageNum);
-    }, [focusedPageNum, focusFlashKey, gridEl]);
+    }, [focusedPageNum, gridEl]);
 
     useEffect(() => {
         if (appliedPageNum === null) return;
         scrollToPage(gridEl, appliedPageNum);
-    }, [appliedPageNum, appliedPageSignal, gridEl]);
+    }, [appliedPageNum, gridEl]);
 
     const handlePageInputCommit = () => {
         applyPageInput(true);
@@ -179,21 +175,27 @@ export function PdfPanel({
 
             <div ref={setGridEl} className="min-h-0 flex-1 overflow-y-auto p-4">
                 <div className="grid grid-cols-2 gap-4">
-                    {Array.from({ length: file.pageCount }, (_, index) => index + 1).map((pageNum) => (
-                        <PdfThumbnailItem
-                            key={`${pageNum}:${focusedPageNum === pageNum ? focusFlashKey ?? 0 : 0}`}
-                            file={file}
-                            pageNum={pageNum}
-                            edits={editsByFile[file.id] ?? emptyFileEdits()}
-                            scrollRoot={gridEl}
-                            isSelected={selectedPageNums.has(pageNum)}
-                            isFocused={focusedPageNum === pageNum}
-                            focusFlashKey={focusedPageNum === pageNum ? focusFlashKey : undefined}
-                            onClick={(event) => handleThumbClick(pageNum, event)}
-                            onPreview={() => onPreview(pageNum)}
-                            onRotate={(direction) => void onRotatePage(file.id, pageNum, direction)}
-                        />
-                    ))}
+                    {Array.from({ length: file.pageCount }, (_, index) => index + 1).map(
+                        (pageNum) => (
+                            <PdfThumbnailItem
+                                key={`${pageNum}:${focusedPageNum === pageNum ? (focusFlashKey ?? 0) : 0}`}
+                                file={file}
+                                pageNum={pageNum}
+                                edits={editsByFile[file.id] ?? emptyFileEdits()}
+                                scrollRoot={gridEl}
+                                isSelected={selectedPageNums.has(pageNum)}
+                                isFocused={focusedPageNum === pageNum}
+                                focusFlashKey={
+                                    focusedPageNum === pageNum ? focusFlashKey : undefined
+                                }
+                                onClick={(event) => handleThumbClick(pageNum, event)}
+                                onPreview={() => onPreview(pageNum)}
+                                onRotate={(direction) =>
+                                    void onRotatePage(file.id, pageNum, direction)
+                                }
+                            />
+                        ),
+                    )}
                 </div>
             </div>
         </div>

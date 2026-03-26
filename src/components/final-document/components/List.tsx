@@ -1,20 +1,20 @@
-import { useCallback, useMemo } from 'react';
 import {
-    DndContext,
     closestCenter,
+    DndContext,
+    type DragEndEvent,
     PointerSensor,
     useSensor,
     useSensors,
-    type DragEndEvent,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { IconFile } from '@tabler/icons-react';
+import { useCallback, useMemo } from 'react';
 
 import type { FileEdits, FinalPage, SourceFile } from '@/domain';
 import { emptyFileEdits } from '@/domain/file-edits';
 import { useTranslation } from '@/i18n';
-import { ListRow } from './ListRow';
 import type { ListItem } from '../models/list-item';
+import { ListRow } from './ListRow';
 
 interface Props {
     finalPages: FinalPage[];
@@ -42,26 +42,28 @@ export function List({
     const { t } = useTranslation();
     const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
     const items = useMemo<ListItem[]>(
-        () => finalPages.map((page, index) => ({
-            page,
-            file: fileMap.get(page.fileId),
-            edits: editsByFile[page.fileId] ?? emptyFileEdits(),
-            index,
-            isSelected: page.id === selectedPageId,
-        })),
+        () =>
+            finalPages.map((page, index) => ({
+                page,
+                file: fileMap.get(page.fileId),
+                edits: editsByFile[page.fileId] ?? emptyFileEdits(),
+                index,
+                isSelected: page.id === selectedPageId,
+            })),
         [editsByFile, fileMap, finalPages, selectedPageId],
     );
     const sortableItems = useMemo(() => items.map((item) => item.page.id), [items]);
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    );
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-    const handleDragEnd = useCallback((event: DragEndEvent) => {
-        const { active, over } = event;
-        if (over && active.id !== over.id) {
-            onReorder(String(active.id), String(over.id));
-        }
-    }, [onReorder]);
+    const handleDragEnd = useCallback(
+        (event: DragEndEvent) => {
+            const { active, over } = event;
+            if (over && active.id !== over.id) {
+                onReorder(String(active.id), String(over.id));
+            }
+        },
+        [onReorder],
+    );
 
     if (items.length === 0) {
         return (
@@ -73,11 +75,7 @@ export function List({
     }
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-        >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
                 <div className="flex flex-col gap-3">
                     {items.map((item, i) => (

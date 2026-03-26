@@ -3,12 +3,13 @@ import type { PageSpecError } from '@/domain/page-spec';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from './resources';
 
 type Translator = (key: TranslationKey, values?: InterpolationValues) => string;
-type PluralTranslator = (baseKey: PluralBaseKey, count: number, values?: InterpolationValues) => string;
+type PluralTranslator = (
+    baseKey: PluralBaseKey,
+    count: number,
+    values?: InterpolationValues,
+) => string;
 
-export function formatSkippedFile(
-    skipped: ImportWarningSkippedFile,
-    t: Translator,
-): string {
+export function formatSkippedFile(skipped: ImportWarningSkippedFile, t: Translator): string {
     const key = `errors.skipped.${skipped.reason}` as TranslationKey;
     return t(key, { name: skipped.name, detail: skipped.detail ?? '' });
 }
@@ -25,10 +26,7 @@ export function formatImportWarning(
     });
 }
 
-export function formatPageSpecError(
-    error: PageSpecError,
-    t: Translator,
-): string {
+export function formatPageSpecError(error: PageSpecError, t: Translator): string {
     switch (error.kind) {
         case 'empty-token':
             return t('pageSpec.emptyToken');

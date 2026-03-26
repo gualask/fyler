@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { check, type Update } from '@tauri-apps/plugin-updater';
+import { useCallback, useEffect, useState } from 'react';
 import { useDiagnostics } from '@/diagnostics';
 import { getErrorMessage } from '@/errors';
 
@@ -36,7 +36,9 @@ export function useAppUpdater() {
             .catch(() => {
                 // Silently ignore — dev mode or no network
             });
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const downloadAndInstall = useCallback(async () => {
@@ -52,7 +54,8 @@ export function useAppUpdater() {
                     totalBytes = event.data.contentLength;
                 } else if (event.event === 'Progress') {
                     downloadedBytes += event.data.chunkLength;
-                    const pct = totalBytes > 0 ? Math.round((downloadedBytes / totalBytes) * 100) : null;
+                    const pct =
+                        totalBytes > 0 ? Math.round((downloadedBytes / totalBytes) * 100) : null;
                     setState((s) => ({ ...s, progress: pct }));
                 }
             });

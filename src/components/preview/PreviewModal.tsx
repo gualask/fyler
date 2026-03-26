@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { emptyFileEdits } from '@/domain/file-edits';
 import type { RotationDirection } from '@/domain/file-edits';
+import { emptyFileEdits } from '@/domain/file-edits';
 import { PageSlot } from './components/PageSlot';
 import { Toolbar } from './components/Toolbar';
-import type { PreviewModalProps } from './types';
 import type { SlotContext } from './models/slot-model';
+import type { PreviewModalProps } from './types';
 
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 3;
@@ -28,9 +27,11 @@ export function PreviewModal({
     const [currentIndex, setCurrentIndex] = useState(0);
     const currentPage = finalPages[currentIndex] ?? null;
     const canRotate = Boolean(onRotatePage && currentPage && fileMap.get(currentPage.fileId));
-    const displayCurrentPage = indicator?.current ?? (indicator?.mode === 'page-num'
-        ? Math.max(currentPage?.pageNum ?? 1, 1)
-        : currentIndex + 1);
+    const displayCurrentPage =
+        indicator?.current ??
+        (indicator?.mode === 'page-num'
+            ? Math.max(currentPage?.pageNum ?? 1, 1)
+            : currentIndex + 1);
     const displayTotalPages = indicator?.total ?? total;
 
     useEffect(() => {
@@ -62,23 +63,29 @@ export function PreviewModal({
         setCurrentIndex(index);
     }, []);
 
-    const slotContext = useMemo<SlotContext>(() => ({
-        scrollRoot: scrollEl,
-        zoomLevel,
-        imageFit,
-        matchExportedImages,
-        onVisible: handleVisible,
-    }), [handleVisible, imageFit, matchExportedImages, scrollEl, zoomLevel]);
+    const slotContext = useMemo<SlotContext>(
+        () => ({
+            scrollRoot: scrollEl,
+            zoomLevel,
+            imageFit,
+            matchExportedImages,
+            onVisible: handleVisible,
+        }),
+        [handleVisible, imageFit, matchExportedImages, scrollEl, zoomLevel],
+    );
 
-    const handleRotate = useCallback(async (direction: RotationDirection) => {
-        if (!onRotatePage || !currentPage) return;
-        setIsRotating(true);
-        try {
-            await onRotatePage(currentPage.fileId, currentPage.pageNum, direction);
-        } finally {
-            setIsRotating(false);
-        }
-    }, [currentPage, onRotatePage]);
+    const handleRotate = useCallback(
+        async (direction: RotationDirection) => {
+            if (!onRotatePage || !currentPage) return;
+            setIsRotating(true);
+            try {
+                await onRotatePage(currentPage.fileId, currentPage.pageNum, direction);
+            } finally {
+                setIsRotating(false);
+            }
+        },
+        [currentPage, onRotatePage],
+    );
 
     return (
         <div
@@ -103,11 +110,12 @@ export function PreviewModal({
                     onClose={onClose}
                 />
 
-                <div
-                    ref={setScrollEl}
-                    className="flex-1 overflow-y-auto px-4 pb-10 pt-16"
-                >
-                    <div className={total === 1 ? 'flex min-h-full items-center justify-center' : undefined}>
+                <div ref={setScrollEl} className="flex-1 overflow-y-auto px-4 pb-10 pt-16">
+                    <div
+                        className={
+                            total === 1 ? 'flex min-h-full items-center justify-center' : undefined
+                        }
+                    >
                         {finalPages.map((fp, index) => (
                             <PageSlot
                                 key={`${fp.id}:${(editsByFile[fp.fileId] ?? emptyFileEdits()).revision}`}

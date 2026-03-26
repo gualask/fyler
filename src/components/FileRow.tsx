@@ -35,7 +35,13 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                     <Tooltip
                         className="block min-w-0"
                         panelClassName="w-max max-w-full px-2 py-1 text-xs font-medium text-ui-text"
-                        renderTrigger={({ ariaDescribedBy, ariaExpanded, onFocus, onBlur, onClick }) => (
+                        renderTrigger={({
+                            ariaDescribedBy,
+                            ariaExpanded,
+                            onFocus,
+                            onBlur,
+                            onClick,
+                        }) => (
                             <button
                                 type="button"
                                 className="block w-full truncate bg-transparent p-0 text-left text-sm font-semibold text-ui-text"
@@ -56,11 +62,14 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                         <span className="block [overflow-wrap:anywhere]">{file.name}</span>
                     </Tooltip>
                     <p className="mt-0.5 text-[11px] text-ui-text-muted">
-                        {t('fileList.pageCount', { count: file.kind === 'image' ? 1 : file.pageCount })}
+                        {t('fileList.pageCount', {
+                            count: file.kind === 'image' ? 1 : file.pageCount,
+                        })}
                     </p>
                 </div>
 
                 <button
+                    type="button"
                     onClick={(e) => {
                         e.stopPropagation();
                         onRemove();

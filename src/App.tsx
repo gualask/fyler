@@ -1,27 +1,39 @@
 import { useState } from 'react';
-import { DiagnosticsProvider } from '@/diagnostics';
-import { PdfCacheProvider } from '@/pdf';
-import { useFiles } from '@/files';
-import { useAddFilesAction, useAppNotifications, useExportAction, useOptimize, useQuickAdd, useQuickAddActions } from '@/hooks';
-import { useDiagnostics } from '@/diagnostics';
-import { PreferencesProvider, useTheme } from '@/preferences';
+import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { AppHeader } from '@/components/AppHeader';
+import { DragOverlay } from '@/components/DragOverlay';
+import { EmptyState } from '@/components/EmptyState';
 import { FileList } from '@/components/FileList';
-import { PagePicker } from '@/components/page-picker';
 import { FinalDocument } from '@/components/final-document';
-import { PreviewModal } from '@/components/preview';
 import { OutputPanel } from '@/components/OutputPanel';
 import { ProgressModal } from '@/components/ProgressModal';
-import { EmptyState } from '@/components/EmptyState';
-import { Toast } from '@/components/Toast';
-import { DragOverlay } from '@/components/DragOverlay';
+import { PagePicker } from '@/components/page-picker';
+import { PreviewModal } from '@/components/preview';
 import { QuickAddView } from '@/components/QuickAddView';
-import { AppErrorBoundary } from '@/components/AppErrorBoundary';
-import { UpdateDialog } from '@/components/UpdateDialog';
 import { SupportDialog } from '@/components/support/SupportDialog';
 import { useSupportDiagnostics } from '@/components/support/support-diagnostics.hook';
-import { TutorialOverlay, useTutorial, useTutorialFilesAddedHandler, tutorialTargetProps, TUTORIAL_TARGETS } from '@/components/tutorial';
+import { Toast } from '@/components/Toast';
+import {
+    TUTORIAL_TARGETS,
+    TutorialOverlay,
+    tutorialTargetProps,
+    useTutorial,
+    useTutorialFilesAddedHandler,
+} from '@/components/tutorial';
+import { UpdateDialog } from '@/components/UpdateDialog';
+import { DiagnosticsProvider, useDiagnostics } from '@/diagnostics';
+import { useFiles } from '@/files';
+import {
+    useAddFilesAction,
+    useAppNotifications,
+    useExportAction,
+    useOptimize,
+    useQuickAdd,
+    useQuickAddActions,
+} from '@/hooks';
 import { useTranslation } from '@/i18n';
+import { PdfCacheProvider } from '@/pdf';
+import { PreferencesProvider, useTheme } from '@/preferences';
 
 function AppContent() {
     const [showFinalPreview, setShowFinalPreview] = useState(false);
@@ -36,9 +48,15 @@ function AppContent() {
     const { isDark, toggleTheme, accent, setAccent } = useTheme();
     const optimize = useOptimize();
 
-    const focusedSourceMatchesSelected = Boolean(filesApi.focusedSource && filesApi.focusedSource.fileId === filesApi.selectedFile?.id);
-    const focusedSourcePageNum = focusedSourceMatchesSelected ? filesApi.focusedSource!.pageNum : null;
-    const focusedSourceFlashKey = focusedSourceMatchesSelected ? filesApi.focusedSource!.flashKey : undefined;
+    const focusedSourceMatchesSelected = Boolean(
+        filesApi.focusedSource && filesApi.focusedSource.fileId === filesApi.selectedFile?.id,
+    );
+    const focusedSourcePageNum = focusedSourceMatchesSelected
+        ? (filesApi.focusedSource?.pageNum ?? null)
+        : null;
+    const focusedSourceFlashKey = focusedSourceMatchesSelected
+        ? filesApi.focusedSource?.flashKey
+        : undefined;
 
     const {
         supportDialogMode,
@@ -61,10 +79,15 @@ function AppContent() {
 
     const exportMerged = useExportAction({ files: filesApi, notifications, optimize });
     const handleAddFiles = useAddFilesAction({ files: filesApi, notifications });
-    const { handleEnterQuickAdd, handleExitQuickAdd } = useQuickAddActions({ quickAdd, notifications });
+    const { handleEnterQuickAdd, handleExitQuickAdd } = useQuickAddActions({
+        quickAdd,
+        notifications,
+    });
 
     return (
-        <div className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}>
+        <div
+            className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}
+        >
             <UpdateDialog />
             {quickAdd.isQuickAdd ? (
                 <QuickAddView
@@ -101,8 +124,17 @@ function AppContent() {
                             <EmptyState onAddFiles={handleAddFiles} />
                         ) : (
                             <>
-                                <div className="grid min-h-0 flex-1 overflow-hidden" style={{ gridTemplateColumns: 'minmax(200px, 30fr) minmax(200px, 40fr) minmax(200px, 30fr)' }}>
-                                    <aside {...tutorialTargetProps(TUTORIAL_TARGETS.fileList)} className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
+                                <div
+                                    className="grid min-h-0 flex-1 overflow-hidden"
+                                    style={{
+                                        gridTemplateColumns:
+                                            'minmax(200px, 30fr) minmax(200px, 40fr) minmax(200px, 30fr)',
+                                    }}
+                                >
+                                    <aside
+                                        {...tutorialTargetProps(TUTORIAL_TARGETS.fileList)}
+                                        className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source"
+                                    >
                                         <FileList
                                             files={filesApi.files}
                                             finalPages={filesApi.finalPages}
@@ -114,7 +146,10 @@ function AppContent() {
                                         />
                                     </aside>
 
-                                    <section {...tutorialTargetProps(TUTORIAL_TARGETS.pagePicker)} className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source">
+                                    <section
+                                        {...tutorialTargetProps(TUTORIAL_TARGETS.pagePicker)}
+                                        className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source"
+                                    >
                                         <PagePicker
                                             key={filesApi.selectedFile?.id}
                                             file={filesApi.selectedFile}
@@ -131,11 +166,18 @@ function AppContent() {
                                         />
                                     </section>
 
-                                    <section {...tutorialTargetProps(TUTORIAL_TARGETS.finalDocument)} className="min-w-0 overflow-hidden bg-ui-output">
+                                    <section
+                                        {...tutorialTargetProps(TUTORIAL_TARGETS.finalDocument)}
+                                        className="min-w-0 overflow-hidden bg-ui-output"
+                                    >
                                         <FinalDocument
                                             finalPages={filesApi.finalPages}
                                             files={filesApi.files}
-                                            selectedPageId={filesApi.focusedSource ? `${filesApi.focusedSource.fileId}:${filesApi.focusedSource.pageNum}` : null}
+                                            selectedPageId={
+                                                filesApi.focusedSource
+                                                    ? `${filesApi.focusedSource.fileId}:${filesApi.focusedSource.pageNum}`
+                                                    : null
+                                            }
                                             onReorder={filesApi.reorderFinalPages}
                                             onMovePageToIndex={filesApi.moveFinalPageToIndex}
                                             onRemove={filesApi.removeFinalPage}
@@ -165,10 +207,19 @@ function AppContent() {
             )}
 
             {notifications.statusMessage && notifications.statusTone && (
-                <Toast key={notifications.statusMessage} message={notifications.statusMessage} tone={notifications.statusTone} />
+                <Toast
+                    key={notifications.statusMessage}
+                    message={notifications.statusMessage}
+                    tone={notifications.statusTone}
+                />
             )}
 
-            {notifications.loadingMessage && <ProgressModal message={notifications.loadingMessage} progress={notifications.loadingProgress} />}
+            {notifications.loadingMessage && (
+                <ProgressModal
+                    message={notifications.loadingMessage}
+                    progress={notifications.loadingProgress}
+                />
+            )}
 
             <SupportDialog
                 key={supportDialogMode ?? 'closed'}

@@ -7,298 +7,292 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* superfici e testo */
-  --ui-bg:               #F5F7FA;
-  --ui-surface:          #ffffff;
-  --ui-surface-hover:    #f1f5f9;
-  --ui-source:           #F5F7FA;
-  --ui-output:           #F0F2F5;
-  --ui-border:           #e2e8f0;
-  --ui-border-hover:     #cbd5e1;
-  --ui-text:             #0f172a;
-  --ui-text-secondary:   #334155;
-  --ui-text-dim:         #475569;
-  --ui-text-muted:       #64748b;
+    /* superfici e testo */
+    --ui-bg: #f5f7fa;
+    --ui-surface: #ffffff;
+    --ui-surface-hover: #f1f5f9;
+    --ui-source: #f5f7fa;
+    --ui-output: #f0f2f5;
+    --ui-border: #e2e8f0;
+    --ui-border-hover: #cbd5e1;
+    --ui-text: #0f172a;
+    --ui-text-secondary: #334155;
+    --ui-text-dim: #475569;
+    --ui-text-muted: #64748b;
 
-  /* accent — default indigo, overridden by accent-* classes below */
-  --ui-accent:           #6366f1;
-  --ui-accent-hover:     #4f46e5;
-  --ui-accent-text:      #6366f1;
-  --ui-accent-muted:     #a5b4fc;
-  --ui-accent-soft:      #eef2ff;
-  --ui-accent-soft-hover: #e0e7ff;
-  --ui-accent-on-soft:   #4338ca;
+    /* accent — default indigo, overridden by accent-* classes below */
+    --ui-accent: #6366f1;
+    --ui-accent-hover: #4f46e5;
+    --ui-accent-text: #6366f1;
+    --ui-accent-muted: #a5b4fc;
+    --ui-accent-soft: #eef2ff;
+    --ui-accent-soft-hover: #e0e7ff;
+    --ui-accent-on-soft: #4338ca;
 }
 
 .dark {
-  /* superfici e testo */
-  --ui-bg:               #2e3039;
-  --ui-surface:          #383a44;
-  --ui-surface-hover:    #444752;
-  --ui-source:           #333541;
-  --ui-output:           #292b34;
-  --ui-border:           rgba(255,255,255,0.12);
-  --ui-border-hover:     rgba(255,255,255,0.20);
-  --ui-text:             #f4f6fb;
-  --ui-text-secondary:   #dde3ee;
-  --ui-text-dim:         #b1bacb;
-  --ui-text-muted:       #8994a8;
+    /* superfici e testo */
+    --ui-bg: #2e3039;
+    --ui-surface: #383a44;
+    --ui-surface-hover: #444752;
+    --ui-source: #333541;
+    --ui-output: #292b34;
+    --ui-border: rgba(255, 255, 255, 0.12);
+    --ui-border-hover: rgba(255, 255, 255, 0.2);
+    --ui-text: #f4f6fb;
+    --ui-text-secondary: #dde3ee;
+    --ui-text-dim: #b1bacb;
+    --ui-text-muted: #8994a8;
 
-  /* accent in dark — indigo default */
-  --ui-accent-text:      #a5b4fc;
-  --ui-accent-muted:     #818cf8;
-  --ui-accent-soft:      rgba(99,102,241,0.15);
-  --ui-accent-soft-hover: rgba(99,102,241,0.25);
-  --ui-accent-on-soft:   #a5b4fc;
+    /* accent in dark — indigo default */
+    --ui-accent-text: #a5b4fc;
+    --ui-accent-muted: #818cf8;
+    --ui-accent-soft: rgba(99, 102, 241, 0.15);
+    --ui-accent-soft-hover: rgba(99, 102, 241, 0.25);
+    --ui-accent-on-soft: #a5b4fc;
 }
 
 /* ── Accent color palettes ─────────────────────────────────────────────── */
 
 /* Teal */
 .accent-teal {
-  --ui-accent:           #14b8a6;
-  --ui-accent-hover:     #0d9488;
-  --ui-accent-text:      #0d9488;
-  --ui-accent-muted:     #5eead4;
-  --ui-accent-soft:      #f0fdfa;
-  --ui-accent-soft-hover: #ccfbf1;
-  --ui-accent-on-soft:   #0f766e;
+    --ui-accent: #14b8a6;
+    --ui-accent-hover: #0d9488;
+    --ui-accent-text: #0d9488;
+    --ui-accent-muted: #5eead4;
+    --ui-accent-soft: #f0fdfa;
+    --ui-accent-soft-hover: #ccfbf1;
+    --ui-accent-on-soft: #0f766e;
 }
-.dark.accent-teal, .dark .accent-teal {
-  --ui-accent-text:      #5eead4;
-  --ui-accent-muted:     #2dd4bf;
-  --ui-accent-soft:      rgba(20,184,166,0.15);
-  --ui-accent-soft-hover: rgba(20,184,166,0.25);
-  --ui-accent-on-soft:   #5eead4;
+.dark.accent-teal,
+.dark .accent-teal {
+    --ui-accent-text: #5eead4;
+    --ui-accent-muted: #2dd4bf;
+    --ui-accent-soft: rgba(20, 184, 166, 0.15);
+    --ui-accent-soft-hover: rgba(20, 184, 166, 0.25);
+    --ui-accent-on-soft: #5eead4;
 }
 
 /* Amber */
 .accent-amber {
-  --ui-accent:           #f59e0b;
-  --ui-accent-hover:     #d97706;
-  --ui-accent-text:      #d97706;
-  --ui-accent-muted:     #fcd34d;
-  --ui-accent-soft:      #fffbeb;
-  --ui-accent-soft-hover: #fef3c7;
-  --ui-accent-on-soft:   #b45309;
+    --ui-accent: #f59e0b;
+    --ui-accent-hover: #d97706;
+    --ui-accent-text: #d97706;
+    --ui-accent-muted: #fcd34d;
+    --ui-accent-soft: #fffbeb;
+    --ui-accent-soft-hover: #fef3c7;
+    --ui-accent-on-soft: #b45309;
 }
-.dark.accent-amber, .dark .accent-amber {
-  --ui-accent-text:      #fcd34d;
-  --ui-accent-muted:     #fbbf24;
-  --ui-accent-soft:      rgba(245,158,11,0.15);
-  --ui-accent-soft-hover: rgba(245,158,11,0.25);
-  --ui-accent-on-soft:   #fcd34d;
+.dark.accent-amber,
+.dark .accent-amber {
+    --ui-accent-text: #fcd34d;
+    --ui-accent-muted: #fbbf24;
+    --ui-accent-soft: rgba(245, 158, 11, 0.15);
+    --ui-accent-soft-hover: rgba(245, 158, 11, 0.25);
+    --ui-accent-on-soft: #fcd34d;
 }
 
 /* Blue */
 .accent-blue {
-  --ui-accent:           #3b82f6;
-  --ui-accent-hover:     #2563eb;
-  --ui-accent-text:      #2563eb;
-  --ui-accent-muted:     #93c5fd;
-  --ui-accent-soft:      #eff6ff;
-  --ui-accent-soft-hover: #dbeafe;
-  --ui-accent-on-soft:   #1d4ed8;
+    --ui-accent: #3b82f6;
+    --ui-accent-hover: #2563eb;
+    --ui-accent-text: #2563eb;
+    --ui-accent-muted: #93c5fd;
+    --ui-accent-soft: #eff6ff;
+    --ui-accent-soft-hover: #dbeafe;
+    --ui-accent-on-soft: #1d4ed8;
 }
-.dark.accent-blue, .dark .accent-blue {
-  --ui-accent-text:      #93c5fd;
-  --ui-accent-muted:     #60a5fa;
-  --ui-accent-soft:      rgba(59,130,246,0.15);
-  --ui-accent-soft-hover: rgba(59,130,246,0.25);
-  --ui-accent-on-soft:   #93c5fd;
+.dark.accent-blue,
+.dark .accent-blue {
+    --ui-accent-text: #93c5fd;
+    --ui-accent-muted: #60a5fa;
+    --ui-accent-soft: rgba(59, 130, 246, 0.15);
+    --ui-accent-soft-hover: rgba(59, 130, 246, 0.25);
+    --ui-accent-on-soft: #93c5fd;
 }
 
 @keyframes ui-thumb-flash {
-  0% {
-    opacity: 0;
-    transform: scale(1);
-  }
-  18% {
-    opacity: 0.92;
-    transform: scale(1.01);
-  }
-  42% {
-    opacity: 0.76;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1);
-  }
+    0% {
+        opacity: 0;
+        transform: scale(1);
+    }
+    18% {
+        opacity: 0.92;
+        transform: scale(1.01);
+    }
+    42% {
+        opacity: 0.76;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
 }
 
 @keyframes empty-state-enter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes empty-state-breathe {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.06); }
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.06);
+    }
 }
 
 .empty-state-enter {
-  animation: empty-state-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: empty-state-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .empty-state-breathe {
-  animation: empty-state-breathe 3s ease-in-out infinite;
-  animation-delay: 0.8s;
+    animation: empty-state-breathe 3s ease-in-out infinite;
+    animation-delay: 0.8s;
 }
 
 /* ── Font ────────────────────────────────────────────────────────────────── */
 body {
-  font-family: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 /* ── Placeholder ─────────────────────────────────────────────────────────── */
 ::placeholder {
-  color: var(--ui-text-muted);
-  opacity: 1;
+    color: var(--ui-text-muted);
+    opacity: 1;
 }
 
 /* ── Tailwind utilities ──────────────────────────────────────────────────── */
 @layer components {
+    /* ── Pulsanti ──────────────────────────────────────────────── */
+    .btn-primary {
+        @apply flex items-center gap-2 rounded-lg bg-ui-accent px-5 py-2 text-sm font-semibold text-white shadow-md transition-[colors,transform] hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
+    }
+    .btn-primary-lg {
+        @apply flex items-center gap-2 rounded-lg bg-ui-accent px-6 py-3 text-base font-semibold text-white shadow-md transition-[colors,transform] hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
+    }
+    .btn-ghost {
+        @apply flex items-center gap-2 rounded-lg bg-ui-surface-hover px-4 py-2 text-sm font-medium text-ui-text-secondary transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
+    }
+    .btn-ghost-sm {
+        @apply flex items-center gap-1 rounded-md bg-ui-surface-hover px-2.5 py-1.5 text-sm font-medium text-ui-text-secondary transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
+    }
+    .btn-icon {
+        @apply inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg p-1.5 text-ui-text-muted transition-[colors,transform] hover:bg-ui-surface-hover hover:text-ui-text-secondary active:scale-[0.93];
+    }
+    .btn-primary,
+    .btn-primary-lg,
+    .btn-ghost,
+    .btn-ghost-sm,
+    .btn-icon {
+        @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface disabled:cursor-not-allowed;
+    }
+    .btn-toolbar {
+        @apply h-9;
+    }
+    .btn-icon-active {
+        @apply bg-ui-accent-soft text-ui-accent-on-soft;
+    }
+    /* ── Toggle (pulsante "Tutti/Nessuna" e opzioni SegmentedControl) ── */
+    .toggle-on {
+        @apply bg-ui-accent border-ui-accent text-white;
+    }
+    .toggle-off {
+        @apply border-ui-border text-ui-text-secondary hover:border-ui-accent/30 hover:bg-ui-accent-soft hover:text-ui-accent-on-soft;
+    }
+    /* ── Input ─────────────────────────────────────────────────── */
+    .input-base {
+        @apply h-[38px] w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none transition-colors focus:ring-1 focus:ring-ui-accent;
+    }
 
-  /* ── Pulsanti ──────────────────────────────────────────────── */
-  .btn-primary {
-    @apply flex items-center gap-2 rounded-lg bg-ui-accent px-5 py-2
-           text-sm font-semibold text-white shadow-md transition-[colors,transform]
-           hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
-  }
-  .btn-primary-lg {
-    @apply flex items-center gap-2 rounded-lg bg-ui-accent px-6 py-3
-           text-base font-semibold text-white shadow-md transition-[colors,transform]
-           hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
-  }
-  .btn-ghost {
-    @apply flex items-center gap-2 rounded-lg bg-ui-surface-hover
-           px-4 py-2 text-sm font-medium text-ui-text-secondary
-           transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft
-           active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100
-           disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
-  }
-  .btn-ghost-sm {
-    @apply flex items-center gap-1 rounded-md bg-ui-surface-hover
-           px-2.5 py-1.5 text-sm font-medium text-ui-text-secondary
-           transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft
-           active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100
-           disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
-  }
-  .btn-icon {
-    @apply inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg
-           p-1.5 text-ui-text-muted transition-[colors,transform] hover:bg-ui-surface-hover hover:text-ui-text-secondary
-           active:scale-[0.93];
-  }
-	  .btn-primary,
-	  .btn-primary-lg,
-	  .btn-ghost,
-	  .btn-ghost-sm,
-	  .btn-icon {
-	    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted
-	           focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface disabled:cursor-not-allowed;
-	  }
-	  .btn-toolbar {
-	    @apply h-9;
-	  }
-	  .btn-icon-active {
-	    @apply bg-ui-accent-soft text-ui-accent-on-soft;
-	  }
-  /* ── Toggle (pulsante "Tutti/Nessuna" e opzioni SegmentedControl) ── */
-  .toggle-on {
-    @apply bg-ui-accent border-ui-accent text-white;
-  }
-  .toggle-off {
-    @apply border-ui-border text-ui-text-secondary
-           hover:border-ui-accent/30 hover:bg-ui-accent-soft hover:text-ui-accent-on-soft;
-  }
-  /* ── Input ─────────────────────────────────────────────────── */
-  .input-base {
-    @apply h-[38px] w-full rounded-lg border border-ui-border bg-ui-bg
-           px-3 text-sm text-ui-text outline-none transition-colors
-           focus:ring-1 focus:ring-ui-accent;
-  }
+    /* ── Thumbnail cards (page picker) ─────────────────────────── */
+    .thumb-card {
+        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.25);
+    }
+    .thumb-card-idle:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    .thumb-card-focused {
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+    }
+    :is(.dark, .dark *) .thumb-card {
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.1),
+            0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+    :is(.dark, .dark *) .thumb-card-idle:hover {
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.2),
+            0 6px 18px rgba(0, 0, 0, 0.7);
+    }
+    :is(.dark, .dark *) .thumb-card-focused {
+        box-shadow:
+            0 0 0 1px var(--ui-accent-muted),
+            0 6px 18px rgba(0, 0, 0, 0.7);
+    }
 
-  /* ── Thumbnail cards (page picker) ─────────────────────────── */
-  .thumb-card {
-    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.25);
-  }
-  .thumb-card-idle:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  }
-  .thumb-card-focused {
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
-  }
-  :is(.dark, .dark *) .thumb-card {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.6);
-  }
-  :is(.dark, .dark *) .thumb-card-idle:hover {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 6px 18px rgba(0, 0, 0, 0.7);
-  }
-  :is(.dark, .dark *) .thumb-card-focused {
-    box-shadow: 0 0 0 1px var(--ui-accent-muted), 0 6px 18px rgba(0, 0, 0, 0.7);
-  }
+    /* ── Label uppercase ───────────────────────────────────────── */
+    .label-caps {
+        @apply text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
+    }
 
-  /* ── Label uppercase ───────────────────────────────────────── */
-  .label-caps {
-    @apply text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
-  }
+    /* ── Header pannello ───────────────────────────────────────── */
+    .column-header {
+        @apply flex h-[54px] shrink-0 items-center justify-between gap-3 border-b border-ui-border px-4;
+    }
+    .column-header-title {
+        @apply min-w-0 shrink-0 truncate text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
+    }
+    .column-toolbar {
+        @apply flex min-w-0 items-center justify-end gap-2;
+    }
+    .column-toolbar-label {
+        @apply shrink-0 text-[10px] font-bold uppercase tracking-wide text-ui-text-muted;
+    }
+    .column-toolbar-note {
+        @apply inline-flex h-[34px] items-center text-xs font-medium text-ui-text-muted;
+    }
+    .column-toolbar-stat {
+        @apply inline-flex h-[34px] items-center rounded-lg bg-ui-surface-hover px-3 text-sm font-semibold text-ui-text-secondary;
+    }
+    .panel-header {
+        @apply flex shrink-0 items-center justify-between border-b border-ui-border px-4 py-3;
+    }
 
-  /* ── Header pannello ───────────────────────────────────────── */
-  .column-header {
-    @apply flex h-[54px] shrink-0 items-center justify-between gap-3 border-b border-ui-border px-4;
-  }
-  .column-header-title {
-    @apply min-w-0 shrink-0 truncate text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
-  }
-  .column-toolbar {
-    @apply flex min-w-0 items-center justify-end gap-2;
-  }
-  .column-toolbar-label {
-    @apply shrink-0 text-[10px] font-bold uppercase tracking-wide text-ui-text-muted;
-  }
-  .column-toolbar-note {
-    @apply inline-flex h-[34px] items-center text-xs font-medium text-ui-text-muted;
-  }
-  .column-toolbar-stat {
-    @apply inline-flex h-[34px] items-center rounded-lg bg-ui-surface-hover px-3 text-sm font-semibold text-ui-text-secondary;
-  }
-  .panel-header {
-    @apply flex shrink-0 items-center justify-between
-           border-b border-ui-border px-4 py-3;
-  }
-
-  .flash-accent-thumb {
-    animation: ui-thumb-flash 1.2s ease-out 1;
-  }
+    .flash-accent-thumb {
+        animation: ui-thumb-flash 1.2s ease-out 1;
+    }
 }
 
 @theme inline {
-  /* superfici */
-  --color-ui-bg:              var(--ui-bg);
-  --color-ui-surface:         var(--ui-surface);
-  --color-ui-surface-hover:   var(--ui-surface-hover);
-  --color-ui-source:          var(--ui-source);
-  --color-ui-output:          var(--ui-output);
-  --color-ui-border:          var(--ui-border);
-  --color-ui-border-hover:    var(--ui-border-hover);
-  /* testo */
-  --color-ui-text:            var(--ui-text);
-  --color-ui-text-secondary:  var(--ui-text-secondary);
-  --color-ui-text-dim:        var(--ui-text-dim);
-  --color-ui-text-muted:      var(--ui-text-muted);
-  /* accent */
-  --color-ui-accent:          var(--ui-accent);
-  --color-ui-accent-hover:    var(--ui-accent-hover);
-  --color-ui-accent-text:     var(--ui-accent-text);
-  --color-ui-accent-muted:    var(--ui-accent-muted);
-  --color-ui-accent-soft:     var(--ui-accent-soft);
-  --color-ui-accent-soft-hover: var(--ui-accent-soft-hover);
-  --color-ui-accent-on-soft:  var(--ui-accent-on-soft);
+    /* superfici */
+    --color-ui-bg: var(--ui-bg);
+    --color-ui-surface: var(--ui-surface);
+    --color-ui-surface-hover: var(--ui-surface-hover);
+    --color-ui-source: var(--ui-source);
+    --color-ui-output: var(--ui-output);
+    --color-ui-border: var(--ui-border);
+    --color-ui-border-hover: var(--ui-border-hover);
+    /* testo */
+    --color-ui-text: var(--ui-text);
+    --color-ui-text-secondary: var(--ui-text-secondary);
+    --color-ui-text-dim: var(--ui-text-dim);
+    --color-ui-text-muted: var(--ui-text-muted);
+    /* accent */
+    --color-ui-accent: var(--ui-accent);
+    --color-ui-accent-hover: var(--ui-accent-hover);
+    --color-ui-accent-text: var(--ui-accent-text);
+    --color-ui-accent-muted: var(--ui-accent-muted);
+    --color-ui-accent-soft: var(--ui-accent-soft);
+    --color-ui-accent-soft-hover: var(--ui-accent-soft-hover);
+    --color-ui-accent-on-soft: var(--ui-accent-on-soft);
 }

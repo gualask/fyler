@@ -1,7 +1,14 @@
-import { invoke, convertFileSrc } from '@tauri-apps/api/core';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
-import type { ImageExportPreviewLayout, OpenFilesResult, MergeRequest, MergeResult, ImageFit, QuarterTurn } from '../domain';
 import type { AppMetadata } from '../diagnostics';
+import type {
+    ImageExportPreviewLayout,
+    ImageFit,
+    MergeRequest,
+    MergeResult,
+    OpenFilesResult,
+    QuarterTurn,
+} from '../domain';
 
 export const openFilesDialog = (filterLabel: string): Promise<OpenFilesResult> =>
     invoke('open_files_dialog', { filterLabel });
@@ -9,14 +16,11 @@ export const openFilesDialog = (filterLabel: string): Promise<OpenFilesResult> =
 export const savePDFDialog = (defaultFilename: string, filterLabel: string): Promise<string> =>
     invoke('save_pdf_dialog', { defaultFilename, filterLabel });
 
-export const mergePDFs = (req: MergeRequest): Promise<MergeResult> =>
-    invoke('merge_pdfs', { req });
+export const mergePDFs = (req: MergeRequest): Promise<MergeResult> => invoke('merge_pdfs', { req });
 
-export const getAppMetadata = (): Promise<AppMetadata> =>
-    invoke('get_app_metadata');
+export const getAppMetadata = (): Promise<AppMetadata> => invoke('get_app_metadata');
 
-export const openExternalUrl = (url: string): Promise<void> =>
-    invoke('open_external_url', { url });
+export const openExternalUrl = (url: string): Promise<void> => invoke('open_external_url', { url });
 
 export const openFilesFromPaths = (paths: string[]): Promise<OpenFilesResult> =>
     invoke('open_files_from_paths', { paths });
@@ -32,8 +36,7 @@ export const getImageExportPreviewLayout = (
     invoke('get_image_export_preview_layout', { path, imageFit, quarterTurns });
 
 // asset:// protocol: il webview Tauri carica il file locale direttamente
-export const getPreviewUrl = (path: string): string =>
-    convertFileSrc(path);
+export const getPreviewUrl = (path: string): string => convertFileSrc(path);
 
 export const windowGetLogicalSize = async () => {
     const win = getCurrentWindow();
@@ -45,5 +48,4 @@ export const windowGetLogicalSize = async () => {
 export const windowSetSize = (w: number, h: number) =>
     getCurrentWindow().setSize(new LogicalSize(w, h));
 
-export const windowSetAlwaysOnTop = (flag: boolean) =>
-    getCurrentWindow().setAlwaysOnTop(flag);
+export const windowSetAlwaysOnTop = (flag: boolean) => getCurrentWindow().setAlwaysOnTop(flag);

@@ -1,6 +1,6 @@
 import { IconArrowsMinimize, IconDownload, IconEye, IconHelp } from '@tabler/icons-react';
-import { useTranslation } from '@/i18n';
 import { TUTORIAL_TARGETS, tutorialTargetProps } from '@/components/tutorial';
+import { useTranslation } from '@/i18n';
 import { AppSettingsMenu, type AppSettingsMenuProps } from './AppSettingsMenu';
 
 interface Props {
@@ -31,23 +31,36 @@ export function AppHeader({
             <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                     <img src="/icon.svg" alt="Fyler" className="h-6 w-6" />
-                    <span className="text-base font-bold bg-gradient-to-r from-[#05BAFF] to-[#505FFF] bg-clip-text text-transparent">Fyler</span>
+                    <span className="text-base font-bold bg-gradient-to-r from-[#05BAFF] to-[#505FFF] bg-clip-text text-transparent">
+                        Fyler
+                    </span>
                 </div>
                 <div className="mx-1 h-5 w-px bg-ui-border" />
                 <div className="flex items-center gap-2">
                     <AppSettingsMenu {...settings} />
-                    <button onClick={onQuickAdd} className="btn-ghost btn-toolbar" title={t('header.quickAdd')}>
+                    <button
+                        type="button"
+                        onClick={onQuickAdd}
+                        className="btn-ghost btn-toolbar"
+                        title={t('header.quickAdd')}
+                    >
                         <IconArrowsMinimize className="h-4 w-4" />
                         {t('header.quickAdd')}
                     </button>
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                <button disabled={!canHelp} onClick={onHelp} className="btn-ghost btn-toolbar">
+                <button
+                    type="button"
+                    disabled={!canHelp}
+                    onClick={onHelp}
+                    className="btn-ghost btn-toolbar"
+                >
                     <IconHelp className="h-4 w-4" />
                     {t('header.help')}
                 </button>
                 <button
+                    type="button"
                     disabled={!canPreview}
                     onClick={onPreview}
                     className="btn-ghost btn-toolbar"
@@ -56,6 +69,7 @@ export function AppHeader({
                     {t('header.preview')}
                 </button>
                 <button
+                    type="button"
                     {...tutorialTargetProps(TUTORIAL_TARGETS.export)}
                     disabled={!canExport}
                     onClick={onExport}

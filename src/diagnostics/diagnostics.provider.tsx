@@ -1,13 +1,9 @@
-import {
-    useCallback,
-    useMemo,
-    useState,
-    type ReactNode,
-} from 'react';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 
 import { DiagnosticsContext, type DiagnosticsContextValue } from './diagnostics.context';
 import { sanitizeMetadata, sanitizeText } from './diagnostics.sanitize';
 import type { DiagnosticEntry } from './diagnostics.types';
+
 const MAX_ENTRIES = 50;
 
 export function DiagnosticsProvider({ children }: { children: ReactNode }) {
@@ -25,14 +21,13 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
         setEntries((current) => [...current, nextEntry].slice(-MAX_ENTRIES));
     }, []);
 
-    const value = useMemo<DiagnosticsContextValue>(() => ({
-        entries,
-        record,
-    }), [entries, record]);
-
-    return (
-        <DiagnosticsContext.Provider value={value}>
-            {children}
-        </DiagnosticsContext.Provider>
+    const value = useMemo<DiagnosticsContextValue>(
+        () => ({
+            entries,
+            record,
+        }),
+        [entries, record],
     );
+
+    return <DiagnosticsContext.Provider value={value}>{children}</DiagnosticsContext.Provider>;
 }

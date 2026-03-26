@@ -1,7 +1,7 @@
 import { IconChevronDown } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
-import { useTranslation } from '@/i18n';
 import { useDismissableMenu } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import { SUPPORTED_LOCALES } from '@/preferences';
 
 export function LanguageSwitcher() {
@@ -20,10 +20,7 @@ export function LanguageSwitcher() {
     }
 
     return (
-        <div
-            ref={rootRef}
-            className="language-switcher"
-        >
+        <div ref={rootRef} className="language-switcher">
             <button
                 type="button"
                 className="language-switcher__trigger"
@@ -35,11 +32,18 @@ export function LanguageSwitcher() {
             >
                 <span>{t(`language.short.${locale}`)}</span>
                 <IconChevronDown
-                    className={['language-switcher__chevron', open ? 'language-switcher__chevron-open' : ''].join(' ')}
+                    className={[
+                        'language-switcher__chevron',
+                        open ? 'language-switcher__chevron-open' : '',
+                    ].join(' ')}
                 />
             </button>
             {open ? (
-                <div className="language-switcher__menu" role="menu" aria-label={t('language.switcherLabel')}>
+                <div
+                    className="language-switcher__menu"
+                    role="menu"
+                    aria-label={t('language.switcherLabel')}
+                >
                     {SUPPORTED_LOCALES.map((option) => (
                         <button
                             key={option}
@@ -55,8 +59,12 @@ export function LanguageSwitcher() {
                                     : 'language-switcher__menu-option-inactive',
                             ].join(' ')}
                         >
-                            <span className="language-switcher__menu-label">{t(`language.name.${option}`)}</span>
-                            <span className="language-switcher__menu-short">{t(`language.short.${option}`)}</span>
+                            <span className="language-switcher__menu-label">
+                                {t(`language.name.${option}`)}
+                            </span>
+                            <span className="language-switcher__menu-short">
+                                {t(`language.short.${option}`)}
+                            </span>
                         </button>
                     ))}
                 </div>

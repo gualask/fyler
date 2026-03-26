@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useReducer } from 'react';
-import type { SourceFile, FinalPage } from '@/domain';
+import type { FinalPage, SourceFile } from '@/domain';
 
 import {
     allPagesForFile,
@@ -12,10 +12,11 @@ export function useFinalPages() {
     const [state, dispatch] = useReducer(compositionReducer, initialCompositionState);
 
     const finalPages = useMemo<FinalPage[]>(
-        () => state.pageOrder.map((id) => {
-            const { fileId, pageNum } = fromFinalPageId(id);
-            return { id, fileId, pageNum };
-        }),
+        () =>
+            state.pageOrder.map((id) => {
+                const { fileId, pageNum } = fromFinalPageId(id);
+                return { id, fileId, pageNum };
+            }),
         [state.pageOrder],
     );
 
@@ -31,39 +32,48 @@ export function useFinalPages() {
         dispatch({ type: 'reset' });
     }, []);
 
-    const togglePage = useCallback((fileId: string, pageNum: number) => {
-        const current = state.selectedPagesByFile[fileId] ?? [];
-        const next = current.includes(pageNum)
-            ? current.filter((n) => n !== pageNum)
-            : [...current, pageNum];
-        dispatch({ type: 'set-file-selection', fileId, pages: next });
-    }, [state.selectedPagesByFile]);
+    const togglePage = useCallback(
+        (fileId: string, pageNum: number) => {
+            const current = state.selectedPagesByFile[fileId] ?? [];
+            const next = current.includes(pageNum)
+                ? current.filter((n) => n !== pageNum)
+                : [...current, pageNum];
+            dispatch({ type: 'set-file-selection', fileId, pages: next });
+        },
+        [state.selectedPagesByFile],
+    );
 
-    const togglePageRange = useCallback((fileId: string, from: number, to: number) => {
-        const [lo, hi] = from <= to ? [from, to] : [to, from];
-        const current = state.selectedPagesByFile[fileId] ?? [];
-        const currentSet = new Set(current);
-        const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
-        const allPresent = rangeNums.every((pageNum) => currentSet.has(pageNum));
-        const next = allPresent
-            ? current.filter((pageNum) => pageNum < lo || pageNum > hi)
-            : [...current, ...rangeNums.filter((pageNum) => !currentSet.has(pageNum))];
-        dispatch({ type: 'set-file-selection', fileId, pages: next });
-    }, [state.selectedPagesByFile]);
+    const togglePageRange = useCallback(
+        (fileId: string, from: number, to: number) => {
+            const [lo, hi] = from <= to ? [from, to] : [to, from];
+            const current = state.selectedPagesByFile[fileId] ?? [];
+            const currentSet = new Set(current);
+            const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+            const allPresent = rangeNums.every((pageNum) => currentSet.has(pageNum));
+            const next = allPresent
+                ? current.filter((pageNum) => pageNum < lo || pageNum > hi)
+                : [...current, ...rangeNums.filter((pageNum) => !currentSet.has(pageNum))];
+            dispatch({ type: 'set-file-selection', fileId, pages: next });
+        },
+        [state.selectedPagesByFile],
+    );
 
     const setPagesForFile = useCallback((fileId: string, pages: number[]) => {
         dispatch({ type: 'set-file-selection', fileId, pages });
     }, []);
 
-    const removeFinalPage = useCallback((id: string) => {
-        const { fileId, pageNum } = fromFinalPageId(id);
-        const current = state.selectedPagesByFile[fileId] ?? [];
-        dispatch({
-            type: 'set-file-selection',
-            fileId,
-            pages: current.filter((n) => n !== pageNum),
-        });
-    }, [state.selectedPagesByFile]);
+    const removeFinalPage = useCallback(
+        (id: string) => {
+            const { fileId, pageNum } = fromFinalPageId(id);
+            const current = state.selectedPagesByFile[fileId] ?? [];
+            dispatch({
+                type: 'set-file-selection',
+                fileId,
+                pages: current.filter((n) => n !== pageNum),
+            });
+        },
+        [state.selectedPagesByFile],
+    );
 
     const reorderFinalPages = useCallback((fromId: string, toId: string) => {
         dispatch({ type: 'reorder', fromId, toId });

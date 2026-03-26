@@ -56,8 +56,10 @@ export function PageQuickActions({
     const previewSize = compact ? 'h-7 w-7' : 'h-8 w-8';
     const rotateSize = compact ? 'h-6 w-6' : 'h-7 w-7';
     const iconSize = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
-    const previewButtonTone = 'bg-slate-800/80 text-white shadow-lg transition-colors hover:bg-slate-900 disabled:cursor-wait disabled:opacity-40';
-    const rotateButtonTone = 'bg-white/85 text-slate-800 shadow-md transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-40';
+    const previewButtonTone =
+        'bg-slate-800/80 text-white shadow-lg transition-colors hover:bg-slate-900 disabled:cursor-wait disabled:opacity-40';
+    const rotateButtonTone =
+        'bg-white/85 text-slate-800 shadow-md transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-40';
 
     return (
         <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">

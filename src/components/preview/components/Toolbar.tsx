@@ -1,4 +1,3 @@
-import { useCallback, useState } from 'react';
 import {
     IconChevronDown,
     IconRotate2,
@@ -7,6 +6,7 @@ import {
     IconZoomIn,
     IconZoomOut,
 } from '@tabler/icons-react';
+import { useCallback, useState } from 'react';
 
 import type { RotationDirection } from '@/domain/file-edits';
 import { useTranslation } from '@/i18n';
@@ -46,22 +46,31 @@ export function Toolbar({
         ? Array.from({ length: moveControl.totalPositions }, (_, index) => index + 1)
         : [];
 
-    const handleMoveToChange = useCallback((target: string) => {
-        setMoveToValue(target);
-        const targetIndex = Number.parseInt(target, 10) - 1;
-        if (!moveControl || Number.isNaN(targetIndex) || targetIndex < 0 || targetIndex >= moveControl.totalPositions) {
+    const handleMoveToChange = useCallback(
+        (target: string) => {
+            setMoveToValue(target);
+            const targetIndex = Number.parseInt(target, 10) - 1;
+            if (
+                !moveControl ||
+                Number.isNaN(targetIndex) ||
+                targetIndex < 0 ||
+                targetIndex >= moveControl.totalPositions
+            ) {
+                setMoveToValue('');
+                return;
+            }
+            moveControl.onMoveToPosition(targetIndex);
             setMoveToValue('');
-            return;
-        }
-        moveControl.onMoveToPosition(targetIndex);
-        setMoveToValue('');
-    }, [moveControl]);
+        },
+        [moveControl],
+    );
 
     return (
         <div className="absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-black/60 px-4 py-2">
             <div className="justify-self-start">
                 <div className="flex items-center gap-1 rounded-lg bg-white/10 p-1">
                     <button
+                        type="button"
                         onClick={onZoomOut}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                         title={t('preview.zoomOut')}
@@ -72,6 +81,7 @@ export function Toolbar({
                         {Math.round(zoomLevel * 100)}%
                     </span>
                     <button
+                        type="button"
                         onClick={onZoomIn}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                         title={t('preview.zoomIn')}
@@ -79,6 +89,7 @@ export function Toolbar({
                         <IconZoomIn className="h-4 w-4" />
                     </button>
                     <button
+                        type="button"
                         onClick={onZoomReset}
                         className="rounded-md px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20"
                         title={t('preview.resetZoom')}
@@ -96,6 +107,7 @@ export function Toolbar({
                 {canRotate && (
                     <div className="flex items-center gap-1 rounded-lg bg-white/10 p-1">
                         <button
+                            type="button"
                             onClick={() => onRotate('ccw')}
                             disabled={isRotating}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
@@ -104,6 +116,7 @@ export function Toolbar({
                             <IconRotate2 className="h-4 w-4" />
                         </button>
                         <button
+                            type="button"
                             onClick={() => onRotate('cw')}
                             disabled={isRotating}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
@@ -122,7 +135,9 @@ export function Toolbar({
                             className="h-9 appearance-none rounded-lg bg-transparent py-1 pl-3 pr-9 text-sm outline-none"
                             title={t('preview.moveTo')}
                         >
-                            <option value="" className="text-slate-900">{t('preview.moveTo')}</option>
+                            <option value="" className="text-slate-900">
+                                {t('preview.moveTo')}
+                            </option>
                             {moveOptions.map((position) => (
                                 <option
                                     key={position}
@@ -139,6 +154,7 @@ export function Toolbar({
                 )}
 
                 <button
+                    type="button"
                     onClick={onClose}
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
                     title={t('preview.close')}

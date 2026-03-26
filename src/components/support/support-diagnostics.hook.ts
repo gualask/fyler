@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
 import {
-    formatDiagnosticsReport,
-    toDiagnosticMessage,
     type AppMetadata,
     type DiagnosticsSnapshot,
+    formatDiagnosticsReport,
+    toDiagnosticMessage,
+    useDiagnostics,
 } from '@/diagnostics';
-import { useDiagnostics } from '@/diagnostics';
 import { useTranslation } from '@/i18n';
 import { getAppMetadata, openExternalUrl } from '@/platform';
 
@@ -56,36 +55,39 @@ export function useSupportDiagnostics({
             });
     }, [record]);
 
-    const diagnosticsSnapshot = useMemo<DiagnosticsSnapshot>(() => ({
-        generatedAt: new Date().toISOString(),
-        app: appMetadata,
-        preferences: {
-            locale,
-            theme: isDark ? 'dark' : 'light',
-        },
-        session: {
-            quickAdd: isQuickAdd,
+    const diagnosticsSnapshot = useMemo<DiagnosticsSnapshot>(
+        () => ({
+            generatedAt: new Date().toISOString(),
+            app: appMetadata,
+            preferences: {
+                locale,
+                theme: isDark ? 'dark' : 'light',
+            },
+            session: {
+                quickAdd: isQuickAdd,
+                fileCount,
+                finalPageCount,
+                optimizationPreset,
+                imageFit,
+                targetDpi: targetDpi ?? null,
+                jpegQuality: jpegQuality ?? null,
+            },
+            recentEvents: entries,
+        }),
+        [
+            appMetadata,
+            entries,
             fileCount,
             finalPageCount,
-            optimizationPreset,
             imageFit,
-            targetDpi: targetDpi ?? null,
-            jpegQuality: jpegQuality ?? null,
-        },
-        recentEvents: entries,
-    }), [
-        appMetadata,
-        entries,
-        fileCount,
-        finalPageCount,
-        imageFit,
-        isDark,
-        isQuickAdd,
-        jpegQuality,
-        locale,
-        optimizationPreset,
-        targetDpi,
-    ]);
+            isDark,
+            isQuickAdd,
+            jpegQuality,
+            locale,
+            optimizationPreset,
+            targetDpi,
+        ],
+    );
 
     const diagnosticsReport = useMemo(
         () => formatDiagnosticsReport(diagnosticsSnapshot),
@@ -99,7 +101,11 @@ export function useSupportDiagnostics({
     const copyDiagnostics = useCallback(async () => {
         try {
             await navigator.clipboard.writeText(diagnosticsReport);
-            record({ category: 'support', severity: 'info', message: 'Diagnostics copied to clipboard' });
+            record({
+                category: 'support',
+                severity: 'info',
+                message: 'Diagnostics copied to clipboard',
+            });
         } catch (error) {
             record({
                 category: 'support',

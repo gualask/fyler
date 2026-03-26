@@ -1,8 +1,7 @@
 import { useCallback } from 'react';
-
+import type { SourceFile } from '@/domain';
 import type { RotationDirection } from '@/domain/file-edits';
 import { applyRotationToEdits } from '@/domain/file-edits';
-import type { SourceFile } from '@/domain';
 import { useTranslation } from '@/i18n';
 import { buildThumbnailRenderRequest, usePdfCache } from '@/pdf';
 import { openFilesDialog, releaseSources } from '@/platform';
@@ -16,17 +15,26 @@ interface Options {
 
 export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) {
     const { t } = useTranslation();
-    const { files, addFiles: addToList, removeFile: removeFileFromList, clearFiles, reorderFiles } = useFileList();
+    const {
+        files,
+        addFiles: addToList,
+        removeFile: removeFileFromList,
+        clearFiles,
+        reorderFiles,
+    } = useFileList();
     const { editsByFile, setFileEdits, clearFileEdits, clearAllFileEdits } = useFileEdits();
     const { requestRenders, releaseFile } = usePdfCache();
 
-    const addSourceFiles = useCallback((newFiles: SourceFile[]) => {
-        if (!newFiles.length) return [];
+    const addSourceFiles = useCallback(
+        (newFiles: SourceFile[]) => {
+            if (!newFiles.length) return [];
 
-        addToList(newFiles);
-        onFilesAdded?.(newFiles);
-        return newFiles;
-    }, [addToList, onFilesAdded]);
+            addToList(newFiles);
+            onFilesAdded?.(newFiles);
+            return newFiles;
+        },
+        [addToList, onFilesAdded],
+    );
 
     const openAndAddSourceFiles = useCallback(async () => {
         const result = await openFilesDialog(t('dialogs.filters.documentsAndImages'));
@@ -34,17 +42,20 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
         return { files: added, skippedErrors: result.skippedErrors };
     }, [addSourceFiles, t]);
 
-    const removeSourceFile = useCallback((id: string) => {
-        const removed = files.find((file) => file.id === id) ?? null;
-        if (removed?.kind === 'pdf') {
-            releaseFile(id);
-        }
-        clearFileEdits(id);
-        void releaseSources([id]);
-        removeFileFromList(id);
-        onFileRemoved?.(removed);
-        return removed;
-    }, [clearFileEdits, files, onFileRemoved, releaseFile, removeFileFromList]);
+    const removeSourceFile = useCallback(
+        (id: string) => {
+            const removed = files.find((file) => file.id === id) ?? null;
+            if (removed?.kind === 'pdf') {
+                releaseFile(id);
+            }
+            clearFileEdits(id);
+            void releaseSources([id]);
+            removeFileFromList(id);
+            onFileRemoved?.(removed);
+            return removed;
+        },
+        [clearFileEdits, files, onFileRemoved, releaseFile, removeFileFromList],
+    );
 
     const clearSourceFiles = useCallback(() => {
         if (!files.length) return;
@@ -59,16 +70,24 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
         clearFiles();
     }, [clearAllFileEdits, clearFiles, files, releaseFile]);
 
-    const rotateSourcePage = useCallback(async (fileId: string, pageNum: number, direction: RotationDirection) => {
-        const file = files.find((entry) => entry.id === fileId);
-        if (!file) return;
+    const rotateSourcePage = useCallback(
+        async (fileId: string, pageNum: number, direction: RotationDirection) => {
+            const file = files.find((entry) => entry.id === fileId);
+            if (!file) return;
 
-        const nextEdits = applyRotationToEdits(editsByFile[file.id], file.kind, pageNum, direction);
-        setFileEdits(file.id, nextEdits);
-        if (file.kind === 'pdf') {
-            requestRenders(file, [buildThumbnailRenderRequest(pageNum, nextEdits)]);
-        }
-    }, [editsByFile, files, requestRenders, setFileEdits]);
+            const nextEdits = applyRotationToEdits(
+                editsByFile[file.id],
+                file.kind,
+                pageNum,
+                direction,
+            );
+            setFileEdits(file.id, nextEdits);
+            if (file.kind === 'pdf') {
+                requestRenders(file, [buildThumbnailRenderRequest(pageNum, nextEdits)]);
+            }
+        },
+        [editsByFile, files, requestRenders, setFileEdits],
+    );
 
     return {
         files,

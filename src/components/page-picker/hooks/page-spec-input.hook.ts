@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-import { formatPageSpecError, useTranslation } from '@/i18n';
 import { parseSelectedPagesFromSpec } from '@/domain/page-spec';
+import { formatPageSpecError, useTranslation } from '@/i18n';
 
 const PAGE_INPUT_DEBOUNCE_MS = 600;
 
@@ -27,43 +26,50 @@ export function usePageSpecInput({ fileId, pageCount, onSetPages }: PageSpecInpu
     const [appliedPageSignal, setAppliedPageSignal] = useState(0);
     const lastAppliedSpecRef = useRef<string | null>(null);
 
-    const applyPageInput = useCallback((force = false) => {
-        const normalizedValue = normalizePageInput(pageInput);
-        if (!normalizedValue) {
-            setPageInputError('');
-            return null;
-        }
+    const applyPageInput = useCallback(
+        (force = false) => {
+            const normalizedValue = normalizePageInput(pageInput);
+            if (!normalizedValue) {
+                setPageInputError('');
+                return null;
+            }
 
-        if (isIncompletePageInput(normalizedValue)) {
-            setPageInputError('');
-            return null;
-        }
+            if (isIncompletePageInput(normalizedValue)) {
+                setPageInputError('');
+                return null;
+            }
 
-        const parsed = parseSelectedPagesFromSpec(normalizedValue, pageCount);
-        if (parsed.pages === null) {
-            setPageInputError(formatPageSpecError(parsed.error, t));
-            return null;
-        }
+            const parsed = parseSelectedPagesFromSpec(normalizedValue, pageCount);
+            if (parsed.pages === null) {
+                setPageInputError(formatPageSpecError(parsed.error, t));
+                return null;
+            }
 
-        if (!force && lastAppliedSpecRef.current === normalizedValue) {
+            if (!force && lastAppliedSpecRef.current === normalizedValue) {
+                setPageInputError('');
+                setAppliedPageNum(parsed.pages[0]);
+                setAppliedPageSignal((signal) => signal + 1);
+                return parsed.pages[0];
+            }
+
+            onSetPages(fileId, parsed.pages);
             setPageInputError('');
+            lastAppliedSpecRef.current = normalizedValue;
+            setPageInput(normalizedValue);
             setAppliedPageNum(parsed.pages[0]);
             setAppliedPageSignal((signal) => signal + 1);
             return parsed.pages[0];
-        }
-
-        onSetPages(fileId, parsed.pages);
-        setPageInputError('');
-        lastAppliedSpecRef.current = normalizedValue;
-        setPageInput(normalizedValue);
-        setAppliedPageNum(parsed.pages[0]);
-        setAppliedPageSignal((signal) => signal + 1);
-        return parsed.pages[0];
-    }, [fileId, pageCount, onSetPages, pageInput, t]);
+        },
+        [fileId, pageCount, onSetPages, pageInput, t],
+    );
 
     useEffect(() => {
         const normalizedValue = normalizePageInput(pageInput);
-        if (!normalizedValue || isIncompletePageInput(normalizedValue) || lastAppliedSpecRef.current === normalizedValue) {
+        if (
+            !normalizedValue ||
+            isIncompletePageInput(normalizedValue) ||
+            lastAppliedSpecRef.current === normalizedValue
+        ) {
             return;
         }
 

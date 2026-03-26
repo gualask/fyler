@@ -26,7 +26,10 @@ export function usePdfControls({
     const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
 
     const selectedPageNums = useMemo(
-        () => new Set(finalPages.filter((page) => page.fileId === file.id).map((page) => page.pageNum)),
+        () =>
+            new Set(
+                finalPages.filter((page) => page.fileId === file.id).map((page) => page.pageNum),
+            ),
         [file.id, finalPages],
     );
     const allSelected = file.pageCount > 0 && selectedPageNums.size === file.pageCount;

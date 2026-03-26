@@ -32,16 +32,21 @@ export function PageSlot({ page, context }: Props) {
                     exportMatchedImageSrc ? (
                         <img
                             src={exportMatchedImageSrc}
+                            alt=""
                             draggable={false}
                             className="block h-auto w-full select-none bg-white"
                         />
                     ) : isExportMatchedImagePending ? (
-                        <div className="flex w-full items-center justify-center bg-white" style={{ aspectRatio: useA4Container ? '595/842' : '210/297' }}>
+                        <div
+                            className="flex w-full items-center justify-center bg-white"
+                            style={{ aspectRatio: useA4Container ? '595/842' : '210/297' }}
+                        >
                             <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
                         </div>
                     ) : (
                         <img
                             src={imageSrc}
+                            alt=""
                             draggable={false}
                             className="block h-auto w-full select-none bg-white"
                             style={{ transform: `rotate(${imageRotation}deg)` }}
@@ -54,6 +59,7 @@ export function PageSlot({ page, context }: Props) {
                     >
                         <img
                             src={imageSrc}
+                            alt=""
                             draggable={false}
                             className={[
                                 'absolute inset-0 h-full w-full select-none',
@@ -65,6 +71,7 @@ export function PageSlot({ page, context }: Props) {
                 ) : (
                     <img
                         src={imageSrc}
+                        alt=""
                         draggable={false}
                         className="block h-auto w-full select-none bg-white"
                         style={{ transform: `rotate(${imageRotation}deg)` }}
@@ -73,11 +80,15 @@ export function PageSlot({ page, context }: Props) {
             ) : pdfSrc ? (
                 <img
                     src={pdfSrc}
+                    alt=""
                     draggable={false}
                     className="block h-auto w-full select-none bg-white"
                 />
             ) : (
-                <div className="flex w-full items-center justify-center bg-white" style={{ aspectRatio: '210/297' }}>
+                <div
+                    className="flex w-full items-center justify-center bg-white"
+                    style={{ aspectRatio: '210/297' }}
+                >
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
                 </div>
             )}

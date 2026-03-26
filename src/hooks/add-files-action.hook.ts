@@ -1,7 +1,5 @@
 import { useCallback } from 'react';
-
-import { toDiagnosticMessage } from '@/diagnostics';
-import { useDiagnostics } from '@/diagnostics';
+import { toDiagnosticMessage, useDiagnostics } from '@/diagnostics';
 import type { useFiles } from '@/files';
 import { formatSkippedFile, useTranslation } from '@/i18n';
 import type { useAppNotifications } from './app-notifications.hook';
@@ -18,16 +16,21 @@ export function useAddFilesAction({ files, notifications }: AddFilesActionDeps) 
     const handleAddFiles = useCallback(() => {
         record({ category: 'files', severity: 'info', message: 'Open files dialog started' });
         notifications.showOpeningFiles();
-        void files.addFiles()
+        void files
+            .addFiles()
             .then(({ files: addedFiles, skippedErrors }) => {
                 record({
                     category: 'files',
                     severity: 'info',
-                    message: addedFiles.length ? 'Files added to workspace' : 'Open files dialog canceled',
+                    message: addedFiles.length
+                        ? 'Files added to workspace'
+                        : 'Open files dialog canceled',
                     metadata: { addedCount: addedFiles.length },
                 });
                 if (skippedErrors.length > 0 && addedFiles.length === 0) {
-                    notifications.showError(skippedErrors.map((s) => formatSkippedFile(s, t)).join(', '));
+                    notifications.showError(
+                        skippedErrors.map((s) => formatSkippedFile(s, t)).join(', '),
+                    );
                 }
             })
             .catch((error) => {

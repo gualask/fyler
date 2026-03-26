@@ -1,4 +1,9 @@
-import type { InterpolationValues, PluralBaseKey, TranslationDictionary, TranslationKey } from './resources';
+import type {
+    InterpolationValues,
+    PluralBaseKey,
+    TranslationDictionary,
+    TranslationKey,
+} from './resources';
 
 function interpolate(template: string, values?: InterpolationValues): string {
     if (!values) return template;
@@ -24,9 +29,5 @@ export function translatePlural(
     values?: InterpolationValues,
 ): string {
     const suffix = count === 1 ? 'one' : 'other';
-    return translate(
-        messages,
-        `${baseKey}.${suffix}` as TranslationKey,
-        { ...values, count },
-    );
+    return translate(messages, `${baseKey}.${suffix}` as TranslationKey, { ...values, count });
 }

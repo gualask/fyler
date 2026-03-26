@@ -1,15 +1,8 @@
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    type ReactNode,
-} from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { detectPreferredLocale, isLocale, type Locale } from './locale';
-import { ACCENT_COLORS, loadSettings, saveSettings, type AccentColor } from './settings';
 import { PreferencesContext, type PreferencesContextValue } from './preferences.context';
+import { ACCENT_COLORS, type AccentColor, loadSettings, saveSettings } from './settings';
 
 type PreferencesState = {
     isDark: boolean;
@@ -82,42 +75,65 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         void saveSettings(preferences);
     }, [canPersistPreferences, preferences]);
 
-    const updatePreferences = useCallback((updater: (current: PreferencesState) => PreferencesState) => {
-        hasLocalChangesRef.current = true;
-        setCanPersistPreferences(true);
-        setPreferences((current) => updater(current));
-    }, []);
+    const updatePreferences = useCallback(
+        (updater: (current: PreferencesState) => PreferencesState) => {
+            hasLocalChangesRef.current = true;
+            setCanPersistPreferences(true);
+            setPreferences((current) => updater(current));
+        },
+        [],
+    );
 
-    const setLocale = useCallback((locale: Locale) => {
-        updatePreferences((current) => current.locale === locale ? current : { ...current, locale });
-    }, [updatePreferences]);
+    const setLocale = useCallback(
+        (locale: Locale) => {
+            updatePreferences((current) =>
+                current.locale === locale ? current : { ...current, locale },
+            );
+        },
+        [updatePreferences],
+    );
 
     const toggleTheme = useCallback(() => {
         updatePreferences((current) => ({ ...current, isDark: !current.isDark }));
     }, [updatePreferences]);
 
-    const setAccent = useCallback((accent: AccentColor) => {
-        updatePreferences((current) => current.accent === accent ? current : { ...current, accent });
-    }, [updatePreferences]);
+    const setAccent = useCallback(
+        (accent: AccentColor) => {
+            updatePreferences((current) =>
+                current.accent === accent ? current : { ...current, accent },
+            );
+        },
+        [updatePreferences],
+    );
 
     const markTutorialSeen = useCallback(() => {
-        updatePreferences((current) => current.tutorialSeen ? current : { ...current, tutorialSeen: true });
+        updatePreferences((current) =>
+            current.tutorialSeen ? current : { ...current, tutorialSeen: true },
+        );
     }, [updatePreferences]);
 
-    const value = useMemo<PreferencesContextValue>(() => ({
-        isDark: preferences.isDark,
-        locale: preferences.locale,
-        accent: preferences.accent,
-        tutorialSeen: preferences.tutorialSeen,
-        setLocale,
-        toggleTheme,
-        setAccent,
-        markTutorialSeen,
-    }), [preferences.isDark, preferences.locale, preferences.accent, preferences.tutorialSeen, setLocale, toggleTheme, setAccent, markTutorialSeen]);
-
-    return (
-        <PreferencesContext.Provider value={value}>
-            {children}
-        </PreferencesContext.Provider>
+    const value = useMemo<PreferencesContextValue>(
+        () => ({
+            isDark: preferences.isDark,
+            locale: preferences.locale,
+            accent: preferences.accent,
+            tutorialSeen: preferences.tutorialSeen,
+            setLocale,
+            toggleTheme,
+            setAccent,
+            markTutorialSeen,
+        }),
+        [
+            preferences.isDark,
+            preferences.locale,
+            preferences.accent,
+            preferences.tutorialSeen,
+            setLocale,
+            toggleTheme,
+            setAccent,
+            markTutorialSeen,
+        ],
     );
+
+    return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }

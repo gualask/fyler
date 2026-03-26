@@ -41,9 +41,7 @@ export function ProgressModal({ message, progress }: Props) {
                         </div>
                     </div>
                 )}
-                {progress === undefined && (
-                    <p className="text-sm text-ui-text-muted">{message}</p>
-                )}
+                {progress === undefined && <p className="text-sm text-ui-text-muted">{message}</p>}
             </div>
         </div>
     );

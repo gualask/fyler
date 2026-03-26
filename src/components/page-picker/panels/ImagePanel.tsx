@@ -3,12 +3,12 @@ import { useState } from 'react';
 import type { FileEdits, SourceFile } from '@/domain';
 import type { RotationDirection } from '@/domain/file-edits';
 import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/file-edits';
-import { useElementWidth } from '../hooks/element-width.hook';
 import { useTranslation } from '@/i18n';
 import { getPreviewUrl } from '@/platform';
-import { ColumnHeader } from '../../shared/layout/ColumnHeader';
-import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
 import { PageQuickActions } from '../../shared/actions/PageQuickActions';
+import { FocusFlashOverlay } from '../../shared/feedback/FocusFlashOverlay';
+import { ColumnHeader } from '../../shared/layout/ColumnHeader';
+import { useElementWidth } from '../hooks/element-width.hook';
 
 const IMAGE_THUMB_FALLBACK_WIDTH = 420;
 const IMAGE_THUMB_FALLBACK_HEIGHT = 320;
@@ -59,9 +59,10 @@ export function ImagePanel({
     const quarterTurns = getImageQuarterTurn(editsByFile[file.id]);
     const rotation = getImageRotationDegrees(editsByFile[file.id]);
     const isQuarterTurnOdd = quarterTurns % 2 === 1;
-    const maxThumbWidth = imagePanelWidth > 0
-        ? Math.max(240, Math.min(imagePanelWidth - 24, 560))
-        : IMAGE_THUMB_FALLBACK_WIDTH;
+    const maxThumbWidth =
+        imagePanelWidth > 0
+            ? Math.max(240, Math.min(imagePanelWidth - 24, 560))
+            : IMAGE_THUMB_FALLBACK_WIDTH;
     const naturalWidth = imageNaturalSize?.width ?? IMAGE_THUMB_FALLBACK_WIDTH;
     const naturalHeight = imageNaturalSize?.height ?? IMAGE_THUMB_FALLBACK_HEIGHT;
     const rotatedWidth = isQuarterTurnOdd ? naturalHeight : naturalWidth;
@@ -81,11 +82,16 @@ export function ImagePanel({
             <ColumnHeader title={t('pagePicker.title')}>
                 <span className="column-toolbar-note">{t('pagePicker.singleImage')}</span>
             </ColumnHeader>
-            <div ref={imagePanelEl} className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
+            <div
+                ref={imagePanelEl}
+                className="flex flex-1 flex-col items-center justify-center gap-3 p-4"
+            >
                 <div
                     className={[
                         'group relative cursor-pointer rounded-xl border-2 p-1 transition-colors',
-                        focusedPageNum === 0 ? 'border-[3px] border-ui-accent' : 'border-transparent',
+                        focusedPageNum === 0
+                            ? 'border-[3px] border-ui-accent'
+                            : 'border-transparent',
                     ].join(' ')}
                     style={{ width: thumbSize.width + 8, height: thumbSize.height + 8 }}
                     onClick={onPreview}
@@ -114,7 +120,10 @@ export function ImagePanel({
                         </div>
                     </div>
                     {focusedPageNum === 0 && focusFlashKey && (
-                        <FocusFlashOverlay flashKey={focusFlashKey} className="inset-1 rounded-lg" />
+                        <FocusFlashOverlay
+                            flashKey={focusFlashKey}
+                            className="inset-1 rounded-lg"
+                        />
                     )}
                     <PageQuickActions
                         onPreview={onPreview}
@@ -122,7 +131,9 @@ export function ImagePanel({
                         onRotateRight={() => void onRotatePage(file.id, 0, 'cw')}
                     />
                 </div>
-                <span className="text-xs text-ui-text-muted">{t('pagePicker.includedAutomatically')}</span>
+                <span className="text-xs text-ui-text-muted">
+                    {t('pagePicker.includedAutomatically')}
+                </span>
             </div>
         </div>
     );

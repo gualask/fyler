@@ -1,194 +1,205 @@
 @reference "../../main.css";
 
 .output-panel-group {
-  @apply flex min-w-0 flex-col gap-1;
+    @apply flex min-w-0 flex-col gap-1;
 }
 
 .output-panel-label {
-  @apply flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-ui-text-muted;
+    @apply flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-ui-text-muted;
 }
 
 .output-panel-group-fill {
-  width: 100%;
-  min-width: 0;
+    width: 100%;
+    min-width: 0;
 }
 
 .output-panel-optimization {
-  flex: 1 1 31rem;
-  min-width: 0;
-  max-width: min(100%, 54rem);
+    flex: 1 1 31rem;
+    min-width: 0;
+    max-width: min(100%, 54rem);
 }
 
 .output-panel-advanced-anchor {
-  position: relative;
-  min-width: 0;
-  width: 100%;
+    position: relative;
+    min-width: 0;
+    width: 100%;
 }
 
 .output-panel-advanced-trigger-row {
-  @apply flex items-center gap-2;
-  width: 100%;
-  max-width: 100%;
+    @apply flex items-center gap-2;
+    width: 100%;
+    max-width: 100%;
 }
 
 .output-panel-preset-shell {
-  flex: 1 1 auto;
-  width: 100%;
-  max-width: 100%;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
 }
 
 .output-panel-advanced-panel {
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 2.5rem);
-  z-index: 70;
-  box-sizing: border-box;
-  width: min(34rem, calc(100vw - 3rem));
-  max-width: calc(100vw - 3rem);
-  padding: 0.9rem;
-  border: 1px solid var(--ui-border);
-  border-radius: 1rem;
-  background: color-mix(in srgb, var(--ui-surface) 95%, var(--ui-bg));
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 2.5rem);
+    z-index: 70;
+    box-sizing: border-box;
+    width: min(34rem, calc(100vw - 3rem));
+    max-width: calc(100vw - 3rem);
+    padding: 0.9rem;
+    border: 1px solid var(--ui-border);
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--ui-surface) 95%, var(--ui-bg));
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
 }
 
 .output-panel-advanced-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.9rem;
-  align-items: end;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: end;
 }
 
 .segmented-control {
-  @apply flex min-w-0 flex-col gap-1;
-  width: 100%;
+    @apply flex min-w-0 flex-col gap-1;
+    width: 100%;
 }
 
 .segmented-control__label {
-  @apply flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-ui-text-muted;
+    @apply flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-ui-text-muted;
 }
 
 .segmented-control__buttons {
-  @apply flex min-w-0 gap-0.5 rounded-lg bg-ui-surface-hover p-1;
-  width: 100%;
+    @apply flex min-w-0 gap-0.5 rounded-lg bg-ui-surface-hover p-1;
+    width: 100%;
 }
 
 .segmented-control__button {
-  @apply rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap
-         transition-[background-color,color,box-shadow] disabled:cursor-default disabled:opacity-55;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1 1 0;
-  min-width: 4rem;
+    @apply rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap transition-[background-color,color,box-shadow] disabled:cursor-default disabled:opacity-55;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    min-width: 4rem;
 }
 
 .segmented-control__button:focus-visible {
-  outline: 2px solid var(--ui-accent-muted);
-  outline-offset: 2px;
+    outline: 2px solid var(--ui-accent-muted);
+    outline-offset: 2px;
 }
 
 .segmented-control__button-active {
-  @apply text-white;
+    @apply text-white;
 }
 
 .segmented-control__button-inactive {
-  @apply text-ui-text-secondary hover:bg-ui-accent-soft-hover hover:text-ui-accent-on-soft;
+    @apply text-ui-text-secondary hover:bg-ui-accent-soft-hover hover:text-ui-accent-on-soft;
 }
 
 .output-panel-page-fit {
-  flex: 0 1 18rem;
-  min-width: 17rem;
+    flex: 0 1 18rem;
+    min-width: 17rem;
 }
 
 .fit-preview {
-  position: relative;
-  display: inline-flex;
-  width: 3.4rem;
-  height: 2.6rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.85rem;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 15%, transparent), transparent 58%),
-    color-mix(in srgb, var(--ui-bg) 84%, var(--ui-surface));
+    position: relative;
+    display: inline-flex;
+    width: 3.4rem;
+    height: 2.6rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.85rem;
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--ui-accent) 15%, transparent),
+            transparent 58%
+        ),
+        color-mix(in srgb, var(--ui-bg) 84%, var(--ui-surface));
 }
 
 .fit-preview-page {
-  position: absolute;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--ui-border) 85%, transparent);
-  border-radius: 0.2rem;
-  background: white;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    position: absolute;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--ui-border) 85%, transparent);
+    border-radius: 0.2rem;
+    background: white;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 .fit-preview-media {
-  position: absolute;
-  inset: 0;
-  border-radius: 0.14rem;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.22), transparent 34%),
-    linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 85%, white), color-mix(in srgb, var(--ui-accent) 55%, #22c55e));
-  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.22);
+    position: absolute;
+    inset: 0;
+    border-radius: 0.14rem;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 34%),
+        linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--ui-accent) 85%, white),
+            color-mix(in srgb, var(--ui-accent) 55%, #22c55e)
+        );
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.22);
 }
 
 .fit-preview-overflow {
-  position: absolute;
-  display: none;
-  border-radius: 0.2rem;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.16), transparent 34%),
-    linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 38%, white), color-mix(in srgb, var(--ui-accent) 26%, #22c55e));
-  opacity: 0.35;
+    position: absolute;
+    display: none;
+    border-radius: 0.2rem;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 34%),
+        linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--ui-accent) 38%, white),
+            color-mix(in srgb, var(--ui-accent) 26%, #22c55e)
+        );
+    opacity: 0.35;
 }
 
 .fit-preview-fit .fit-preview-page {
-  width: 2.3rem;
-  height: 1.32rem;
+    width: 2.3rem;
+    height: 1.32rem;
 }
 
 .fit-preview-contain .fit-preview-page {
-  width: 1.56rem;
-  height: 2.22rem;
+    width: 1.56rem;
+    height: 2.22rem;
 }
 
 .fit-preview-contain .fit-preview-media {
-  inset: 0.66rem 0.08rem auto;
-  height: 0.88rem;
+    inset: 0.66rem 0.08rem auto;
+    height: 0.88rem;
 }
 
 .fit-preview-cover .fit-preview-page {
-  width: 1.56rem;
-  height: 2.22rem;
+    width: 1.56rem;
+    height: 2.22rem;
 }
 
 .fit-preview-cover .fit-preview-media {
-  inset: 0.35rem -0.54rem auto;
-  height: 1.5rem;
+    inset: 0.35rem -0.54rem auto;
+    height: 1.5rem;
 }
 
 .fit-preview-cover .fit-preview-overflow {
-  display: block;
-  width: 2.64rem;
-  height: 1.5rem;
+    display: block;
+    width: 2.64rem;
+    height: 1.5rem;
 }
 
 .fit-preview-cover .fit-preview-page::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 1px dashed color-mix(in srgb, var(--ui-accent) 40%, transparent);
-  border-radius: inherit;
-  pointer-events: none;
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px dashed color-mix(in srgb, var(--ui-accent) 40%, transparent);
+    border-radius: inherit;
+    pointer-events: none;
 }
 
 .fit-preview-contain .fit-preview-page::after,
 .fit-preview-fit .fit-preview-page::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(255,255,255,0.55);
-  border-radius: inherit;
-  pointer-events: none;
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: inherit;
+    pointer-events: none;
 }

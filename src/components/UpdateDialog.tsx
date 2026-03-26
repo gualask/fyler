@@ -1,5 +1,5 @@
-import { useTranslation } from '@/i18n';
 import { useAppUpdater } from '@/hooks';
+import { useTranslation } from '@/i18n';
 
 export function UpdateDialog() {
     const { t } = useTranslation();
@@ -18,9 +18,7 @@ export function UpdateDialog() {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="w-full max-w-sm rounded-xl bg-ui-surface p-6 shadow-2xl">
-                <h2 className="text-base font-semibold text-ui-text">
-                    {t('update.title')}
-                </h2>
+                <h2 className="text-base font-semibold text-ui-text">{t('update.title')}</h2>
                 <p className="mt-2 text-sm text-ui-text-muted">
                     {t('update.message', { version: updateVersion ?? '' })}
                 </p>
@@ -49,11 +47,7 @@ export function UpdateDialog() {
 
                 {!installing && (
                     <div className="mt-5 flex justify-end gap-2">
-                        <button
-                            type="button"
-                            className="btn-ghost"
-                            onClick={dismiss}
-                        >
+                        <button type="button" className="btn-ghost" onClick={dismiss}>
                             {t('update.notNow')}
                         </button>
                         <button

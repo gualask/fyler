@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
 import { IconFilePlus, IconTrash, IconUpload } from '@tabler/icons-react';
-import type { SourceFile, FinalPage } from '@/domain';
+import { useMemo } from 'react';
+import type { FinalPage, SourceFile } from '@/domain';
 import { useTranslation } from '@/i18n';
-import { ColumnHeader } from './shared/layout/ColumnHeader';
 import { FileRow } from './FileRow';
+import { ColumnHeader } from './shared/layout/ColumnHeader';
 
 interface Props {
     files: SourceFile[];
@@ -15,7 +15,15 @@ interface Props {
     onClearFiles: () => void;
 }
 
-export function FileList({ files, finalPages, selectedId, onSelect, onRemove, onAddFiles, onClearFiles }: Props) {
+export function FileList({
+    files,
+    finalPages,
+    selectedId,
+    onSelect,
+    onRemove,
+    onAddFiles,
+    onClearFiles,
+}: Props) {
     const { t } = useTranslation();
     const pageCountByFile = useMemo(() => {
         const map = new Map<string, number>();
@@ -29,6 +37,7 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
         <div className="flex h-full flex-col overflow-hidden">
             <ColumnHeader title={t('fileList.title', { count: files.length })}>
                 <button
+                    type="button"
                     onClick={onAddFiles}
                     title={t('fileList.addFilesTitle')}
                     className="btn-ghost-sm h-[34px]"
@@ -37,6 +46,7 @@ export function FileList({ files, finalPages, selectedId, onSelect, onRemove, on
                     {t('fileList.add')}
                 </button>
                 <button
+                    type="button"
                     onClick={onClearFiles}
                     title={t('fileList.clearFilesTitle')}
                     disabled={files.length === 0}

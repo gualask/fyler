@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { AppStatusPayload, MergeProgressStep } from '@/diagnostics';
-import { formatImportWarning, useTranslation } from '@/i18n';
 import { formatUserFacingError } from '@/errors';
+import { formatImportWarning, useTranslation } from '@/i18n';
 
 import { useGlobalErrorHandlers } from './global-error-handlers.hook';
 import { useTauriNotificationEvents } from './tauri-notification-events.hook';
@@ -67,9 +67,12 @@ export function useAppNotifications() {
         setStatus({ kind: 'export-completed-with-optimization-warning', count });
     }, []);
 
-    const showError = useCallback((error: unknown) => {
-        setStatus({ kind: 'error', message: formatUserFacingError(error, t) });
-    }, [t]);
+    const showError = useCallback(
+        (error: unknown) => {
+            setStatus({ kind: 'error', message: formatUserFacingError(error, t) });
+        },
+        [t],
+    );
 
     const statusMessage = useMemo(() => {
         if (!status) return null;

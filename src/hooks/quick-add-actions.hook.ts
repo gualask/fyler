@@ -1,9 +1,7 @@
 import { useCallback } from 'react';
-
-import { toDiagnosticMessage } from '@/diagnostics';
-import { useDiagnostics } from '@/diagnostics';
-import type { useQuickAdd } from './quick-add.hook';
+import { toDiagnosticMessage, useDiagnostics } from '@/diagnostics';
 import type { useAppNotifications } from './app-notifications.hook';
+import type { useQuickAdd } from './quick-add.hook';
 
 interface QuickAddActionsDeps {
     quickAdd: ReturnType<typeof useQuickAdd>;
@@ -14,9 +12,14 @@ export function useQuickAddActions({ quickAdd, notifications }: QuickAddActionsD
     const { record } = useDiagnostics();
 
     const handleEnterQuickAdd = useCallback(() => {
-        void quickAdd.enterQuickAdd()
+        void quickAdd
+            .enterQuickAdd()
             .then(() => {
-                record({ category: 'quick-add', severity: 'info', message: 'Entered Quick Add mode' });
+                record({
+                    category: 'quick-add',
+                    severity: 'info',
+                    message: 'Entered Quick Add mode',
+                });
             })
             .catch((error) => {
                 record({
@@ -29,9 +32,14 @@ export function useQuickAddActions({ quickAdd, notifications }: QuickAddActionsD
     }, [notifications, quickAdd, record]);
 
     const handleExitQuickAdd = useCallback(() => {
-        void quickAdd.exitQuickAdd()
+        void quickAdd
+            .exitQuickAdd()
             .then(() => {
-                record({ category: 'quick-add', severity: 'info', message: 'Exited Quick Add mode' });
+                record({
+                    category: 'quick-add',
+                    severity: 'info',
+                    message: 'Exited Quick Add mode',
+                });
             })
             .catch((error) => {
                 record({

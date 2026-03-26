@@ -34,9 +34,7 @@ function normalizePages(pages: number[]): number[] {
 }
 
 export function allPagesForFile(file: SourceFile): number[] {
-    return file.kind === 'image'
-        ? [0]
-        : Array.from({ length: file.pageCount }, (_, i) => i + 1);
+    return file.kind === 'image' ? [0] : Array.from({ length: file.pageCount }, (_, i) => i + 1);
 }
 
 function moveItem<T>(items: T[], fromIdx: number, toIdx: number): T[] {
@@ -59,21 +57,24 @@ function reconcileFileOrder(pageOrder: string[], fileId: string, pages: number[]
 }
 
 function reorderPageIds(pageOrder: string[], fromId: string, toId: string): string[] {
-    const fromIdx = pageOrder.findIndex((id) => id === fromId);
-    const toIdx = pageOrder.findIndex((id) => id === toId);
+    const fromIdx = pageOrder.indexOf(fromId);
+    const toIdx = pageOrder.indexOf(toId);
     if (fromIdx === -1 || toIdx === -1) return pageOrder;
     return moveItem(pageOrder, fromIdx, toIdx);
 }
 
 function movePageIdToIndex(pageOrder: string[], id: string, targetIndex: number): string[] {
-    const fromIdx = pageOrder.findIndex((pageId) => pageId === id);
+    const fromIdx = pageOrder.indexOf(id);
     if (fromIdx === -1) return pageOrder;
 
     const boundedIndex = Math.min(Math.max(targetIndex, 0), pageOrder.length - 1);
     return moveItem(pageOrder, fromIdx, boundedIndex);
 }
 
-export function compositionReducer(state: CompositionState, action: CompositionAction): CompositionState {
+export function compositionReducer(
+    state: CompositionState,
+    action: CompositionAction,
+): CompositionState {
     switch (action.type) {
         case 'set-file-selection': {
             const pages = normalizePages(action.pages);

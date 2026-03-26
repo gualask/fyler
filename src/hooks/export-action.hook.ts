@@ -1,13 +1,11 @@
 import { useCallback } from 'react';
-
+import { toDiagnosticMessage, useDiagnostics } from '@/diagnostics';
 import { buildMergeRequest } from '@/domain';
-import { toDiagnosticMessage } from '@/diagnostics';
-import { useDiagnostics } from '@/diagnostics';
-import { mergePDFs, savePDFDialog } from '@/platform';
 import type { useFiles } from '@/files';
+import { useTranslation } from '@/i18n';
+import { mergePDFs, savePDFDialog } from '@/platform';
 import type { useAppNotifications } from './app-notifications.hook';
 import type { useOptimize } from './optimize.hook';
-import { useTranslation } from '@/i18n';
 
 interface ExportActionDeps {
     files: ReturnType<typeof useFiles>;
@@ -52,7 +50,9 @@ export function useExportAction({ files, notifications, optimize }: ExportAction
                     message: 'PDF export completed with optimization warnings',
                     metadata: { optimizationFailedCount: result.optimizationFailedCount },
                 });
-                notifications.showExportCompletedWithOptimizationWarning(result.optimizationFailedCount);
+                notifications.showExportCompletedWithOptimizationWarning(
+                    result.optimizationFailedCount,
+                );
             } else {
                 record({
                     category: 'export',
@@ -72,7 +72,16 @@ export function useExportAction({ files, notifications, optimize }: ExportAction
         } finally {
             notifications.clearLoading();
         }
-    }, [files.editsByFile, files.finalPages, notifications, optimize.imageFit, optimize.optimizationPreset, optimize.optimizeOptions, record, t]);
+    }, [
+        files.editsByFile,
+        files.finalPages,
+        notifications,
+        optimize.imageFit,
+        optimize.optimizationPreset,
+        optimize.optimizeOptions,
+        record,
+        t,
+    ]);
 
     return exportMerged;
 }

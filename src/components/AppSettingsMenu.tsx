@@ -9,8 +9,7 @@ import {
 import { useRef, useState } from 'react';
 import { useDismissableMenu } from '@/hooks';
 import { useTranslation } from '@/i18n';
-import { ACCENT_COLORS, type AccentColor } from '@/preferences';
-import { SUPPORTED_LOCALES } from '@/preferences';
+import { ACCENT_COLORS, type AccentColor, SUPPORTED_LOCALES } from '@/preferences';
 
 type Submenu = 'language' | 'theme' | null;
 
@@ -36,7 +35,14 @@ const menuItemClass =
 const submenuPanelClass =
     'absolute left-full top-0 z-30 ml-1 min-w-[11rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg';
 
-export function AppSettingsMenu({ isDark, accent, onToggleTheme, onSetAccent, onReportBug, onOpenAbout }: AppSettingsMenuProps) {
+export function AppSettingsMenu({
+    isDark,
+    accent,
+    onToggleTheme,
+    onSetAccent,
+    onReportBug,
+    onOpenAbout,
+}: AppSettingsMenuProps) {
     const { locale, setLocale, t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [activeSubmenu, setActiveSubmenu] = useState<Submenu>(null);
@@ -62,7 +68,9 @@ export function AppSettingsMenu({ isDark, accent, onToggleTheme, onSetAccent, on
                 className={[
                     'btn-ghost btn-toolbar',
                     open ? 'bg-ui-accent-soft text-ui-accent-on-soft' : '',
-                ].filter(Boolean).join(' ')}
+                ]
+                    .filter(Boolean)
+                    .join(' ')}
                 aria-label={t('header.settings')}
                 aria-haspopup="menu"
                 aria-expanded={open}
@@ -73,7 +81,9 @@ export function AppSettingsMenu({ isDark, accent, onToggleTheme, onSetAccent, on
             >
                 <IconAdjustments className="h-4 w-4" />
                 <IconChevronDown
-                    className={['h-3.5 w-3.5 transition-transform', open ? 'rotate-180' : ''].join(' ')}
+                    className={['h-3.5 w-3.5 transition-transform', open ? 'rotate-180' : ''].join(
+                        ' ',
+                    )}
                 />
             </button>
             {open ? (
@@ -95,9 +105,13 @@ export function AppSettingsMenu({ isDark, accent, onToggleTheme, onSetAccent, on
                             aria-expanded={activeSubmenu === 'language'}
                             className={[
                                 menuItemClass,
-                                activeSubmenu === 'language' ? 'bg-ui-surface-hover text-ui-text' : '',
+                                activeSubmenu === 'language'
+                                    ? 'bg-ui-surface-hover text-ui-text'
+                                    : '',
                             ].join(' ')}
-                            onClick={() => setActiveSubmenu((c) => (c === 'language' ? null : 'language'))}
+                            onClick={() =>
+                                setActiveSubmenu((c) => (c === 'language' ? null : 'language'))
+                            }
                         >
                             {t('header.language')}
                             <IconChevronRight className="ml-auto h-3.5 w-3.5" />
@@ -144,7 +158,9 @@ export function AppSettingsMenu({ isDark, accent, onToggleTheme, onSetAccent, on
                                 menuItemClass,
                                 activeSubmenu === 'theme' ? 'bg-ui-surface-hover text-ui-text' : '',
                             ].join(' ')}
-                            onClick={() => setActiveSubmenu((c) => (c === 'theme' ? null : 'theme'))}
+                            onClick={() =>
+                                setActiveSubmenu((c) => (c === 'theme' ? null : 'theme'))
+                            }
                         >
                             {t('header.theme')}
                             <IconChevronRight className="ml-auto h-3.5 w-3.5" />
@@ -165,7 +181,9 @@ export function AppSettingsMenu({ isDark, accent, onToggleTheme, onSetAccent, on
                                     ) : (
                                         <IconMoon className="h-4 w-4" />
                                     )}
-                                    {isDark ? t('header.toggleTheme.light') : t('header.toggleTheme.dark')}
+                                    {isDark
+                                        ? t('header.toggleTheme.light')
+                                        : t('header.toggleTheme.dark')}
                                 </button>
                                 <div className="my-1 h-px bg-ui-border" />
                                 {ACCENT_COLORS.map((color) => (

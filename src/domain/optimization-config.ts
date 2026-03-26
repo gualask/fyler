@@ -79,10 +79,7 @@ export function deriveOptimizationPreset(
     targetDpi: number | undefined,
 ): ImageOptimizationPreset {
     const matched = OPTIMIZATION_PRESETS.find(
-        (preset) => (
-            preset.jpegQuality === jpegQuality
-            && preset.targetDpi === targetDpi
-        ),
+        (preset) => preset.jpegQuality === jpegQuality && preset.targetDpi === targetDpi,
     );
     return matched?.value ?? 'custom';
 }

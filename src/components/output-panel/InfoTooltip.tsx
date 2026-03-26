@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { IconInfoCircle } from '@tabler/icons-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n';
 import { Tooltip, type TooltipAlign } from '../shared/feedback/Tooltip';
 

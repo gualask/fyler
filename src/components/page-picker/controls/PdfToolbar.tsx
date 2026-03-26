@@ -1,5 +1,5 @@
-import { ColumnHeader } from '../../shared/layout/ColumnHeader';
 import { useTranslation } from '@/i18n';
+import { ColumnHeader } from '../../shared/layout/ColumnHeader';
 
 interface Props {
     fileId: string;
@@ -42,6 +42,7 @@ export function PdfToolbar({
                     />
                 </div>
                 <button
+                    type="button"
                     onClick={onToggleAll}
                     className={[
                         'h-[34px] shrink-0 rounded-lg border px-3 text-[10px] font-bold uppercase tracking-wide transition-colors',
