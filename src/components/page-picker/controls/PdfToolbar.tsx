@@ -25,6 +25,17 @@ export function PdfToolbar({
     return (
         <>
             <ColumnHeader title={t('pagePicker.title')}>
+                <button
+                    type="button"
+                    onClick={onToggleAll}
+                    className={[
+                        'h-[34px] shrink-0 rounded-lg border px-3 text-[10px] font-bold uppercase tracking-wide transition-colors',
+                        allSelected ? 'toggle-on' : 'toggle-off',
+                    ].join(' ')}
+                >
+                    {allSelected ? t('pagePicker.clearAll') : t('pagePicker.selectAll')}
+                </button>
+                <div className="flex-1" />
                 <div className="flex min-w-0 items-center gap-2">
                     <label htmlFor={`page-input-${fileId}`} className="column-toolbar-label">
                         {t('pagePicker.inputLabel')}
@@ -41,16 +52,6 @@ export function PdfToolbar({
                         className="input-base h-[34px] w-40 min-w-0"
                     />
                 </div>
-                <button
-                    type="button"
-                    onClick={onToggleAll}
-                    className={[
-                        'h-[34px] shrink-0 rounded-lg border px-3 text-[10px] font-bold uppercase tracking-wide transition-colors',
-                        allSelected ? 'toggle-on' : 'toggle-off',
-                    ].join(' ')}
-                >
-                    {allSelected ? t('pagePicker.clearAll') : t('pagePicker.selectAll')}
-                </button>
             </ColumnHeader>
 
             {pageInputError && (
