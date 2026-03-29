@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 
 import type { DiagnosticsSnapshot } from '@/diagnostics';
 import { useTranslation } from '@/i18n';
@@ -71,28 +71,26 @@ export function SupportDialog({
     }
 
     const isReport = mode === 'report';
+    const title = t(isReport ? 'support.dialog.reportTitle' : 'support.dialog.aboutTitle');
+    const description = t(
+        isReport ? 'support.dialog.reportDescription' : 'support.dialog.aboutDescription',
+    );
+
+    const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+        if (event.target === event.currentTarget) {
+            onClose();
+        }
+    };
 
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-            onMouseDown={(event) => {
-                if (event.target === event.currentTarget) {
-                    onClose();
-                }
-            }}
+            onMouseDown={handleBackdropMouseDown}
         >
             <div className="w-full max-w-2xl rounded-2xl border border-ui-border bg-ui-surface shadow-2xl">
                 <div className="border-b border-ui-border px-6 py-5">
-                    <h2 className="text-lg font-semibold text-ui-text">
-                        {isReport
-                            ? t('support.dialog.reportTitle')
-                            : t('support.dialog.aboutTitle')}
-                    </h2>
-                    <p className="mt-1 text-sm text-ui-text-muted">
-                        {isReport
-                            ? t('support.dialog.reportDescription')
-                            : t('support.dialog.aboutDescription')}
-                    </p>
+                    <h2 className="text-lg font-semibold text-ui-text">{title}</h2>
+                    <p className="mt-1 text-sm text-ui-text-muted">{description}</p>
                 </div>
 
                 <div className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
