@@ -60,7 +60,7 @@ function PdfThumbnailItem({
                     <img
                         src={dataUrl}
                         alt={t('pagePicker.pageLabel', { pageNum })}
-                        className="block h-full w-full bg-white object-contain"
+                        className="block h-full w-full object-cover"
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center bg-ui-surface-hover">

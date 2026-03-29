@@ -15,6 +15,7 @@ export function PageSlot({ page, context }: Props) {
         isImage,
         imageSrc,
         imageRotation,
+        rotatedImagePreviewStatus,
         pdfSrc,
         pdfAspectRatio,
         useA4Container,
@@ -38,6 +39,7 @@ export function PageSlot({ page, context }: Props) {
     let content: ReactNode;
     if (isImage && imageSrc) {
         if (context.matchExportedImages) {
+            const needsLayoutSafeRotation = Math.abs(imageRotation) % 180 !== 0;
             if (exportMatchedImageSrc) {
                 content = (
                     <img
@@ -54,6 +56,36 @@ export function PageSlot({ page, context }: Props) {
                         style={{ aspectRatio: useA4Container ? '595/842' : '210/297' }}
                     >
                         <div className="h-8 w-8 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
+                    </div>
+                );
+            } else if (
+                needsLayoutSafeRotation &&
+                (rotatedImagePreviewStatus === 'idle' || rotatedImagePreviewStatus === 'pending')
+            ) {
+                content = (
+                    <div
+                        className="flex w-full items-center justify-center bg-white"
+                        style={{ aspectRatio: useA4Container ? '595/842' : '210/297' }}
+                    >
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
+                    </div>
+                );
+            } else if (needsLayoutSafeRotation && rotatedImagePreviewStatus === 'failed') {
+                content = (
+                    <div
+                        className="relative w-full overflow-hidden bg-white"
+                        style={{ aspectRatio: '595/842' }}
+                    >
+                        <img
+                            src={imageSrc}
+                            alt=""
+                            draggable={false}
+                            className={[
+                                'absolute inset-0 h-full w-full select-none',
+                                imageFitMode === 'cover' ? 'object-cover' : 'object-contain',
+                            ].join(' ')}
+                            style={{ transform: `rotate(${imageRotation}deg)` }}
+                        />
                     </div>
                 );
             } else {

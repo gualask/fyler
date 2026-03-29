@@ -2,9 +2,29 @@ import type { ImageExportPreviewLayout } from '@/domain';
 
 const EXPORT_PREVIEW_WIDTH = 900;
 
+async function canvasToObjectUrl(
+    canvas: HTMLCanvasElement,
+    type: string,
+    quality: number,
+): Promise<string> {
+    const safeQuality = Number.isFinite(quality) ? Math.min(1, Math.max(0, quality)) : 0.92;
+    const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+            (value) => {
+                if (value) resolve(value);
+                else reject(new Error('Failed to encode canvas to blob'));
+            },
+            type,
+            safeQuality,
+        );
+    });
+    return URL.createObjectURL(blob);
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
         img.src = src;
@@ -50,7 +70,7 @@ function buildRotatedImageCanvas(img: HTMLImageElement, quarterTurns: number): H
 export async function renderRotatedImage(src: string, quarterTurns: number): Promise<string> {
     const img = await loadImage(src);
     const rotated = buildRotatedImageCanvas(img, quarterTurns);
-    return rotated.toDataURL('image/jpeg', 0.92);
+    return canvasToObjectUrl(rotated, 'image/jpeg', 0.92);
 }
 
 export async function renderExportMatchedImage(
@@ -94,5 +114,5 @@ export async function renderExportMatchedImage(
         ctx.drawImage(rotated, drawX, drawY, drawWidth, drawHeight);
     }
 
-    return canvas.toDataURL('image/jpeg', 0.92);
+    return canvasToObjectUrl(canvas, 'image/jpeg', 0.92);
 }

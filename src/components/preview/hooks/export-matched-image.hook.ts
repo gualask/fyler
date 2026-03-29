@@ -4,6 +4,12 @@ import type { ImageFit, QuarterTurn } from '@/domain';
 import { getImageExportPreviewLayout } from '@/platform';
 import { renderExportMatchedImage } from '../utils/render-image';
 
+function maybeRevokeObjectUrl(url: string | null | undefined) {
+    if (url?.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+    }
+}
+
 export function useExportMatchedImage(
     imageSrc: string | undefined,
     imageOriginalPath: string | undefined,
@@ -31,7 +37,14 @@ export function useExportMatchedImage(
             .then((layout) => renderExportMatchedImage(imageSrc, layout, imageQuarterTurns))
             .then((src) => {
                 if (active) {
-                    setExportMatchedImage({ key: exportPreviewKey, src });
+                    setExportMatchedImage((current) => {
+                        if (current?.key === exportPreviewKey) {
+                            maybeRevokeObjectUrl(current.src);
+                        }
+                        return { key: exportPreviewKey, src };
+                    });
+                } else {
+                    maybeRevokeObjectUrl(src);
                 }
             })
             .catch(() => {
@@ -42,6 +55,13 @@ export function useExportMatchedImage(
 
         return () => {
             active = false;
+            setExportMatchedImage((current) => {
+                if (current?.key === exportPreviewKey) {
+                    maybeRevokeObjectUrl(current.src);
+                    return null;
+                }
+                return current;
+            });
         };
     }, [exportPreviewKey, imageFit, imageOriginalPath, imageQuarterTurns, imageSrc]);
 

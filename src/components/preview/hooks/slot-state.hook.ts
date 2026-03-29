@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 
 import { getImageQuarterTurn, getImageRotationDegrees } from '@/domain/file-edits';
-import { buildPreviewRenderRequest, usePdfCache } from '@/pdf';
+import { buildPreviewRenderRequest, usePdfCache, usePdfRenderSrc } from '@/pdf';
 import { getPreviewUrl } from '@/platform';
 import type { SlotContext, SlotPage } from '../models/slot-model';
 import { useExportMatchedImage } from './export-matched-image.hook';
@@ -11,7 +11,7 @@ import { useSlotVisibility } from './slot-visibility.hook';
 export function useSlotState(page: SlotPage, context: SlotContext) {
     const { fp, file, edits, index } = page;
     const { scrollRoot, imageFit, matchExportedImages, onVisible } = context;
-    const { requestRenders, getRender, getPageAspectRatio } = usePdfCache();
+    const { requestRenders, getPageAspectRatio } = usePdfCache();
 
     const isImage = file?.kind === 'image';
     const imageQuarterTurns = getImageQuarterTurn(edits);
@@ -21,7 +21,7 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
         () => (file?.kind === 'pdf' ? buildPreviewRenderRequest(fp.pageNum, edits) : null),
         [edits, file?.kind, fp.pageNum],
     );
-    const pdfSrc = file && previewRequest ? getRender(file.id, previewRequest) : undefined;
+    const pdfSrc = usePdfRenderSrc(file, previewRequest);
     const pdfAspectRatio =
         file?.kind === 'pdf' && previewRequest
             ? getPageAspectRatio(file.id, previewRequest.pageNum, previewRequest.quarterTurns)
@@ -35,12 +35,6 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
         requestRenders(file, [previewRequest]);
     }, [file, previewRequest, requestRenders, shouldRender]);
 
-    const rotatedImagePreviewSrc = useRotatedImagePreview(
-        imageSrc,
-        imageQuarterTurns,
-        useA4Container,
-    );
-
     const { exportMatchedImageSrc, isExportMatchedImagePending } = useExportMatchedImage(
         imageSrc,
         file?.originalPath,
@@ -49,11 +43,38 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
         matchExportedImages,
     );
 
+    const shouldPrerotateAsFallback =
+        matchExportedImages &&
+        Boolean(imageSrc) &&
+        !useA4Container &&
+        imageQuarterTurns !== 0 &&
+        !isExportMatchedImagePending &&
+        !exportMatchedImageSrc;
+
+    const rotatedImagePreview = useRotatedImagePreview(
+        imageSrc,
+        imageQuarterTurns,
+        !shouldPrerotateAsFallback,
+    );
+
+    const effectiveImageSrc =
+        shouldPrerotateAsFallback &&
+        rotatedImagePreview.status === 'ready' &&
+        rotatedImagePreview.src
+            ? rotatedImagePreview.src
+            : imageSrc;
+
     return {
         slotRef,
         isImage,
-        imageSrc: rotatedImagePreviewSrc ?? imageSrc,
-        imageRotation: rotatedImagePreviewSrc ? 0 : imageRotation,
+        imageSrc: effectiveImageSrc,
+        imageRotation:
+            shouldPrerotateAsFallback &&
+            rotatedImagePreview.status === 'ready' &&
+            rotatedImagePreview.src
+                ? 0
+                : imageRotation,
+        rotatedImagePreviewStatus: rotatedImagePreview.status,
         pdfSrc,
         pdfAspectRatio,
         useA4Container,

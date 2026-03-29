@@ -12,7 +12,7 @@ export function PreviewModal({
     finalPages,
     files,
     editsByFile,
-    imageFit = 'contain',
+    imageFit = 'fit',
     matchExportedImages = false,
     indicator,
     moveControl,
@@ -38,8 +38,8 @@ export function PreviewModal({
         const handler = (event: KeyboardEvent) => {
             if (event.key === 'Escape') onClose();
         };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
+        window.addEventListener('keydown', handler, { capture: true });
+        return () => window.removeEventListener('keydown', handler, { capture: true });
     }, [onClose]);
 
     useEffect(() => {
