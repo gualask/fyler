@@ -1,4 +1,4 @@
-import { type MouseEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { DiagnosticsSnapshot } from '@/diagnostics';
 import { useTranslation } from '@/i18n';
@@ -76,16 +76,14 @@ export function SupportDialog({
         isReport ? 'support.dialog.reportDescription' : 'support.dialog.aboutDescription',
     );
 
-    const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-        if (event.target === event.currentTarget) {
-            onClose();
-        }
-    };
-
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-            onMouseDown={handleBackdropMouseDown}
+            onMouseDown={(event) => {
+                if (event.target === event.currentTarget) {
+                    onClose();
+                }
+            }}
         >
             <div className="w-full max-w-2xl rounded-2xl border border-ui-border bg-ui-surface shadow-2xl">
                 <div className="border-b border-ui-border px-6 py-5">

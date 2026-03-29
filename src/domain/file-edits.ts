@@ -3,9 +3,14 @@ import type { DocKind, FileEdits, QuarterTurn } from '.';
 type RotationDirection = 'cw' | 'ccw';
 
 const EMPTY_PAGE_ROTATIONS: Record<number, QuarterTurn> = {};
+const EMPTY_FILE_EDITS: FileEdits = Object.freeze({
+    revision: 0,
+    pageRotations: EMPTY_PAGE_ROTATIONS,
+    imageRotation: 0,
+});
 
 export function emptyFileEdits(): FileEdits {
-    return { revision: 0, pageRotations: EMPTY_PAGE_ROTATIONS, imageRotation: 0 };
+    return EMPTY_FILE_EDITS;
 }
 
 export function quarterTurnsToDegrees(turns: QuarterTurn): number {

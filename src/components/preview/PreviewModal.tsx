@@ -116,18 +116,21 @@ export function PreviewModal({
                             total === 1 ? 'flex min-h-full items-center justify-center' : undefined
                         }
                     >
-                        {finalPages.map((fp, index) => (
-                            <PageSlot
-                                key={`${fp.id}:${(editsByFile[fp.fileId] ?? emptyFileEdits()).revision}`}
-                                page={{
-                                    fp,
-                                    file: fileMap.get(fp.fileId),
-                                    edits: editsByFile[fp.fileId] ?? emptyFileEdits(),
-                                    index,
-                                }}
-                                context={slotContext}
-                            />
-                        ))}
+                        {finalPages.map((fp, index) => {
+                            const edits = editsByFile[fp.fileId] ?? emptyFileEdits();
+                            return (
+                                <PageSlot
+                                    key={`${fp.id}:${edits.revision}`}
+                                    page={{
+                                        fp,
+                                        file: fileMap.get(fp.fileId),
+                                        edits,
+                                        index,
+                                    }}
+                                    context={slotContext}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
             </div>
