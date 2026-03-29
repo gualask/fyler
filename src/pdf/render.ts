@@ -5,7 +5,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 export { pdfjsLib };
 
-export type PdfRenderResult = { dataUrl: string; aspectRatio: number };
+export type PdfRenderResult = { blob: Blob; aspectRatio: number };
 
 export async function renderPdfPage(
     pdfDoc: pdfjsLib.PDFDocumentProxy,
@@ -48,5 +48,20 @@ export async function renderPdfPage(
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-    return { dataUrl: canvas.toDataURL('image/jpeg', safeQuality), aspectRatio };
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+            (value) => {
+                if (value) {
+                    resolve(value);
+                } else {
+                    reject(new Error('Failed to encode PDF page to blob'));
+                }
+            },
+            'image/jpeg',
+            safeQuality,
+        );
+    });
+
+    return { blob, aspectRatio };
 }

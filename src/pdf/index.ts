@@ -1,6 +1,7 @@
 export { useLazyPdfRender } from './lazy-pdf-render.hook';
 export { type PdfRenderRequest, usePdfCache } from './pdf-cache.hook';
 export { PdfCacheProvider } from './pdf-cache.provider';
+export { usePdfRenderSrc } from './pdf-render-src.hook';
 export { type PdfRenderResult, pdfjsLib, renderPdfPage } from './render';
 export {
     buildPreviewRenderRequest,

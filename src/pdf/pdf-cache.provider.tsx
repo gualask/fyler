@@ -1,5 +1,5 @@
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 import type { QuarterTurn, SourceFile } from '@/domain';
 import { quarterTurnsToDegrees } from '@/domain/file-edits';
 import { getPreviewUrl } from '@/platform';
@@ -11,13 +11,22 @@ import {
 } from './pdf-cache.hook';
 import { pdfjsLib, renderPdfPage } from './render';
 
+function revokeObjectUrls(cache: Map<string, string> | undefined) {
+    if (!cache) return;
+    for (const url of cache.values()) {
+        if (url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+        }
+    }
+}
+
 export function PdfCacheProvider({ children }: { children: ReactNode }) {
     const cacheRef = useRef<Map<string, Map<string, string>>>(new Map());
     const aspectRatiosRef = useRef<Map<string, Map<string, number>>>(new Map());
     const pageTasksRef = useRef<Map<string, Promise<void>>>(new Map());
+    const listenersRef = useRef<Map<string, Set<() => void>>>(new Map());
     const docTasksRef = useRef<Map<string, PDFDocumentLoadingTask>>(new Map());
     const docPromisesRef = useRef<Map<string, Promise<PDFDocumentProxy>>>(new Map());
-    const [, setCacheVersion] = useState(0);
 
     const getPdfDocument = useCallback((file: SourceFile): Promise<PDFDocumentProxy> => {
         const existing = docPromisesRef.current.get(file.id);
@@ -33,6 +42,33 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
         });
         docPromisesRef.current.set(file.id, promise);
         return promise;
+    }, []);
+
+    const subscribeRender = useCallback(
+        (fileId: string, request: PdfRenderRequest, listener: () => void) => {
+            const cacheKey = getPdfRenderCacheKey(request);
+            const taskKey = `${fileId}:${cacheKey}`;
+            const set = listenersRef.current.get(taskKey) ?? new Set<() => void>();
+            set.add(listener);
+            listenersRef.current.set(taskKey, set);
+            return () => {
+                const current = listenersRef.current.get(taskKey);
+                if (!current) return;
+                current.delete(listener);
+                if (!current.size) {
+                    listenersRef.current.delete(taskKey);
+                }
+            };
+        },
+        [],
+    );
+
+    const notify = useCallback((taskKey: string) => {
+        const listeners = listenersRef.current.get(taskKey);
+        if (!listeners?.size) return;
+        for (const listener of listeners) {
+            listener();
+        }
     }, []);
 
     const requestRenders = useCallback(
@@ -52,7 +88,7 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
                 const task = (async () => {
                     try {
                         const pdfDoc = await getPdfDocument(file);
-                        const { dataUrl, aspectRatio } = await renderPdfPage(
+                        const { blob, aspectRatio } = await renderPdfPage(
                             pdfDoc,
                             request.pageNum,
                             request.width,
@@ -62,13 +98,14 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
                         );
                         const currentCache = cacheRef.current.get(file.id);
                         if (!currentCache) return;
-                        currentCache.set(cacheKey, dataUrl);
+                        const objectUrl = URL.createObjectURL(blob);
+                        currentCache.set(cacheKey, objectUrl);
                         const arKey = getAspectRatioCacheKey(request.pageNum, request.quarterTurns);
                         const fileAR =
                             aspectRatiosRef.current.get(file.id) ?? new Map<string, number>();
                         fileAR.set(arKey, aspectRatio);
                         aspectRatiosRef.current.set(file.id, fileAR);
-                        setCacheVersion((value) => value + 1);
+                        notify(taskKey);
                     } catch {
                         // Keep previous renders if a refresh for a new variant fails.
                     } finally {
@@ -79,7 +116,7 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
                 pageTasksRef.current.set(taskKey, task);
             }
         },
-        [getPdfDocument],
+        [getPdfDocument, notify],
     );
 
     const getRender = useCallback(
@@ -95,9 +132,16 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
     );
 
     const releaseFile = useCallback((fileId: string) => {
+        revokeObjectUrls(cacheRef.current.get(fileId));
         cacheRef.current.delete(fileId);
         aspectRatiosRef.current.delete(fileId);
         docPromisesRef.current.delete(fileId);
+
+        for (const taskKey of Array.from(listenersRef.current.keys())) {
+            if (taskKey.startsWith(`${fileId}:`)) {
+                listenersRef.current.delete(taskKey);
+            }
+        }
 
         for (const taskKey of Array.from(pageTasksRef.current.keys())) {
             if (taskKey.startsWith(`${fileId}:`)) {
@@ -108,24 +152,25 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
         const docTask = docTasksRef.current.get(fileId);
         docTasksRef.current.delete(fileId);
         void docTask?.destroy();
-        setCacheVersion((value) => value + 1);
     }, []);
 
     useEffect(
         () => () => {
+            for (const fileCache of cacheRef.current.values()) revokeObjectUrls(fileCache);
             for (const task of docTasksRef.current.values()) {
                 void task.destroy();
             }
             docTasksRef.current.clear();
             docPromisesRef.current.clear();
             pageTasksRef.current.clear();
+            listenersRef.current.clear();
         },
         [],
     );
 
     return (
         <PdfCacheContext.Provider
-            value={{ requestRenders, getRender, getPageAspectRatio, releaseFile }}
+            value={{ requestRenders, getRender, subscribeRender, getPageAspectRatio, releaseFile }}
         >
             {children}
         </PdfCacheContext.Provider>

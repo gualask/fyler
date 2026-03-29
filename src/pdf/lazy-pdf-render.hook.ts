@@ -2,16 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { SourceFile } from '@/domain';
 import { type PdfRenderRequest, usePdfCache } from './pdf-cache.hook';
+import { usePdfRenderSrc } from './pdf-render-src.hook';
 
 export function useLazyPdfRender(
     file: SourceFile | undefined,
     request: PdfRenderRequest | null,
     root: HTMLElement | null,
 ) {
-    const { requestRenders, getRender } = usePdfCache();
+    const { requestRenders } = usePdfCache();
     const [targetEl, setTargetEl] = useState<HTMLElement | null>(null);
     const [shouldRequest, setShouldRequest] = useState(false);
-    const dataUrl = file && request ? getRender(file.id, request) : undefined;
+    const dataUrl = usePdfRenderSrc(file, request);
     const attachTarget = useCallback((element: HTMLElement | null) => {
         setTargetEl(element);
     }, []);

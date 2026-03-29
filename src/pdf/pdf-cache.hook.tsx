@@ -16,6 +16,11 @@ export type PdfRenderRequest = {
 export type PdfCacheContextType = {
     requestRenders: (file: SourceFile, requests: PdfRenderRequest[]) => void;
     getRender: (fileId: string, request: PdfRenderRequest) => string | undefined;
+    subscribeRender: (
+        fileId: string,
+        request: PdfRenderRequest,
+        listener: () => void,
+    ) => () => void;
     getPageAspectRatio: (
         fileId: string,
         pageNum: number,
