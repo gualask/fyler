@@ -24,7 +24,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-store = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-lopdf = "0.39"
+lopdf = "0.40"
 uuid = { version = "1", features = ["v4"] }
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "ico", "jpeg", "png", "qoi", "tga", "tiff", "webp"] }
 anyhow = "1"
@@ -32,6 +32,6 @@ thiserror = "2"
 rayon = "1"
 fast_image_resize = { version = "6", default-features = false, features = ["rayon"] }
 jpeg-decoder = { version = "0.3", default-features = false }
-jpeg-encoder = { version = "0.6", default-features = false, features = ["std"] }
+jpeg-encoder = { version = "0.7", default-features = false, features = ["std"] }
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
