@@ -27,7 +27,7 @@ export function SegmentButtons<T extends string>({
     const sync = useCallback(() => {
         const container = containerRef.current;
         if (!container) return;
-        const active = container.querySelector<HTMLElement>('[data-active="true"]');
+        const active = container.querySelector<HTMLElement>(`[data-segment-value="${value}"]`);
         if (!active) {
             setPillStyle({ opacity: 0 });
             return;
@@ -45,7 +45,7 @@ export function SegmentButtons<T extends string>({
                 ? 'transform 250ms cubic-bezier(0.16, 1, 0.3, 1), width 250ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms'
                 : 'none',
         });
-    }, []);
+    }, [value]);
 
     useEffect(() => {
         const el = containerRef.current;
@@ -77,6 +77,7 @@ export function SegmentButtons<T extends string>({
                     key={opt.value}
                     type="button"
                     disabled={opt.disabled}
+                    data-segment-value={opt.value}
                     data-active={value === opt.value}
                     onClick={() => onChange(opt.value)}
                     className={[
