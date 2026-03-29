@@ -89,16 +89,12 @@ export function useSupportDiagnostics({
         ],
     );
 
-    const diagnosticsReport = useMemo(
-        () => formatDiagnosticsReport(diagnosticsSnapshot),
-        [diagnosticsSnapshot],
-    );
-
     const openReportBug = useCallback(() => setSupportDialogMode('report'), []);
     const openAbout = useCallback(() => setSupportDialogMode('about'), []);
     const closeSupportDialog = useCallback(() => setSupportDialogMode(null), []);
 
     const copyDiagnostics = useCallback(async () => {
+        const diagnosticsReport = formatDiagnosticsReport(diagnosticsSnapshot);
         try {
             await navigator.clipboard.writeText(diagnosticsReport);
             record({
@@ -114,7 +110,7 @@ export function useSupportDiagnostics({
             });
             throw error;
         }
-    }, [diagnosticsReport, record]);
+    }, [diagnosticsSnapshot, record]);
 
     const openGitHubIssues = useCallback(async () => {
         try {

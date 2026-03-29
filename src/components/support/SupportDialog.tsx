@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { DiagnosticsSnapshot } from '@/diagnostics';
 import { useTranslation } from '@/i18n';
@@ -51,12 +51,10 @@ export function SupportDialog({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [mode, onClose]);
 
-    const recentEvents = useMemo(
-        () => [...snapshot.recentEvents].reverse(),
-        [snapshot.recentEvents],
-    );
-
     if (!mode) return null;
+
+    const isReport = mode === 'report';
+    const recentEvents = isReport ? [...snapshot.recentEvents].reverse() : [];
 
     async function runAction(action: () => Promise<void>, successMessage: string) {
         try {
@@ -70,7 +68,6 @@ export function SupportDialog({
         }
     }
 
-    const isReport = mode === 'report';
     const title = t(isReport ? 'support.dialog.reportTitle' : 'support.dialog.aboutTitle');
     const description = t(
         isReport ? 'support.dialog.reportDescription' : 'support.dialog.aboutDescription',
