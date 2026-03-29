@@ -49,13 +49,13 @@ export function PdfToolbar({
                         onChange={(event) => onPageInputChange(event.target.value)}
                         onKeyDown={(event) => event.key === 'Enter' && onPageInputCommit()}
                         onBlur={onPageInputCommit}
-                        className="input-base h-[34px] w-40 min-w-0"
+                        className="input-base w-40 min-w-0"
                     />
                 </div>
             </ColumnHeader>
 
             {pageInputError && (
-                <div className="shrink-0 border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-xs text-red-500">
+                <div className="shrink-0 border-b border-ui-danger-border bg-ui-danger-soft px-4 py-2 text-xs text-ui-danger">
                     {pageInputError}
                 </div>
             )}

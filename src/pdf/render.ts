@@ -5,6 +5,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 export { pdfjsLib };
 
+export type PdfRenderResult = { dataUrl: string; aspectRatio: number };
+
 export async function renderPdfPage(
     pdfDoc: pdfjsLib.PDFDocumentProxy,
     pageNum: number,
@@ -12,9 +14,11 @@ export async function renderPdfPage(
     quality: number,
     rotation = 0,
     density = 1,
-): Promise<string> {
+): Promise<PdfRenderResult> {
     const page = await pdfDoc.getPage(pageNum);
-    const scale = width / page.getViewport({ scale: 1, rotation }).width;
+    const baseViewport = page.getViewport({ scale: 1, rotation });
+    const aspectRatio = baseViewport.width / baseViewport.height;
+    const scale = width / baseViewport.width;
     const renderScale = scale * Math.max(1, density);
     const viewport = page.getViewport({ scale: renderScale, rotation });
     const canvas = document.createElement('canvas');
@@ -25,5 +29,5 @@ export async function renderPdfPage(
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-    return canvas.toDataURL('image/jpeg', quality);
+    return { dataUrl: canvas.toDataURL('image/jpeg', quality), aspectRatio };
 }

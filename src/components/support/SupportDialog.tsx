@@ -229,7 +229,7 @@ export function SupportDialog({
                                 'rounded-lg px-3 py-2 text-sm',
                                 actionState.tone === 'success'
                                     ? 'bg-ui-accent-soft text-ui-accent-on-soft'
-                                    : 'bg-red-500/10 text-red-600',
+                                    : 'bg-ui-danger-soft text-ui-danger',
                             ].join(' ')}
                         >
                             {actionState.message}

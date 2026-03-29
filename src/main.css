@@ -28,6 +28,25 @@
     --ui-accent-soft: #eef2ff;
     --ui-accent-soft-hover: #e0e7ff;
     --ui-accent-on-soft: #4338ca;
+
+    /* status — danger */
+    --ui-danger: #ef4444;
+    --ui-danger-hover: #dc2626;
+    --ui-danger-soft: #fef2f2;
+    --ui-danger-soft-text: #991b1b;
+    --ui-danger-border: #fecaca;
+
+    /* status — success */
+    --ui-success: #059669;
+    --ui-success-soft: #d1fae5;
+    --ui-success-soft-text: #064e3b;
+    --ui-success-border: #6ee7b7;
+
+    /* status — warning */
+    --ui-warning: #d97706;
+    --ui-warning-soft: #fffbeb;
+    --ui-warning-soft-text: #92400e;
+    --ui-warning-border: #fde68a;
 }
 
 .dark {
@@ -50,6 +69,25 @@
     --ui-accent-soft: rgba(99, 102, 241, 0.15);
     --ui-accent-soft-hover: rgba(99, 102, 241, 0.25);
     --ui-accent-on-soft: #a5b4fc;
+
+    /* status — danger */
+    --ui-danger: #f87171;
+    --ui-danger-hover: #ef4444;
+    --ui-danger-soft: rgba(127, 29, 29, 0.6);
+    --ui-danger-soft-text: #fecaca;
+    --ui-danger-border: rgba(153, 27, 27, 0.4);
+
+    /* status — success */
+    --ui-success: #34d399;
+    --ui-success-soft: rgba(2, 44, 34, 0.6);
+    --ui-success-soft-text: #a7f3d0;
+    --ui-success-border: rgba(6, 95, 70, 0.4);
+
+    /* status — warning */
+    --ui-warning: #fbbf24;
+    --ui-warning-soft: rgba(69, 26, 3, 0.6);
+    --ui-warning-soft-text: #fde68a;
+    --ui-warning-border: rgba(146, 64, 14, 0.4);
 }
 
 /* ── Accent color palettes ─────────────────────────────────────────────── */
@@ -211,7 +249,7 @@ body {
     }
     /* ── Input ─────────────────────────────────────────────────── */
     .input-base {
-        @apply h-[38px] w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none transition-colors focus:ring-1 focus:ring-ui-accent;
+        @apply h-[34px] w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none transition-colors focus:ring-1 focus:ring-ui-accent;
     }
 
     /* ── Thumbnail cards (page picker) ─────────────────────────── */
@@ -295,4 +333,18 @@ body {
     --color-ui-accent-soft: var(--ui-accent-soft);
     --color-ui-accent-soft-hover: var(--ui-accent-soft-hover);
     --color-ui-accent-on-soft: var(--ui-accent-on-soft);
+    /* status */
+    --color-ui-danger: var(--ui-danger);
+    --color-ui-danger-hover: var(--ui-danger-hover);
+    --color-ui-danger-soft: var(--ui-danger-soft);
+    --color-ui-danger-soft-text: var(--ui-danger-soft-text);
+    --color-ui-danger-border: var(--ui-danger-border);
+    --color-ui-success: var(--ui-success);
+    --color-ui-success-soft: var(--ui-success-soft);
+    --color-ui-success-soft-text: var(--ui-success-soft-text);
+    --color-ui-success-border: var(--ui-success-border);
+    --color-ui-warning: var(--ui-warning);
+    --color-ui-warning-soft: var(--ui-warning-soft);
+    --color-ui-warning-soft-text: var(--ui-warning-soft-text);
+    --color-ui-warning-border: var(--ui-warning-border);
 }

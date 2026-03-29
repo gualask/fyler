@@ -63,7 +63,7 @@ export function PageQuickActions({
 
     return (
         <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
-            <div className="absolute inset-0 bg-black/10 dark:bg-black/20" />
+            <div className="absolute inset-0 bg-black/15" />
 
             {onPreview && (
                 <div className="absolute inset-0 flex items-center justify-center">

@@ -74,7 +74,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                         e.stopPropagation();
                         onRemove();
                     }}
-                    className="mt-0.5 shrink-0 rounded p-0.5 text-ui-text-muted opacity-0 transition-all hover:text-red-500 group-hover:opacity-100"
+                    className="mt-0.5 shrink-0 rounded p-0.5 text-ui-text-muted opacity-0 transition-all hover:text-ui-danger group-hover:opacity-100"
                     style={{ opacity: selected ? 0.6 : undefined }}
                     onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = '')}

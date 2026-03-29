@@ -11,21 +11,21 @@ interface Props {
 const toneConfig: Record<Tone, { icon: typeof IconCheck; iconClass: string; className: string }> = {
     success: {
         icon: IconCheck,
-        iconClass: 'text-emerald-600 dark:text-emerald-400',
+        iconClass: 'text-ui-success',
         className:
-            'border-emerald-300 bg-emerald-100 text-emerald-900 shadow-lg shadow-emerald-600/10 dark:border-emerald-800/40 dark:bg-emerald-950/60 dark:text-emerald-200',
+            'border-ui-success-border bg-ui-success-soft text-ui-success-soft-text shadow-lg shadow-ui-success/10',
     },
     error: {
         icon: IconX,
-        iconClass: 'text-red-600 dark:text-red-400',
+        iconClass: 'text-ui-danger',
         className:
-            'border-red-200 bg-red-50 text-red-800 shadow-lg shadow-red-600/8 dark:border-red-800/40 dark:bg-red-950/60 dark:text-red-200',
+            'border-ui-danger-border bg-ui-danger-soft text-ui-danger-soft-text shadow-lg shadow-ui-danger/8',
     },
     warning: {
         icon: IconAlertTriangle,
-        iconClass: 'text-amber-600 dark:text-amber-400',
+        iconClass: 'text-ui-warning',
         className:
-            'border-amber-200 bg-amber-50 text-amber-800 shadow-lg shadow-amber-600/8 dark:border-amber-800/40 dark:bg-amber-950/60 dark:text-amber-200',
+            'border-ui-warning-border bg-ui-warning-soft text-ui-warning-soft-text shadow-lg shadow-ui-warning/8',
     },
 };
 

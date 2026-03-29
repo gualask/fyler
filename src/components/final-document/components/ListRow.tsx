@@ -155,7 +155,7 @@ export const ListRow = memo(function ListRow({
                         event.stopPropagation();
                         onRemove(item.page.id);
                     }}
-                    className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-colors hover:bg-red-600 group-hover:flex"
+                    className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-ui-danger text-white shadow-md transition-colors hover:bg-ui-danger-hover group-hover:flex"
                     title={t('finalDocument.removePage')}
                 >
                     <IconX className="h-3.5 w-3.5" />

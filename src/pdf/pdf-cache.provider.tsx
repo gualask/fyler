@@ -1,13 +1,19 @@
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import type { SourceFile } from '@/domain';
+import type { QuarterTurn, SourceFile } from '@/domain';
 import { quarterTurnsToDegrees } from '@/domain/file-edits';
 import { getPreviewUrl } from '@/platform';
-import { getPdfRenderCacheKey, PdfCacheContext, type PdfRenderRequest } from './pdf-cache.hook';
+import {
+    getAspectRatioCacheKey,
+    getPdfRenderCacheKey,
+    PdfCacheContext,
+    type PdfRenderRequest,
+} from './pdf-cache.hook';
 import { pdfjsLib, renderPdfPage } from './render';
 
 export function PdfCacheProvider({ children }: { children: ReactNode }) {
     const cacheRef = useRef<Map<string, Map<string, string>>>(new Map());
+    const aspectRatiosRef = useRef<Map<string, Map<string, number>>>(new Map());
     const pageTasksRef = useRef<Map<string, Promise<void>>>(new Map());
     const docTasksRef = useRef<Map<string, PDFDocumentLoadingTask>>(new Map());
     const docPromisesRef = useRef<Map<string, Promise<PDFDocumentProxy>>>(new Map());
@@ -46,7 +52,7 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
                 const task = (async () => {
                     try {
                         const pdfDoc = await getPdfDocument(file);
-                        const dataUrl = await renderPdfPage(
+                        const { dataUrl, aspectRatio } = await renderPdfPage(
                             pdfDoc,
                             request.pageNum,
                             request.width,
@@ -57,6 +63,11 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
                         const currentCache = cacheRef.current.get(file.id);
                         if (!currentCache) return;
                         currentCache.set(cacheKey, dataUrl);
+                        const arKey = getAspectRatioCacheKey(request.pageNum, request.quarterTurns);
+                        const fileAR =
+                            aspectRatiosRef.current.get(file.id) ?? new Map<string, number>();
+                        fileAR.set(arKey, aspectRatio);
+                        aspectRatiosRef.current.set(file.id, fileAR);
                         setCacheVersion((value) => value + 1);
                     } catch {
                         // Keep previous renders if a refresh for a new variant fails.
@@ -77,8 +88,15 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
         [],
     );
 
+    const getPageAspectRatio = useCallback(
+        (fileId: string, pageNum: number, quarterTurns: QuarterTurn): number | undefined =>
+            aspectRatiosRef.current.get(fileId)?.get(getAspectRatioCacheKey(pageNum, quarterTurns)),
+        [],
+    );
+
     const releaseFile = useCallback((fileId: string) => {
         cacheRef.current.delete(fileId);
+        aspectRatiosRef.current.delete(fileId);
         docPromisesRef.current.delete(fileId);
 
         for (const taskKey of Array.from(pageTasksRef.current.keys())) {
@@ -106,7 +124,9 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
     );
 
     return (
-        <PdfCacheContext.Provider value={{ requestRenders, getRender, releaseFile }}>
+        <PdfCacheContext.Provider
+            value={{ requestRenders, getRender, getPageAspectRatio, releaseFile }}
+        >
             {children}
         </PdfCacheContext.Provider>
     );

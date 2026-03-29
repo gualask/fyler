@@ -15,18 +15,20 @@ export function PageSlot({ page, context }: Props) {
         imageSrc,
         imageRotation,
         pdfSrc,
+        pdfAspectRatio,
         useA4Container,
         imageFitMode,
         exportMatchedImageSrc,
         isExportMatchedImagePending,
     } = useSlotState(page, context);
 
+    const slotWidth =
+        pdfAspectRatio != null
+            ? BASE_WIDTH * Math.max(1, pdfAspectRatio) * context.zoomLevel
+            : BASE_WIDTH * context.zoomLevel;
+
     return (
-        <div
-            ref={slotRef}
-            style={{ width: BASE_WIDTH * context.zoomLevel }}
-            className="mx-auto mb-4 shadow-lg"
-        >
+        <div ref={slotRef} style={{ width: slotWidth }} className="mx-auto mb-4 shadow-lg">
             {isImage && imageSrc ? (
                 context.matchExportedImages ? (
                     exportMatchedImageSrc ? (
@@ -41,7 +43,7 @@ export function PageSlot({ page, context }: Props) {
                             className="flex w-full items-center justify-center bg-white"
                             style={{ aspectRatio: useA4Container ? '595/842' : '210/297' }}
                         >
-                            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                            <div className="h-8 w-8 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
                         </div>
                     ) : (
                         <img
@@ -89,7 +91,7 @@ export function PageSlot({ page, context }: Props) {
                     className="flex w-full items-center justify-center bg-white"
                     style={{ aspectRatio: '210/297' }}
                 >
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
                 </div>
             )}
         </div>

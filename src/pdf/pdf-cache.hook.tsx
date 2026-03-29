@@ -16,6 +16,11 @@ export type PdfRenderRequest = {
 export type PdfCacheContextType = {
     requestRenders: (file: SourceFile, requests: PdfRenderRequest[]) => void;
     getRender: (fileId: string, request: PdfRenderRequest) => string | undefined;
+    getPageAspectRatio: (
+        fileId: string,
+        pageNum: number,
+        quarterTurns: QuarterTurn,
+    ) => number | undefined;
     releaseFile: (fileId: string) => void;
 };
 
@@ -30,6 +35,10 @@ export function getPdfRenderCacheKey(request: PdfRenderRequest): string {
         request.quality,
         request.density ?? 1,
     ].join(':');
+}
+
+export function getAspectRatioCacheKey(pageNum: number, quarterTurns: QuarterTurn): string {
+    return `${pageNum}:${quarterTurns}`;
 }
 
 export function usePdfCache(): PdfCacheContextType {

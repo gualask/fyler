@@ -11,7 +11,7 @@ import { useSlotVisibility } from './slot-visibility.hook';
 export function useSlotState(page: SlotPage, context: SlotContext) {
     const { fp, file, edits, index } = page;
     const { scrollRoot, imageFit, matchExportedImages, onVisible } = context;
-    const { requestRenders, getRender } = usePdfCache();
+    const { requestRenders, getRender, getPageAspectRatio } = usePdfCache();
 
     const isImage = file?.kind === 'image';
     const imageQuarterTurns = getImageQuarterTurn(edits);
@@ -22,6 +22,10 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
         [edits, file?.kind, fp.pageNum],
     );
     const pdfSrc = file && previewRequest ? getRender(file.id, previewRequest) : undefined;
+    const pdfAspectRatio =
+        file?.kind === 'pdf' && previewRequest
+            ? getPageAspectRatio(file.id, previewRequest.pageNum, previewRequest.quarterTurns)
+            : undefined;
     const imageSrc = file?.kind === 'image' ? getPreviewUrl(file.originalPath) : undefined;
 
     const { slotRef, shouldRender } = useSlotVisibility(scrollRoot, index, onVisible);
@@ -51,6 +55,7 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
         imageSrc: rotatedImagePreviewSrc ?? imageSrc,
         imageRotation: rotatedImagePreviewSrc ? 0 : imageRotation,
         pdfSrc,
+        pdfAspectRatio,
         useA4Container,
         imageFitMode: imageFit === 'cover' ? 'cover' : 'contain',
         exportMatchedImageSrc,
