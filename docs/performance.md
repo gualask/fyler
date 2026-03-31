@@ -21,10 +21,7 @@ The main rule across both is the same:
 
 ### Parallel source inspection
 
-File import work is parallelized in
-[source_registry.rs](/Users/blazar/Dev/fyler/src-tauri/src/source_registry.rs).
-
-`files_from_paths(...)` collects the input paths and processes them with Rayon:
+File import work is parallelized across input paths:
 
 - file kind detection runs per path
 - PDF page counting runs per PDF
@@ -35,9 +32,7 @@ independently and the task is mostly I/O-bound.
 
 ### Layout-aware PDF image optimization
 
-Embedded PDF image optimization is implemented in
-[mod.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/mod.rs) and is split
-into:
+Embedded PDF image optimization is split into:
 
 1. analysis
 2. plan building
@@ -48,9 +43,8 @@ work that is not justified.
 
 #### Analysis before rewrite
 
-[analysis.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/analysis.rs)
-walks page content streams and records how large each image is actually drawn on
-the page.
+The analyzer walks page content streams and records how large each image is
+actually drawn on the page.
 
 That lets the optimizer reason about effective DPI instead of relying on blind
 pixel caps or fixed percentage reductions.
@@ -62,8 +56,7 @@ The benefit is twofold:
 
 #### Plan gating
 
-[plan.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/plan.rs) decides
-whether an image should be:
+The plan step decides whether an image should be:
 
 - resized
 - re-encoded
@@ -72,21 +65,24 @@ whether an image should be:
 This keeps expensive decode/resize/rewrite work off images that do not have a
 meaningful optimization path.
 
-The optimizer also keeps the original stream when the rewritten result does not
-beat a minimum reduction threshold. This avoids paying CPU cost for output that
-is not materially smaller.
+Concrete gating rules:
+
+- resizing is skipped unless effective DPI exceeds the target by at least 25 DPI
+  (hysteresis avoids churn)
+- resizing is skipped if the resulting image would be smaller than 256 px on its
+  long side
+- rewritten streams are discarded unless they are at least 12% smaller than the
+  original (otherwise the original bytes are kept)
 
 #### Fast resize path
 
-When resize is required, Fyler uses
-[`fast_image_resize`](https://docs.rs/fast_image_resize/) in
-[raster.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/raster.rs).
+When resize is required, Fyler uses an optimized resize backend.
 
 Current characteristics:
 
 - Lanczos3 convolution for quality-preserving downscale
 - RGB, grayscale, and CMYK support
-- Rayon-enabled crate features for maximum throughput on the resize path
+- parallel resize support for maximum throughput on the hot path
 
 The code does not parallelize the entire optimizer loop at the document level.
 Instead, it uses a specialized resize implementation that is already optimized
@@ -94,12 +90,7 @@ for the hot path.
 
 ### Imported image files: cheap decisions before PDF construction
 
-The `image -> pdf` path has its own performance-sensitive split in
-[mod.rs](/Users/blazar/Dev/fyler/src-tauri/src/pdf_image/mod.rs):
-
-- [descriptor.rs](/Users/blazar/Dev/fyler/src-tauri/src/pdf_image/descriptor.rs)
-- [policy.rs](/Users/blazar/Dev/fyler/src-tauri/src/pdf_image/policy.rs)
-- [encode.rs](/Users/blazar/Dev/fyler/src-tauri/src/pdf_image/encode.rs)
+The `image -> PDF` path is structured to make cheap decisions up front.
 
 This helps performance indirectly:
 
@@ -112,8 +103,7 @@ output-size blowups for common photo inputs.
 
 ### Conservative save path
 
-Fyler saves PDFs with the classic writer in
-[mod.rs](/Users/blazar/Dev/fyler/src-tauri/src/optimize/mod.rs).
+Fyler saves PDFs with a conservative, compatibility-first writer.
 
 This is not the most aggressive size optimization strategy, but it is the right
 performance tradeoff for production:
@@ -125,12 +115,25 @@ performance tradeoff for production:
 The backend intentionally does not spend extra complexity budget on PDF
 container tricks that are fragile across viewers.
 
+### Practical thresholds (backend)
+
+Some numeric choices that guide performance behavior:
+
+- effective DPI resizing: 25 DPI hysteresis above the target
+- minimum resized long side: 256 px
+- keep-original threshold: rewritten stream must be at least 12% smaller
+- auto-JPEG trigger for large raw images: at least 128 KiB, and at least 256 px
+  on the long side
+
+When auto-JPEG is used, the default quality is chosen based on how much an image
+is downscaled (more downscale → slightly lower quality), and is kept higher for
+already-JPEG sources.
+
 ## Frontend
 
 ### PDF rendering happens off the main thread
 
-PDF.js is configured with a worker in
-[pdfRender.ts](/Users/blazar/Dev/fyler/src/pdfRender.ts).
+PDF.js is configured to use a worker so rendering does not block the UI thread.
 
 This keeps page rendering work out of the UI thread, which matters for:
 
@@ -138,10 +141,13 @@ This keeps page rendering work out of the UI thread, which matters for:
 - drag and drop interactions
 - selection-heavy flows
 
+When a page is rasterized, it is rendered to a canvas and encoded as JPEG. The
+canvas is filled with white before rendering so transparent content produces a
+predictable result.
+
 ### Render cache with task deduplication
 
-[PdfCacheProvider.tsx](/Users/blazar/Dev/fyler/src/hooks/PdfCacheProvider.tsx)
-maintains:
+Fyler maintains:
 
 - an in-memory render cache keyed by file and render profile
 - a map of in-flight page tasks
@@ -158,8 +164,7 @@ same source document is referenced in multiple UI areas.
 
 ### Lazy preview rendering
 
-Preview slots are gated by `IntersectionObserver` in
-[useSlotState.ts](/Users/blazar/Dev/fyler/src/components/preview/hooks/useSlotState.ts).
+Preview slots are gated by `IntersectionObserver`.
 
 Two observers are used for different purposes:
 
@@ -168,17 +173,18 @@ Two observers are used for different purposes:
 
 This avoids eagerly rendering every preview page when the modal opens.
 
+Concrete observer parameters (today):
+
+- prefetch margin: 300 px
+- visible-page threshold: 30% intersection
+
 ### Targeted memoization in page-heavy UI
 
 Fyler uses `useMemo` and `useCallback` in the places where they remove repeated
 work with clear ownership:
 
-- file lookup maps in
-  [PreviewModal.tsx](/Users/blazar/Dev/fyler/src/components/preview/PreviewModal.tsx)
-  and
-  [List.tsx](/Users/blazar/Dev/fyler/src/components/final-document/components/List.tsx)
-- derived page counters in
-  [FileList.tsx](/Users/blazar/Dev/fyler/src/components/FileList.tsx)
+- file lookup maps in preview and list UIs
+- derived page counters in file lists
 - reorder handlers and derived sortable items in the final document list
 
 The goal is not blanket memoization. The goal is to keep recalculation local to

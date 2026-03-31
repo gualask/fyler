@@ -4,25 +4,23 @@
 
 Components contain no hard-coded colors and no `dark:` classes for colors.
 They exclusively use semantic utility classes (`bg-ui-surface`, `text-ui-text-muted`, `bg-ui-accent`, …)
-generated from CSS custom properties defined in `src/main.css`.
+generated from CSS custom properties defined in a single stylesheet under `src/`.
 
-**Changing the theme = editing only `src/main.css`.**
+**Changing the theme = editing only the theme token values.**
 
 ---
 
 ## Architecture
 
-```
-src/main.css
-├── :root { ... }          light mode values
-├── .dark { ... }          dark mode values  ← only place to edit for theming
-└── @theme inline { ... }  exposes variables as Tailwind utilities
-```
+The theming mechanism has three layers:
 
-The mechanism relies on two Tailwind 4 features:
+- light mode values (a base token set)
+- dark mode overrides (applied when a `.dark` class is present on the root element)
+- a Tailwind mapping that exposes the tokens as semantic utilities (`bg-ui-*`, `text-ui-*`, `border-ui-*`)
 
-- **`@custom-variant dark`** — activates the `dark:` variant based on the `.dark` class on `<html>` (toggled by React via `document.documentElement.classList.toggle('dark', isDark)`)
-- **`@theme inline`** — registers CSS custom properties as design tokens, making them available as utilities (`bg-ui-accent`, `text-ui-text-muted`, etc.)
+The mechanism relies on Tailwind 4 features that (1) bind dark mode to a root
+`.dark` class and (2) expose CSS custom properties as design tokens so the UI
+can use semantic utilities instead of raw colors.
 
 ---
 
@@ -35,7 +33,10 @@ The mechanism relies on two Tailwind 4 features:
 | `--ui-bg` | `bg-ui-bg` | App root background |
 | `--ui-surface` | `bg-ui-surface` | Header, footer, cards, panels |
 | `--ui-surface-hover` | `bg-ui-surface-hover` | Hover state on interactive elements |
+| `--ui-source` | `bg-ui-source` | Source panel surface |
+| `--ui-output` | `bg-ui-output` | Output panel surface |
 | `--ui-border` | `border-ui-border` | Default borders |
+| `--ui-border-hover` | `border-ui-border-hover` | Hover / active borders |
 | `--ui-text` | `text-ui-text` | Primary text |
 | `--ui-text-secondary` | `text-ui-text-secondary` | Body text, input values |
 | `--ui-text-dim` | `text-ui-text-dim` | Labels, counters, secondary text |
@@ -47,48 +48,39 @@ The mechanism relies on two Tailwind 4 features:
 |---|---|---|
 | `--ui-accent` | `bg-ui-accent` | Primary action buttons (e.g. "Export PDF") |
 | `--ui-accent-hover` | `bg-ui-accent-hover` | Hover on primary button |
+| `--ui-accent-text` | `text-ui-accent-text` | Accent-colored text (icons, labels) |
 | `--ui-accent-muted` | `border-ui-accent-muted` | Selection borders, focus rings, spinner |
 | `--ui-accent-soft` | `bg-ui-accent-soft` | Soft background (secondary buttons, selected row) |
 | `--ui-accent-soft-hover` | `bg-ui-accent-soft-hover` | Hover on soft background |
 | `--ui-accent-on-soft` | `text-ui-accent-on-soft` | Text on soft background |
 
+### Status colors
+
+Fyler keeps a small set of semantic status tokens for UI feedback:
+
+- danger (destructive actions and error emphasis)
+- success (positive confirmation)
+- warning (caution / potentially risky actions)
+
+These tokens intentionally stay “semantic-first”: they communicate meaning
+independently from the active accent palette.
+
 ---
 
 ## Changing the accent color
 
-Accent values are defined only in `:root`. The `.dark` block overrides only
-the soft variants (semi-transparent) and text-on-soft, since dark mode requires
-different opacity handling.
+Fyler supports switching the accent palette without changing individual
+components.
 
-To switch from **indigo** to **violet**, edit 6 lines in `:root`:
+Conceptually, there are two approaches:
 
-```css
-/* before */
---ui-accent:            var(--color-indigo-600);
---ui-accent-hover:      var(--color-indigo-700);
---ui-accent-muted:      var(--color-indigo-400);
---ui-accent-soft:       var(--color-indigo-50);
---ui-accent-soft-hover: var(--color-indigo-100);
---ui-accent-on-soft:    var(--color-indigo-700);
+- **Pick a built-in palette** by applying a single accent class at the app root
+  (e.g. teal/amber/blue). This updates all accent-related tokens at once.
+- **Define a new palette** by providing a new group of accent token values.
 
-/* after */
---ui-accent:            var(--color-violet-600);
---ui-accent-hover:      var(--color-violet-700);
---ui-accent-muted:      var(--color-violet-400);
---ui-accent-soft:       var(--color-violet-50);
---ui-accent-soft-hover: var(--color-violet-100);
---ui-accent-on-soft:    var(--color-violet-700);
-```
-
-Also update the `color-mix` lines in `.dark`:
-
-```css
-.dark {
-  --ui-accent-soft:       color-mix(in srgb, var(--color-violet-500) 18%, transparent);
-  --ui-accent-soft-hover: color-mix(in srgb, var(--color-violet-500) 28%, transparent);
-  --ui-accent-on-soft:    var(--color-violet-300);
-}
-```
+Dark mode typically overrides only the “soft” accent variants and the
+text-on-soft color to preserve contrast (dark UIs need different opacity
+handling than light UIs).
 
 ---
 
@@ -96,20 +88,9 @@ Also update the `color-mix` lines in `.dark`:
 
 The `.dark` block controls background and text colors in dark mode.
 Currently uses the **gray** palette. To switch to another palette (e.g. slate):
-
-```css
-.dark {
-  --ui-bg:             var(--color-slate-900);
-  --ui-surface:        var(--color-slate-800);
-  --ui-surface-hover:  var(--color-slate-700);
-  --ui-border:         var(--color-slate-700);
-  --ui-text:           var(--color-slate-100);
-  --ui-text-secondary: var(--color-slate-300);
-  --ui-text-dim:       var(--color-slate-400);
-  --ui-text-muted:     var(--color-slate-500);
-  /* accent unchanged */
-}
-```
+change the dark-mode surface and text token values as a group. The goal is to
+keep contrast predictable across the whole app, rather than tweaking individual
+components.
 
 ---
 
@@ -121,13 +102,17 @@ meaning regardless of the active theme:
 - **Red** (`red-*`) — destructive actions (Remove button, error messages)
 - **White** (`text-white`) — text on solid accent backgrounds
 
+There is also one intentional “non-theme” color choice outside UI styling:
+
+- PDF page thumbnails/previews are rasterized onto a white background before
+  JPEG encoding (so transparent PDF content produces a predictable result).
+
 ---
 
-## Files involved
+## Where the system lives
 
-| File | Role |
-|---|---|
-| `src/main.css` | All token definitions — **the only file to edit for theming** |
-| `src/App.tsx` | Consumes surface and accent tokens |
-| `src/components/DocumentRow.tsx` | Consumes surface and accent tokens |
-| `src/components/PdfPreview.tsx` | Consumes surface and accent-muted tokens |
+Directory-level map (no per-file coupling intended):
+
+- `src/` contains the theme token definitions and Tailwind token mapping
+- `src/components/` consumes only semantic utilities (`bg-ui-*`, `text-ui-*`, `border-ui-*`)
+- `src/preferences/` owns the persisted dark-mode preference and toggles the root `.dark` class

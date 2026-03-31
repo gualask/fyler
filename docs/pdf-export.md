@@ -46,8 +46,8 @@ files smaller and avoids unnecessary structural work.
 
 ## Save strategy
 
-Fyler saves exported PDFs with the classic serializer (`save_to`) and compresses
-stream data before writing.
+Fyler saves exported PDFs with a classic, compatibility-first serializer and
+compresses stream data before writing.
 
 This is intentional. A previous attempt to use object streams / modern PDF
 serialization produced files that were technically writable but not reliably

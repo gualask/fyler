@@ -13,10 +13,13 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
     const { scrollRoot, imageFit, matchExportedImages, onVisible } = context;
     const { requestRenders, getPageAspectRatio } = usePdfCache();
 
+    const { slotRef, shouldRender } = useSlotVisibility(scrollRoot, index, onVisible);
+
     const isImage = file?.kind === 'image';
     const imageQuarterTurns = getImageQuarterTurn(edits);
     const imageRotation = getImageRotationDegrees(edits);
     const useA4Container = isImage && (imageFit === 'contain' || imageFit === 'cover');
+    const matchExportedImagesActive = Boolean(matchExportedImages && shouldRender);
     const previewRequest = useMemo(
         () => (file?.kind === 'pdf' ? buildPreviewRenderRequest(fp.pageNum, edits) : null),
         [edits, file?.kind, fp.pageNum],
@@ -28,8 +31,6 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
             : undefined;
     const imageSrc = file?.kind === 'image' ? getPreviewUrl(file.originalPath) : undefined;
 
-    const { slotRef, shouldRender } = useSlotVisibility(scrollRoot, index, onVisible);
-
     useEffect(() => {
         if (!shouldRender || !file || !previewRequest) return;
         requestRenders(file, [previewRequest]);
@@ -40,11 +41,11 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
         file?.originalPath,
         imageFit,
         imageQuarterTurns,
-        matchExportedImages,
+        matchExportedImagesActive,
     );
 
     const shouldPrerotateAsFallback =
-        matchExportedImages &&
+        matchExportedImagesActive &&
         Boolean(imageSrc) &&
         !useA4Container &&
         imageQuarterTurns !== 0 &&

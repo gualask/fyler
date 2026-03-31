@@ -120,7 +120,7 @@ export function PreviewModal({
                             const edits = editsByFile[fp.fileId] ?? emptyFileEdits();
                             return (
                                 <PageSlot
-                                    key={`${fp.id}:${edits.revision}`}
+                                    key={fp.id}
                                     page={{
                                         fp,
                                         file: fileMap.get(fp.fileId),
