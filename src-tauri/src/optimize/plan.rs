@@ -11,17 +11,23 @@ const MIN_REDUCTION_RATIO: f32 = 0.12;
 const MIN_AUTO_JPEG_SOURCE_BYTES: usize = 128 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Output encoding chosen for the rewritten image stream.
 pub enum OutputEncoding {
+    /// Store raw pixels (removes compression filters).
     Raw,
+    /// Re-encode as JPEG at the given quality.
     Jpeg(u8),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Concrete optimization plan for a single image candidate.
 pub struct OptimizationPlan {
+    /// Resize target (in pixels) before re-encoding.
     pub resize_to: Option<(u32, u32)>,
     pub output_encoding: OutputEncoding,
 }
 
+/// Builds an optimization plan for a candidate when a resize is beneficial.
 pub fn build_plan(
     candidate: &ImageCandidate,
     usages: Option<&[ImageUsage]>,
@@ -36,6 +42,7 @@ pub fn build_plan(
     })
 }
 
+/// Builds a plan that keeps the original dimensions but may change encoding.
 pub fn build_passthrough_plan(
     candidate: &ImageCandidate,
     opts: &OptimizeOptions,
@@ -48,6 +55,7 @@ pub fn build_passthrough_plan(
     })
 }
 
+/// Returns true when rewriting is not worth it (insufficient size reduction).
 pub fn should_keep_original(original_size: usize, rewritten_size: usize) -> bool {
     let threshold = (original_size as f32 * (1.0 - MIN_REDUCTION_RATIO)).floor() as usize;
     rewritten_size >= threshold
@@ -152,6 +160,7 @@ fn auto_quality(candidate: &ImageCandidate, dimensions: (u32, u32)) -> u8 {
     }
 }
 
+/// Returns the usage slice for a candidate (if present).
 pub fn usages_for<'a>(
     usages: &'a HashMap<lopdf::ObjectId, Vec<ImageUsage>>,
     candidate: &ImageCandidate,

@@ -1,3 +1,10 @@
+//! Fyler's native backend (Tauri).
+//!
+//! This crate exposes a small set of Tauri commands used by the frontend to:
+//! - import sources (PDFs/images)
+//! - compose and export a merged PDF
+//! - compute export previews and persist user settings
+
 use tauri::Emitter;
 
 mod commands;
@@ -12,6 +19,7 @@ mod settings;
 mod source_registry;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// Boots the Tauri app and registers all commands/plugins.
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())

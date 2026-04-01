@@ -6,6 +6,7 @@ use lopdf::{
 };
 
 #[derive(Debug, Clone, Copy, Default)]
+/// Observed drawn size for an image, expressed in PDF points.
 pub struct ImageUsage {
     pub drawn_width_pt: f32,
     pub drawn_height_pt: f32,
@@ -93,6 +94,9 @@ enum XObjectKind {
     Form(FormXObject),
 }
 
+/// Collects where and how large each embedded image is drawn across the document.
+///
+/// The result is used to estimate effective DPI and decide whether a downscale is worthwhile.
 pub fn analyze_image_usages(doc: &PdfDoc) -> HashMap<ObjectId, Vec<ImageUsage>> {
     let mut usages = HashMap::new();
     for page_id in doc.get_pages().into_values() {

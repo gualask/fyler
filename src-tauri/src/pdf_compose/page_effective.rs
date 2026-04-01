@@ -88,6 +88,10 @@ fn effective_resources(doc: &PdfDoc, page_id: ObjectId) -> Result<Dictionary> {
     Ok(merged)
 }
 
+/// Builds a self-contained page dictionary for composition.
+///
+/// This resolves inherited page tree values (MediaBox/resources/rotation) so the resulting page can
+/// be inserted into a new document without depending on the original page tree structure.
 pub fn effective_page_dictionary(
     doc: &PdfDoc,
     page_id: ObjectId,

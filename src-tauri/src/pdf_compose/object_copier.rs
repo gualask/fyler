@@ -1,6 +1,9 @@
 use anyhow::{Context, Result};
 use lopdf::{Document as PdfDoc, Object, ObjectId, Stream};
 
+/// Copies objects from a source PDF into a destination PDF, rewriting indirect references.
+///
+/// The `memo` map ensures each source object is copied at most once.
 pub struct ObjectCopier<'a> {
     dest: &'a mut PdfDoc,
     source: &'a PdfDoc,
@@ -8,6 +11,7 @@ pub struct ObjectCopier<'a> {
 }
 
 impl<'a> ObjectCopier<'a> {
+    /// Creates a new copier. The caller owns `memo` so it can be reused across multiple pages.
     pub fn new(
         dest: &'a mut PdfDoc,
         source: &'a PdfDoc,
@@ -34,6 +38,7 @@ impl<'a> ObjectCopier<'a> {
         Ok(dest_id)
     }
 
+    /// Rewrites an object by copying referenced objects into the destination document.
     pub fn rewrite_object(&mut self, object: &Object) -> Result<Object> {
         Ok(match object {
             Object::Reference(source_id) => Object::Reference(self.copy_reference(*source_id)?),
@@ -49,6 +54,7 @@ impl<'a> ObjectCopier<'a> {
         })
     }
 
+    /// Rewrites a dictionary by rewriting all nested values and references.
     pub fn rewrite_dictionary(&mut self, dict: &lopdf::Dictionary) -> Result<lopdf::Dictionary> {
         let mut out = lopdf::Dictionary::new();
         for (key, value) in dict.iter() {

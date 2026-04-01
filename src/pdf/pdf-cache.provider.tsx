@@ -65,6 +65,13 @@ function revokeObjectUrls(cache: Map<string, string> | undefined) {
     }
 }
 
+/**
+ * In-memory cache for rendered PDF page images.
+ *
+ * The cache stores `blob:` object URLs and must explicitly revoke them to avoid
+ * accumulating browser-managed memory. Call `releaseFile(fileId)` when a source
+ * is removed from the session.
+ */
 export function PdfCacheProvider({ children }: { children: ReactNode }) {
     const cacheRef = useRef<Map<string, Map<string, string>>>(new Map());
     const aspectRatiosRef = useRef<Map<string, Map<string, number>>>(new Map());

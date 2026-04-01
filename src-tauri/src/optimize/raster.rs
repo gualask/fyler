@@ -6,6 +6,7 @@ use lopdf::Stream;
 use super::candidate::{ImageCandidate, SourceEncoding, SupportedColorSpace};
 
 #[derive(Debug)]
+/// Decoded raster pixels extracted from an embedded PDF image stream.
 pub struct DecodedRaster {
     width: u32,
     height: u32,
@@ -14,6 +15,7 @@ pub struct DecodedRaster {
 }
 
 impl DecodedRaster {
+    /// Decodes a candidate image stream into raw pixel data (supports raw and JPEG sources).
     pub fn decode(stream: &Stream, candidate: &ImageCandidate) -> Result<Self> {
         match candidate.source_encoding {
             SourceEncoding::Raw => Self::decode_raw(stream, candidate),
@@ -21,6 +23,7 @@ impl DecodedRaster {
         }
     }
 
+    /// Resizes the raster to the provided dimensions (when present), preserving color space.
     pub fn resize(self, dimensions: Option<(u32, u32)>) -> Result<Self> {
         let Some((width, height)) = dimensions else {
             return Ok(self);
@@ -54,22 +57,27 @@ impl DecodedRaster {
         })
     }
 
+    /// Raster width in pixels.
     pub fn width(&self) -> u32 {
         self.width
     }
 
+    /// Raster height in pixels.
     pub fn height(&self) -> u32 {
         self.height
     }
 
+    /// Raster color space.
     pub fn color_space(&self) -> SupportedColorSpace {
         self.color_space
     }
 
+    /// Raw interleaved pixel bytes (layout depends on `color_space`).
     pub fn data(&self) -> &[u8] {
         &self.data
     }
 
+    /// Consumes the raster and returns its raw pixel bytes.
     pub fn into_raw(self) -> Vec<u8> {
         self.data
     }

@@ -5,6 +5,16 @@ export type PageSpecError =
     | { kind: 'reversed-range'; start: number; end: number }
     | { kind: 'out-of-range'; page: number; total: number };
 
+/**
+ * Parses a user-provided page selection string.
+ *
+ * Supported format:
+ * - Comma-separated tokens (`1,3,5-7`)
+ * - Ranges are inclusive and 1-based
+ * - Output is de-duplicated and sorted
+ *
+ * Empty/whitespace-only input selects all pages.
+ */
 export function parseSelectedPagesFromSpec(
     spec: string,
     total: number,

@@ -11,6 +11,7 @@ const KEY_TUTORIAL_SEEN: &str = "tutorialSeen";
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+/// Persisted user preferences stored via `tauri-plugin-store`.
 pub struct StoredSettings {
     is_dark: bool,
     locale: Option<String>,
@@ -33,6 +34,7 @@ fn sanitize_accent(accent: Option<String>) -> Option<String> {
 }
 
 #[tauri::command]
+/// Loads persisted settings, applying input sanitization to keep values within the supported set.
 pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppError> {
     let store = app
         .store(SETTINGS_STORE_FILE)
@@ -57,6 +59,7 @@ pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppE
 }
 
 #[tauri::command]
+/// Saves settings, sanitizing values and deleting keys for `None` to keep storage compact.
 pub async fn save_settings(
     app: tauri::AppHandle,
     settings: StoredSettings,

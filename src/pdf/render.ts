@@ -7,6 +7,16 @@ export { pdfjsLib };
 
 export type PdfRenderResult = { blob: Blob; aspectRatio: number };
 
+/**
+ * Renders a single PDF page into a JPEG blob.
+ *
+ * - `width` is the target output width in CSS pixels.
+ * - `quality` is clamped to `[0..1]` and passed to JPEG encoding.
+ * - `rotation` is in degrees.
+ * - `density` is a resolution multiplier; values < 1 are treated as 1.
+ *
+ * Returns the page aspect ratio computed from the unscaled viewport (rotation-aware).
+ */
 export async function renderPdfPage(
     pdfDoc: pdfjsLib.PDFDocumentProxy,
     pageNum: number,

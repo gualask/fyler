@@ -13,6 +13,14 @@ interface ExportActionDeps {
     optimize: ReturnType<typeof useOptimize>;
 }
 
+/**
+ * Returns an async callback that exports the current composition as a single PDF.
+ *
+ * The callback:
+ * - prompts the user for an output path
+ * - records diagnostics metadata for support
+ * - shows user-facing progress/toasts
+ */
 export function useExportAction({ files, notifications, optimize }: ExportActionDeps) {
     const { t } = useTranslation();
     const { record } = useDiagnostics();

@@ -10,6 +10,11 @@ import type {
     QuarterTurn,
 } from '../domain';
 
+/**
+ * Typed wrapper around the app's native (Tauri) API surface.
+ *
+ * Keep all `invoke(...)` calls centralized here to make the boundary explicit.
+ */
 export const openFilesDialog = (filterLabel: string): Promise<OpenFilesResult> =>
     invoke('open_files_dialog', { filterLabel });
 
@@ -35,7 +40,7 @@ export const getImageExportPreviewLayout = (
 ): Promise<ImageExportPreviewLayout> =>
     invoke('get_image_export_preview_layout', { path, imageFit, quarterTurns });
 
-// asset:// protocol: il webview Tauri carica il file locale direttamente
+/** Converts a local filesystem path into a URL that the Tauri webview can load. */
 export const getPreviewUrl = (path: string): string => convertFileSrc(path);
 
 export const windowGetLogicalSize = async () => {

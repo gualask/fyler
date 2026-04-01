@@ -67,12 +67,24 @@ function buildRotatedImageCanvas(img: HTMLImageElement, quarterTurns: number): H
     return canvas;
 }
 
+/**
+ * Renders an image into a rotated JPEG object URL.
+ *
+ * The returned URL must be revoked by the caller via `URL.revokeObjectURL(...)`
+ * once it is no longer needed.
+ */
 export async function renderRotatedImage(src: string, quarterTurns: number): Promise<string> {
     const img = await loadImage(src);
     const rotated = buildRotatedImageCanvas(img, quarterTurns);
     return canvasToObjectUrl(rotated, 'image/jpeg', 0.92);
 }
 
+/**
+ * Builds a preview image that matches the export layout constraints.
+ *
+ * - `layout` coordinates are expressed in PDF points (1/72 inch) and scaled to pixels here.
+ * - The returned URL must be revoked by the caller via `URL.revokeObjectURL(...)`.
+ */
 export async function renderExportMatchedImage(
     src: string,
     layout: ImageExportPreviewLayout,

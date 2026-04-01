@@ -8,13 +8,18 @@ const BALANCED_QUALITY: u8 = 82;
 const COMPACT_QUALITY: u8 = 74;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Output encoding used when embedding an image into the exported PDF.
 pub enum PdfImageEncoding {
+    /// Embed raw RGB bytes (largest, but lossless for already-lossless sources).
     RawRgb,
+    /// Encode to JPEG at the specified quality.
     Jpeg { quality: u8 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Decision produced by the policy layer about how to embed an image.
 pub struct ImageEmbedDecision {
+    /// Whether alpha should be flattened against a white background.
     pub flatten_alpha: bool,
     pub encoding: PdfImageEncoding,
 }
@@ -28,6 +33,10 @@ enum ImagePresetClass {
     Custom,
 }
 
+/// Chooses how a source image should be embedded into the output PDF.
+///
+/// The policy aims to preserve fidelity while enabling size reductions when the user requests
+/// optimization. Lossless sources are kept raw unless a JPEG re-encode is explicitly requested.
 pub fn decide_image_embed(
     descriptor: &SourceImageDescriptor,
     opts: Option<&OptimizeOptions>,

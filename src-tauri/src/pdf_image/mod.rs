@@ -1,3 +1,7 @@
+//! Image loading and encoding for embedding into PDFs.
+//!
+//! This module hides image format details behind a small API used by the export pipeline.
+
 mod descriptor;
 mod encode;
 mod policy;

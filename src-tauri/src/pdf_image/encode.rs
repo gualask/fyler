@@ -4,13 +4,17 @@ use jpeg_encoder::{ColorType, Encoder};
 
 use super::policy::{ImageEmbedDecision, PdfImageEncoding};
 
+/// Prepared image payload ready to be embedded as a PDF XObject image.
 pub struct PreparedPdfImage {
     pub width: u32,
     pub height: u32,
+    /// Image bytes (raw RGB or encoded JPEG) depending on `filter`.
     pub data: Vec<u8>,
+    /// Optional PDF stream filter name (e.g. `DCTDecode` for JPEG).
     pub filter: Option<&'static [u8]>,
 }
 
+/// Encodes a decoded image according to the provided embedding decision.
 pub fn prepare_pdf_image(
     img: DynamicImage,
     decision: ImageEmbedDecision,

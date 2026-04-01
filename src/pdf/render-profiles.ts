@@ -2,6 +2,7 @@ import type { FileEdits, QuarterTurn } from '@/domain';
 import { emptyFileEdits, getPdfPageQuarterTurn } from '@/domain/file-edits';
 import type { PdfRenderRequest } from './pdf-cache.hook';
 
+/** Use device pixel ratio for thumbnails, capped to avoid heavy CPU/memory usage. */
 const THUMB_DENSITY = typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
 
 function withRotation(
@@ -28,6 +29,7 @@ export function buildThumbnailRenderRequest(
     });
 }
 
+/** Convenience helper for batch thumbnail prefetching. */
 export function buildThumbnailRenderRequests(
     pageNums: number[],
     edits: FileEdits | undefined,
@@ -35,6 +37,7 @@ export function buildThumbnailRenderRequests(
     return pageNums.map((pageNum) => buildThumbnailRenderRequest(pageNum, edits));
 }
 
+/** Render profile for the main page preview. */
 export function buildPreviewRenderRequest(
     pageNum: number,
     edits: FileEdits | undefined,

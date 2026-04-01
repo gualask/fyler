@@ -1,5 +1,6 @@
 export type BasicOptimizationPreset = 'original' | 'light' | 'balanced' | 'compact';
 export type ImageOptimizationPreset = BasicOptimizationPreset | 'custom';
+/** Default preset used for new sessions. */
 export const DEFAULT_OPTIMIZATION_PRESET: BasicOptimizationPreset = 'light';
 
 export type OptimizationSettings = {
@@ -63,10 +64,15 @@ export const TARGET_DPI_OPTIONS: NumericOptionDefinition[] = [
     },
 ];
 
+/**
+ * Maps a preset to concrete optimization settings.
+ *
+ * Note: the preset list is part of the UX contract (labels/options) and should remain stable.
+ */
 export function getOptimizationSettings(preset: BasicOptimizationPreset): OptimizationSettings {
     const found = OPTIMIZATION_PRESETS.find((candidate) => candidate.value === preset);
     if (!found) {
-        throw new Error(`Preset non supportato: ${preset}`);
+        throw new Error(`Unsupported preset: ${preset}`);
     }
     return {
         jpegQuality: found.jpegQuality,
@@ -74,6 +80,11 @@ export function getOptimizationSettings(preset: BasicOptimizationPreset): Optimi
     };
 }
 
+/**
+ * Derives the matching preset for the provided settings.
+ *
+ * Returns `'custom'` when the pair does not exactly match a known preset.
+ */
 export function deriveOptimizationPreset(
     jpegQuality: number | undefined,
     targetDpi: number | undefined,

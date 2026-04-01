@@ -21,6 +21,7 @@ struct ImportWarningPayload {
 
 #[derive(Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
+/// Minimal app metadata surfaced to the frontend for diagnostics/UI.
 pub struct AppMetadataPayload {
     app_name: String,
     version: String,
@@ -60,6 +61,9 @@ fn finalize_import(
 }
 
 #[tauri::command]
+/// Opens a native file picker dialog and imports the selected files.
+///
+/// Import is performed on a blocking thread to avoid stalling the UI thread.
 pub async fn open_files_dialog(
     app: tauri::AppHandle,
     filter_label: String,
@@ -113,6 +117,7 @@ pub async fn open_files_dialog(
 }
 
 #[tauri::command]
+/// Imports files from the provided filesystem paths (used for drag&drop / CLI integrations).
 pub async fn open_files_from_paths(
     app: tauri::AppHandle,
     paths: Vec<String>,
@@ -126,11 +131,15 @@ pub async fn open_files_from_paths(
 }
 
 #[tauri::command]
+/// Releases all backend resources associated with the given file IDs.
+///
+/// The frontend calls this when a source is removed from the session.
 pub fn release_sources(file_ids: Vec<String>, registry: State<'_, SourceRegistry>) {
     registry.remove_many(&file_ids);
 }
 
 #[tauri::command]
+/// Opens a native save dialog and returns the chosen path (or empty string if cancelled).
 pub async fn save_pdf_dialog(
     app: tauri::AppHandle,
     default_filename: String,
@@ -148,6 +157,9 @@ pub async fn save_pdf_dialog(
 }
 
 #[tauri::command]
+/// Exports the requested composition to a single PDF.
+///
+/// Runs on a blocking thread; progress is emitted as `"merge-progress"` events.
 pub async fn merge_pdfs(
     app: tauri::AppHandle,
     registry: State<'_, SourceRegistry>,
@@ -162,6 +174,7 @@ pub async fn merge_pdfs(
 }
 
 #[tauri::command]
+/// Returns build/runtime metadata for diagnostics and the "About" UI.
 pub fn get_app_metadata(app: tauri::AppHandle) -> AppMetadataPayload {
     let package = app.package_info();
     AppMetadataPayload {
@@ -174,6 +187,7 @@ pub fn get_app_metadata(app: tauri::AppHandle) -> AppMetadataPayload {
 }
 
 #[tauri::command]
+/// Opens an external URL using the OS handler (default browser).
 pub fn open_external_url(app: tauri::AppHandle, url: String) -> Result<(), AppError> {
     app.opener()
         .open_url(url, None::<String>)
@@ -182,6 +196,9 @@ pub fn open_external_url(app: tauri::AppHandle, url: String) -> Result<(), AppEr
 }
 
 #[tauri::command]
+/// Computes a preview layout for exporting a single image as a PDF page.
+///
+/// This is used by the frontend to show an accurate export preview without duplicating layout math.
 pub fn get_image_export_preview_layout(
     path: String,
     image_fit: String,

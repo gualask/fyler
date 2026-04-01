@@ -2,12 +2,16 @@ use anyhow::{Context, Result};
 use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Coarse compression class derived from the source image format.
 pub enum SourceCompressionClass {
+    /// A lossy encoding (currently JPEG, lossy WebP).
     Lossy,
+    /// Lossless or unknown (conservative default).
     LosslessOrUnknown,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Lightweight metadata about a source image.
 pub struct SourceImageDescriptor {
     pub compression_class: SourceCompressionClass,
     pub has_alpha: bool,
@@ -15,6 +19,7 @@ pub struct SourceImageDescriptor {
     pub height: u32,
 }
 
+/// Loads an image from disk and returns both decoded pixels and a descriptor.
 pub fn load_source_image(path: &str) -> Result<(DynamicImage, SourceImageDescriptor)> {
     let mut reader =
         ImageReader::open(path).with_context(|| format!("Failed to open image '{path}'"))?;

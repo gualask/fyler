@@ -6,12 +6,16 @@ use crate::models::OptimizeOptions;
 use super::object_copier::ObjectCopier;
 use super::page_effective::effective_page_dictionary;
 
+/// Incrementally composes a new PDF document from PDF pages and images.
+///
+/// Call `push_*` methods in the desired output order, then `finish()` to obtain a `lopdf::Document`.
 pub struct PdfComposer {
     doc: PdfDoc,
     page_ids: Vec<ObjectId>,
 }
 
 impl PdfComposer {
+    /// Creates a new empty composer.
     pub fn new() -> Self {
         Self {
             doc: PdfDoc::with_version("1.5"),
@@ -19,6 +23,7 @@ impl PdfComposer {
         }
     }
 
+    /// Appends an image as a new page in the output document.
     pub fn push_image_page(
         &mut self,
         path: &str,
@@ -38,6 +43,9 @@ impl PdfComposer {
         Ok(())
     }
 
+    /// Appends a page from an existing PDF into the output document.
+    ///
+    /// `memo` is used to avoid copying the same indirect objects multiple times.
     pub fn push_pdf_page(
         &mut self,
         source: &PdfDoc,
@@ -65,6 +73,7 @@ impl PdfComposer {
         Ok(())
     }
 
+    /// Finalizes the PDF by writing the page tree and catalog.
     pub fn finish(mut self) -> Result<PdfDoc> {
         let pages_id = self.doc.new_object_id();
 

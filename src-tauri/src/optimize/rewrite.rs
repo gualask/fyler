@@ -64,6 +64,9 @@ fn rewrite_jpeg(stream: &mut Stream, raster: DecodedRaster, quality: u8) -> Resu
     Ok(())
 }
 
+/// Rewrites a PDF image stream using the provided decoded raster and output encoding.
+///
+/// Returns the rewritten stream size in bytes.
 pub fn rewrite_stream(
     stream: &mut Stream,
     raster: DecodedRaster,

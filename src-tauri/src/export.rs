@@ -33,6 +33,9 @@ fn quarter_turns_for_image(edits: Option<&FileEdits>) -> anyhow::Result<u8> {
     Ok(turns)
 }
 
+/// In-memory cache for a loaded PDF source during a single export.
+///
+/// `memo` maps source object IDs to destination object IDs so repeated references are copied once.
 struct CachedPdfSource {
     doc: PdfDoc,
     memo: std::collections::HashMap<lopdf::ObjectId, lopdf::ObjectId>,
@@ -99,6 +102,8 @@ fn compose_document(
 
     emit_progress(app, "merging-pages", 5);
     for (index, page) in req.pages.iter().enumerate() {
+        // Evict per-source cached PDFs once we've appended their last referenced page.
+        // This keeps memory usage bounded even if users export very large compositions.
         let should_evict_pdf_cache =
             last_use_index_by_file_id.get(&page.file_id).copied() == Some(index);
         let source = resolve_source(registry, &page.file_id)?;
@@ -143,6 +148,9 @@ fn compose_document(
     composer.finish()
 }
 
+/// Performs the full export pipeline: compose pages, optionally optimize images, then save.
+///
+/// Progress is emitted via `"merge-progress"` events on the provided `app` handle.
 pub fn export_pdf(
     app: &AppHandle,
     registry: &SourceRegistry,

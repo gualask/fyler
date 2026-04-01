@@ -1,6 +1,7 @@
 use lopdf::{Object, ObjectId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Color spaces supported by the optimizer.
 pub enum SupportedColorSpace {
     Gray,
     Rgb,
@@ -8,6 +9,7 @@ pub enum SupportedColorSpace {
 }
 
 impl SupportedColorSpace {
+    /// Returns the number of channels for this color space.
     pub fn components(self) -> usize {
         match self {
             Self::Gray => 1,
@@ -18,18 +20,23 @@ impl SupportedColorSpace {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Source encoding detected from PDF stream filters.
 pub enum SourceEncoding {
     Raw,
     Jpeg,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Reasons why an image candidate is not optimized.
 pub enum CandidateSkipReason {
+    /// Not supported by the optimizer (format/filters/colorspace/etc).
     Unsupported,
+    /// Potentially unsafe to optimize (e.g. masks, missing metadata).
     Risky,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// A PDF XObject image stream that is eligible (or nearly eligible) for optimization.
 pub struct ImageCandidate {
     pub object_id: ObjectId,
     pub width: u32,
@@ -99,6 +106,12 @@ fn source_encoding(obj: &Object) -> Result<SourceEncoding, CandidateSkipReason> 
     }
 }
 
+/// Attempts to classify an object as an optimizable image candidate.
+///
+/// Returns:
+/// - `None` when the object is not an image XObject
+/// - `Some(Ok(candidate))` when it is an eligible candidate
+/// - `Some(Err(reason))` when it is an image but should be skipped
 pub fn discover_candidate(
     object_id: ObjectId,
     obj: &Object,
