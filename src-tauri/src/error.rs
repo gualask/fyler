@@ -20,7 +20,10 @@ impl UserFacingError {
     }
 
     pub fn with_meta(code: &'static str, meta: Value) -> Self {
-        Self { code, meta: Some(meta) }
+        Self {
+            code,
+            meta: Some(meta),
+        }
     }
 }
 

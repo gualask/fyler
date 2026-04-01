@@ -19,30 +19,46 @@ coupling between unrelated steps.
 
 ## Export path
 
-Fyler uses three distinct preparation paths before the final save:
+Fyler builds the exported PDF in a single pass with an incremental composer:
 
-### 1. PDF subset path
+- pages are appended in the exact order requested by the user
+- duplicates are allowed and represented explicitly in the output
+- the composer copies only the object graph that is actually referenced by the
+  exported pages (content, resources, XObjects, fonts, …)
+- objects coming from the same source PDF are memoized so repeated references
+  are not duplicated unnecessarily in the output
 
-If consecutive pages from the same source PDF can be represented as a simple
-subset, Fyler keeps a single document and removes unneeded pages.
+This design avoids building many intermediate documents and merging them later.
+The main advantage is lower peak memory and fewer structural transformations
+that can accidentally drop inherited properties.
 
-This path also prunes image XObjects that are no longer referenced by the
-remaining pages. Without that cleanup, single-page exports could still carry the
-weight of images used only by deleted pages.
+### Copying a PDF page correctly
 
-### 2. Single-page PDF extraction path
+PDF pages can inherit properties from their page tree parents. To avoid
+viewer-dependent behavior and subtle rendering bugs, Fyler materializes the
+effective page dictionary before copying it:
 
-If the final ordering requires isolated PDF pages, Fyler prepares one-page PDF
-documents and merges them later.
+- page `Resources` are built as an effective merged view (parent resources are
+  preserved, page resources override only the relevant entries)
+- `MediaBox` (and related box keys when present) are materialized if inherited
+- `Rotate` is materialized if inherited, then combined with the user-requested
+  rotation delta
 
-### 3. Image-to-PDF path
+The output contains a minimal, deterministic page tree and catalog. It does not
+attempt to preserve interactive structures (forms/outlines) from input PDFs.
 
-If a source item is an image file, Fyler turns it into a one-page PDF before
-merge. This path is not a trivial raster dump anymore: the image is classified,
-an embed policy is chosen, and the final page image is encoded accordingly.
+### Imported images
 
-When a single prepared document is enough, merge is skipped entirely. This keeps
-files smaller and avoids unnecessary structural work.
+Imported image files become pages directly inside the final document:
+
+- the image is decoded once, optionally rotated, then encoded according to the
+  selected export preset
+- the page geometry is derived from the chosen fit mode (`fit`, `contain`,
+  `cover`)
+- the resulting image XObject and content stream are inserted into the final PDF
+
+This keeps the image policy independent from the rest of the PDF-copy logic,
+while avoiding intermediate “mini-PDF” construction for each image.
 
 ## Save strategy
 
@@ -226,7 +242,7 @@ is well understood, explicitly scoped, and covered by regression tests.
 The export code now has regression tests around the failures that actually
 happened during development:
 
-- subset exports must not keep unused image payloads
+- single-page exports must not keep unused payloads from the source PDF
 - image + PDF merges must not drag the full original PDF payload
 - target-DPI-only optimization must really run
 - optimized PDFs must still save and reload correctly

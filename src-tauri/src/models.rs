@@ -24,9 +24,9 @@ pub struct FileEdits {
     #[serde(default)]
     pub revision: u32,
     #[serde(rename = "pageRotations", default)]
-    pub page_rotations: HashMap<String, u8>,
+    pub page_rotations: HashMap<u32, u8>,
     #[serde(rename = "imageRotation", default)]
-    pub image_rotation: Option<u8>,
+    pub image_rotation: u8,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

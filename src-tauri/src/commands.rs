@@ -1,8 +1,8 @@
 use std::env::consts::{ARCH, OS};
 use tauri::Emitter;
 use tauri::State;
-use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_opener::OpenerExt;
 
 use crate::error::AppError;
 use crate::export::export_pdf;
@@ -105,17 +105,23 @@ pub async fn open_files_dialog(
         })
         .collect::<Vec<_>>();
 
-    let result = files_from_paths(paths, &registry)?;
+    let registry = registry.inner().clone();
+    let result = tauri::async_runtime::spawn_blocking(move || files_from_paths(paths, &registry))
+        .await
+        .map_err(anyhow::Error::from)??;
     Ok(finalize_import(&app, result, path_skipped))
 }
 
 #[tauri::command]
-pub fn open_files_from_paths(
+pub async fn open_files_from_paths(
     app: tauri::AppHandle,
     paths: Vec<String>,
     registry: State<'_, SourceRegistry>,
 ) -> Result<OpenFilesResult, AppError> {
-    let result = files_from_paths(paths, &registry)?;
+    let registry = registry.inner().clone();
+    let result = tauri::async_runtime::spawn_blocking(move || files_from_paths(paths, &registry))
+        .await
+        .map_err(anyhow::Error::from)??;
     Ok(finalize_import(&app, result, vec![]))
 }
 
@@ -147,7 +153,12 @@ pub async fn merge_pdfs(
     registry: State<'_, SourceRegistry>,
     req: MergeRequest,
 ) -> Result<MergeResult, AppError> {
-    export_pdf(&app, &registry, req).map_err(Into::into)
+    let app = app.clone();
+    let registry = registry.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || export_pdf(&app, &registry, req))
+        .await
+        .map_err(anyhow::Error::from)?
+        .map_err(Into::into)
 }
 
 #[tauri::command]

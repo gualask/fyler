@@ -1,14 +1,11 @@
-use std::collections::HashMap;
-
 use lopdf::Document as PdfDoc;
 use tauri::{AppHandle, Emitter};
 
+use crate::error::UserFacingError;
 use crate::models::{FileEdits, MergeRequest, MergeResult};
 use crate::optimize;
-use crate::pdf::{
-    image_to_pdf_doc, prepare_pdf_page_doc, prepare_pdf_subset_doc, quarter_turns_to_degrees,
-};
-use crate::error::UserFacingError;
+use crate::pdf::quarter_turns_to_degrees;
+use crate::pdf_compose::PdfComposer;
 use crate::source_registry::SourceRegistry;
 
 #[derive(serde::Serialize, Clone)]
@@ -24,139 +21,126 @@ fn emit_progress(app: &AppHandle, step: &'static str, progress: u8) {
 
 fn quarter_turns_for_pdf_page(edits: Option<&FileEdits>, page_num: u32) -> anyhow::Result<u8> {
     let turns = edits
-        .and_then(|value| value.page_rotations.get(&page_num.to_string()).copied())
+        .and_then(|value| value.page_rotations.get(&page_num).copied())
         .unwrap_or(0);
     let _ = quarter_turns_to_degrees(turns)?;
     Ok(turns)
 }
 
 fn quarter_turns_for_image(edits: Option<&FileEdits>) -> anyhow::Result<u8> {
-    let turns = edits.and_then(|value| value.image_rotation).unwrap_or(0);
+    let turns = edits.map(|value| value.image_rotation).unwrap_or(0);
     let _ = quarter_turns_to_degrees(turns)?;
     Ok(turns)
 }
 
-fn is_simple_pdf_run(page_numbers: &[u32]) -> bool {
-    page_numbers.windows(2).all(|window| window[0] < window[1])
+struct CachedPdfSource {
+    doc: PdfDoc,
+    memo: std::collections::HashMap<lopdf::ObjectId, lopdf::ObjectId>,
 }
 
-fn split_monotonic_page_runs(page_numbers: &[u32]) -> Vec<&[u32]> {
-    if page_numbers.is_empty() {
-        return Vec::new();
+fn build_last_use_index(
+    pages: &[crate::models::ExportPage],
+) -> std::collections::HashMap<String, usize> {
+    let mut map = std::collections::HashMap::new();
+    for (index, page) in pages.iter().enumerate() {
+        map.insert(page.file_id.clone(), index);
     }
-
-    let mut runs = Vec::new();
-    let mut run_start = 0;
-
-    for index in 1..page_numbers.len() {
-        if page_numbers[index - 1] >= page_numbers[index] {
-            runs.push(&page_numbers[run_start..index]);
-            run_start = index;
-        }
-    }
-
-    runs.push(&page_numbers[run_start..]);
-    runs
+    map
 }
 
-pub fn build_documents(
-    req: &MergeRequest,
+fn resolve_source(
     registry: &SourceRegistry,
-    image_fit: &str,
-) -> anyhow::Result<Vec<PdfDoc>> {
-    let mut pdf_cache: HashMap<String, PdfDoc> = HashMap::new();
-    let mut docs = Vec::with_capacity(req.pages.len());
-    let mut index = 0;
+    file_id: &str,
+) -> anyhow::Result<crate::source_registry::RegisteredSource> {
+    registry.get(file_id).ok_or_else(|| {
+        anyhow::Error::new(UserFacingError::with_meta(
+            "source_not_found",
+            serde_json::json!({ "fileId": file_id }),
+        ))
+    })
+}
 
-    while index < req.pages.len() {
-        let page = &req.pages[index];
-        let source = registry
-            .get(&page.file_id)
-            .ok_or_else(|| anyhow::Error::new(UserFacingError::with_meta(
-                "source_not_found",
-                serde_json::json!({ "fileId": page.file_id }),
-            )))?;
+fn load_cached_pdf_source<'a>(
+    cache: &'a mut std::collections::HashMap<String, CachedPdfSource>,
+    file_id: String,
+    path: &str,
+    name: &str,
+) -> anyhow::Result<&'a mut CachedPdfSource> {
+    use std::collections::hash_map::Entry;
+
+    Ok(match cache.entry(file_id) {
+        Entry::Occupied(existing) => existing.into_mut(),
+        Entry::Vacant(vacant) => {
+            let doc = PdfDoc::load(path).map_err(|_| {
+                anyhow::Error::new(UserFacingError::with_meta(
+                    "open_pdf_failed",
+                    serde_json::json!({ "name": name }),
+                ))
+            })?;
+            vacant.insert(CachedPdfSource {
+                doc,
+                memo: std::collections::HashMap::new(),
+            })
+        }
+    })
+}
+
+fn compose_document(
+    app: &AppHandle,
+    registry: &SourceRegistry,
+    req: &MergeRequest,
+    image_fit: &str,
+) -> anyhow::Result<PdfDoc> {
+    emit_progress(app, "preparing-documents", 0);
+    let mut pdf_cache: std::collections::HashMap<String, CachedPdfSource> =
+        std::collections::HashMap::new();
+    let last_use_index_by_file_id = build_last_use_index(&req.pages);
+    let mut composer = PdfComposer::new();
+
+    emit_progress(app, "merging-pages", 5);
+    for (index, page) in req.pages.iter().enumerate() {
+        let should_evict_pdf_cache =
+            last_use_index_by_file_id.get(&page.file_id).copied() == Some(index);
+        let source = resolve_source(registry, &page.file_id)?;
         let edits = req.edits.get(&page.file_id);
 
         if source.kind == "image" {
-            docs.push(image_to_pdf_doc(
+            composer.push_image_page(
                 &source.original_path,
                 image_fit,
                 quarter_turns_for_image(edits)?,
                 req.optimize.as_ref(),
-            )?);
-            index += 1;
-            continue;
-        }
-
-        let source_doc = if let Some(doc) = pdf_cache.get(&page.file_id) {
-            doc.clone()
+            )?;
         } else {
-            let doc = PdfDoc::load(&source.original_path).map_err(|_| {
-                anyhow::Error::new(UserFacingError::with_meta(
-                    "open_pdf_failed",
-                    serde_json::json!({ "name": source.name }),
-                ))
-            })?;
-            pdf_cache.insert(page.file_id.clone(), doc.clone());
-            doc
-        };
+            {
+                let entry = load_cached_pdf_source(
+                    &mut pdf_cache,
+                    page.file_id.clone(),
+                    &source.original_path,
+                    &source.name,
+                )?;
+                composer.push_pdf_page(
+                    &entry.doc,
+                    &mut entry.memo,
+                    &source.name,
+                    page.page_num,
+                    quarter_turns_for_pdf_page(edits, page.page_num)?,
+                )?;
+            }
 
-        let mut run_end = index + 1;
-        let mut run_pages = vec![page.page_num];
-        while run_end < req.pages.len() && req.pages[run_end].file_id == page.file_id {
-            run_pages.push(req.pages[run_end].page_num);
-            run_end += 1;
-        }
-
-        if is_simple_pdf_run(&run_pages) {
-            let subset_pages = run_pages
-                .iter()
-                .copied()
-                .map(|page_num| Ok((page_num, quarter_turns_for_pdf_page(edits, page_num)?)))
-                .collect::<anyhow::Result<Vec<_>>>()?;
-            docs.push(prepare_pdf_subset_doc(source_doc, &subset_pages)?);
-        } else {
-            for chunk in split_monotonic_page_runs(&run_pages) {
-                if chunk.len() == 1 {
-                    let page_num = chunk[0];
-                    docs.push(prepare_pdf_page_doc(
-                        source_doc.clone(),
-                        page_num,
-                        quarter_turns_for_pdf_page(edits, page_num)?,
-                    )?);
-                    continue;
-                }
-
-                let subset_pages = chunk
-                    .iter()
-                    .copied()
-                    .map(|page_num| Ok((page_num, quarter_turns_for_pdf_page(edits, page_num)?)))
-                    .collect::<anyhow::Result<Vec<_>>>()?;
-                docs.push(prepare_pdf_subset_doc(source_doc.clone(), &subset_pages)?);
+            if should_evict_pdf_cache {
+                pdf_cache.remove(&page.file_id);
             }
         }
 
-        index = run_end;
+        if index % 10 == 0 {
+            let progress =
+                ((index as f64 / req.pages.len().max(1) as f64) * 55.0).round() as u8 + 5;
+            emit_progress(app, "merging-pages", progress.min(60));
+        }
     }
 
-    Ok(docs)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::split_monotonic_page_runs;
-
-    #[test]
-    fn split_monotonic_page_runs_keeps_increasing_chunks_together() {
-        let runs = split_monotonic_page_runs(&[1, 2, 4, 3, 5, 5, 7, 1]);
-        assert_eq!(runs, vec![&[1, 2, 4][..], &[3, 5][..], &[5, 7][..], &[1][..]]);
-    }
-
-    #[test]
-    fn split_monotonic_page_runs_handles_empty_input() {
-        assert!(split_monotonic_page_runs(&[]).is_empty());
-    }
+    composer.finish()
 }
 
 pub fn export_pdf(
@@ -185,25 +169,20 @@ pub fn export_pdf(
         .and_then(|options| options.image_fit.as_deref())
         .unwrap_or("fit");
 
-    emit_progress(app, "preparing-documents", 0);
-    let docs = build_documents(&req, registry, image_fit)?;
-    if docs.is_empty() {
-        return Err(anyhow::Error::new(UserFacingError::new("no_documents_to_merge")));
+    if req.pages.is_empty() {
+        return Err(anyhow::Error::new(UserFacingError::new(
+            "no_documents_to_merge",
+        )));
     }
 
-    emit_progress(app, "merging-pages", 60);
-    let mut docs = docs;
-    let mut merged = if docs.len() == 1 {
-        docs.pop().expect("single prepared document")
-    } else {
-        crate::pdf::merge_pdf_documents(docs)?
-    };
+    let mut merged = compose_document(app, registry, &req, image_fit)?;
 
     let mut optimization_failed_count = 0;
     if let Some(options) = &req.optimize {
         if optimize::has_optimization_work(options) {
             emit_progress(app, "optimizing-images", 80);
-            optimization_failed_count = optimize::optimize_images(&mut merged, options)?.failed_non_fatal;
+            optimization_failed_count =
+                optimize::optimize_images(&mut merged, options)?.failed_non_fatal;
         }
     }
 

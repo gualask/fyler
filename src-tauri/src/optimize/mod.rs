@@ -323,8 +323,7 @@ mod tests {
         let width: u16 = 32;
         let height: u16 = 32;
         let mut jpeg = Vec::new();
-        let raw = [0, 255, 255, 0, 255, 0, 255, 0]
-            .repeat(usize::from((width * height) / 2));
+        let raw = [0, 255, 255, 0, 255, 0, 255, 0].repeat(usize::from((width * height) / 2));
         Encoder::new(&mut jpeg, 95).encode(&raw, width, height, ColorType::Cmyk)?;
 
         let mut doc = page_doc(
@@ -450,8 +449,7 @@ mod tests {
         let width: u16 = 32;
         let height: u16 = 32;
         let mut jpeg = Vec::new();
-        let raw = [0, 255, 255, 0, 255, 0, 255, 0]
-            .repeat(usize::from((width * height) / 2));
+        let raw = [0, 255, 255, 0, 255, 0, 255, 0].repeat(usize::from((width * height) / 2));
         Encoder::new(&mut jpeg, 95).encode(&raw, width, height, ColorType::Cmyk)?;
 
         let mut doc = page_doc(

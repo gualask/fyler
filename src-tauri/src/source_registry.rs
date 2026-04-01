@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::RwLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 
 use crate::models::{SkippedFile, SourceFile};
 use crate::pdf::{count_pages, detect_kind_from_ext};
@@ -13,9 +15,9 @@ pub struct RegisteredSource {
     pub kind: String,
 }
 
-#[derive(Default)]
+#[derive(Clone)]
 pub struct SourceRegistry {
-    state: RwLock<RegistryState>,
+    state: Arc<RwLock<RegistryState>>,
 }
 
 #[derive(Default)]
@@ -29,9 +31,39 @@ pub struct FilesFromPathsResult {
     pub skipped: Vec<SkippedFile>,
 }
 
+static REGISTRY_LOCK_POISON_LOGGED: AtomicBool = AtomicBool::new(false);
+
 impl SourceRegistry {
+    fn read_state(&self) -> RwLockReadGuard<'_, RegistryState> {
+        match self.state.read() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                if !REGISTRY_LOCK_POISON_LOGGED.swap(true, Ordering::Relaxed) {
+                    eprintln!(
+                        "[fyler] SourceRegistry lock poisoned (read); continuing best-effort"
+                    );
+                }
+                poisoned.into_inner()
+            }
+        }
+    }
+
+    fn write_state(&self) -> RwLockWriteGuard<'_, RegistryState> {
+        match self.state.write() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                if !REGISTRY_LOCK_POISON_LOGGED.swap(true, Ordering::Relaxed) {
+                    eprintln!(
+                        "[fyler] SourceRegistry lock poisoned (write); continuing best-effort"
+                    );
+                }
+                poisoned.into_inner()
+            }
+        }
+    }
+
     pub fn insert_many(&self, entries: impl IntoIterator<Item = (String, RegisteredSource)>) {
-        let mut state = self.state.write().expect("source registry poisoned");
+        let mut state = self.write_state();
         for (file_id, registered) in entries {
             state
                 .id_by_original_path
@@ -41,24 +73,15 @@ impl SourceRegistry {
     }
 
     pub fn get(&self, file_id: &str) -> Option<RegisteredSource> {
-        self.state
-            .read()
-            .expect("source registry poisoned")
-            .sources_by_id
-            .get(file_id)
-            .cloned()
+        self.read_state().sources_by_id.get(file_id).cloned()
     }
 
     pub fn contains_original_path(&self, path: &str) -> bool {
-        self.state
-            .read()
-            .expect("source registry poisoned")
-            .id_by_original_path
-            .contains_key(path)
+        self.read_state().id_by_original_path.contains_key(path)
     }
 
     pub fn remove_many(&self, file_ids: &[String]) {
-        let mut state = self.state.write().expect("source registry poisoned");
+        let mut state = self.write_state();
         for file_id in file_ids {
             if let Some(registered) = state.sources_by_id.remove(file_id) {
                 state.id_by_original_path.remove(&registered.original_path);
@@ -67,9 +90,17 @@ impl SourceRegistry {
     }
 }
 
-fn registered_file_from_path(
-    path: String,
-) -> Result<(SourceFile, RegisteredSource), SkippedFile> {
+impl Default for SourceRegistry {
+    fn default() -> Self {
+        Self {
+            state: Arc::new(RwLock::new(RegistryState::default())),
+        }
+    }
+}
+
+static IMPORT_POOL: OnceLock<rayon::ThreadPool> = OnceLock::new();
+
+fn registered_file_from_path(path: String) -> Result<(SourceFile, RegisteredSource), SkippedFile> {
     let name = std::path::Path::new(&path)
         .file_name()
         .unwrap_or_default()
@@ -128,10 +159,19 @@ pub fn files_from_paths(
         accepted_paths.push(path);
     }
 
-    let results = accepted_paths
-        .into_par_iter()
-        .map(registered_file_from_path)
-        .collect::<Vec<_>>();
+    let pool = IMPORT_POOL.get_or_init(|| {
+        ThreadPoolBuilder::new()
+            .num_threads(4)
+            .thread_name(|index| format!("fyler-import-{index}"))
+            .build()
+            .expect("failed to build import threadpool")
+    });
+    let results = pool.install(|| {
+        accepted_paths
+            .into_par_iter()
+            .map(registered_file_from_path)
+            .collect::<Vec<_>>()
+    });
 
     let mut entries = Vec::new();
     let mut skipped = Vec::new();
@@ -227,7 +267,13 @@ mod tests {
         assert!(second.files.is_empty());
         assert!(second.skipped.is_empty());
 
-        registry.remove_many(&first.files.iter().map(|file| file.id.clone()).collect::<Vec<_>>());
+        registry.remove_many(
+            &first
+                .files
+                .iter()
+                .map(|file| file.id.clone())
+                .collect::<Vec<_>>(),
+        );
         let _ = fs::remove_file(image_path);
         Ok(())
     }
@@ -255,12 +301,19 @@ mod tests {
         )?;
 
         assert_eq!(result.files.len(), 1);
-        assert_eq!(result.files[0].original_path, new_path.to_string_lossy().to_string());
+        assert_eq!(
+            result.files[0].original_path,
+            new_path.to_string_lossy().to_string()
+        );
         assert_eq!(result.skipped.len(), 1);
         assert!(result.skipped[0].name.contains("unsupported"));
         assert_eq!(result.skipped[0].reason, "unsupported_format");
 
-        let mut ids = first.files.iter().map(|file| file.id.clone()).collect::<Vec<_>>();
+        let mut ids = first
+            .files
+            .iter()
+            .map(|file| file.id.clone())
+            .collect::<Vec<_>>();
         ids.extend(result.files.iter().map(|file| file.id.clone()));
         registry.remove_many(&ids);
         let _ = fs::remove_file(existing_path);

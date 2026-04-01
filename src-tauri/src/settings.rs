@@ -52,9 +52,7 @@ pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppE
                 .get(KEY_ACCENT)
                 .and_then(|v| v.as_str().map(|a| a.to_owned())),
         ),
-        tutorial_seen: store
-            .get(KEY_TUTORIAL_SEEN)
-            .and_then(|v| v.as_bool()),
+        tutorial_seen: store.get(KEY_TUTORIAL_SEEN).and_then(|v| v.as_bool()),
     })
 }
 

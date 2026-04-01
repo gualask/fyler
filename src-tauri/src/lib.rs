@@ -6,6 +6,7 @@ mod export;
 mod models;
 mod optimize;
 mod pdf;
+mod pdf_compose;
 mod pdf_image;
 mod settings;
 mod source_registry;

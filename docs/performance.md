@@ -30,6 +30,13 @@ File import work is parallelized across input paths:
 This is a good place for parallelism because each file can be inspected
 independently and the task is mostly I/O-bound.
 
+Fyler intentionally caps this import parallelism to a small fixed number of
+threads (currently 4). This prevents import batches from saturating the machine
+and keeps the UI responsive even when many files are dropped at once.
+
+The goal is not maximum throughput at all costs. The goal is predictable
+latency and avoiding resource contention with export and preview rendering.
+
 ### Layout-aware PDF image optimization
 
 Embedded PDF image optimization is split into:
@@ -114,6 +121,18 @@ performance tradeoff for production:
 
 The backend intentionally does not spend extra complexity budget on PDF
 container tricks that are fragile across viewers.
+
+### Export composition avoids intermediate documents
+
+The export composer builds the final PDF incrementally instead of preparing many
+intermediate one-page documents and merging them.
+
+This reduces peak memory and avoids structural work that can easily become
+fragile (for example, inherited page properties disappearing when a page is
+extracted incorrectly).
+
+The composer also memoizes objects copied from the same source PDF so repeated
+references are not duplicated unnecessarily in the output.
 
 ### Practical thresholds (backend)
 
