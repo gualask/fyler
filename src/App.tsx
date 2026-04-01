@@ -35,6 +35,230 @@ import { useTranslation } from '@/i18n';
 import { PdfCacheProvider } from '@/pdf';
 import { PreferencesProvider, useTheme } from '@/preferences';
 
+type FilesApi = ReturnType<typeof useFiles>;
+type OptimizeApi = ReturnType<typeof useOptimize>;
+type NotificationsApi = ReturnType<typeof useAppNotifications>;
+type TutorialApi = ReturnType<typeof useTutorial>;
+type SupportApi = ReturnType<typeof useSupportDiagnostics>;
+type ThemeApi = ReturnType<typeof useTheme>;
+
+function MainAppView({
+    isDark,
+    accent,
+    toggleTheme,
+    setAccent,
+    openReportBug,
+    openAbout,
+    tutorialStart,
+    canHelp,
+    onQuickAdd,
+    canExport,
+    canPreview,
+    isDragOver,
+    filesApi,
+    handleAddFiles,
+    focusedSourcePageNum,
+    focusedSourceFlashKey,
+    optimize,
+    exportMerged,
+    setShowFinalPreview,
+}: {
+    isDark: ThemeApi['isDark'];
+    accent: ThemeApi['accent'];
+    toggleTheme: ThemeApi['toggleTheme'];
+    setAccent: ThemeApi['setAccent'];
+    openReportBug: () => void;
+    openAbout: () => void;
+    tutorialStart: () => void;
+    canHelp: boolean;
+    onQuickAdd: () => void;
+    canExport: boolean;
+    canPreview: boolean;
+    isDragOver: boolean;
+    filesApi: FilesApi;
+    handleAddFiles: () => void;
+    focusedSourcePageNum: number | null;
+    focusedSourceFlashKey?: number;
+    optimize: OptimizeApi;
+    exportMerged: () => Promise<void>;
+    setShowFinalPreview: (value: boolean) => void;
+}) {
+    return (
+        <>
+            <AppHeader
+                settings={{
+                    isDark,
+                    accent,
+                    onToggleTheme: toggleTheme,
+                    onSetAccent: setAccent,
+                    onReportBug: openReportBug,
+                    onOpenAbout: openAbout,
+                }}
+                onExport={() => void exportMerged()}
+                canExport={canExport}
+                onPreview={() => setShowFinalPreview(true)}
+                canPreview={canPreview}
+                onQuickAdd={onQuickAdd}
+                onHelp={tutorialStart}
+                canHelp={canHelp}
+            />
+
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+                {isDragOver && <DragOverlay />}
+
+                {filesApi.files.length === 0 ? (
+                    <EmptyState onAddFiles={handleAddFiles} />
+                ) : (
+                    <>
+                        <div
+                            className="grid min-h-0 flex-1 overflow-hidden"
+                            style={{
+                                gridTemplateColumns:
+                                    'minmax(200px, 30fr) minmax(200px, 40fr) minmax(200px, 30fr)',
+                            }}
+                        >
+                            <aside
+                                {...tutorialTargetProps(TUTORIAL_TARGETS.fileList)}
+                                className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source"
+                            >
+                                <FileList
+                                    files={filesApi.files}
+                                    finalPages={filesApi.finalPages}
+                                    selectedId={filesApi.selectedId}
+                                    onSelect={filesApi.selectFile}
+                                    onRemove={filesApi.removeFile}
+                                    onAddFiles={handleAddFiles}
+                                    onClearFiles={filesApi.clearAllFiles}
+                                />
+                            </aside>
+
+                            <section
+                                {...tutorialTargetProps(TUTORIAL_TARGETS.pagePicker)}
+                                className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source"
+                            >
+                                <PagePicker
+                                    key={filesApi.selectedFile?.id}
+                                    file={filesApi.selectedFile}
+                                    finalPages={filesApi.finalPages}
+                                    onTogglePage={filesApi.togglePage}
+                                    onToggleRange={filesApi.togglePageRange}
+                                    onSetPages={filesApi.setPagesForFile}
+                                    onSelectAll={filesApi.selectAll}
+                                    onDeselectAll={filesApi.deselectAll}
+                                    onRotatePage={filesApi.rotatePage}
+                                    editsByFile={filesApi.editsByFile}
+                                    focusedPageNum={focusedSourcePageNum}
+                                    focusFlashKey={focusedSourceFlashKey}
+                                />
+                            </section>
+
+                            <section
+                                {...tutorialTargetProps(TUTORIAL_TARGETS.finalDocument)}
+                                className="min-w-0 overflow-hidden bg-ui-output"
+                            >
+                                <FinalDocument
+                                    finalPages={filesApi.finalPages}
+                                    files={filesApi.files}
+                                    selectedPageId={
+                                        filesApi.focusedSource
+                                            ? `${filesApi.focusedSource.fileId}:${filesApi.focusedSource.pageNum}`
+                                            : null
+                                    }
+                                    onReorder={filesApi.reorderFinalPages}
+                                    onMovePageToIndex={filesApi.moveFinalPageToIndex}
+                                    onRemove={filesApi.removeFinalPage}
+                                    onSelectPage={filesApi.focusFinalPageSource}
+                                    onRotatePage={filesApi.rotatePage}
+                                    editsByFile={filesApi.editsByFile}
+                                />
+                            </section>
+                        </div>
+
+                        <footer className="shrink-0 border-t border-ui-border bg-ui-surface">
+                            <OutputPanel
+                                imageFit={optimize.imageFit}
+                                jpegQuality={optimize.jpegQuality}
+                                targetDpi={optimize.targetDpi}
+                                optimizationPreset={optimize.optimizationPreset}
+                                onImageFitChange={optimize.setImageFit}
+                                onJpegQualityChange={optimize.setJpegQuality}
+                                onTargetDpiChange={optimize.setTargetDpi}
+                                onOptimizationPresetChange={optimize.setOptimizationPreset}
+                            />
+                        </footer>
+                    </>
+                )}
+            </div>
+        </>
+    );
+}
+
+function AppOverlays({
+    notifications,
+    support,
+    tutorial,
+    showFinalPreview,
+    setShowFinalPreview,
+    filesApi,
+    optimize,
+}: {
+    notifications: NotificationsApi;
+    support: SupportApi;
+    tutorial: TutorialApi;
+    showFinalPreview: boolean;
+    setShowFinalPreview: (value: boolean) => void;
+    filesApi: FilesApi;
+    optimize: OptimizeApi;
+}) {
+    return (
+        <>
+            {notifications.statusMessage && notifications.statusTone && (
+                <Toast
+                    key={notifications.statusMessage}
+                    message={notifications.statusMessage}
+                    tone={notifications.statusTone}
+                />
+            )}
+
+            {notifications.loadingMessage && (
+                <ProgressModal
+                    message={notifications.loadingMessage}
+                    progress={notifications.loadingProgress}
+                />
+            )}
+
+            <SupportDialog
+                key={support.supportDialogMode ?? 'closed'}
+                mode={support.supportDialogMode}
+                snapshot={support.diagnosticsSnapshot}
+                onClose={support.closeSupportDialog}
+                onCopyDiagnostics={support.copyDiagnostics}
+                onOpenGitHubIssues={support.openGitHubIssues}
+                onOpenReportBug={support.openReportBug}
+            />
+
+            {tutorial.isActive && tutorial.currentStep !== null && (
+                <TutorialOverlay
+                    currentStep={tutorial.currentStep}
+                    onNext={tutorial.next}
+                    onSkip={tutorial.skip}
+                />
+            )}
+
+            {showFinalPreview && (
+                <PreviewModal
+                    finalPages={filesApi.finalPages}
+                    files={filesApi.files}
+                    editsByFile={filesApi.editsByFile}
+                    imageFit={optimize.imageFit}
+                    matchExportedImages
+                    onClose={() => setShowFinalPreview(false)}
+                />
+            )}
+        </>
+    );
+}
+
 function AppContent() {
     const [showFinalPreview, setShowFinalPreview] = useState(false);
     const quickAdd = useQuickAdd();
@@ -58,15 +282,7 @@ function AppContent() {
         ? filesApi.focusedSource?.flashKey
         : undefined;
 
-    const {
-        supportDialogMode,
-        diagnosticsSnapshot,
-        openReportBug,
-        openAbout,
-        closeSupportDialog,
-        copyDiagnostics,
-        openGitHubIssues,
-    } = useSupportDiagnostics({
+    const support = useSupportDiagnostics({
         isDark,
         isQuickAdd: quickAdd.isQuickAdd,
         fileCount: filesApi.files.length,
@@ -84,10 +300,10 @@ function AppContent() {
         notifications,
     });
 
+    const rootClassName = `flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`;
+
     return (
-        <div
-            className={`flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`}
-        >
+        <div className={rootClassName}>
             <UpdateDialog />
             {quickAdd.isQuickAdd ? (
                 <QuickAddView
@@ -98,157 +314,38 @@ function AppContent() {
                     onExit={handleExitQuickAdd}
                 />
             ) : (
-                <>
-                    <AppHeader
-                        settings={{
-                            isDark,
-                            accent,
-                            onToggleTheme: toggleTheme,
-                            onSetAccent: setAccent,
-                            onReportBug: openReportBug,
-                            onOpenAbout: openAbout,
-                        }}
-                        onExport={() => void exportMerged()}
-                        canExport={filesApi.finalPages.length > 0}
-                        onPreview={() => setShowFinalPreview(true)}
-                        canPreview={filesApi.finalPages.length > 0}
-                        onQuickAdd={handleEnterQuickAdd}
-                        onHelp={tutorial.start}
-                        canHelp={filesApi.files.length > 0}
-                    />
-
-                    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-                        {filesApi.isDragOver && <DragOverlay />}
-
-                        {filesApi.files.length === 0 ? (
-                            <EmptyState onAddFiles={handleAddFiles} />
-                        ) : (
-                            <>
-                                <div
-                                    className="grid min-h-0 flex-1 overflow-hidden"
-                                    style={{
-                                        gridTemplateColumns:
-                                            'minmax(200px, 30fr) minmax(200px, 40fr) minmax(200px, 30fr)',
-                                    }}
-                                >
-                                    <aside
-                                        {...tutorialTargetProps(TUTORIAL_TARGETS.fileList)}
-                                        className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source"
-                                    >
-                                        <FileList
-                                            files={filesApi.files}
-                                            finalPages={filesApi.finalPages}
-                                            selectedId={filesApi.selectedId}
-                                            onSelect={filesApi.selectFile}
-                                            onRemove={filesApi.removeFile}
-                                            onAddFiles={handleAddFiles}
-                                            onClearFiles={filesApi.clearAllFiles}
-                                        />
-                                    </aside>
-
-                                    <section
-                                        {...tutorialTargetProps(TUTORIAL_TARGETS.pagePicker)}
-                                        className="min-w-0 overflow-hidden border-r border-ui-border bg-ui-source"
-                                    >
-                                        <PagePicker
-                                            key={filesApi.selectedFile?.id}
-                                            file={filesApi.selectedFile}
-                                            finalPages={filesApi.finalPages}
-                                            onTogglePage={filesApi.togglePage}
-                                            onToggleRange={filesApi.togglePageRange}
-                                            onSetPages={filesApi.setPagesForFile}
-                                            onSelectAll={filesApi.selectAll}
-                                            onDeselectAll={filesApi.deselectAll}
-                                            onRotatePage={filesApi.rotatePage}
-                                            editsByFile={filesApi.editsByFile}
-                                            focusedPageNum={focusedSourcePageNum}
-                                            focusFlashKey={focusedSourceFlashKey}
-                                        />
-                                    </section>
-
-                                    <section
-                                        {...tutorialTargetProps(TUTORIAL_TARGETS.finalDocument)}
-                                        className="min-w-0 overflow-hidden bg-ui-output"
-                                    >
-                                        <FinalDocument
-                                            finalPages={filesApi.finalPages}
-                                            files={filesApi.files}
-                                            selectedPageId={
-                                                filesApi.focusedSource
-                                                    ? `${filesApi.focusedSource.fileId}:${filesApi.focusedSource.pageNum}`
-                                                    : null
-                                            }
-                                            onReorder={filesApi.reorderFinalPages}
-                                            onMovePageToIndex={filesApi.moveFinalPageToIndex}
-                                            onRemove={filesApi.removeFinalPage}
-                                            onSelectPage={filesApi.focusFinalPageSource}
-                                            onRotatePage={filesApi.rotatePage}
-                                            editsByFile={filesApi.editsByFile}
-                                        />
-                                    </section>
-                                </div>
-
-                                <footer className="shrink-0 border-t border-ui-border bg-ui-surface">
-                                    <OutputPanel
-                                        imageFit={optimize.imageFit}
-                                        jpegQuality={optimize.jpegQuality}
-                                        targetDpi={optimize.targetDpi}
-                                        optimizationPreset={optimize.optimizationPreset}
-                                        onImageFitChange={optimize.setImageFit}
-                                        onJpegQualityChange={optimize.setJpegQuality}
-                                        onTargetDpiChange={optimize.setTargetDpi}
-                                        onOptimizationPresetChange={optimize.setOptimizationPreset}
-                                    />
-                                </footer>
-                            </>
-                        )}
-                    </div>
-                </>
-            )}
-
-            {notifications.statusMessage && notifications.statusTone && (
-                <Toast
-                    key={notifications.statusMessage}
-                    message={notifications.statusMessage}
-                    tone={notifications.statusTone}
+                <MainAppView
+                    isDark={isDark}
+                    accent={accent}
+                    toggleTheme={toggleTheme}
+                    setAccent={setAccent}
+                    openReportBug={support.openReportBug}
+                    openAbout={support.openAbout}
+                    tutorialStart={tutorial.start}
+                    canHelp={filesApi.files.length > 0}
+                    onQuickAdd={handleEnterQuickAdd}
+                    canExport={filesApi.finalPages.length > 0}
+                    canPreview={filesApi.finalPages.length > 0}
+                    isDragOver={filesApi.isDragOver}
+                    filesApi={filesApi}
+                    handleAddFiles={handleAddFiles}
+                    focusedSourcePageNum={focusedSourcePageNum}
+                    focusedSourceFlashKey={focusedSourceFlashKey}
+                    optimize={optimize}
+                    exportMerged={exportMerged}
+                    setShowFinalPreview={setShowFinalPreview}
                 />
             )}
 
-            {notifications.loadingMessage && (
-                <ProgressModal
-                    message={notifications.loadingMessage}
-                    progress={notifications.loadingProgress}
-                />
-            )}
-
-            <SupportDialog
-                key={supportDialogMode ?? 'closed'}
-                mode={supportDialogMode}
-                snapshot={diagnosticsSnapshot}
-                onClose={closeSupportDialog}
-                onCopyDiagnostics={copyDiagnostics}
-                onOpenGitHubIssues={openGitHubIssues}
-                onOpenReportBug={openReportBug}
+            <AppOverlays
+                notifications={notifications}
+                support={support}
+                tutorial={tutorial}
+                showFinalPreview={showFinalPreview}
+                setShowFinalPreview={setShowFinalPreview}
+                filesApi={filesApi}
+                optimize={optimize}
             />
-
-            {tutorial.isActive && tutorial.currentStep !== null && (
-                <TutorialOverlay
-                    currentStep={tutorial.currentStep}
-                    onNext={tutorial.next}
-                    onSkip={tutorial.skip}
-                />
-            )}
-
-            {showFinalPreview && (
-                <PreviewModal
-                    finalPages={filesApi.finalPages}
-                    files={filesApi.files}
-                    editsByFile={filesApi.editsByFile}
-                    imageFit={optimize.imageFit}
-                    matchExportedImages
-                    onClose={() => setShowFinalPreview(false)}
-                />
-            )}
         </div>
     );
 }

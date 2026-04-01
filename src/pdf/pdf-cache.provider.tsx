@@ -11,6 +11,51 @@ import {
 } from './pdf-cache.hook';
 import { pdfjsLib, renderPdfPage } from './render';
 
+function buildTaskKey(fileId: string, cacheKey: string) {
+    return `${fileId}:${cacheKey}`;
+}
+
+function getOrCreateFileCache(cacheByFileId: Map<string, Map<string, string>>, fileId: string) {
+    const existing = cacheByFileId.get(fileId);
+    if (existing) return existing;
+    const next = new Map<string, string>();
+    cacheByFileId.set(fileId, next);
+    return next;
+}
+
+function setAspectRatio(
+    aspectRatiosByFileId: Map<string, Map<string, number>>,
+    fileId: string,
+    request: PdfRenderRequest,
+    aspectRatio: number,
+) {
+    const arKey = getAspectRatioCacheKey(request.pageNum, request.quarterTurns);
+    const existing = aspectRatiosByFileId.get(fileId);
+    if (existing) {
+        existing.set(arKey, aspectRatio);
+        return;
+    }
+    const next = new Map<string, number>();
+    next.set(arKey, aspectRatio);
+    aspectRatiosByFileId.set(fileId, next);
+}
+
+function getOrCreateListenerSet(listenersByTaskKey: Map<string, Set<() => void>>, taskKey: string) {
+    const existing = listenersByTaskKey.get(taskKey);
+    if (existing) return existing;
+    const next = new Set<() => void>();
+    listenersByTaskKey.set(taskKey, next);
+    return next;
+}
+
+function deleteEntriesByPrefix<V>(map: Map<string, V>, prefix: string) {
+    for (const key of Array.from(map.keys())) {
+        if (key.startsWith(prefix)) {
+            map.delete(key);
+        }
+    }
+}
+
 function revokeObjectUrls(cache: Map<string, string> | undefined) {
     if (!cache) return;
     for (const url of cache.values()) {
@@ -47,10 +92,9 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
     const subscribeRender = useCallback(
         (fileId: string, request: PdfRenderRequest, listener: () => void) => {
             const cacheKey = getPdfRenderCacheKey(request);
-            const taskKey = `${fileId}:${cacheKey}`;
-            const set = listenersRef.current.get(taskKey) ?? new Set<() => void>();
+            const taskKey = buildTaskKey(fileId, cacheKey);
+            const set = getOrCreateListenerSet(listenersRef.current, taskKey);
             set.add(listener);
-            listenersRef.current.set(taskKey, set);
             return () => {
                 const current = listenersRef.current.get(taskKey);
                 if (!current) return;
@@ -75,14 +119,13 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
         (file: SourceFile, requests: PdfRenderRequest[]) => {
             if (file.kind !== 'pdf') return;
 
-            const fileCache = cacheRef.current.get(file.id) ?? new Map<string, string>();
-            cacheRef.current.set(file.id, fileCache);
+            const fileCache = getOrCreateFileCache(cacheRef.current, file.id);
 
             for (const request of requests) {
                 const cacheKey = getPdfRenderCacheKey(request);
                 if (fileCache.has(cacheKey)) continue;
 
-                const taskKey = `${file.id}:${cacheKey}`;
+                const taskKey = buildTaskKey(file.id, cacheKey);
                 if (pageTasksRef.current.has(taskKey)) continue;
 
                 const task = (async () => {
@@ -100,11 +143,7 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
                         if (!currentCache) return;
                         const objectUrl = URL.createObjectURL(blob);
                         currentCache.set(cacheKey, objectUrl);
-                        const arKey = getAspectRatioCacheKey(request.pageNum, request.quarterTurns);
-                        const fileAR =
-                            aspectRatiosRef.current.get(file.id) ?? new Map<string, number>();
-                        fileAR.set(arKey, aspectRatio);
-                        aspectRatiosRef.current.set(file.id, fileAR);
+                        setAspectRatio(aspectRatiosRef.current, file.id, request, aspectRatio);
                         notify(taskKey);
                     } catch {
                         // Keep previous renders if a refresh for a new variant fails.
@@ -137,17 +176,8 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
         aspectRatiosRef.current.delete(fileId);
         docPromisesRef.current.delete(fileId);
 
-        for (const taskKey of Array.from(listenersRef.current.keys())) {
-            if (taskKey.startsWith(`${fileId}:`)) {
-                listenersRef.current.delete(taskKey);
-            }
-        }
-
-        for (const taskKey of Array.from(pageTasksRef.current.keys())) {
-            if (taskKey.startsWith(`${fileId}:`)) {
-                pageTasksRef.current.delete(taskKey);
-            }
-        }
+        deleteEntriesByPrefix(listenersRef.current, `${fileId}:`);
+        deleteEntriesByPrefix(pageTasksRef.current, `${fileId}:`);
 
         const docTask = docTasksRef.current.get(fileId);
         docTasksRef.current.delete(fileId);
