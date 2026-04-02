@@ -1,20 +1,11 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {
-    IconChevronDown,
-    IconChevronUp,
-    IconFile,
-    IconGripVertical,
-    IconPhoto,
-    IconX,
-} from '@tabler/icons-react';
-import { memo, useMemo } from 'react';
-import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
-import { getPreviewUrl } from '@/infra/platform';
-import { getImageRotationDegrees } from '@/shared/domain/file-edits';
+import { IconGripVertical, IconX } from '@tabler/icons-react';
+import { memo } from 'react';
 import { useTranslation } from '@/shared/i18n';
-import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
 import type { ListItem } from '../models/list-item';
+import { ListRowIndexControls } from './ListRowIndexControls';
+import { ListRowThumbnail } from './ListRowThumbnail';
 
 interface Props {
     item: ListItem;
@@ -50,21 +41,6 @@ export const ListRow = memo(function ListRow({
         zIndex: isDragging ? 10 : undefined,
     };
 
-    const thumbRequest = useMemo(
-        () =>
-            item.file?.kind === 'pdf'
-                ? buildThumbnailRenderRequest(item.page.pageNum, item.edits)
-                : null,
-        [item.edits, item.file, item.page.pageNum],
-    );
-    const { dataUrl: thumbUrl, setTargetEl } = useLazyPdfRender(
-        item.file?.kind === 'pdf' ? item.file : undefined,
-        thumbRequest,
-        scrollRoot,
-    );
-    const imageUrl = item.file?.kind === 'image' ? getPreviewUrl(item.file.originalPath) : null;
-    const imageRotation = item.file?.kind === 'image' ? getImageRotationDegrees(item.edits) : 0;
-
     return (
         <div
             ref={setNodeRef}
@@ -74,25 +50,13 @@ export const ListRow = memo(function ListRow({
                 ' ',
             )}
         >
-            <div className="flex shrink-0 flex-col items-center gap-0.5">
-                <button
-                    type="button"
-                    onClick={onMoveUp}
-                    disabled={isFirst}
-                    className="cursor-pointer rounded p-0.5 text-ui-text-muted transition-colors hover:text-ui-text disabled:invisible"
-                >
-                    <IconChevronUp className="h-4 w-4" />
-                </button>
-                <span className="text-xs font-bold text-ui-text-muted">{item.index + 1}</span>
-                <button
-                    type="button"
-                    onClick={onMoveDown}
-                    disabled={isLast}
-                    className="cursor-pointer rounded p-0.5 text-ui-text-muted transition-colors hover:text-ui-text disabled:invisible"
-                >
-                    <IconChevronDown className="h-4 w-4" />
-                </button>
-            </div>
+            <ListRowIndexControls
+                indexLabel={item.index + 1}
+                isFirst={isFirst}
+                isLast={isLast}
+                onMoveUp={onMoveUp}
+                onMoveDown={onMoveDown}
+            />
 
             <div
                 onClick={onSelect}
@@ -111,31 +75,7 @@ export const ListRow = memo(function ListRow({
                     <IconGripVertical className="h-5 w-5" />
                 </div>
 
-                <div
-                    ref={item.file?.kind === 'pdf' ? setTargetEl : undefined}
-                    className="group relative shrink-0 overflow-hidden rounded bg-ui-surface-hover"
-                    style={{ width: 60, height: 80 }}
-                >
-                    {thumbUrl ? (
-                        <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
-                    ) : imageUrl ? (
-                        <img
-                            src={imageUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                            style={{ transform: `rotate(${imageRotation}deg)` }}
-                        />
-                    ) : (
-                        <div className="flex h-full items-center justify-center">
-                            {item.file?.kind === 'image' ? (
-                                <IconPhoto className="h-5 w-5 text-ui-text-muted" />
-                            ) : (
-                                <IconFile className="h-5 w-5 text-ui-text-muted" />
-                            )}
-                        </div>
-                    )}
-                    <PageQuickActions compact onPreview={onPreview} />
-                </div>
+                <ListRowThumbnail item={item} scrollRoot={scrollRoot} onPreview={onPreview} />
 
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-bold text-ui-text">

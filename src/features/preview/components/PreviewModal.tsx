@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RotationDirection } from '@/shared/domain/file-edits';
 import { emptyFileEdits } from '@/shared/domain/file-edits';
 import { PageSlot } from './components/PageSlot';
-import { Toolbar } from './components/Toolbar';
 import type { SlotContext } from './models/slot-model';
+import { Toolbar } from './toolbar/Toolbar';
 import type { PreviewModalProps } from './types';
 
 const ZOOM_MIN = 0.5;

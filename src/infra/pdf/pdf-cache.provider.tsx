@@ -9,61 +9,15 @@ import {
     PdfCacheContext,
     type PdfRenderRequest,
 } from './pdf-cache.hook';
+import {
+    buildTaskKey,
+    deleteEntriesByPrefix,
+    getOrCreateFileCache,
+    getOrCreateListenerSet,
+    revokeObjectUrls,
+    setAspectRatio,
+} from './pdf-cache.internal';
 import { pdfjsLib, renderPdfPage } from './render';
-
-function buildTaskKey(fileId: string, cacheKey: string) {
-    return `${fileId}:${cacheKey}`;
-}
-
-function getOrCreateFileCache(cacheByFileId: Map<string, Map<string, string>>, fileId: string) {
-    const existing = cacheByFileId.get(fileId);
-    if (existing) return existing;
-    const next = new Map<string, string>();
-    cacheByFileId.set(fileId, next);
-    return next;
-}
-
-function setAspectRatio(
-    aspectRatiosByFileId: Map<string, Map<string, number>>,
-    fileId: string,
-    request: PdfRenderRequest,
-    aspectRatio: number,
-) {
-    const arKey = getAspectRatioCacheKey(request.pageNum, request.quarterTurns);
-    const existing = aspectRatiosByFileId.get(fileId);
-    if (existing) {
-        existing.set(arKey, aspectRatio);
-        return;
-    }
-    const next = new Map<string, number>();
-    next.set(arKey, aspectRatio);
-    aspectRatiosByFileId.set(fileId, next);
-}
-
-function getOrCreateListenerSet(listenersByTaskKey: Map<string, Set<() => void>>, taskKey: string) {
-    const existing = listenersByTaskKey.get(taskKey);
-    if (existing) return existing;
-    const next = new Set<() => void>();
-    listenersByTaskKey.set(taskKey, next);
-    return next;
-}
-
-function deleteEntriesByPrefix<V>(map: Map<string, V>, prefix: string) {
-    for (const key of Array.from(map.keys())) {
-        if (key.startsWith(prefix)) {
-            map.delete(key);
-        }
-    }
-}
-
-function revokeObjectUrls(cache: Map<string, string> | undefined) {
-    if (!cache) return;
-    for (const url of cache.values()) {
-        if (url.startsWith('blob:')) {
-            URL.revokeObjectURL(url);
-        }
-    }
-}
 
 /**
  * In-memory cache for rendered PDF page images.

@@ -1,7 +1,7 @@
 import { IconArrowsMinimize, IconDownload, IconEye, IconHelp } from '@tabler/icons-react';
 import { TUTORIAL_TARGETS, tutorialTargetProps } from '@/features/tutorial';
 import { useTranslation } from '@/shared/i18n';
-import { AppSettingsMenu, type AppSettingsMenuProps } from './AppSettingsMenu';
+import { AppSettingsMenu, type AppSettingsMenuProps } from './settings-menu';
 
 interface Props {
     settings: AppSettingsMenuProps;
