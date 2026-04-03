@@ -90,6 +90,12 @@ function renderImageSlot({
     return renderPlainImage(imageSrc, imageRotation);
 }
 
+/**
+ * Pure rendering decision function for preview slots.
+ *
+ * Given already-derived inputs (image/pdf sources, rotation, cache status), it returns the correct
+ * React node without triggering side-effects.
+ */
 export function renderSlotContent({
     isImage,
     imageSrc,

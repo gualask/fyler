@@ -6,3 +6,9 @@ export const TUTORIAL_TARGETS = {
 } as const;
 
 export type TutorialTarget = (typeof TUTORIAL_TARGETS)[keyof typeof TUTORIAL_TARGETS];
+
+export const TUTORIAL_DATA_ATTR = 'data-tutorial' as const;
+
+export function tutorialTargetProps(target: TutorialTarget): { 'data-tutorial': TutorialTarget } {
+    return { 'data-tutorial': target };
+}

@@ -34,6 +34,13 @@ function setAspectRatio(
     aspectRatiosByFileId.set(fileId, next);
 }
 
+/**
+ * Enqueues render tasks for a set of PDF page requests, with deduplication.
+ *
+ * - Uses `pageTasksByTaskKey` to avoid starting the same render twice.
+ * - Stores results as `blob:` object URLs in `cacheByFileId`.
+ * - Updates `aspectRatiosByFileId` for rotation-aware layout.
+ */
 export function requestRenders({
     file,
     requests,
@@ -90,6 +97,7 @@ export function requestRenders({
     }
 }
 
+/** Reads a cached render object URL, if available. */
 export function getRender(
     cacheByFileId: Map<string, Map<string, string>>,
     fileId: string,
@@ -98,6 +106,7 @@ export function getRender(
     return cacheByFileId.get(fileId)?.get(getPdfRenderCacheKey(request));
 }
 
+/** Reads a cached, rotation-aware aspect ratio for a specific page, if available. */
 export function getPageAspectRatio(
     aspectRatiosByFileId: Map<string, Map<string, number>>,
     fileId: string,

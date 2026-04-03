@@ -1,5 +1,6 @@
 import { getPdfRenderCacheKey, type PdfRenderRequest } from '../pdf-cache.hook';
 
+/** Stable task identifier for a `(fileId, render-cache-key)` pair. */
 export function buildTaskKey(fileId: string, cacheKey: string) {
     return `${fileId}:${cacheKey}`;
 }
@@ -32,6 +33,7 @@ export function subscribeRender(
     };
 }
 
+/** Notifies all listeners subscribed to `taskKey` (if any). */
 export function notify(listenersByTaskKey: Map<string, Set<() => void>>, taskKey: string) {
     const listeners = listenersByTaskKey.get(taskKey);
     if (!listeners?.size) return;

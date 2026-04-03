@@ -13,6 +13,12 @@ function resolveZoomLevel(value: unknown): number {
     return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 1;
 }
 
+/**
+ * Renders a single preview slot.
+ *
+ * It delegates all state (visibility, sources, cache lookups) to `useSlotState`, and keeps this
+ * component focused on layout (width/zoom) and selecting the correct rendering path.
+ */
 export function PageSlot({ page, context }: Props) {
     const {
         slotRef,

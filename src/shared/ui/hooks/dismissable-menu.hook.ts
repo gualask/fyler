@@ -6,6 +6,11 @@ interface Options {
     onClose: () => void;
 }
 
+/**
+ * Closes a menu/popover when the user clicks outside `rootRef` or presses `Escape`.
+ *
+ * Unlike `useDismiss`, this hook is specialized for menu-like components and uses the `open` flag.
+ */
 export function useDismissableMenu({ open, rootRef, onClose }: Options) {
     useEffect(() => {
         if (!open) {

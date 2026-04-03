@@ -1,5 +1,10 @@
 import { type RefObject, useEffect } from 'react';
 
+/**
+ * Dismisses an open UI surface when the user clicks outside `containerRef` or presses `Escape`.
+ *
+ * This hook attaches global listeners only while `active` is true.
+ */
 export function useDismiss(
     active: boolean,
     containerRef: RefObject<HTMLElement | null>,

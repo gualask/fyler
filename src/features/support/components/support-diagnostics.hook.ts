@@ -31,6 +31,12 @@ interface Params {
 
 type SupportDialogMode = 'report' | 'about' | null;
 
+/**
+ * Collects a `DiagnosticsSnapshot` for the support dialog and exposes user actions
+ * (open/close, copy report, open GitHub issues).
+ *
+ * This hook also records notable events into the diagnostics stream.
+ */
 export function useSupportDiagnostics({
     isDark,
     isQuickAdd,
