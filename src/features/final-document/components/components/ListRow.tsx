@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { IconGripVertical, IconX } from '@tabler/icons-react';
 import { memo } from 'react';
 import { useTranslation } from '@/shared/i18n';
-import type { ListItem } from '../models/list-item';
+import type { ListItem } from '../list-item.types';
 import { ListRowIndexControls } from './ListRowIndexControls';
 import { ListRowThumbnail } from './ListRowThumbnail';
 

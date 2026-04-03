@@ -1,7 +1,7 @@
-export { formatImportWarning, formatPageSpecError, formatSkippedFile } from './formatters';
-export { useTranslation } from './hooks';
+export { formatImportWarning, formatPageSpecError, formatSkippedFile } from './i18n.formatters';
+export { useTranslation } from './i18n.hook';
 export type {
     InterpolationValues,
     PluralBaseKey,
     TranslationKey,
-} from './resources';
+} from './i18n.resources';

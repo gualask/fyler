@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { TUTORIAL_DATA_ATTR } from './targets';
+import { TUTORIAL_DATA_ATTR } from './tutorial.targets';
 
 export interface TargetRect {
     top: number;

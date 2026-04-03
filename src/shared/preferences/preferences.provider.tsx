@@ -1,8 +1,12 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-import { detectPreferredLocale, isLocale, type Locale } from './locale';
 import { PreferencesContext, type PreferencesContextValue } from './preferences.context';
-import { ACCENT_COLORS, type AccentColor, loadSettings, saveSettings } from './settings';
+import { detectPreferredLocale, isLocale, type Locale } from './preferences.locale';
+import {
+    ACCENT_COLORS,
+    type AccentColor,
+    loadSettings,
+    saveSettings,
+} from './preferences.settings';
 
 type PreferencesState = {
     isDark: boolean;

@@ -1,7 +1,7 @@
 import { IconX } from '@tabler/icons-react';
 import type { RotationDirection } from '@/shared/domain/file-edits';
 import { useTranslation } from '@/shared/i18n';
-import type { MoveControl } from '../types';
+import type { MoveControl } from '../preview.types';
 import { MoveToSelect } from './MoveToSelect';
 import { RotateControls } from './RotateControls';
 import { ZoomControls } from './ZoomControls';

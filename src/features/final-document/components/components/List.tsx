@@ -13,7 +13,7 @@ import { useCallback, useMemo } from 'react';
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
 import { emptyFileEdits } from '@/shared/domain/file-edits';
 import { useTranslation } from '@/shared/i18n';
-import type { ListItem } from '../models/list-item';
+import type { ListItem } from '../list-item.types';
 import { ListRow } from './ListRow';
 
 interface Props {

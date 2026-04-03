@@ -2,9 +2,13 @@ import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 import type { QuarterTurn, SourceFile } from '@/shared/domain';
 import { PdfCacheContext, type PdfRenderRequest } from '../pdf-cache.hook';
-import { destroyAllPdfDocuments, destroyPdfDocument, getOrCreatePdfDocument } from './documents';
-import { notify, subscribeRender } from './listeners';
-import { getPageAspectRatio, getRender, requestRenders } from './renders';
+import {
+    destroyAllPdfDocuments,
+    destroyPdfDocument,
+    getOrCreatePdfDocument,
+} from './pdf-cache.documents';
+import { notify, subscribeRender } from './pdf-cache.listeners';
+import { getPageAspectRatio, getRender, requestRenders } from './pdf-cache.renders';
 
 function deleteEntriesByPrefix<V>(map: Map<string, V>, prefix: string) {
     for (const key of Array.from(map.keys())) {

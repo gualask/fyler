@@ -3,7 +3,7 @@ import type {
     PluralBaseKey,
     TranslationDictionary,
     TranslationKey,
-} from './resources';
+} from './i18n.resources';
 
 function interpolate(template: string, values?: InterpolationValues): string {
     if (!values) return template;

@@ -7,7 +7,7 @@ import {
     type PdfRenderRequest,
 } from '../pdf-cache.hook';
 import { renderPdfPage } from '../render';
-import { buildTaskKey } from './listeners';
+import { buildTaskKey } from './pdf-cache.listeners';
 
 function getOrCreateFileCache(cacheByFileId: Map<string, Map<string, string>>, fileId: string) {
     const existing = cacheByFileId.get(fileId);

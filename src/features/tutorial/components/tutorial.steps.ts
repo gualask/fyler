@@ -1,5 +1,5 @@
-import type { TranslationKey } from '@/shared/i18n/resources';
-import { TUTORIAL_TARGETS, type TutorialTarget } from './targets';
+import type { TranslationKey } from '@/shared/i18n';
+import { TUTORIAL_TARGETS, type TutorialTarget } from './tutorial.targets';
 
 export interface TutorialStep {
     target: TutorialTarget;

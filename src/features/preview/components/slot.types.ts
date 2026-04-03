@@ -1,5 +1,6 @@
 import type { FileEdits, FinalPage, ImageFit, SourceFile } from '@/shared/domain';
 
+/** Derived view-model types used by the preview slot rendering pipeline. */
 export interface SlotPage {
     fp: FinalPage;
     file: SourceFile | undefined;

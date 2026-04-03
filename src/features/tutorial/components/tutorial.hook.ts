@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePreferences } from '@/shared/preferences';
-import { TUTORIAL_STEPS } from './steps';
+import { TUTORIAL_STEPS } from './tutorial.steps';
 
 export function useTutorial() {
     const { tutorialSeen, markTutorialSeen } = usePreferences();

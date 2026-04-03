@@ -4,7 +4,7 @@ import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
 import { getImageRotationDegrees } from '@/shared/domain/file-edits';
 import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
-import type { ListItem } from '../models/list-item';
+import type { ListItem } from '../list-item.types';
 
 interface Props {
     item: ListItem;

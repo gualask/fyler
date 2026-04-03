@@ -3,8 +3,8 @@ export type {
     ImportWarningSkippedFile,
     MergeProgressStep,
 } from './app-events.types';
-export { DiagnosticsProvider } from './DiagnosticsProvider';
 export { useDiagnostics } from './diagnostics.hook';
+export { DiagnosticsProvider } from './diagnostics.provider';
 export { formatDiagnosticsReport } from './diagnostics.report';
 export { toDiagnosticMessage } from './diagnostics.sanitize';
 export type {

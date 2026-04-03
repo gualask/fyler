@@ -1,6 +1,6 @@
 import { IconChevronDown } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
-import type { MoveControl } from '../types';
+import type { MoveControl } from '../preview.types';
 
 interface Props {
     moveControl: MoveControl;

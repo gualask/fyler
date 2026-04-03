@@ -1,8 +1,8 @@
 import { useEffect, useReducer } from 'react';
 import { useTranslation } from '@/shared/i18n';
-import { TUTORIAL_STEPS } from './steps';
 import { TutorialCard } from './TutorialCard';
-import { getBackdropClipPath, getTargetRect, getTooltipStyle } from './tutorial-layout';
+import { getBackdropClipPath, getTargetRect, getTooltipStyle } from './tutorial.layout';
+import { TUTORIAL_STEPS } from './tutorial.steps';
 
 interface Props {
     currentStep: number;

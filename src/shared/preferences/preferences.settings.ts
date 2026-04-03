@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 
-import type { Locale } from './locale';
+import type { Locale } from './preferences.locale';
 
 export type AccentColor = 'indigo' | 'teal' | 'amber' | 'blue';
 

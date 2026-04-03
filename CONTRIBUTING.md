@@ -17,10 +17,12 @@ Fyler values **cognitive simplicity**: you should be able to understand where th
 ## File and Directory Naming
 
 - Directories use **kebab-case**.
-- React components use **PascalCase** filenames.
+- Visual React components use **PascalCase** filenames.
 - App entrypoints may use conventional lowercase names (e.g., `main.tsx`).
 - Hooks use **kebab-case** filenames with a `.hook` suffix and export `useXxx`.
+- Context providers use **kebab-case** filenames with a `.provider.tsx` suffix (Nest-style), e.g. `preferences.provider.tsx`.
 - Pure modules (options, rendering helpers, mappers, etc.) use **kebab-case** filenames unless they are strictly tied to one component.
+- Avoid overly-generic filenames like `settings.ts` or `types.ts`; prefer `<module>.<role>.ts` (Nest-style), e.g. `preferences.settings.ts`.
 - When multiple files belong exclusively to one component/module, prefer a shared prefix like `ComponentName.*` to keep them grouped.
 - Avoid creating “micro-files” (≈ <20 lines) unless they remove real complexity or will be reused soon.
 - Avoid single-symbol re-export files unless they represent a stable public boundary (feature root, shared package boundary).

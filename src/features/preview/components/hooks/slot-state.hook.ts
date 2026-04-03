@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { buildPreviewRenderRequest, usePdfCache, usePdfRenderSrc } from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
 import { getImageQuarterTurn, getImageRotationDegrees } from '@/shared/domain/file-edits';
-import type { SlotContext, SlotPage } from '../models/slot-model';
+import type { SlotContext, SlotPage } from '../slot.types';
 import { useExportMatchedImage } from './export-matched-image.hook';
 import { useRotatedImagePreview } from './rotated-image-preview.hook';
 import { useSlotVisibility } from './slot-visibility.hook';

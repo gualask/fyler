@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 
 import { usePreferences } from '@/shared/preferences';
-import type { InterpolationValues, PluralBaseKey, TranslationKey } from './resources';
-import { resources } from './resources';
-import { translate, translatePlural } from './translate';
+import type { InterpolationValues, PluralBaseKey, TranslationKey } from './i18n.resources';
+import { resources } from './i18n.resources';
+import { translate, translatePlural } from './i18n.translate';
 
 export function useTranslation() {
     const { locale, setLocale } = usePreferences();
