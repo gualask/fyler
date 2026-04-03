@@ -4,7 +4,7 @@ import {
     renderPdfSlot,
     renderPlainImage,
     renderSpinnerSlot,
-} from './renderers';
+} from './PageSlot.renderers';
 
 const A4_ASPECT_RATIO = '595/842';
 const A4_MM_ASPECT_RATIO = '210/297';

@@ -1,5 +1,6 @@
 const A4_ASPECT_RATIO = '595/842';
 
+/** Low-level JSX render helpers for `PageSlot`. */
 function renderImage(
     src: string,
     {

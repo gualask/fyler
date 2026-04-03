@@ -6,6 +6,7 @@ import type { DiagnosticEntry } from './diagnostics.types';
 
 const MAX_ENTRIES = 50;
 
+/** Stores diagnostic entries in memory and exposes a `record()` function via context. */
 export function DiagnosticsProvider({ children }: { children: ReactNode }) {
     const [entries, setEntries] = useState<DiagnosticEntry[]>([]);
 

@@ -18,6 +18,7 @@ function resolveInitialLocale(storedLocale: Locale | undefined): Locale {
     return detectPreferredLocale(navigator.languages);
 }
 
+/** Persists user preferences and exposes them via context. */
 export function PreferencesProvider({ children }: { children: ReactNode }) {
     const [preferences, setPreferences] = useState<PreferencesState>({
         isDark: false,

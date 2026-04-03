@@ -5,6 +5,13 @@ import type { QuarterTurn, SourceFile } from '@/shared/domain';
 export type PdfRenderVariant = 'thumb' | 'preview';
 
 /**
+ * PDF render cache access primitives.
+ *
+ * This module defines:
+ * - The `PdfRenderRequest` shape and cache-key helpers
+ * - The `PdfCacheContext` contract and the `usePdfCache()` hook
+ */
+/**
  * A single render request for a PDF page.
  *
  * `width` is the target output width (in CSS pixels) for the rendered image.
