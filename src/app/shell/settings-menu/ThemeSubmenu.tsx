@@ -3,7 +3,8 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { ACCENT_COLORS, type AccentColor } from '@/shared/preferences';
 import { ACCENT_SWATCHES, menuItemClass, submenuPanelClass } from './menu.styles';
-import type { Submenu } from './types';
+
+type Submenu = 'language' | 'theme' | null;
 
 interface Props {
     isDark: boolean;

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RotationDirection } from '@/shared/domain/file-edits';
 import { emptyFileEdits } from '@/shared/domain/file-edits';
-import { PageSlot } from './components/PageSlot';
 import type { SlotContext } from './models/slot-model';
+import { PageSlot } from './page-slot/PageSlot';
 import { Toolbar } from './toolbar/Toolbar';
 import type { PreviewModalProps } from './types';
 

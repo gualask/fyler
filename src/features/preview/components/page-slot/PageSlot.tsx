@@ -1,6 +1,6 @@
 import { useSlotState } from '../hooks/slot-state.hook';
 import type { SlotContext, SlotPage } from '../models/slot-model';
-import { renderSlotContent } from './PageSlot.render';
+import { renderSlotContent } from './render-slot-content';
 
 const BASE_WIDTH = 680;
 

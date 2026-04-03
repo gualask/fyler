@@ -1,7 +1,7 @@
+import { IconX } from '@tabler/icons-react';
 import type { RotationDirection } from '@/shared/domain/file-edits';
 import { useTranslation } from '@/shared/i18n';
 import type { MoveControl } from '../types';
-import { CloseButton } from './CloseButton';
 import { MoveToSelect } from './MoveToSelect';
 import { RotateControls } from './RotateControls';
 import { ZoomControls } from './ZoomControls';
@@ -73,7 +73,14 @@ export function Toolbar({
                     />
                 ) : null}
 
-                <CloseButton onClose={onClose} title={t('preview.close')} />
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                    title={t('preview.close')}
+                >
+                    <IconX className="h-5 w-5" />
+                </button>
             </div>
         </div>
     );

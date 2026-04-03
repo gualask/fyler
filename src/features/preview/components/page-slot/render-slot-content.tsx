@@ -1,55 +1,13 @@
 import type { ReactNode } from 'react';
+import {
+    renderA4ContainedImage,
+    renderPdfSlot,
+    renderPlainImage,
+    renderSpinnerSlot,
+} from './renderers';
 
 const A4_ASPECT_RATIO = '595/842';
 const A4_MM_ASPECT_RATIO = '210/297';
-
-function renderSpinnerSlot(aspectRatio: string) {
-    return (
-        <div className="flex w-full items-center justify-center bg-white" style={{ aspectRatio }}>
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
-        </div>
-    );
-}
-
-function renderImage(
-    src: string,
-    {
-        className,
-        style,
-    }: {
-        className: string;
-        style?: React.CSSProperties;
-    },
-) {
-    return <img src={src} alt="" draggable={false} className={className} style={style} />;
-}
-
-function renderPdfSlot(src: string) {
-    return renderImage(src, { className: 'block h-auto w-full select-none bg-white' });
-}
-function renderPlainImage(src: string, rotation: number) {
-    return renderImage(src, {
-        className: 'block h-auto w-full select-none bg-white',
-        style: { transform: `rotate(${rotation}deg)` },
-    });
-}
-
-function renderA4ContainedImage(src: string, rotation: number, fitMode: 'cover' | 'contain') {
-    return (
-        <div
-            className="relative w-full overflow-hidden bg-white"
-            style={{ aspectRatio: A4_ASPECT_RATIO }}
-        >
-            {renderImage(src, {
-                className: [
-                    'absolute inset-0 h-full w-full select-none',
-                    fitMode === 'cover' ? 'object-cover' : 'object-contain',
-                ].join(' '),
-                style: { transform: `rotate(${rotation}deg)` },
-            })}
-        </div>
-    );
-}
 
 function renderMatchedExportImage({
     imageSrc,
@@ -72,9 +30,14 @@ function renderMatchedExportImage({
     const containerAspectRatio = useA4Container ? A4_ASPECT_RATIO : A4_MM_ASPECT_RATIO;
 
     if (exportMatchedImageSrc) {
-        return renderImage(exportMatchedImageSrc, {
-            className: 'block h-auto w-full select-none bg-white',
-        });
+        return (
+            <img
+                src={exportMatchedImageSrc}
+                alt=""
+                draggable={false}
+                className="block h-auto w-full select-none bg-white"
+            />
+        );
     }
     if (isExportMatchedImagePending) {
         return renderSpinnerSlot(containerAspectRatio);

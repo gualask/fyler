@@ -3,12 +3,10 @@ import { useEffect, useState } from 'react';
 import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
 import { useTranslation } from '@/shared/i18n';
 
-import {
-    SupportAboutSection,
-    SupportActionBanner,
-    SupportAppSection,
-    SupportReportSections,
-} from './SupportDialog.sections';
+import { SupportAboutSection } from './sections/AboutSection';
+import { SupportActionBanner } from './sections/ActionBanner';
+import { SupportAppSection } from './sections/AppSection';
+import { SupportReportSections } from './sections/report/ReportSections';
 
 type SupportDialogMode = 'report' | 'about';
 type ActionState = {

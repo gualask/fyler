@@ -6,7 +6,8 @@ import { useDismissableMenu } from '@/shared/ui';
 import { LanguageSubmenu } from './LanguageSubmenu';
 import { menuItemClass } from './menu.styles';
 import { ThemeSubmenu } from './ThemeSubmenu';
-import type { Submenu } from './types';
+
+type Submenu = 'language' | 'theme' | null;
 
 export interface AppSettingsMenuProps {
     isDark: boolean;

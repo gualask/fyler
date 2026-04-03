@@ -3,7 +3,8 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { SUPPORTED_LOCALES } from '@/shared/preferences';
 import { menuItemClass, submenuPanelClass } from './menu.styles';
-import type { Submenu } from './types';
+
+type Submenu = 'language' | 'theme' | null;
 
 interface Props {
     activeSubmenu: Submenu;
