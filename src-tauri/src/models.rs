@@ -10,6 +10,9 @@ pub struct SourceFile {
     pub original_path: String,
     /// Display name (typically filename).
     pub name: String,
+    #[serde(rename = "byteSize")]
+    /// Original file size in bytes.
+    pub byte_size: u64,
     #[serde(rename = "pageCount")]
     /// Total page count for PDFs, or `1` for images.
     pub page_count: u32,

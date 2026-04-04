@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fs;
 use std::sync::OnceLock;
 
 use rayon::prelude::*;
@@ -43,12 +44,14 @@ fn registered_file_from_path(path: String) -> Result<(SourceFile, RegisteredSour
     } else {
         1
     };
+    let byte_size = fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
     let id = uuid::Uuid::new_v4().to_string();
 
     let source = SourceFile {
         id: id.clone(),
         original_path: path.clone(),
         name: name.clone(),
+        byte_size,
         page_count,
         kind: kind.to_string(),
     };

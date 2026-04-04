@@ -1,13 +1,12 @@
 import { IconFilePlus, IconTrash, IconUpload } from '@tabler/icons-react';
-import { useEffect, useMemo, useState } from 'react';
-import type { FinalPage, SourceFile } from '@/shared/domain';
+import { useEffect, useState } from 'react';
+import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { ColumnHeader } from '@/shared/ui/layout/ColumnHeader';
 import { FileRow } from './FileRow';
 
 interface Props {
     files: SourceFile[];
-    finalPages: FinalPage[];
     selectedId: string | null;
     onSelect: (id: string) => void;
     onRemove: (id: string) => void;
@@ -17,7 +16,6 @@ interface Props {
 
 export function FileList({
     files,
-    finalPages,
     selectedId,
     onSelect,
     onRemove,
@@ -26,13 +24,6 @@ export function FileList({
 }: Props) {
     const { t } = useTranslation();
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
-    const pageCountByFile = useMemo(() => {
-        const map = new Map<string, number>();
-        for (const fp of finalPages) {
-            map.set(fp.fileId, (map.get(fp.fileId) ?? 0) + 1);
-        }
-        return map;
-    }, [finalPages]);
 
     useEffect(() => {
         if (!isClearConfirmOpen) return;
@@ -79,7 +70,6 @@ export function FileList({
                             <FileRow
                                 key={f.id}
                                 file={f}
-                                usedPages={pageCountByFile.get(f.id) ?? 0}
                                 selected={f.id === selectedId}
                                 onSelect={() => onSelect(f.id)}
                                 onRemove={() => onRemove(f.id)}

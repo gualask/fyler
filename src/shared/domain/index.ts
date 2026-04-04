@@ -17,6 +17,8 @@ export type SourceFile = {
     id: string;
     originalPath: string;
     name: string;
+    /** Original file size in bytes. */
+    byteSize: number;
     pageCount: number;
     kind: DocKind;
 };

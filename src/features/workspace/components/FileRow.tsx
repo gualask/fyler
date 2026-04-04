@@ -2,17 +2,19 @@ import { IconFileTypePdf, IconPhoto, IconTrash } from '@tabler/icons-react';
 import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { Tooltip } from '@/shared/ui/feedback/Tooltip';
+import { formatByteSize } from '@/shared/ui/format/byte-size';
 
 interface Props {
     file: SourceFile;
-    usedPages: number;
     selected: boolean;
     onSelect: () => void;
     onRemove: () => void;
 }
 
-export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props) {
-    const { t, tp } = useTranslation();
+export function FileRow({ file, selected, onSelect, onRemove }: Props) {
+    const { locale, t } = useTranslation();
+
+    const fileSize = formatByteSize(file.byteSize, locale);
 
     return (
         <div
@@ -24,7 +26,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                     : 'border border-transparent hover:bg-ui-surface-hover',
             ].join(' ')}
         >
-            <div className="flex items-stretch gap-3">
+            <div className="flex items-start gap-3">
                 {file.kind === 'image' ? (
                     <IconPhoto className="mt-0.5 h-5 w-5 shrink-0 text-ui-kind-image" />
                 ) : (
@@ -62,24 +64,17 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                         <span className="block [overflow-wrap:anywhere]">{file.name}</span>
                     </Tooltip>
                     <p className="mt-0.5 text-[11px] text-ui-text-muted">
-                        {t('fileList.pageCount', {
-                            count: file.kind === 'image' ? 1 : file.pageCount,
-                        })}
+                        <span>{fileSize}</span>
+                        {file.kind === 'pdf' ? (
+                            <>
+                                <span className="mx-2">•</span>
+                                <span>{t('fileList.pageCount', { count: file.pageCount })}</span>
+                            </>
+                        ) : null}
                     </p>
-                    {selected && (
-                        <div className="mt-3 flex items-center text-[11px] font-medium text-ui-accent-text">
-                            <span>
-                                {file.kind === 'image'
-                                    ? usedPages > 0
-                                        ? t('fileList.imageIncluded')
-                                        : t('fileList.imageNotIncluded')
-                                    : tp('fileList.usedPages', usedPages)}
-                            </span>
-                        </div>
-                    )}
                 </div>
 
-                <div className="flex shrink-0 items-center">
+                <div className="flex shrink-0 items-center self-center">
                     <button
                         type="button"
                         onClick={(e) => {

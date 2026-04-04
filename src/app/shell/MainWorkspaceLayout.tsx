@@ -35,7 +35,6 @@ export function MainWorkspaceLayout({
                 >
                     <FileList
                         files={workspace.files}
-                        finalPages={workspace.finalPages}
                         selectedId={workspace.selectedId}
                         onSelect={workspace.selectFile}
                         onRemove={workspace.removeFile}
