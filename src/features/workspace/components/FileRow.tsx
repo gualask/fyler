@@ -1,4 +1,4 @@
-import { IconChevronRight, IconFileTypePdf, IconPhoto, IconTrash } from '@tabler/icons-react';
+import { IconFileTypePdf, IconPhoto, IconTrash } from '@tabler/icons-react';
 import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { Tooltip } from '@/shared/ui/feedback/Tooltip';
@@ -24,7 +24,7 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                     : 'border border-transparent hover:bg-ui-surface-hover',
             ].join(' ')}
         >
-            <div className="flex items-start gap-3">
+            <div className="flex items-stretch gap-3">
                 {file.kind === 'image' ? (
                     <IconPhoto className="mt-0.5 h-5 w-5 shrink-0 text-ui-kind-image" />
                 ) : (
@@ -66,36 +66,38 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
                             count: file.kind === 'image' ? 1 : file.pageCount,
                         })}
                     </p>
+                    {selected && (
+                        <div className="mt-3 flex items-center text-[11px] font-medium text-ui-accent-text">
+                            <span>
+                                {file.kind === 'image'
+                                    ? usedPages > 0
+                                        ? t('fileList.imageIncluded')
+                                        : t('fileList.imageNotIncluded')
+                                    : tp('fileList.usedPages', usedPages)}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onRemove();
-                    }}
-                    className="mt-0.5 shrink-0 rounded p-0.5 text-ui-text-muted opacity-0 transition-all hover:text-ui-danger group-hover:opacity-100"
-                    style={{ opacity: selected ? 0.6 : undefined }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '')}
-                    title={t('fileList.remove')}
-                >
-                    <IconTrash className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex shrink-0 items-center">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove();
+                        }}
+                        className={[
+                            'btn-icon h-9 w-9 hover:text-ui-danger transition-opacity',
+                            selected
+                                ? 'opacity-100'
+                                : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100',
+                        ].join(' ')}
+                        title={t('fileList.remove')}
+                    >
+                        <IconTrash className="h-4 w-4" />
+                    </button>
+                </div>
             </div>
-
-            {selected && (
-                <div className="mt-3 flex items-center justify-between text-[11px] font-medium text-ui-accent-text">
-                    <span>
-                        {file.kind === 'image'
-                            ? usedPages > 0
-                                ? t('fileList.imageIncluded')
-                                : t('fileList.imageNotIncluded')
-                            : tp('fileList.usedPages', usedPages)}
-                    </span>
-                    <IconChevronRight className="h-3.5 w-3.5" />
-                </div>
-            )}
         </div>
     );
 }
