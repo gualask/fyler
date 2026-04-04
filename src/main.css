@@ -47,6 +47,10 @@
     --ui-warning-soft: #fffbeb;
     --ui-warning-soft-text: #92400e;
     --ui-warning-border: #fde68a;
+
+    /* document kinds */
+    --ui-kind-pdf: #fb7185;
+    --ui-kind-image: #38bdf8;
 }
 
 .dark {
@@ -88,6 +92,10 @@
     --ui-warning-soft: rgba(69, 26, 3, 0.6);
     --ui-warning-soft-text: #fde68a;
     --ui-warning-border: rgba(146, 64, 14, 0.4);
+
+    /* document kinds */
+    --ui-kind-pdf: #fda4af;
+    --ui-kind-image: #7dd3fc;
 }
 
 /* ── Accent color palettes ─────────────────────────────────────────────── */
@@ -347,4 +355,8 @@ body {
     --color-ui-warning-soft: var(--ui-warning-soft);
     --color-ui-warning-soft-text: var(--ui-warning-soft-text);
     --color-ui-warning-border: var(--ui-warning-border);
+
+    /* document kinds */
+    --color-ui-kind-pdf: var(--ui-kind-pdf);
+    --color-ui-kind-image: var(--ui-kind-image);
 }

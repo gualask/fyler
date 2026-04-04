@@ -1,4 +1,4 @@
-import { IconFile, IconPhoto } from '@tabler/icons-react';
+import { IconFileTypePdf, IconPhoto } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
@@ -46,9 +46,9 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview }: Props) {
             ) : (
                 <div className="flex h-full items-center justify-center">
                     {item.file?.kind === 'image' ? (
-                        <IconPhoto className="h-5 w-5 text-ui-text-muted" />
+                        <IconPhoto className="h-5 w-5 text-ui-kind-image" />
                     ) : (
-                        <IconFile className="h-5 w-5 text-ui-text-muted" />
+                        <IconFileTypePdf className="h-5 w-5 text-ui-kind-pdf" />
                     )}
                 </div>
             )}

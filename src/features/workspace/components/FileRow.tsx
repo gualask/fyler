@@ -1,4 +1,4 @@
-import { IconChevronRight, IconFile, IconPhoto, IconTrash } from '@tabler/icons-react';
+import { IconChevronRight, IconFileTypePdf, IconPhoto, IconTrash } from '@tabler/icons-react';
 import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { Tooltip } from '@/shared/ui/feedback/Tooltip';
@@ -26,9 +26,9 @@ export function FileRow({ file, usedPages, selected, onSelect, onRemove }: Props
         >
             <div className="flex items-start gap-3">
                 {file.kind === 'image' ? (
-                    <IconPhoto className="mt-0.5 h-5 w-5 shrink-0 text-ui-text-muted" />
+                    <IconPhoto className="mt-0.5 h-5 w-5 shrink-0 text-ui-kind-image" />
                 ) : (
-                    <IconFile className="mt-0.5 h-5 w-5 shrink-0 text-ui-accent" />
+                    <IconFileTypePdf className="mt-0.5 h-5 w-5 shrink-0 text-ui-kind-pdf" />
                 )}
 
                 <div className="min-w-0 flex-1">

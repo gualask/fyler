@@ -1,4 +1,4 @@
-import { IconFile, IconFileDownload, IconPhoto, IconX } from '@tabler/icons-react';
+import { IconFileDownload, IconFileTypePdf, IconPhoto, IconX } from '@tabler/icons-react';
 import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { DragOverlay } from './DragOverlay';
@@ -58,9 +58,9 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                                     className="flex items-center gap-2 px-3 py-2 hover:bg-ui-bg"
                                 >
                                     {file.kind === 'pdf' ? (
-                                        <IconFile className="h-4 w-4 shrink-0 text-ui-accent" />
+                                        <IconFileTypePdf className="h-4 w-4 shrink-0 text-ui-kind-pdf" />
                                     ) : (
-                                        <IconPhoto className="h-4 w-4 shrink-0 text-ui-text-muted" />
+                                        <IconPhoto className="h-4 w-4 shrink-0 text-ui-kind-image" />
                                     )}
                                     <span className="flex-1 truncate text-xs">{file.name}</span>
                                     <button

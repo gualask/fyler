@@ -65,6 +65,15 @@ Fyler keeps a small set of semantic status tokens for UI feedback:
 These tokens intentionally stay “semantic-first”: they communicate meaning
 independently from the active accent palette.
 
+### Document kind colors
+
+Fyler also has a couple of stable “kind” tokens to quickly distinguish content types:
+
+| CSS token | Tailwind utility | Typical use |
+|---|---|---|
+| `--ui-kind-pdf` | `text-ui-kind-pdf`, `bg-ui-kind-pdf` | PDF file/page indicators |
+| `--ui-kind-image` | `text-ui-kind-image`, `bg-ui-kind-image` | Image file/page indicators |
+
 ---
 
 ## Changing the accent color

@@ -110,6 +110,7 @@
     "finalDocument.pageCount": "{count} pag",
     "finalDocument.empty": "Nessuna pagina selezionata",
     "finalDocument.pageLabel": "Pagina {pageNum}",
+    "finalDocument.imageLabel": "Immagine",
     "finalDocument.removePage": "Rimuovi pagina",
     "preview.zoomOut": "Riduci (Ctrl+scroll giù)",
     "preview.zoomIn": "Ingrandisci (Ctrl+scroll su)",
