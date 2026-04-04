@@ -2,7 +2,15 @@ import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
 import { useTranslation } from '@/shared/i18n';
 import { SummaryRow } from './SummaryRow';
 
-export function SupportAppSection({ snapshot }: { snapshot: DiagnosticsSnapshot }) {
+export function SupportAppSection({
+    snapshot,
+    showIdentifier = true,
+    showGeneratedAt = true,
+}: {
+    snapshot: DiagnosticsSnapshot;
+    showIdentifier?: boolean;
+    showGeneratedAt?: boolean;
+}) {
     const { t } = useTranslation();
 
     return (
@@ -13,12 +21,19 @@ export function SupportAppSection({ snapshot }: { snapshot: DiagnosticsSnapshot 
                     v{snapshot.app.version}
                 </span>
             </div>
-            <SummaryRow label={t('support.dialog.identifier')} value={snapshot.app.identifier} />
+            {showIdentifier ? (
+                <SummaryRow
+                    label={t('support.dialog.identifier')}
+                    value={snapshot.app.identifier}
+                />
+            ) : null}
             <SummaryRow
                 label={t('support.dialog.platform')}
                 value={`${snapshot.app.platform} (${snapshot.app.arch})`}
             />
-            <SummaryRow label={t('support.dialog.generatedAt')} value={snapshot.generatedAt} />
+            {showGeneratedAt ? (
+                <SummaryRow label={t('support.dialog.generatedAt')} value={snapshot.generatedAt} />
+            ) : null}
         </section>
     );
 }

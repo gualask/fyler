@@ -9,6 +9,7 @@ import { useTauriNotificationEvents } from './tauri-notification-events.hook';
 
 type StatusState =
     | { kind: 'error'; message: string }
+    | { kind: 'toast'; tone: 'success' | 'warning'; message: string }
     | { kind: 'export-completed' }
     | { kind: 'export-completed-with-optimization-warning'; count: number }
     | { kind: 'import-warning'; payload: AppStatusPayload };
@@ -74,10 +75,17 @@ export function useAppNotifications() {
         [t],
     );
 
+    const showToast = useCallback((tone: 'success' | 'warning', message: string) => {
+        setStatus({ kind: 'toast', tone, message });
+    }, []);
+
     const statusMessage = useMemo(() => {
         if (!status) return null;
         if (status.kind === 'error') {
             return t('status.errorPrefix', { message: status.message });
+        }
+        if (status.kind === 'toast') {
+            return status.message;
         }
         if (status.kind === 'export-completed') {
             return t('status.exportCompleted');
@@ -91,6 +99,7 @@ export function useAppNotifications() {
     const statusTone = useMemo<'success' | 'error' | 'warning' | null>(() => {
         if (!status) return null;
         if (status.kind === 'error') return 'error';
+        if (status.kind === 'toast') return status.tone;
         if (status.kind === 'export-completed') return 'success';
         return 'warning';
     }, [status]);
@@ -113,5 +122,6 @@ export function useAppNotifications() {
         showExportCompleted,
         showExportCompletedWithOptimizationWarning,
         showError,
+        showToast,
     };
 }

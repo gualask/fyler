@@ -21,6 +21,12 @@ export const openFilesDialog = (filterLabel: string): Promise<OpenFilesResult> =
 export const savePDFDialog = (defaultFilename: string, filterLabel: string): Promise<string> =>
     invoke('save_pdf_dialog', { defaultFilename, filterLabel });
 
+export const saveTextFile = (
+    defaultFilename: string,
+    filterLabel: string,
+    content: string,
+): Promise<string> => invoke('save_text_file', { defaultFilename, filterLabel, content });
+
 export const mergePDFs = (req: MergeRequest): Promise<MergeResult> => invoke('merge_pdfs', { req });
 
 export const getAppMetadata = (): Promise<AppMetadata> => invoke('get_app_metadata');

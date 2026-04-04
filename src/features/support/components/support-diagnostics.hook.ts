@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getAppMetadata, openExternalUrl } from '@/infra/platform';
+import { getAppMetadata, openExternalUrl, saveTextFile } from '@/infra/platform';
 import {
     type AppMetadata,
     type DiagnosticsSnapshot,
@@ -16,7 +16,13 @@ const FALLBACK_APP_METADATA: AppMetadata = {
     platform: 'unknown',
     arch: 'unknown',
 };
-const GITHUB_ISSUES_URL = 'https://github.com/gualask/fyler/issues/new';
+const GITHUB_NEW_ISSUE_URL = 'https://github.com/gualask/fyler/issues/new';
+const MAX_GITHUB_ISSUE_URL_LENGTH = 8000;
+
+function buildGitHubNewIssueUrl({ title, body }: { title: string; body: string }) {
+    const url = `${GITHUB_NEW_ISSUE_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+    return url.length <= MAX_GITHUB_ISSUE_URL_LENGTH ? url : null;
+}
 
 interface Params {
     isDark: boolean;
@@ -99,8 +105,13 @@ export function useSupportDiagnostics({
     const openAbout = useCallback(() => setSupportDialogMode('about'), []);
     const closeSupportDialog = useCallback(() => setSupportDialogMode(null), []);
 
+    const buildDiagnosticsReport = useCallback(
+        () => formatDiagnosticsReport(diagnosticsSnapshot),
+        [diagnosticsSnapshot],
+    );
+
     const copyDiagnostics = useCallback(async () => {
-        const diagnosticsReport = formatDiagnosticsReport(diagnosticsSnapshot);
+        const diagnosticsReport = buildDiagnosticsReport();
         try {
             await navigator.clipboard.writeText(diagnosticsReport);
             record({
@@ -116,21 +127,64 @@ export function useSupportDiagnostics({
             });
             throw error;
         }
-    }, [diagnosticsSnapshot, record]);
+    }, [buildDiagnosticsReport, record]);
 
-    const openGitHubIssues = useCallback(async () => {
-        try {
-            await openExternalUrl(GITHUB_ISSUES_URL);
-            record({ category: 'support', severity: 'info', message: 'Opened GitHub issues page' });
-        } catch (error) {
-            record({
-                category: 'support',
-                severity: 'error',
-                message: `Open GitHub issues failed: ${toDiagnosticMessage(error)}`,
-            });
-            throw error;
-        }
-    }, [record]);
+    const saveDiagnosticsFile = useCallback(
+        async ({
+            defaultFilename,
+            filterLabel,
+        }: {
+            defaultFilename: string;
+            filterLabel: string;
+        }) => {
+            const diagnosticsReport = buildDiagnosticsReport();
+            try {
+                const path = await saveTextFile(defaultFilename, filterLabel, diagnosticsReport);
+                if (path) {
+                    record({
+                        category: 'support',
+                        severity: 'info',
+                        message: 'Saved diagnostics file',
+                        metadata: { path },
+                    });
+                }
+                return path;
+            } catch (error) {
+                record({
+                    category: 'support',
+                    severity: 'error',
+                    message: `Save diagnostics file failed: ${toDiagnosticMessage(error)}`,
+                });
+                throw error;
+            }
+        },
+        [buildDiagnosticsReport, record],
+    );
+
+    const openGitHubIssue = useCallback(
+        async ({ title, body }: { title: string; body: string }) => {
+            const url = buildGitHubNewIssueUrl({ title, body });
+            try {
+                await openExternalUrl(url ?? GITHUB_NEW_ISSUE_URL);
+                record({
+                    category: 'support',
+                    severity: 'info',
+                    message: url
+                        ? 'Opened GitHub new issue (prefilled)'
+                        : 'Opened GitHub new issue (blank fallback)',
+                });
+                return url ? 'prefilled' : 'blank_fallback';
+            } catch (error) {
+                record({
+                    category: 'support',
+                    severity: 'error',
+                    message: `Open GitHub new issue failed: ${toDiagnosticMessage(error)}`,
+                });
+                throw error;
+            }
+        },
+        [record],
+    );
 
     return {
         supportDialogMode,
@@ -139,6 +193,7 @@ export function useSupportDiagnostics({
         openAbout,
         closeSupportDialog,
         copyDiagnostics,
-        openGitHubIssues,
+        saveDiagnosticsFile,
+        openGitHubIssue,
     };
 }

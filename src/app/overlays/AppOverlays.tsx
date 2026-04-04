@@ -11,6 +11,8 @@ type NotificationsLike = {
     statusTone: 'success' | 'error' | 'warning' | null;
     loadingMessage: string | null;
     loadingProgress?: number;
+    showToast: (tone: 'success' | 'warning', message: string) => void;
+    showError: (error: unknown) => void;
 };
 
 type SupportLike = {
@@ -18,8 +20,14 @@ type SupportLike = {
     diagnosticsSnapshot: DiagnosticsSnapshot;
     closeSupportDialog: () => void;
     copyDiagnostics: () => Promise<void>;
-    openGitHubIssues: () => Promise<void>;
-    openReportBug: () => void;
+    saveDiagnosticsFile: (params: {
+        defaultFilename: string;
+        filterLabel: string;
+    }) => Promise<string>;
+    openGitHubIssue: (params: {
+        title: string;
+        body: string;
+    }) => Promise<'prefilled' | 'blank_fallback'>;
 };
 
 type TutorialLike = {
@@ -75,8 +83,10 @@ export function AppOverlays({
                 snapshot={support.diagnosticsSnapshot}
                 onClose={support.closeSupportDialog}
                 onCopyDiagnostics={support.copyDiagnostics}
-                onOpenGitHubIssues={support.openGitHubIssues}
-                onOpenReportBug={support.openReportBug}
+                onSaveDiagnosticsFile={support.saveDiagnosticsFile}
+                onOpenGitHubIssue={support.openGitHubIssue}
+                onShowToast={notifications.showToast}
+                onShowError={notifications.showError}
             />
 
             {tutorial.isActive && tutorial.currentStep !== null && (

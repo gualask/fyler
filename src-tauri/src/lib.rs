@@ -40,6 +40,7 @@ pub fn run() {
             commands::open_files_from_paths,
             commands::release_sources,
             commands::save_pdf_dialog,
+            commands::save_text_file,
             commands::merge_pdfs,
             commands::get_app_metadata,
             commands::open_external_url,

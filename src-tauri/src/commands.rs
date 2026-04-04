@@ -1,4 +1,5 @@
 use std::env::consts::{ARCH, OS};
+use std::fs;
 use tauri::Emitter;
 use tauri::State;
 use tauri_plugin_dialog::DialogExt;
@@ -154,6 +155,31 @@ pub async fn save_pdf_dialog(
         .and_then(|file| file.into_path().ok())
         .map(|path| path.to_string_lossy().to_string())
         .unwrap_or_default())
+}
+
+#[tauri::command]
+/// Opens a native save dialog and writes the provided text file.
+///
+/// Returns the saved path (or empty string if cancelled).
+pub async fn save_text_file(
+    app: tauri::AppHandle,
+    default_filename: String,
+    filter_label: String,
+    content: String,
+) -> Result<String, AppError> {
+    let Some(path) = app
+        .dialog()
+        .file()
+        .add_filter(&filter_label, &["txt"])
+        .set_file_name(&default_filename)
+        .blocking_save_file()
+        .and_then(|file| file.into_path().ok())
+    else {
+        return Ok(String::new());
+    };
+
+    fs::write(&path, content).map_err(anyhow::Error::from)?;
+    Ok(path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
