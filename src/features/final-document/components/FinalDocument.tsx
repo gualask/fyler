@@ -11,6 +11,7 @@ interface Props {
     finalPages: FinalPage[];
     files: SourceFile[];
     selectedPageId: string | null;
+    selectedPageScrollKey?: number;
     onReorder: (fromId: string, toId: string) => void;
     onMovePageToIndex: (id: string, targetIndex: number) => void;
     onRemove: (id: string) => void;
@@ -23,6 +24,7 @@ export function FinalDocument({
     finalPages,
     files,
     selectedPageId,
+    selectedPageScrollKey,
     onReorder,
     onMovePageToIndex,
     onRemove,
@@ -47,6 +49,7 @@ export function FinalDocument({
                     finalPages={finalPages}
                     files={files}
                     selectedPageId={selectedPageId}
+                    selectedPageScrollKey={selectedPageScrollKey}
                     editsByFile={editsByFile}
                     scrollRoot={scrollRoot}
                     onReorder={onReorder}

@@ -98,6 +98,8 @@
     "pagePicker.inputPlaceholder": "E.g. 1-5, 8",
     "pagePicker.selectAll": "All",
     "pagePicker.clearAll": "None",
+    "pagePicker.addPage": "Add page",
+    "pagePicker.removePage": "Remove page",
     "quickActions.preview": "Open preview",
     "quickActions.rotateLeft": "Rotate 90° counterclockwise",
     "quickActions.rotateRight": "Rotate 90° clockwise",

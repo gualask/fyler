@@ -52,10 +52,10 @@ export function MainWorkspaceLayout({
                         file={workspace.selectedFile}
                         finalPages={workspace.finalPages}
                         onTogglePage={workspace.togglePage}
-                        onToggleRange={workspace.togglePageRange}
                         onSetPages={workspace.setPagesForFile}
                         onSelectAll={workspace.selectAll}
                         onDeselectAll={workspace.deselectAll}
+                        onFocusPage={workspace.focusFinalPageInDocument}
                         onRotatePage={workspace.rotatePage}
                         editsByFile={workspace.editsByFile}
                         focusedPageNum={focusedSourcePageNum}
@@ -74,6 +74,11 @@ export function MainWorkspaceLayout({
                             workspace.focusedSource
                                 ? `${workspace.focusedSource.fileId}:${workspace.focusedSource.pageNum}`
                                 : null
+                        }
+                        selectedPageScrollKey={
+                            workspace.focusedSource?.flashTarget === 'final'
+                                ? workspace.focusedSource.flashKey
+                                : undefined
                         }
                         onReorder={workspace.reorderFinalPages}
                         onMovePageToIndex={workspace.moveFinalPageToIndex}

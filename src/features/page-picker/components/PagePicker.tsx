@@ -11,10 +11,10 @@ interface Props {
     file: SourceFile | null;
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
-    onToggleRange: (fileId: string, from: number, to: number) => void;
     onSetPages: (fileId: string, pages: number[]) => void;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
+    onFocusPage: (fileId: string, pageNum: number) => void;
     onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
     editsByFile: Record<string, FileEdits>;
     focusedPageNum: number | null;
@@ -25,10 +25,10 @@ export function PagePicker({
     file,
     finalPages,
     onTogglePage,
-    onToggleRange,
     onSetPages,
     onSelectAll,
     onDeselectAll,
+    onFocusPage,
     onRotatePage,
     editsByFile,
     focusedPageNum,
@@ -49,6 +49,7 @@ export function PagePicker({
     }
 
     if (file.kind === 'image') {
+        const isIncluded = finalPages.some((page) => page.fileId === file.id && page.pageNum === 0);
         return (
             <>
                 <ImagePanel
@@ -57,6 +58,9 @@ export function PagePicker({
                     focusedPageNum={focusedPageNum}
                     focusFlashKey={focusFlashKey}
                     onRotatePage={onRotatePage}
+                    isIncluded={isIncluded}
+                    onInclude={() => onSetPages(file.id, [0])}
+                    onFocus={() => onFocusPage(file.id, 0)}
                     onPreview={() =>
                         setPreviewTarget({ id: `${file.id}:0`, fileId: file.id, pageNum: 0 })
                     }
@@ -82,10 +86,10 @@ export function PagePicker({
                 file={file}
                 finalPages={finalPages}
                 onTogglePage={onTogglePage}
-                onToggleRange={onToggleRange}
                 onSetPages={onSetPages}
                 onSelectAll={onSelectAll}
                 onDeselectAll={onDeselectAll}
+                onFocusPage={onFocusPage}
                 onRotatePage={onRotatePage}
                 editsByFile={editsByFile}
                 focusedPageNum={focusedPageNum}

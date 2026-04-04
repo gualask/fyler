@@ -7,21 +7,19 @@ import { usePageSpecInput } from './page-spec-input.hook';
 interface Props {
     file: SourceFile;
     finalPages: FinalPage[];
-    onTogglePage: (fileId: string, pageNum: number) => void;
-    onToggleRange: (fileId: string, from: number, to: number) => void;
     onSetPages: (fileId: string, pages: number[]) => void;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
+    onFocusPage: (fileId: string, pageNum: number) => void;
 }
 
 export function usePdfControls({
     file,
     finalPages,
-    onTogglePage,
-    onToggleRange,
     onSetPages,
     onSelectAll,
     onDeselectAll,
+    onFocusPage,
 }: Props) {
     const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
 
@@ -48,11 +46,26 @@ export function usePdfControls({
     });
 
     const handleThumbClick = (pageNum: number, event: React.MouseEvent) => {
+        const isSelected = selectedPageNums.has(pageNum);
+
         if (event.shiftKey && lastClickedPage !== null) {
-            onToggleRange(file.id, lastClickedPage, pageNum);
-        } else {
-            onTogglePage(file.id, pageNum);
+            const [lo, hi] =
+                lastClickedPage <= pageNum
+                    ? [lastClickedPage, pageNum]
+                    : [pageNum, lastClickedPage];
+            const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+            onSetPages(file.id, [...Array.from(selectedPageNums), ...rangeNums]);
+            setLastClickedPage(pageNum);
+            return;
         }
+
+        if (isSelected) {
+            onFocusPage(file.id, pageNum);
+            setLastClickedPage(pageNum);
+            return;
+        }
+
+        onSetPages(file.id, [...Array.from(selectedPageNums), pageNum]);
         setLastClickedPage(pageNum);
     };
 

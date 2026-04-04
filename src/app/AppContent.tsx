@@ -37,7 +37,9 @@ export function AppContent() {
         ? (workspace.focusedSource?.pageNum ?? null)
         : null;
     const focusedSourceFlashKey = focusedSourceMatchesSelected
-        ? workspace.focusedSource?.flashKey
+        ? workspace.focusedSource?.flashTarget === 'picker'
+            ? workspace.focusedSource.flashKey
+            : undefined
         : undefined;
 
     const support = useSupportDiagnostics({

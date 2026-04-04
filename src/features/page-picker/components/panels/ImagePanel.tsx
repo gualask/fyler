@@ -36,6 +36,9 @@ interface Props {
     focusedPageNum: number | null;
     focusFlashKey?: number;
     onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    isIncluded: boolean;
+    onInclude: () => void;
+    onFocus: () => void;
     onPreview: () => void;
 }
 
@@ -45,6 +48,9 @@ export function ImagePanel({
     focusedPageNum,
     focusFlashKey,
     onRotatePage,
+    isIncluded,
+    onInclude,
+    onFocus,
     onPreview,
 }: Props) {
     const { t } = useTranslation();
@@ -76,6 +82,11 @@ export function ImagePanel({
         ? { width: thumbSize.height, height: thumbSize.width }
         : thumbSize;
 
+    const handleImageClick = () => {
+        if (!isIncluded) onInclude();
+        onFocus();
+    };
+
     return (
         <div className="flex h-full flex-col overflow-hidden">
             <ColumnHeader title={t('pagePicker.title')}>
@@ -93,7 +104,7 @@ export function ImagePanel({
                             : 'border-transparent',
                     ].join(' ')}
                     style={{ width: thumbSize.width + 8, height: thumbSize.height + 8 }}
-                    onClick={onPreview}
+                    onClick={handleImageClick}
                 >
                     <div className="relative h-full w-full overflow-hidden rounded-lg bg-white shadow-sm">
                         <div

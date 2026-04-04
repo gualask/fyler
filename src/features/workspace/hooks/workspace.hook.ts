@@ -17,6 +17,7 @@ export function useWorkspace({
         fileId: string;
         pageNum: number;
         flashKey: number;
+        flashTarget: 'picker' | 'final';
     } | null>(null);
     const finalPagesApi = useFinalPages();
     const { addAllPagesForFile, removePagesForFile, clearAllPages } = finalPagesApi;
@@ -113,10 +114,27 @@ export function useWorkspace({
         setSelectedId((prev) => prev ?? id);
     }, []);
 
-    const focusFinalPageSource = useCallback((fileId: string, pageNum: number) => {
-        setSelectedId(fileId);
-        setFocusedSource({ fileId, pageNum, flashKey: Date.now() });
-    }, []);
+    const focusSource = useCallback(
+        (fileId: string, pageNum: number, flashTarget: 'picker' | 'final') => {
+            setSelectedId(fileId);
+            setFocusedSource({ fileId, pageNum, flashKey: Date.now(), flashTarget });
+        },
+        [],
+    );
+
+    const focusFinalPageSource = useCallback(
+        (fileId: string, pageNum: number) => {
+            focusSource(fileId, pageNum, 'picker');
+        },
+        [focusSource],
+    );
+
+    const focusFinalPageInDocument = useCallback(
+        (fileId: string, pageNum: number) => {
+            focusSource(fileId, pageNum, 'final');
+        },
+        [focusSource],
+    );
 
     const handleDropError = useCallback(
         (error: unknown) => {
@@ -139,6 +157,7 @@ export function useWorkspace({
         clearAllFiles,
         rotatePage,
         focusFinalPageSource,
+        focusFinalPageInDocument,
         reorderFiles,
         isDragOver,
         ...finalPagesApi,

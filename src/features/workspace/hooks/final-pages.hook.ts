@@ -43,21 +43,6 @@ export function useFinalPages() {
         [state.selectedPagesByFile],
     );
 
-    const togglePageRange = useCallback(
-        (fileId: string, from: number, to: number) => {
-            const [lo, hi] = from <= to ? [from, to] : [to, from];
-            const current = state.selectedPagesByFile[fileId] ?? [];
-            const currentSet = new Set(current);
-            const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
-            const allPresent = rangeNums.every((pageNum) => currentSet.has(pageNum));
-            const next = allPresent
-                ? current.filter((pageNum) => pageNum < lo || pageNum > hi)
-                : [...current, ...rangeNums.filter((pageNum) => !currentSet.has(pageNum))];
-            dispatch({ type: 'set-file-selection', fileId, pages: next });
-        },
-        [state.selectedPagesByFile],
-    );
-
     const setPagesForFile = useCallback((fileId: string, pages: number[]) => {
         dispatch({ type: 'set-file-selection', fileId, pages });
     }, []);
@@ -94,7 +79,6 @@ export function useFinalPages() {
         removePagesForFile,
         clearAllPages,
         togglePage,
-        togglePageRange,
         setPagesForFile,
         removeFinalPage,
         reorderFinalPages,

@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { IconGripVertical, IconX } from '@tabler/icons-react';
 import { memo } from 'react';
 import { useTranslation } from '@/shared/i18n';
+import { FocusFlashOverlay } from '@/shared/ui/feedback/FocusFlashOverlay';
 import type { ListItem } from '../list-item.types';
 import { ListRowIndexControls } from './ListRowIndexControls';
 import { ListRowThumbnail } from './ListRowThumbnail';
@@ -17,6 +18,7 @@ interface Props {
     onRemove: (id: string) => void;
     onSelect: () => void;
     onPreview: () => void;
+    flashKey?: number;
 }
 
 export const ListRow = memo(function ListRow({
@@ -29,6 +31,7 @@ export const ListRow = memo(function ListRow({
     onRemove,
     onSelect,
     onPreview,
+    flashKey,
 }: Props) {
     const { t } = useTranslation();
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -45,6 +48,7 @@ export const ListRow = memo(function ListRow({
         <div
             ref={setNodeRef}
             style={style}
+            data-final-page-id={item.page.id}
             {...attributes}
             className={['flex min-w-0 items-center gap-3', isDragging ? 'opacity-50' : ''].join(
                 ' ',
@@ -67,6 +71,9 @@ export const ListRow = memo(function ListRow({
                         : 'border-ui-border bg-ui-surface',
                 ].join(' ')}
             >
+                {item.isSelected && flashKey && (
+                    <FocusFlashOverlay flashKey={flashKey} className="inset-0 rounded-xl" />
+                )}
                 <div
                     {...listeners}
                     onClick={(e) => e.stopPropagation()}

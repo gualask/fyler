@@ -16,6 +16,7 @@ interface Props {
     isFocused: boolean;
     focusFlashKey?: number;
     onClick: (event: React.MouseEvent) => void;
+    onToggleSelected: () => void;
     onPreview: () => void;
     onRotate: (direction: RotationDirection) => void;
 }
@@ -28,6 +29,7 @@ export function PdfThumbnailItem({
     isFocused,
     focusFlashKey,
     onClick,
+    onToggleSelected,
     onPreview,
     onRotate,
 }: Props) {
@@ -64,17 +66,29 @@ export function PdfThumbnailItem({
                     <FocusFlashOverlay flashKey={focusFlashKey} className="inset-0" />
                 )}
 
-                {isSelected && (
-                    <div className="absolute right-1.5 top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-ui-accent shadow-md">
-                        <IconCheck className="h-3 w-3 text-white" />
-                    </div>
-                )}
-
                 <PageQuickActions
                     onPreview={onPreview}
                     onRotateLeft={() => onRotate('ccw')}
                     onRotateRight={() => onRotate('cw')}
                 />
+
+                <button
+                    type="button"
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onToggleSelected();
+                    }}
+                    className={[
+                        'absolute right-1.5 top-1.5 z-30 flex h-6 w-6 items-center justify-center rounded-full shadow-md transition-colors',
+                        isSelected
+                            ? 'bg-ui-accent text-white'
+                            : 'bg-white/90 text-slate-800 ring-1 ring-black/10 hover:bg-white',
+                    ].join(' ')}
+                    title={t(isSelected ? 'pagePicker.removePage' : 'pagePicker.addPage')}
+                    aria-label={t(isSelected ? 'pagePicker.removePage' : 'pagePicker.addPage')}
+                >
+                    {isSelected ? <IconCheck className="h-3.5 w-3.5" /> : null}
+                </button>
             </div>
 
             <p

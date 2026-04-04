@@ -8,11 +8,12 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { IconFile } from '@tabler/icons-react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
 import { emptyFileEdits } from '@/shared/domain/file-edits';
 import { useTranslation } from '@/shared/i18n';
+import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
 import type { ListItem } from '../list-item.types';
 import { ListRow } from './ListRow';
 
@@ -20,6 +21,7 @@ interface Props {
     finalPages: FinalPage[];
     files: SourceFile[];
     selectedPageId: string | null;
+    selectedPageScrollKey?: number;
     editsByFile: Record<string, FileEdits>;
     scrollRoot: HTMLDivElement | null;
     onReorder: (fromId: string, toId: string) => void;
@@ -32,6 +34,7 @@ export function List({
     finalPages,
     files,
     selectedPageId,
+    selectedPageScrollKey,
     editsByFile,
     scrollRoot,
     onReorder,
@@ -54,6 +57,16 @@ export function List({
     );
     const sortableItems = useMemo(() => items.map((item) => item.page.id), [items]);
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+    useEffect(() => {
+        if (!selectedPageId || !scrollRoot) return;
+        return scrollIntoViewByDataAttr({
+            root: scrollRoot,
+            attr: 'data-final-page-id',
+            value: selectedPageId,
+            signal: selectedPageScrollKey,
+        });
+    }, [scrollRoot, selectedPageId, selectedPageScrollKey]);
 
     const handleDragEnd = useCallback(
         (event: DragEndEvent) => {
@@ -90,6 +103,9 @@ export function List({
                             onRemove={onRemove}
                             onSelect={() => onSelectPage(item.page.fileId, item.page.pageNum)}
                             onPreview={() => onPreviewPage(item.page.id)}
+                            flashKey={
+                                item.page.id === selectedPageId ? selectedPageScrollKey : undefined
+                            }
                         />
                     ))}
                 </div>
