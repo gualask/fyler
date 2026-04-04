@@ -1,5 +1,5 @@
 import { IconFilePlus, IconTrash, IconUpload } from '@tabler/icons-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FinalPage, SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { ColumnHeader } from '@/shared/ui/layout/ColumnHeader';
@@ -25,6 +25,7 @@ export function FileList({
     onClearFiles,
 }: Props) {
     const { t } = useTranslation();
+    const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const pageCountByFile = useMemo(() => {
         const map = new Map<string, number>();
         for (const fp of finalPages) {
@@ -32,6 +33,15 @@ export function FileList({
         }
         return map;
     }, [finalPages]);
+
+    useEffect(() => {
+        if (!isClearConfirmOpen) return;
+        const handler = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setIsClearConfirmOpen(false);
+        };
+        window.addEventListener('keydown', handler, { capture: true });
+        return () => window.removeEventListener('keydown', handler, { capture: true });
+    }, [isClearConfirmOpen]);
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
@@ -47,7 +57,7 @@ export function FileList({
                 </button>
                 <button
                     type="button"
-                    onClick={onClearFiles}
+                    onClick={() => setIsClearConfirmOpen(true)}
                     title={t('fileList.clearFilesTitle')}
                     disabled={files.length === 0}
                     className="btn-ghost-sm h-[34px]"
@@ -78,6 +88,45 @@ export function FileList({
                     </div>
                 )}
             </div>
+
+            {isClearConfirmOpen ? (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) setIsClearConfirmOpen(false);
+                    }}
+                >
+                    <div className="w-full max-w-md rounded-2xl border border-ui-border bg-ui-surface shadow-2xl">
+                        <div className="border-b border-ui-border px-6 py-5">
+                            <h2 className="text-lg font-semibold text-ui-text">
+                                {t('fileList.clearConfirmTitle')}
+                            </h2>
+                            <p className="mt-1 text-sm text-ui-text-muted">
+                                {t('fileList.clearConfirmBody')}
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-end gap-3 px-6 py-4">
+                            <button
+                                type="button"
+                                className="btn-ghost"
+                                onClick={() => setIsClearConfirmOpen(false)}
+                            >
+                                {t('fileList.clearConfirmCancel')}
+                            </button>
+                            <button
+                                type="button"
+                                className="flex items-center gap-2 rounded-lg bg-ui-danger px-5 py-2 text-sm font-semibold text-white shadow-md transition-[colors,transform] hover:bg-ui-danger-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-danger/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface"
+                                onClick={() => {
+                                    setIsClearConfirmOpen(false);
+                                    onClearFiles();
+                                }}
+                            >
+                                {t('fileList.clearConfirmOk')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }
