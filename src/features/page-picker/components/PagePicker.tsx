@@ -40,7 +40,7 @@ export function PagePicker({
     if (!file) {
         return (
             <div className="flex h-full flex-col overflow-hidden">
-                <ColumnHeader title={t('pagePicker.title')} />
+                <ColumnHeader title={null} />
                 <div className="flex min-h-0 flex-1 items-center justify-center text-ui-text-muted">
                     <p className="text-xs">{t('pagePicker.selectAFile')}</p>
                 </div>

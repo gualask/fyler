@@ -79,10 +79,10 @@ export function PdfThumbnailItem({
                         onToggleSelected();
                     }}
                     className={[
-                        'absolute right-1.5 top-1.5 z-30 flex h-6 w-6 items-center justify-center rounded-full shadow-md transition-colors',
+                        'absolute right-1.5 top-1.5 z-30 flex h-6 w-6 items-center justify-center rounded-md shadow-md transition-colors',
                         isSelected
                             ? 'bg-ui-accent text-white'
-                            : 'bg-white/90 text-slate-800 ring-1 ring-black/10 hover:bg-white',
+                            : 'bg-white/90 text-slate-800 ring-1 ring-black/20 hover:bg-white',
                     ].join(' ')}
                     title={t(isSelected ? 'pagePicker.removePage' : 'pagePicker.addPage')}
                     aria-label={t(isSelected ? 'pagePicker.removePage' : 'pagePicker.addPage')}

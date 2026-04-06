@@ -39,15 +39,18 @@ export function PdfPanel({
     const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null);
     const {
         pageInput,
-        pageInputError,
+        mode,
         selectedPageNums,
-        allSelected,
+        enableManual,
         handleThumbClick,
-        applyPageInput,
+        commitPageInput,
         appliedPageNum,
         appliedPageSignal,
-        handleToggleAll,
+        handleSelectAll,
+        handleClearSelection,
         handlePageInputChange,
+        handleInputFocus,
+        handleInputBlur,
     } = usePdfControls({
         file,
         finalPages,
@@ -78,7 +81,7 @@ export function PdfPanel({
     }, [appliedPageNum, appliedPageSignal, gridEl]);
 
     const handlePageInputCommit = () => {
-        applyPageInput(true);
+        commitPageInput();
     };
 
     return (
@@ -86,11 +89,14 @@ export function PdfPanel({
             <PdfToolbar
                 fileId={file.id}
                 pageInput={pageInput}
-                pageInputError={pageInputError}
-                allSelected={allSelected}
                 onPageInputChange={handlePageInputChange}
                 onPageInputCommit={handlePageInputCommit}
-                onToggleAll={handleToggleAll}
+                onPageInputFocus={handleInputFocus}
+                onPageInputBlur={handleInputBlur}
+                onSelectAll={handleSelectAll}
+                onClearSelection={handleClearSelection}
+                onEnableManual={enableManual}
+                mode={mode}
             />
 
             <div ref={setGridEl} className="min-h-0 flex-1 overflow-y-auto p-4">

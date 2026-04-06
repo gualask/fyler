@@ -1,5 +1,7 @@
 import type { SourceFile } from '@/shared/domain';
 
+import { uniqueSortedNumbers } from '@/shared/domain/number-list';
+
 export type CompositionState = {
     selectedPagesByFile: Record<string, number[]>;
     pageOrder: string[];
@@ -27,10 +29,6 @@ export function fromFinalPageId(id: string): { fileId: string; pageNum: number }
         fileId: id.slice(0, separator),
         pageNum: Number.parseInt(id.slice(separator + 1), 10),
     };
-}
-
-function normalizePages(pages: number[]): number[] {
-    return Array.from(new Set(pages)).sort((a, b) => a - b);
 }
 
 export function allPagesForFile(file: SourceFile): number[] {
@@ -77,7 +75,7 @@ export function compositionReducer(
 ): CompositionState {
     switch (action.type) {
         case 'set-file-selection': {
-            const pages = normalizePages(action.pages);
+            const pages = uniqueSortedNumbers(action.pages);
             const selectedPagesByFile = { ...state.selectedPagesByFile };
 
             if (pages.length === 0) {

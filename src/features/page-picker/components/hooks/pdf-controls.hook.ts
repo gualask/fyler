@@ -23,25 +23,39 @@ export function usePdfControls({
 }: Props) {
     const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
 
-    const selectedPageNums = useMemo(
-        () =>
-            new Set(
-                finalPages.filter((page) => page.fileId === file.id).map((page) => page.pageNum),
-            ),
-        [file.id, finalPages],
-    );
-    const allSelected = file.pageCount > 0 && selectedPageNums.size === file.pageCount;
+    const { selectedPages, selectedPageNums } = useMemo(() => {
+        const pageNums = new Set<number>();
+        for (const page of finalPages) {
+            if (page.fileId === file.id) {
+                pageNums.add(page.pageNum);
+            }
+        }
+
+        return {
+            selectedPages: Array.from(pageNums).sort((a, b) => a - b),
+            selectedPageNums: pageNums,
+        };
+    }, [file.id, finalPages]);
+    const selectedCount = selectedPageNums.size;
+    const mode: 'all' | 'none' | 'custom' = (() => {
+        if (selectedCount === 0) return 'none';
+        if (file.pageCount > 0 && selectedCount === file.pageCount) return 'all';
+        return 'custom';
+    })();
 
     const {
         pageInput,
-        pageInputError,
         appliedPageNum,
         appliedPageSignal,
-        applyPageInput,
+        commitPageInput,
+        handleFocus,
+        handleBlur,
         handlePageInputChange,
     } = usePageSpecInput({
         fileId: file.id,
         pageCount: file.pageCount,
+        selectedPages,
+        mode,
         onSetPages,
     });
 
@@ -69,24 +83,33 @@ export function usePdfControls({
         setLastClickedPage(pageNum);
     };
 
-    const handleToggleAll = () => {
-        if (allSelected) {
-            onDeselectAll(file.id);
-        } else {
-            onSelectAll(file);
-        }
+    const handleSelectAll = () => {
+        onSelectAll(file);
+    };
+
+    const handleClearSelection = () => {
+        onDeselectAll(file.id);
+    };
+
+    const handleEnableManual = () => {
+        if (file.pageCount <= 0) return;
+        onSetPages(file.id, [1]);
     };
 
     return {
         pageInput,
-        pageInputError,
+        mode,
         selectedPageNums,
-        allSelected,
+        selectedCount,
+        enableManual: handleEnableManual,
         handleThumbClick,
-        applyPageInput,
+        commitPageInput,
         appliedPageNum,
         appliedPageSignal,
-        handleToggleAll,
+        handleSelectAll,
+        handleClearSelection,
         handlePageInputChange,
+        handleInputFocus: handleFocus,
+        handleInputBlur: handleBlur,
     };
 }

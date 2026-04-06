@@ -89,7 +89,7 @@ export function ImagePanel({
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
-            <ColumnHeader title={t('pagePicker.title')}>
+            <ColumnHeader title={null}>
                 <span className="column-toolbar-note">{t('pagePicker.singleImage')}</span>
             </ColumnHeader>
             <div

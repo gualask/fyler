@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 interface Props {
-    title: ReactNode;
+    title: ReactNode | null;
     children?: ReactNode;
     toolbarClassName?: string;
 }
@@ -9,7 +9,7 @@ interface Props {
 export function ColumnHeader({ title, children, toolbarClassName = '' }: Props) {
     return (
         <div className="column-header">
-            <h2 className="column-header-title">{title}</h2>
+            {title === null ? <div /> : <h2 className="column-header-title">{title}</h2>}
             <div className={['column-toolbar', toolbarClassName].filter(Boolean).join(' ')}>
                 {children}
             </div>
