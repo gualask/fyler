@@ -1,6 +1,8 @@
-import { type ReactNode, useId, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useResolvedTooltipPlacement } from './resolved-tooltip-placement.hook';
 import type { TooltipPlacement } from './tooltip-placement';
+import { getTooltipBoundaryElement } from './tooltip-placement';
 
 import './tooltip.css';
 
@@ -35,6 +37,7 @@ export function Tooltip({
     const tooltipId = useId();
     const anchorRef = useRef<HTMLSpanElement | null>(null);
     const panelRef = useRef<HTMLSpanElement | null>(null);
+    const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({ opacity: 0 });
     const preferredPlacement = useMemo(
         () => ({ align, side }) satisfies TooltipPlacement,
         [align, side],
@@ -60,6 +63,68 @@ export function Tooltip({
         openTooltip();
     };
 
+    useLayoutEffect(() => {
+        if (!open) return;
+
+        const updatePosition = () => {
+            const triggerEl = anchorRef.current;
+            const panelEl = panelRef.current;
+            if (!triggerEl || !panelEl) return;
+
+            const boundaryRect = {
+                top: 0,
+                right: window.innerWidth,
+                bottom: window.innerHeight,
+                left: 0,
+            };
+            const triggerRect = triggerEl.getBoundingClientRect();
+            const panelRect = panelEl.getBoundingClientRect();
+
+            const viewportPadding = 12;
+            const offset = 9;
+
+            const rawLeft =
+                resolvedPlacement.align === 'start'
+                    ? triggerRect.left
+                    : resolvedPlacement.align === 'center'
+                      ? triggerRect.left + triggerRect.width / 2 - panelRect.width / 2
+                      : triggerRect.right - panelRect.width;
+
+            const rawTop =
+                resolvedPlacement.side === 'top'
+                    ? triggerRect.top - offset - panelRect.height
+                    : triggerRect.bottom + offset;
+
+            const minLeft = boundaryRect.left + viewportPadding;
+            const maxLeft = boundaryRect.right - viewportPadding - panelRect.width;
+            const minTop = boundaryRect.top + viewportPadding;
+            const maxTop = boundaryRect.bottom - viewportPadding - panelRect.height;
+
+            const left = Math.min(Math.max(rawLeft, minLeft), maxLeft);
+            const top = Math.min(Math.max(rawTop, minTop), maxTop);
+
+            setPanelStyle({
+                left,
+                top,
+                opacity: 1,
+            });
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        const boundaryEl = anchorRef.current ? getTooltipBoundaryElement(anchorRef.current) : null;
+        boundaryEl?.addEventListener('scroll', updatePosition, { passive: true });
+        const ro = new ResizeObserver(() => updatePosition());
+        if (panelRef.current) ro.observe(panelRef.current);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+            boundaryEl?.removeEventListener('scroll', updatePosition);
+            ro.disconnect();
+        };
+    }, [open, resolvedPlacement]);
+
     return (
         <span
             ref={anchorRef}
@@ -77,23 +142,29 @@ export function Tooltip({
                 onClick: toggleTooltip,
             })}
 
-            {open ? (
-                <span
-                    id={tooltipId}
-                    ref={panelRef}
-                    role="tooltip"
-                    className={[
-                        'tooltip-panel',
-                        `tooltip-panel-${resolvedPlacement.align}`,
-                        `tooltip-panel-side-${resolvedPlacement.side}`,
-                        panelClassName,
-                    ]
-                        .filter(Boolean)
-                        .join(' ')}
-                >
-                    {children}
-                </span>
-            ) : null}
+            {open
+                ? typeof document === 'undefined'
+                    ? null
+                    : createPortal(
+                          <span
+                              id={tooltipId}
+                              ref={panelRef}
+                              role="tooltip"
+                              style={panelStyle}
+                              className={[
+                                  'tooltip-panel',
+                                  `tooltip-panel-${resolvedPlacement.align}`,
+                                  `tooltip-panel-side-${resolvedPlacement.side}`,
+                                  panelClassName,
+                              ]
+                                  .filter(Boolean)
+                                  .join(' ')}
+                          >
+                              {children}
+                          </span>,
+                          document.body,
+                      )
+                : null}
         </span>
     );
 }

@@ -6,8 +6,8 @@ import { getImageQuarterTurn, getImageRotationDegrees } from '@/shared/domain/fi
 import { useTranslation } from '@/shared/i18n';
 import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
 import { FocusFlashOverlay } from '@/shared/ui/feedback/FocusFlashOverlay';
-import { ColumnHeader } from '@/shared/ui/layout/ColumnHeader';
-import { useElementWidth } from '../hooks/element-width.hook';
+import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
+import { useElementSize } from '../hooks/element-size.hook';
 
 const IMAGE_THUMB_FALLBACK_WIDTH = 420;
 const IMAGE_THUMB_FALLBACK_HEIGHT = 320;
@@ -54,7 +54,7 @@ export function ImagePanel({
     onPreview,
 }: Props) {
     const { t } = useTranslation();
-    const [imagePanelEl, imagePanelWidth] = useElementWidth();
+    const [imagePanelEl, imagePanelSize] = useElementSize();
     const [imageNaturalSize, setImageNaturalSize] = useState<{
         width: number;
         height: number;
@@ -65,19 +65,18 @@ export function ImagePanel({
     const rotation = getImageRotationDegrees(editsByFile[file.id]);
     const isQuarterTurnOdd = quarterTurns % 2 === 1;
     const maxThumbWidth =
-        imagePanelWidth > 0
-            ? Math.max(240, Math.min(imagePanelWidth - 24, 560))
+        imagePanelSize.width > 0
+            ? Math.max(240, Math.min(imagePanelSize.width - 24, 560))
             : IMAGE_THUMB_FALLBACK_WIDTH;
+    const maxThumbHeight =
+        imagePanelSize.height > 0
+            ? Math.max(180, Math.min(imagePanelSize.height - 76, IMAGE_THUMB_MAX_HEIGHT))
+            : IMAGE_THUMB_MAX_HEIGHT;
     const naturalWidth = imageNaturalSize?.width ?? IMAGE_THUMB_FALLBACK_WIDTH;
     const naturalHeight = imageNaturalSize?.height ?? IMAGE_THUMB_FALLBACK_HEIGHT;
     const rotatedWidth = isQuarterTurnOdd ? naturalHeight : naturalWidth;
     const rotatedHeight = isQuarterTurnOdd ? naturalWidth : naturalHeight;
-    const thumbSize = fitImageThumb(
-        rotatedWidth,
-        rotatedHeight,
-        maxThumbWidth,
-        IMAGE_THUMB_MAX_HEIGHT,
-    );
+    const thumbSize = fitImageThumb(rotatedWidth, rotatedHeight, maxThumbWidth, maxThumbHeight);
     const stageSize = isQuarterTurnOdd
         ? { width: thumbSize.height, height: thumbSize.width }
         : thumbSize;
@@ -89,12 +88,15 @@ export function ImagePanel({
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
-            <ColumnHeader title={null}>
-                <span className="column-toolbar-note">{t('pagePicker.singleImage')}</span>
-            </ColumnHeader>
+            <SectionHeader
+                title={t('pagePicker.sectionTitle', { count: 1 })}
+                className="border-b-0"
+            >
+                <span className="section-toolbar-note">{t('pagePicker.singleImage')}</span>
+            </SectionHeader>
             <div
                 ref={imagePanelEl}
-                className="flex flex-1 flex-col items-center justify-center gap-3 p-4"
+                className="section-body flex flex-1 flex-col items-center justify-center gap-3 p-4"
             >
                 <div
                     className={[

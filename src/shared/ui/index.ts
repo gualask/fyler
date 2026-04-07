@@ -7,4 +7,4 @@ export { Tooltip } from './feedback/Tooltip';
 export { formatByteSize } from './format/byte-size';
 export { useDismiss } from './hooks/dismiss.hook';
 export { useDismissableMenu } from './hooks/dismissable-menu.hook';
-export { ColumnHeader } from './layout/ColumnHeader';
+export { SectionHeader } from './layout/SectionHeader';

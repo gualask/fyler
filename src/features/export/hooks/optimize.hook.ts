@@ -2,16 +2,12 @@ import { useState } from 'react';
 
 import type { ImageFit, OptimizeOptions } from '@/shared/domain';
 import {
-    type BasicOptimizationPreset,
     DEFAULT_OPTIMIZATION_PRESET,
-    deriveOptimizationPreset,
     getOptimizationSettings,
+    type ImageOptimizationPreset,
 } from '@/shared/domain/optimization-config';
 
-export type {
-    BasicOptimizationPreset,
-    ImageOptimizationPreset,
-} from '@/shared/domain/optimization-config';
+export type { BasicOptimizationPreset } from '@/shared/domain/optimization-config';
 export type { ImageFit };
 
 export function useOptimize() {
@@ -19,13 +15,30 @@ export function useOptimize() {
     const [jpegQuality, setJpegQuality] = useState<number | undefined>(defaultSettings.jpegQuality);
     const [targetDpi, setTargetDpi] = useState<number | undefined>(defaultSettings.targetDpi);
     const [imageFit, setImageFit] = useState<ImageFit>('contain');
+    const [optimizationPreset, setOptimizationPresetState] = useState<ImageOptimizationPreset>(
+        DEFAULT_OPTIMIZATION_PRESET,
+    );
 
-    const optimizationPreset = deriveOptimizationPreset(jpegQuality, targetDpi);
+    const setOptimizationPreset = (preset: ImageOptimizationPreset) => {
+        if (preset === 'custom') {
+            setOptimizationPresetState('custom');
+            return;
+        }
 
-    const setOptimizationPreset = (preset: BasicOptimizationPreset) => {
         const settings = getOptimizationSettings(preset);
         setJpegQuality(settings.jpegQuality);
         setTargetDpi(settings.targetDpi);
+        setOptimizationPresetState(preset);
+    };
+
+    const setCustomJpegQuality = (value: number | undefined) => {
+        setJpegQuality(value);
+        setOptimizationPresetState('custom');
+    };
+
+    const setCustomTargetDpi = (value: number | undefined) => {
+        setTargetDpi(value);
+        setOptimizationPresetState('custom');
     };
 
     const optimizeOptions: OptimizeOptions = {
@@ -41,8 +54,8 @@ export function useOptimize() {
         optimizationPreset,
         optimizeOptions,
         setImageFit,
-        setJpegQuality,
-        setTargetDpi,
+        setJpegQuality: setCustomJpegQuality,
+        setTargetDpi: setCustomTargetDpi,
         setOptimizationPreset,
     };
 }

@@ -1,7 +1,7 @@
 import type { ImageFit } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { buildImageFitOptions } from './output-panel.options';
-import { SegmentedControl, type SegmentOption } from './SegmentedControl';
+import { SelectControl, type SelectOption } from './SelectControl';
 import { ImageFitTooltip } from './Tooltips';
 
 interface Props {
@@ -11,12 +11,12 @@ interface Props {
 
 export function PageFitSection({ imageFit, onImageFitChange }: Props) {
     const { t } = useTranslation();
-    const imageFitOptions: SegmentOption<ImageFit>[] = buildImageFitOptions((fit) =>
+    const imageFitOptions: SelectOption<ImageFit>[] = buildImageFitOptions((fit) =>
         t(`outputPanel.imageFitOptions.${fit}`),
     );
 
     return (
-        <SegmentedControl
+        <SelectControl
             label={t('outputPanel.pageFit')}
             helpContent={<ImageFitTooltip />}
             helpAlign="end"

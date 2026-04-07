@@ -30,17 +30,18 @@ export function useResolvedTooltipPlacement({
             const panelEl = panelRef.current;
             if (!triggerEl || !panelEl) return;
 
-            const boundaryEl = getTooltipBoundaryElement(triggerEl);
-            const boundaryRect = boundaryEl
-                ? boundaryEl.getBoundingClientRect()
-                : { top: 0, right: window.innerWidth, bottom: window.innerHeight, left: 0 };
             const triggerRect = triggerEl.getBoundingClientRect();
             const panelRect = panelEl.getBoundingClientRect();
             const nextPlacement = resolveTooltipPlacement(
                 preferredPlacement,
                 triggerRect,
                 panelRect,
-                boundaryRect,
+                {
+                    top: 0,
+                    right: window.innerWidth,
+                    bottom: window.innerHeight,
+                    left: 0,
+                },
             );
 
             setResolvedPlacement((current) =>

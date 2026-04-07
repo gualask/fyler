@@ -1,8 +1,13 @@
-import { IconFilePlus, IconTrash, IconUpload } from '@tabler/icons-react';
+import {
+    IconChevronLeft,
+    IconChevronRight,
+    IconFilePlus,
+    IconTrash,
+    IconUpload,
+} from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
-import { ColumnHeader } from '@/shared/ui/layout/ColumnHeader';
 import { FileRow } from './FileRow';
 
 interface Props {
@@ -24,6 +29,10 @@ export function FileList({
 }: Props) {
     const { t } = useTranslation();
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+    const [scrollerEl, setScrollerEl] = useState<HTMLDivElement | null>(null);
+    const [wrapEl, setWrapEl] = useState<HTMLDivElement | null>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
 
     useEffect(() => {
         if (!isClearConfirmOpen) return;
@@ -34,49 +43,119 @@ export function FileList({
         return () => window.removeEventListener('keydown', handler, { capture: true });
     }, [isClearConfirmOpen]);
 
-    return (
-        <div className="flex h-full flex-col overflow-hidden">
-            <ColumnHeader title={t('fileList.title', { count: files.length })}>
-                <button
-                    type="button"
-                    onClick={onAddFiles}
-                    title={t('fileList.addFilesTitle')}
-                    className="btn-ghost-sm h-[34px]"
-                >
-                    <IconFilePlus className="h-4 w-4" />
-                    {t('fileList.add')}
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setIsClearConfirmOpen(true)}
-                    title={t('fileList.clearFilesTitle')}
-                    disabled={files.length === 0}
-                    className="btn-ghost-sm h-[34px]"
-                >
-                    <IconTrash className="h-4 w-4" />
-                    {t('fileList.clear')}
-                </button>
-            </ColumnHeader>
+    useEffect(() => {
+        if (!scrollerEl) return;
 
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                {files.length === 0 ? (
-                    <div className="flex h-full flex-col items-center justify-center gap-2 text-ui-text-muted">
-                        <IconUpload className="h-8 w-8 opacity-25" />
-                        <p className="text-center text-xs">{t('fileList.empty')}</p>
+        const sync = () => {
+            const maxScrollLeft = scrollerEl.scrollWidth - scrollerEl.clientWidth;
+            const hasOverflow = maxScrollLeft > 1;
+            if (!hasOverflow) {
+                setCanScrollLeft(false);
+                setCanScrollRight(false);
+                return;
+            }
+
+            setCanScrollLeft(scrollerEl.scrollLeft > 0);
+            setCanScrollRight(scrollerEl.scrollLeft < maxScrollLeft - 1);
+        };
+
+        sync();
+
+        const onScroll = () => sync();
+        scrollerEl.addEventListener('scroll', onScroll, { passive: true });
+
+        const ro = new ResizeObserver(() => sync());
+        ro.observe(scrollerEl);
+        if (wrapEl) ro.observe(wrapEl);
+
+        return () => {
+            scrollerEl.removeEventListener('scroll', onScroll);
+            ro.disconnect();
+        };
+    }, [scrollerEl, wrapEl]);
+
+    const scrollByCard = (direction: -1 | 1) => {
+        if (!scrollerEl) return;
+        const step = 240 + 8; // w-60 + gap-2
+        scrollerEl.scrollBy({ left: direction * step, behavior: 'smooth' });
+    };
+
+    return (
+        <>
+            <div className="flex h-full flex-col overflow-hidden">
+                <div className="section-header file-list-header">
+                    <span className="file-list-title">
+                        {t('fileList.sectionTitle', { count: files.length })}
+                    </span>
+                    <div className="file-list-header-actions">
+                        <button
+                            type="button"
+                            onClick={onAddFiles}
+                            title={t('fileList.addFilesTitle')}
+                            className="file-list-action file-list-action-add"
+                        >
+                            <IconFilePlus className="h-4 w-4" />
+                            {t('fileList.addFiles')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsClearConfirmOpen(true)}
+                            title={t('fileList.clearFilesTitle')}
+                            disabled={files.length === 0}
+                            className="file-list-action file-list-action-clear"
+                        >
+                            <IconTrash className="h-4 w-4" />
+                            {t('fileList.clearAll')}
+                        </button>
                     </div>
-                ) : (
-                    <div className="flex flex-col gap-2">
-                        {files.map((f) => (
-                            <FileRow
-                                key={f.id}
-                                file={f}
-                                selected={f.id === selectedId}
-                                onSelect={() => onSelect(f.id)}
-                                onRemove={() => onRemove(f.id)}
-                            />
-                        ))}
-                    </div>
-                )}
+                </div>
+
+                <div className="file-list-body section-body">
+                    {files.length === 0 ? (
+                        <div className="flex h-full flex-col items-center justify-center gap-2 text-ui-text-muted">
+                            <IconUpload className="h-8 w-8 opacity-25" />
+                            <p className="text-center text-xs">{t('fileList.empty')}</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div ref={setScrollerEl} className="file-list-scroller">
+                                <div ref={setWrapEl} className="file-list-wrap">
+                                    {files.map((f) => (
+                                        <div key={f.id} className="w-60 shrink-0">
+                                            <FileRow
+                                                file={f}
+                                                selected={f.id === selectedId}
+                                                onSelect={() => onSelect(f.id)}
+                                                onRemove={() => onRemove(f.id)}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="file-list-nav-btn file-list-nav-left"
+                                onClick={() => scrollByCard(-1)}
+                                disabled={!canScrollLeft}
+                                aria-label={t('fileList.scrollLeft')}
+                                title={t('fileList.scrollLeft')}
+                            >
+                                <IconChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                                type="button"
+                                className="file-list-nav-btn file-list-nav-right"
+                                onClick={() => scrollByCard(1)}
+                                disabled={!canScrollRight}
+                                aria-label={t('fileList.scrollRight')}
+                                title={t('fileList.scrollRight')}
+                            >
+                                <IconChevronRight className="h-4 w-4" />
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
             {isClearConfirmOpen ? (
@@ -117,6 +196,6 @@ export function FileList({
                     </div>
                 </div>
             ) : null}
-        </div>
+        </>
     );
 }

@@ -2,10 +2,11 @@ import { useRef } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import type { SegmentOption } from '@/shared/ui/controls/SegmentButtons';
 import { SegmentButtons } from '@/shared/ui/controls/SegmentButtons';
-import { ColumnHeader } from '@/shared/ui/layout/ColumnHeader';
+import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 
 interface Props {
     fileId: string;
+    pageCount: number;
     pageInput: string;
     onPageInputChange: (value: string) => void;
     onPageInputCommit: () => void;
@@ -19,6 +20,7 @@ interface Props {
 
 export function PdfToolbar({
     fileId,
+    pageCount,
     pageInput,
     onPageInputChange,
     onPageInputCommit,
@@ -53,11 +55,20 @@ export function PdfToolbar({
     };
 
     return (
-        <ColumnHeader title={null}>
-            <SegmentButtons options={options} value={mode} onChange={handleSegmentChange} />
+        <SectionHeader
+            title={t('pagePicker.sectionTitle', { count: pageCount })}
+            className="border-b-0"
+            toolbarClassName="flex-1 justify-start gap-3"
+        >
+            <SegmentButtons
+                className="shrink-0"
+                options={options}
+                value={mode}
+                onChange={handleSegmentChange}
+            />
 
-            <div className="flex min-w-0 items-center gap-2">
-                <label htmlFor={`page-input-${fileId}`} className="column-toolbar-label sr-only">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+                <label htmlFor={`page-input-${fileId}`} className="section-toolbar-label sr-only">
                     {t('pagePicker.inputLabel')}
                 </label>
                 <input
@@ -75,9 +86,9 @@ export function PdfToolbar({
                         onPageInputBlur();
                         onPageInputCommit();
                     }}
-                    className="input-base w-40 min-w-0"
+                    className="input-base w-full min-w-0"
                 />
             </div>
-        </ColumnHeader>
+        </SectionHeader>
     );
 }

@@ -1,6 +1,6 @@
 import { JPEG_QUALITY_OPTIONS, TARGET_DPI_OPTIONS } from '@/shared/domain/optimization-config';
 import { useTranslation } from '@/shared/i18n';
-import { SegmentedControl, type SegmentOption } from './SegmentedControl';
+import { SelectControl, type SelectOption } from './SelectControl';
 import { DpiTooltip, JpegTooltip } from './Tooltips';
 
 function encodeOptionalNumberOption(value: number | undefined) {
@@ -15,7 +15,7 @@ function decodeOptionalNumberOption(option: string): number | undefined {
 function buildOptionalNumberOptions(
     options: ReadonlyArray<{ value: number | undefined }>,
     offLabel: string,
-): SegmentOption<string>[] {
+): SelectOption<string>[] {
     return options.map(({ value }) => ({
         value: value === undefined ? 'off' : String(value),
         label: value === undefined ? offLabel : String(value),
@@ -40,7 +40,7 @@ export function OptimizationAdvancedPanel({
     return (
         <div className="output-panel-advanced-panel">
             <div className="output-panel-advanced-grid">
-                <SegmentedControl
+                <SelectControl
                     label={t('outputPanel.targetDpi')}
                     helpContent={<DpiTooltip />}
                     helpAlign="start"
@@ -49,7 +49,7 @@ export function OptimizationAdvancedPanel({
                     value={encodeOptionalNumberOption(targetDpi)}
                     onChange={(value) => onTargetDpiChange(decodeOptionalNumberOption(value))}
                 />
-                <SegmentedControl
+                <SelectControl
                     label={t('outputPanel.jpegQuality')}
                     helpContent={<JpegTooltip />}
                     helpAlign="center"

@@ -93,7 +93,7 @@ export function PdfThumbnailItem({
 
             <p
                 className={[
-                    'mt-1.5 text-center text-[10px]',
+                    'mt-1 text-center text-[9px]',
                     isFocused ? 'font-bold text-ui-accent' : 'font-medium text-ui-text-muted',
                 ].join(' ')}
             >

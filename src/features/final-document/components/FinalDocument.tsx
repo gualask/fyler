@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
 import type { RotationDirection } from '@/shared/domain/file-edits';
 import { useTranslation } from '@/shared/i18n';
-import { ColumnHeader } from '@/shared/ui/layout/ColumnHeader';
+import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { List } from './components/List';
 import { Preview } from './components/Preview';
 
@@ -38,11 +38,10 @@ export function FinalDocument({
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
-            <ColumnHeader title={t('finalDocument.title')}>
-                <span className="column-toolbar-stat">
-                    {t('finalDocument.pageCount', { count: finalPages.length })}
-                </span>
-            </ColumnHeader>
+            <SectionHeader
+                title={t('finalDocument.sectionTitle', { count: finalPages.length })}
+                className="border-b border-ui-border"
+            />
 
             <div ref={setScrollRoot} className="min-h-0 flex-1 overflow-y-auto p-4">
                 <List

@@ -10,6 +10,7 @@
     /* superfici e testo */
     --ui-bg: #f5f7fa;
     --ui-surface: #ffffff;
+    --ui-surface-subtle: #f8fafc;
     --ui-surface-hover: #f1f5f9;
     --ui-source: #f5f7fa;
     --ui-output: #f0f2f5;
@@ -51,12 +52,17 @@
     /* document kinds */
     --ui-kind-pdf: #fb7185;
     --ui-kind-image: #38bdf8;
+
+    /* scrollbar */
+    --ui-scrollbar-thumb: color-mix(in srgb, var(--ui-border-hover) 82%, transparent);
+    --ui-scrollbar-thumb-hover: color-mix(in srgb, var(--ui-border-hover) 98%, transparent);
 }
 
 .dark {
     /* superfici e testo */
     --ui-bg: #2e3039;
     --ui-surface: #383a44;
+    --ui-surface-subtle: #3d404b;
     --ui-surface-hover: #444752;
     --ui-source: #333541;
     --ui-output: #292b34;
@@ -96,6 +102,34 @@
     /* document kinds */
     --ui-kind-pdf: #fda4af;
     --ui-kind-image: #7dd3fc;
+
+    /* scrollbar */
+    --ui-scrollbar-thumb: color-mix(in srgb, var(--ui-border-hover) 78%, transparent);
+    --ui-scrollbar-thumb-hover: color-mix(in srgb, var(--ui-border-hover) 96%, transparent);
+}
+
+/* ── Scrollbar (global) ─────────────────────────────────────────────────── */
+@layer base {
+    :where(*) {
+        scrollbar-width: thin;
+        scrollbar-color: var(--ui-scrollbar-thumb) transparent;
+    }
+    :where(*)::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    :where(*)::-webkit-scrollbar-thumb {
+        background: var(--ui-scrollbar-thumb);
+        border-radius: 9999px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+    }
+    :where(*)::-webkit-scrollbar-thumb:hover {
+        background: var(--ui-scrollbar-thumb-hover);
+    }
+    :where(*)::-webkit-scrollbar-track {
+        background: transparent;
+    }
 }
 
 /* ── Accent color palettes ─────────────────────────────────────────────── */
@@ -264,7 +298,7 @@ body {
         @apply flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-ui-text-muted;
     }
     .segmented-control__buttons {
-        @apply flex min-w-0 gap-0.5 rounded-lg bg-ui-surface-hover p-1;
+        @apply flex h-8 min-w-0 gap-0.5 rounded-lg bg-ui-surface-hover p-1;
     }
     .segmented-control__button {
         @apply rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap transition-[background-color,color,box-shadow] disabled:cursor-default disabled:opacity-55;
@@ -285,11 +319,24 @@ body {
         @apply text-ui-text-secondary hover:bg-ui-accent-soft-hover hover:text-ui-accent-on-soft;
     }
     /* ── Input ─────────────────────────────────────────────────── */
-    .input-base {
-        @apply h-[34px] w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none transition-colors focus:ring-1 focus:ring-ui-accent;
+    .input-base,
+    .select-base {
+        @apply h-8 w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none transition-colors focus:ring-1 focus:ring-ui-accent;
     }
-
+    .select-base {
+        cursor: pointer;
+    }
     /* ── Thumbnail cards (page picker) ─────────────────────────── */
+    .page-picker-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    @media (min-width: 900px) {
+        .page-picker-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
     .thumb-card {
         box-shadow: 0 3px 14px rgba(0, 0, 0, 0.25);
     }
@@ -320,27 +367,81 @@ body {
         @apply text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
     }
 
-    /* ── Header pannello ───────────────────────────────────────── */
-    .column-header {
-        @apply flex h-[54px] shrink-0 items-center justify-between gap-3 border-b border-ui-border px-4;
+    /* ── Header sezione ────────────────────────────────────────── */
+    .section-header {
+        @apply flex h-10 shrink-0 items-center justify-between gap-3 bg-ui-surface-subtle py-1 pl-4 pr-3 box-border;
     }
-    .column-header-title {
+    .section-header-title {
         @apply min-w-0 shrink-0 truncate text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
     }
-    .column-toolbar {
+    .section-toolbar {
         @apply flex min-w-0 items-center justify-end gap-2;
     }
-    .column-toolbar-label {
+    .section-toolbar-label {
         @apply shrink-0 text-[10px] font-bold uppercase tracking-wide text-ui-text-muted;
     }
-    .column-toolbar-note {
-        @apply inline-flex h-[34px] items-center text-xs font-medium text-ui-text-muted;
+    .section-toolbar-note {
+        @apply inline-flex h-8 items-center text-xs font-medium text-ui-text-muted;
     }
-    .column-toolbar-stat {
-        @apply inline-flex h-[34px] items-center rounded-lg bg-ui-surface-hover px-3 text-sm font-semibold text-ui-text-secondary;
+    .section-toolbar-stat {
+        @apply inline-flex h-8 items-center rounded-lg bg-ui-surface-hover px-3 text-sm font-semibold text-ui-text-secondary;
+    }
+    .section-body {
+        @apply bg-ui-output;
     }
     .panel-header {
         @apply flex shrink-0 items-center justify-between border-b border-ui-border px-4 py-3;
+    }
+
+    /* ── File list (workspace) ───────────────────────────────── */
+    .file-list-body {
+        @apply relative min-h-0 flex-1 overflow-hidden p-1.5;
+    }
+    .file-list-scroller {
+        @apply h-full overflow-x-auto overflow-y-hidden;
+        scrollbar-gutter: stable;
+    }
+    .file-list-header-actions {
+        @apply flex items-center gap-2;
+    }
+    .file-list-title {
+        @apply text-[10px] font-semibold uppercase tracking-widest text-ui-text-muted;
+    }
+    .file-list-action {
+        @apply inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-source disabled:cursor-not-allowed disabled:opacity-40;
+    }
+    .file-list-action-add {
+        @apply text-ui-accent hover:text-ui-accent-hover;
+    }
+    .file-list-action-clear {
+        @apply text-ui-text-muted hover:text-ui-text-secondary disabled:hover:text-ui-text-muted;
+    }
+    .file-list-wrap {
+        @apply flex w-max items-start gap-2;
+    }
+    .file-list-nav-btn {
+        @apply absolute top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border bg-ui-surface text-ui-text-muted shadow-sm transition-[colors,transform,opacity] hover:bg-ui-surface-hover hover:text-ui-text-secondary active:scale-[0.96] disabled:opacity-0 disabled:pointer-events-none;
+    }
+    .file-list-nav-left {
+        @apply left-2;
+    }
+    .file-list-nav-right {
+        @apply right-2;
+    }
+    .file-row {
+        @apply cursor-pointer select-none rounded-xl border border-transparent px-2.5 py-2 transition-colors;
+    }
+    .file-row-idle {
+        @apply hover:bg-ui-surface-hover;
+    }
+    .file-row-selected {
+        @apply border-ui-accent/30 bg-ui-accent-soft;
+    }
+    .file-row-title {
+        @apply block w-full truncate bg-transparent p-0 text-left text-[13px] font-semibold text-ui-text;
+    }
+    .file-row-meta {
+        @apply mt-0.5 text-[11px] text-ui-text-muted;
     }
 
     .flash-accent-thumb {
@@ -352,6 +453,7 @@ body {
     /* superfici */
     --color-ui-bg: var(--ui-bg);
     --color-ui-surface: var(--ui-surface);
+    --color-ui-surface-subtle: var(--ui-surface-subtle);
     --color-ui-surface-hover: var(--ui-surface-hover);
     --color-ui-source: var(--ui-source);
     --color-ui-output: var(--ui-output);

@@ -3,7 +3,7 @@ import { PreviewModal } from '@/features/preview';
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
 import type { RotationDirection } from '@/shared/domain/file-edits';
 import { useTranslation } from '@/shared/i18n';
-import { ColumnHeader } from '@/shared/ui/layout/ColumnHeader';
+import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { ImagePanel } from './panels/ImagePanel';
 import { PdfPanel } from './panels/PdfPanel';
 
@@ -40,8 +40,8 @@ export function PagePicker({
     if (!file) {
         return (
             <div className="flex h-full flex-col overflow-hidden">
-                <ColumnHeader title={null} />
-                <div className="flex min-h-0 flex-1 items-center justify-center text-ui-text-muted">
+                <SectionHeader title={t('pagePicker.title')} className="border-b-0" />
+                <div className="section-body flex min-h-0 flex-1 items-center justify-center text-ui-text-muted">
                     <p className="text-xs">{t('pagePicker.selectAFile')}</p>
                 </div>
             </div>

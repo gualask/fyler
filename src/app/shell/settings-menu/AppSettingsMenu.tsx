@@ -1,4 +1,4 @@
-import { IconAdjustments, IconChevronDown } from '@tabler/icons-react';
+import { IconAdjustments } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import type { AccentColor } from '@/shared/preferences';
@@ -49,10 +49,7 @@ export function AppSettingsMenu({
         <div ref={rootRef} className="relative">
             <button
                 type="button"
-                className={[
-                    'btn-ghost btn-toolbar',
-                    open ? 'bg-ui-accent-soft text-ui-accent-on-soft' : '',
-                ]
+                className={['btn-icon', open ? 'bg-ui-accent-soft text-ui-accent-on-soft' : '']
                     .filter(Boolean)
                     .join(' ')}
                 aria-label={t('header.settings')}
@@ -63,12 +60,7 @@ export function AppSettingsMenu({
                     setActiveSubmenu(null);
                 }}
             >
-                <IconAdjustments className="h-4 w-4" />
-                <IconChevronDown
-                    className={['h-3.5 w-3.5 transition-transform', open ? 'rotate-180' : ''].join(
-                        ' ',
-                    )}
-                />
+                <IconAdjustments className="h-5 w-5" />
             </button>
             {open ? (
                 <div

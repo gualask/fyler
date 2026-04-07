@@ -88,6 +88,7 @@ export function PdfPanel({
         <div className="flex h-full flex-col overflow-hidden">
             <PdfToolbar
                 fileId={file.id}
+                pageCount={file.pageCount}
                 pageInput={pageInput}
                 onPageInputChange={handlePageInputChange}
                 onPageInputCommit={handlePageInputCommit}
@@ -99,8 +100,8 @@ export function PdfPanel({
                 mode={mode}
             />
 
-            <div ref={setGridEl} className="min-h-0 flex-1 overflow-y-auto p-4">
-                <div className="grid grid-cols-2 gap-4">
+            <div ref={setGridEl} className="section-body min-h-0 flex-1 overflow-y-auto p-3">
+                <div className="page-picker-grid">
                     {Array.from({ length: file.pageCount }, (_, index) => index + 1).map(
                         (pageNum) => (
                             <PdfThumbnailItem
