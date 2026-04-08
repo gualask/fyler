@@ -1,6 +1,6 @@
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
+import { CardRow } from './CardRow';
 import { FinalDocumentSortableList } from './FinalDocumentSortableList';
-import { ListRow } from './ListRow';
 
 interface Props {
     finalPages: FinalPage[];
@@ -15,7 +15,7 @@ interface Props {
     onPreviewPage: (id: string) => void;
 }
 
-export function List({
+export function CardList({
     finalPages,
     files,
     selectedPageId,
@@ -39,8 +39,8 @@ export function List({
             onRemove={onRemove}
             onSelectPage={onSelectPage}
             onPreviewPage={onPreviewPage}
-            gapClassName="gap-3"
-            Row={ListRow}
+            gapClassName="gap-4"
+            Row={CardRow}
         />
     );
 }

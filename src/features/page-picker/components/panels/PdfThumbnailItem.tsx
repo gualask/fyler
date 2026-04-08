@@ -44,7 +44,7 @@ export function PdfThumbnailItem({
                 data-page={pageNum}
                 onClick={onClick}
                 className={[
-                    'thumb-card group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-lg border-2 transition-all active:scale-[0.97]',
+                    'thumb-card group relative mx-auto aspect-[3/4] w-full max-w-[352px] cursor-pointer overflow-hidden rounded-lg border-2 transition-all active:scale-[0.97]',
                     isFocused
                         ? 'thumb-card-focused border-[3px] border-ui-accent'
                         : 'border-transparent hover:border-ui-accent/50 thumb-card-idle',

@@ -3,7 +3,8 @@ import { emptyFileEdits, getPdfPageQuarterTurn } from '@/shared/domain/file-edit
 import type { PdfRenderRequest } from './pdf-cache.hook';
 
 /** Use device pixel ratio for thumbnails, capped to avoid heavy CPU/memory usage. */
-const THUMB_DENSITY = typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+const THUMB_DENSITY =
+    typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
 
 function withRotation(
     pageNum: number,
@@ -23,8 +24,10 @@ export function buildThumbnailRenderRequest(
 ): PdfRenderRequest {
     return withRotation(pageNum, getPdfPageQuarterTurn(edits ?? emptyFileEdits(), pageNum), {
         variant: 'thumb',
-        width: 120,
-        quality: 0.88,
+        // Canonical thumbnail profile. Keep this large enough to avoid upscaling blur
+        // in responsive thumbnail UIs (e.g. Final Document card layout).
+        width: 352,
+        quality: 0.86,
         density: THUMB_DENSITY,
     });
 }

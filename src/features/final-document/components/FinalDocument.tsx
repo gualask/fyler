@@ -1,9 +1,10 @@
+import { IconColumns1, IconColumns2 } from '@tabler/icons-react';
 import { useState } from 'react';
-
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
 import type { RotationDirection } from '@/shared/domain/file-edits';
 import { useTranslation } from '@/shared/i18n';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
+import { CardList } from './components/CardList';
 import { List } from './components/List';
 import { Preview } from './components/Preview';
 
@@ -33,6 +34,7 @@ export function FinalDocument({
     editsByFile,
 }: Props) {
     const { t } = useTranslation();
+    const [layout, setLayout] = useState<'columns-2' | 'columns-1'>('columns-2');
     const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
     const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
 
@@ -41,21 +43,59 @@ export function FinalDocument({
             <SectionHeader
                 title={t('finalDocument.sectionTitle', { count: finalPages.length })}
                 className="border-b border-ui-border"
-            />
+            >
+                <button
+                    type="button"
+                    className={['btn-icon', layout === 'columns-1' ? 'btn-icon-active' : '']
+                        .filter(Boolean)
+                        .join(' ')}
+                    onClick={() => setLayout('columns-1')}
+                    aria-label={t('finalDocument.layoutColumns1')}
+                    title={t('finalDocument.layoutColumns1')}
+                >
+                    <IconColumns1 className="h-5 w-5" />
+                </button>
+                <button
+                    type="button"
+                    className={['btn-icon', layout === 'columns-2' ? 'btn-icon-active' : '']
+                        .filter(Boolean)
+                        .join(' ')}
+                    onClick={() => setLayout('columns-2')}
+                    aria-label={t('finalDocument.layoutColumns2')}
+                    title={t('finalDocument.layoutColumns2')}
+                >
+                    <IconColumns2 className="h-5 w-5 rotate-90" />
+                </button>
+            </SectionHeader>
 
             <div ref={setScrollRoot} className="min-h-0 flex-1 overflow-y-auto p-4">
-                <List
-                    finalPages={finalPages}
-                    files={files}
-                    selectedPageId={selectedPageId}
-                    selectedPageScrollKey={selectedPageScrollKey}
-                    editsByFile={editsByFile}
-                    scrollRoot={scrollRoot}
-                    onReorder={onReorder}
-                    onRemove={onRemove}
-                    onSelectPage={onSelectPage}
-                    onPreviewPage={setPreviewTargetId}
-                />
+                {layout === 'columns-2' ? (
+                    <List
+                        finalPages={finalPages}
+                        files={files}
+                        selectedPageId={selectedPageId}
+                        selectedPageScrollKey={selectedPageScrollKey}
+                        editsByFile={editsByFile}
+                        scrollRoot={scrollRoot}
+                        onReorder={onReorder}
+                        onRemove={onRemove}
+                        onSelectPage={onSelectPage}
+                        onPreviewPage={setPreviewTargetId}
+                    />
+                ) : (
+                    <CardList
+                        finalPages={finalPages}
+                        files={files}
+                        selectedPageId={selectedPageId}
+                        selectedPageScrollKey={selectedPageScrollKey}
+                        editsByFile={editsByFile}
+                        scrollRoot={scrollRoot}
+                        onReorder={onReorder}
+                        onRemove={onRemove}
+                        onSelectPage={onSelectPage}
+                        onPreviewPage={setPreviewTargetId}
+                    />
+                )}
             </div>
 
             <Preview
