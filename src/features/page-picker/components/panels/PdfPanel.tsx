@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { FileEdits, FinalPage, RotationDirection, SourceFile } from '@/shared/domain';
+import type {
+    FileEdits,
+    FinalPage,
+    RotationDirection,
+    SourceFile,
+    SourceTarget,
+} from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
 import { PdfToolbar } from '../controls/PdfToolbar';
@@ -10,10 +16,10 @@ interface Props {
     file: SourceFile;
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
-    onSetPages: (fileId: string, pages: number[]) => void;
+    onSetPdfPages: (fileId: string, pages: number[]) => void;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
-    onFocusPage: (fileId: string, pageNum: number) => void;
+    onFocusTarget: (fileId: string, target: SourceTarget) => void;
     onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
     editsByFile: Record<string, FileEdits>;
     focusedPageNum: number | null;
@@ -25,10 +31,10 @@ export function PdfPanel({
     file,
     finalPages,
     onTogglePage,
-    onSetPages,
+    onSetPdfPages,
     onSelectAll,
     onDeselectAll,
-    onFocusPage,
+    onFocusTarget,
     onRotatePage,
     editsByFile,
     focusedPageNum,
@@ -53,10 +59,10 @@ export function PdfPanel({
     } = usePdfControls({
         file,
         finalPages,
-        onSetPages,
+        onSetPdfPages,
         onSelectAll,
         onDeselectAll,
-        onFocusPage,
+        onFocusTarget,
     });
 
     useEffect(() => {

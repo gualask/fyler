@@ -1,4 +1,5 @@
 import { DragOverlay, EmptyState, type WorkspaceApi } from '@/features/workspace';
+import type { SourceTarget } from '@/shared/domain';
 import type { AccentColor } from '@/shared/preferences';
 import { AppHeader } from './AppHeader';
 import { MainWorkspaceLayout } from './MainWorkspaceLayout';
@@ -19,7 +20,7 @@ export function MainAppView({
     isDragOver,
     workspace,
     handleAddFiles,
-    focusedSourcePageNum,
+    focusedSourceTarget,
     focusedSourceFlashKey,
     optimize,
     exportMerged,
@@ -39,7 +40,7 @@ export function MainAppView({
     isDragOver: boolean;
     workspace: WorkspaceApi;
     handleAddFiles: () => void;
-    focusedSourcePageNum: number | null;
+    focusedSourceTarget: SourceTarget | null;
     focusedSourceFlashKey?: number;
     optimize: OptimizeState;
     exportMerged: () => Promise<void>;
@@ -74,7 +75,7 @@ export function MainAppView({
                     <MainWorkspaceLayout
                         workspace={workspace}
                         handleAddFiles={handleAddFiles}
-                        focusedSourcePageNum={focusedSourcePageNum}
+                        focusedSourceTarget={focusedSourceTarget}
                         focusedSourceFlashKey={focusedSourceFlashKey}
                         optimize={optimize}
                     />

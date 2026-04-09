@@ -32,9 +32,9 @@ function fitImageThumb(
 interface Props {
     file: SourceFile;
     editsByFile: Record<string, FileEdits>;
-    focusedPageNum: number | null;
+    isFocused: boolean;
     focusFlashKey?: number;
-    onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    onRotate: (direction: RotationDirection) => Promise<void>;
     isIncluded: boolean;
     onInclude: () => void;
     onFocus: () => void;
@@ -44,9 +44,9 @@ interface Props {
 export function ImagePanel({
     file,
     editsByFile,
-    focusedPageNum,
+    isFocused,
     focusFlashKey,
-    onRotatePage,
+    onRotate,
     isIncluded,
     onInclude,
     onFocus,
@@ -100,9 +100,7 @@ export function ImagePanel({
                 <div
                     className={[
                         'group relative cursor-pointer rounded-xl border-2 p-1 transition-colors',
-                        focusedPageNum === 0
-                            ? 'border-[3px] border-ui-accent'
-                            : 'border-transparent',
+                        isFocused ? 'border-[3px] border-ui-accent' : 'border-transparent',
                     ].join(' ')}
                     style={{ width: thumbSize.width + 8, height: thumbSize.height + 8 }}
                     onClick={handleImageClick}
@@ -130,7 +128,7 @@ export function ImagePanel({
                             />
                         </div>
                     </div>
-                    {focusedPageNum === 0 && focusFlashKey && (
+                    {isFocused && focusFlashKey && (
                         <FocusFlashOverlay
                             flashKey={focusFlashKey}
                             className="inset-1 rounded-lg"
@@ -138,8 +136,8 @@ export function ImagePanel({
                     )}
                     <PageQuickActions
                         onPreview={onPreview}
-                        onRotateLeft={() => void onRotatePage(file.id, 0, 'ccw')}
-                        onRotateRight={() => void onRotatePage(file.id, 0, 'cw')}
+                        onRotateLeft={() => void onRotate('ccw')}
+                        onRotateRight={() => void onRotate('cw')}
                     />
                 </div>
                 <span className="text-xs text-ui-text-muted">

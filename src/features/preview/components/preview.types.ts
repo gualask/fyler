@@ -4,6 +4,7 @@ import type {
     ImageFit,
     RotationDirection,
     SourceFile,
+    SourceTarget,
 } from '@/shared/domain';
 
 export type PageIndicator = {
@@ -26,6 +27,10 @@ export interface PreviewModalProps {
     matchExportedImages?: boolean;
     indicator?: PageIndicator;
     moveControl?: MoveControl;
-    onRotatePage?: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    onRotatePage?: (
+        fileId: string,
+        target: SourceTarget,
+        direction: RotationDirection,
+    ) => Promise<void>;
     onClose: () => void;
 }

@@ -7,6 +7,7 @@ use rayon::ThreadPoolBuilder;
 
 use crate::models::{SkippedFile, SourceFile};
 use crate::pdf::{count_pages, detect_kind_from_ext};
+use crate::vo::DocKind;
 
 use super::registry::{RegisteredSource, SourceRegistry};
 
@@ -35,7 +36,7 @@ fn registered_file_from_path(path: String) -> Result<(SourceFile, RegisteredSour
         });
     };
 
-    let page_count = if kind == "pdf" {
+    let page_count = if kind == DocKind::Pdf {
         count_pages(&path).map_err(|error| SkippedFile {
             name: name.clone(),
             reason: "read_error".into(),
@@ -53,12 +54,12 @@ fn registered_file_from_path(path: String) -> Result<(SourceFile, RegisteredSour
         name: name.clone(),
         byte_size,
         page_count,
-        kind: kind.to_string(),
+        kind,
     };
     let registered = RegisteredSource {
         original_path: path,
         name,
-        kind: kind.to_string(),
+        kind,
     };
 
     Ok((source, registered))

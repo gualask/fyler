@@ -1,4 +1,4 @@
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
+import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
 import { FinalDocumentSortableList } from './FinalDocumentSortableList';
 import { ListRow } from './ListRow';
 
@@ -11,7 +11,7 @@ interface Props {
     scrollRoot: HTMLDivElement | null;
     onReorder: (fromId: string, toId: string) => void;
     onRemove: (id: string) => void;
-    onSelectPage: (fileId: string, pageNum: number) => void;
+    onSelectPage: (fileId: string, target: SourceTarget) => void;
     onPreviewPage: (id: string) => void;
 }
 

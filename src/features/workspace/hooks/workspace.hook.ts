@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { RotationDirection, SourceFile } from '@/shared/domain';
+import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
 import { useFileDrop } from './file-drop.hook';
 import { useFinalPages } from './final-pages.hook';
 import { useSourceSession } from './source-session.hook';
@@ -14,7 +14,7 @@ export function useWorkspace({
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [focusedSource, setFocusedSource] = useState<{
         fileId: string;
-        pageNum: number;
+        target: SourceTarget;
         flashKey: number;
         flashTarget: 'picker' | 'final';
     } | null>(null);
@@ -103,8 +103,8 @@ export function useWorkspace({
     }, [clearAllPages, clearSourceFiles, files.length]);
 
     const rotatePage = useCallback(
-        async (fileId: string, pageNum: number, direction: RotationDirection) => {
-            await rotateSourcePage(fileId, pageNum, direction);
+        async (fileId: string, target: SourceTarget, direction: RotationDirection) => {
+            await rotateSourcePage(fileId, target, direction);
         },
         [rotateSourcePage],
     );
@@ -114,23 +114,23 @@ export function useWorkspace({
     }, []);
 
     const focusSource = useCallback(
-        (fileId: string, pageNum: number, flashTarget: 'picker' | 'final') => {
+        (fileId: string, target: SourceTarget, flashTarget: 'picker' | 'final') => {
             setSelectedId(fileId);
-            setFocusedSource({ fileId, pageNum, flashKey: Date.now(), flashTarget });
+            setFocusedSource({ fileId, target, flashKey: Date.now(), flashTarget });
         },
         [],
     );
 
     const focusFinalPageSource = useCallback(
-        (fileId: string, pageNum: number) => {
-            focusSource(fileId, pageNum, 'picker');
+        (fileId: string, target: SourceTarget) => {
+            focusSource(fileId, target, 'picker');
         },
         [focusSource],
     );
 
     const focusFinalPageInDocument = useCallback(
-        (fileId: string, pageNum: number) => {
-            focusSource(fileId, pageNum, 'final');
+        (fileId: string, target: SourceTarget) => {
+            focusSource(fileId, target, 'final');
         },
         [focusSource],
     );

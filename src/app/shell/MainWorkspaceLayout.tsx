@@ -3,12 +3,14 @@ import { FinalDocument } from '@/features/final-document';
 import { PagePicker } from '@/features/page-picker';
 import { TUTORIAL_TARGETS, tutorialTargetProps } from '@/features/tutorial';
 import { FileList, type WorkspaceApi } from '@/features/workspace';
+import type { SourceTarget } from '@/shared/domain';
+import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
 import type { OptimizeState } from './main-app.types';
 
 interface Props {
     workspace: WorkspaceApi;
     handleAddFiles: () => void;
-    focusedSourcePageNum: number | null;
+    focusedSourceTarget: SourceTarget | null;
     focusedSourceFlashKey?: number;
     optimize: OptimizeState;
 }
@@ -16,10 +18,14 @@ interface Props {
 export function MainWorkspaceLayout({
     workspace,
     handleAddFiles,
-    focusedSourcePageNum,
+    focusedSourceTarget,
     focusedSourceFlashKey,
     optimize,
 }: Props) {
+    const selectedFinalPageId = workspace.focusedSource
+        ? toFinalPageId(workspace.focusedSource.fileId, workspace.focusedSource.target)
+        : null;
+
     return (
         <div
             className="grid min-h-0 flex-1 overflow-hidden"
@@ -57,13 +63,14 @@ export function MainWorkspaceLayout({
                             file={workspace.selectedFile}
                             finalPages={workspace.finalPages}
                             onTogglePage={workspace.togglePage}
-                            onSetPages={workspace.setPagesForFile}
+                            onSetPdfPages={workspace.setPdfPagesForFile}
+                            onSetImageIncluded={workspace.setImageIncluded}
                             onSelectAll={workspace.selectAll}
                             onDeselectAll={workspace.deselectAll}
-                            onFocusPage={workspace.focusFinalPageInDocument}
-                            onRotatePage={workspace.rotatePage}
+                            onFocusTarget={workspace.focusFinalPageInDocument}
+                            onRotateTarget={workspace.rotatePage}
                             editsByFile={workspace.editsByFile}
-                            focusedPageNum={focusedSourcePageNum}
+                            focusedTarget={focusedSourceTarget}
                             focusFlashKey={focusedSourceFlashKey}
                         />
                     </section>
@@ -79,11 +86,7 @@ export function MainWorkspaceLayout({
                         <FinalDocument
                             finalPages={workspace.finalPages}
                             files={workspace.files}
-                            selectedPageId={
-                                workspace.focusedSource
-                                    ? `${workspace.focusedSource.fileId}:${workspace.focusedSource.pageNum}`
-                                    : null
-                            }
+                            selectedPageId={selectedFinalPageId}
                             selectedPageScrollKey={
                                 workspace.focusedSource?.flashTarget === 'final'
                                     ? workspace.focusedSource.flashKey

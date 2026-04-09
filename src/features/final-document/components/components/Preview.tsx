@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
 import { PreviewModal } from '@/features/preview';
-import type { FileEdits, FinalPage, RotationDirection, SourceFile } from '@/shared/domain';
+import type {
+    FileEdits,
+    FinalPage,
+    RotationDirection,
+    SourceFile,
+    SourceTarget,
+} from '@/shared/domain';
 
 interface Props {
     previewTargetId: string | null;
@@ -8,7 +14,11 @@ interface Props {
     files: SourceFile[];
     editsByFile: Record<string, FileEdits>;
     onMovePageToIndex: (id: string, targetIndex: number) => void;
-    onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    onRotatePage: (
+        fileId: string,
+        target: SourceTarget,
+        direction: RotationDirection,
+    ) => Promise<void>;
     onClose: () => void;
 }
 

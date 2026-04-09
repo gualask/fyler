@@ -20,13 +20,13 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', cla
     const { t } = useTranslation();
     const thumbRequest = useMemo(
         () =>
-            item.file?.kind === 'pdf'
+            item.page.kind === 'pdf'
                 ? buildThumbnailRenderRequest(item.page.pageNum, item.edits)
                 : null,
-        [item.edits, item.file, item.page.pageNum],
+        [item.edits, item.page],
     );
     const { dataUrl: thumbUrl, setTargetEl } = useLazyPdfRender(
-        item.file?.kind === 'pdf' ? item.file : undefined,
+        item.page.kind === 'pdf' ? item.file : undefined,
         thumbRequest,
         scrollRoot,
     );
@@ -51,7 +51,7 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', cla
 
     return (
         <div
-            ref={item.file?.kind === 'pdf' ? setTargetEl : undefined}
+            ref={item.page.kind === 'pdf' ? setTargetEl : undefined}
             className={containerClassName}
             style={size === 'sm' ? { width: 60, height: 80 } : undefined}
         >
@@ -88,11 +88,11 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', cla
                             <p className="truncate text-[11px] font-semibold">
                                 {item.file?.name ?? '—'}
                             </p>
-                            {item.file?.kind === 'pdf' ? (
+                            {item.page.kind === 'pdf' ? (
                                 <p className="truncate text-[10px] font-medium opacity-90">
                                     {t('finalDocument.pageLabel', { pageNum: item.page.pageNum })}
                                 </p>
-                            ) : item.file?.kind === 'image' ? (
+                            ) : item.page.kind === 'image' ? (
                                 <p className="truncate text-[10px] font-medium opacity-90">
                                     {t('finalDocument.imageLabel')}
                                 </p>

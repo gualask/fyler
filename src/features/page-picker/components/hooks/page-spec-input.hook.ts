@@ -10,7 +10,7 @@ interface PageSpecInputOptions {
     pageCount: number;
     selectedPages: number[];
     mode: 'all' | 'none' | 'custom';
-    onSetPages: (fileId: string, pages: number[]) => void;
+    onSetPdfPages: (fileId: string, pages: number[]) => void;
 }
 
 export function usePageSpecInput({
@@ -18,7 +18,7 @@ export function usePageSpecInput({
     pageCount,
     selectedPages,
     mode,
-    onSetPages,
+    onSetPdfPages,
 }: PageSpecInputOptions) {
     const [pageInput, setPageInput] = useState('');
     const [appliedPageNum, setAppliedPageNum] = useState<number | null>(null);
@@ -46,19 +46,19 @@ export function usePageSpecInput({
         setPageInput(nextDraft);
 
         const parsedPages = PageSpecVO.parseLoose(nextDraft, pageCount);
-        onSetPages(fileId, parsedPages);
+        onSetPdfPages(fileId, parsedPages);
     };
 
     const commitPageInput = useCallback(() => {
         const parsedPages = PageSpecVO.parseLoose(pageInput, pageCount);
-        onSetPages(fileId, parsedPages);
+        onSetPdfPages(fileId, parsedPages);
 
         const formatted = PageSpecVO.formatSelected(parsedPages);
         setPageInput(formatted);
         setAppliedPageNum(parsedPages[0] ?? null);
         setAppliedPageSignal((signal) => signal + 1);
         return parsedPages[0] ?? null;
-    }, [fileId, onSetPages, pageCount, pageInput]);
+    }, [fileId, onSetPdfPages, pageCount, pageInput]);
 
     return {
         pageInput,

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::vo::DocKind;
+
 /// A user-imported file tracked by the current session.
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct SourceFile {
@@ -17,17 +19,26 @@ pub struct SourceFile {
     /// Total page count for PDFs, or `1` for images.
     pub page_count: u32,
     /// `"pdf"` or `"image"`.
-    pub kind: String,
+    pub kind: DocKind,
 }
 
-/// A single item in the export sequence (source file + page number).
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct ExportPage {
-    #[serde(rename = "fileId")]
-    pub file_id: String,
-    #[serde(rename = "pageNum")]
-    /// 1-based page number in the source PDF.
-    pub page_num: u32,
+/// A single item in the export sequence.
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum ExportItem {
+    /// A single page from a PDF source.
+    Pdf {
+        #[serde(rename = "fileId")]
+        file_id: String,
+        #[serde(rename = "pageNum")]
+        /// 1-based page number in the source PDF.
+        page_num: u32,
+    },
+    /// A single image source (always exports as a single page).
+    Image {
+        #[serde(rename = "fileId")]
+        file_id: String,
+    },
 }
 
 /// Per-source edits applied by the user.
@@ -63,7 +74,7 @@ pub struct OptimizeOptions {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct MergeRequest {
     /// Final ordered list of pages to export.
-    pub pages: Vec<ExportPage>,
+    pub pages: Vec<ExportItem>,
     #[serde(default)]
     /// Edits keyed by `file_id`.
     pub edits: HashMap<String, FileEdits>,
@@ -80,6 +91,17 @@ pub struct MergeResult {
     #[serde(rename = "optimizationFailedCount")]
     /// Number of images that failed optimization but did not abort the export.
     pub optimization_failed_count: usize,
+    /// Non-fatal issues encountered during export.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<MergeWarning>,
+}
+
+/// A non-fatal warning that should be recorded for diagnostics.
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct MergeWarning {
+    pub code: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meta: Option<serde_json::Value>,
 }
 
 /// A single file that was skipped during import, plus a reason code for the UI.

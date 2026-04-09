@@ -4,6 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use image::RgbImage;
 
 use super::{files_from_paths, SourceRegistry};
+use crate::vo::DocKind;
 
 fn temp_path(name: &str, ext: &str) -> std::path::PathBuf {
     let millis = SystemTime::now()
@@ -30,7 +31,7 @@ fn keeps_valid_files_when_batch_contains_a_broken_pdf() -> anyhow::Result<()> {
     )?;
 
     assert_eq!(result.files.len(), 1);
-    assert_eq!(result.files[0].kind, "image");
+    assert_eq!(result.files[0].kind, DocKind::Image);
     assert_eq!(result.skipped.len(), 1);
     assert!(result.skipped[0].name.contains("broken-pdf"));
     assert_eq!(result.skipped[0].reason, "read_error");

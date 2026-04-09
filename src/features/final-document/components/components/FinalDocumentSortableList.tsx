@@ -11,7 +11,8 @@ import { IconFile } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect } from 'react';
 
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
+import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
+import { finalPageToTarget } from '@/shared/domain/utils/final-page-id';
 import { useTranslation } from '@/shared/i18n';
 import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
 import type { ListItem } from '../list-item.types';
@@ -39,7 +40,7 @@ interface Props {
     scrollRoot: HTMLDivElement | null;
     onReorder: (fromId: string, toId: string) => void;
     onRemove: (id: string) => void;
-    onSelectPage: (fileId: string, pageNum: number) => void;
+    onSelectPage: (fileId: string, target: SourceTarget) => void;
     onPreviewPage: (id: string) => void;
     gapClassName: string;
     Row: (props: FinalDocumentRowProps) => ReactNode;
@@ -74,7 +75,7 @@ export function FinalDocumentSortableList({
 
             const wasSelected = item.page.id === selectedPageId;
             if (!wasSelected) {
-                onSelectPage(item.page.fileId, item.page.pageNum);
+                onSelectPage(item.page.fileId, finalPageToTarget(item.page));
             }
 
             onReorder(item.page.id, toId);
@@ -141,7 +142,9 @@ export function FinalDocumentSortableList({
                                 onMoveUp={() => move(item, previousId)}
                                 onMoveDown={() => move(item, nextId)}
                                 onRemove={onRemove}
-                                onSelect={() => onSelectPage(item.page.fileId, item.page.pageNum)}
+                                onSelect={() =>
+                                    onSelectPage(item.page.fileId, finalPageToTarget(item.page))
+                                }
                                 onPreview={() => onPreviewPage(item.page.id)}
                                 flashKey={
                                     item.page.id === selectedPageId

@@ -33,8 +33,8 @@ export function AppContent() {
     const focusedSourceMatchesSelected = Boolean(
         workspace.focusedSource && workspace.focusedSource.fileId === workspace.selectedFile?.id,
     );
-    const focusedSourcePageNum = focusedSourceMatchesSelected
-        ? (workspace.focusedSource?.pageNum ?? null)
+    const focusedSourceTarget = focusedSourceMatchesSelected
+        ? (workspace.focusedSource?.target ?? null)
         : null;
     const focusedSourceFlashKey = focusedSourceMatchesSelected
         ? workspace.focusedSource?.flashTarget === 'picker'
@@ -89,7 +89,7 @@ export function AppContent() {
                     isDragOver={workspace.isDragOver}
                     workspace={workspace}
                     handleAddFiles={handleAddFiles}
-                    focusedSourcePageNum={focusedSourcePageNum}
+                    focusedSourceTarget={focusedSourceTarget}
                     focusedSourceFlashKey={focusedSourceFlashKey}
                     optimize={optimize}
                     exportMerged={exportMerged}

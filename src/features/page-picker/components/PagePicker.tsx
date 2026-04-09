@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { PreviewModal } from '@/features/preview';
-import type { FileEdits, FinalPage, RotationDirection, SourceFile } from '@/shared/domain';
+import type {
+    FileEdits,
+    FinalPage,
+    RotationDirection,
+    SourceFile,
+    SourceTarget,
+} from '@/shared/domain';
+import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
 import { useTranslation } from '@/shared/i18n';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { ImagePanel } from './panels/ImagePanel';
@@ -10,13 +17,18 @@ interface Props {
     file: SourceFile | null;
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
-    onSetPages: (fileId: string, pages: number[]) => void;
+    onSetPdfPages: (fileId: string, pages: number[]) => void;
+    onSetImageIncluded: (fileId: string, included: boolean) => void;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
-    onFocusPage: (fileId: string, pageNum: number) => void;
-    onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    onFocusTarget: (fileId: string, target: SourceTarget) => void;
+    onRotateTarget: (
+        fileId: string,
+        target: SourceTarget,
+        direction: RotationDirection,
+    ) => Promise<void>;
     editsByFile: Record<string, FileEdits>;
-    focusedPageNum: number | null;
+    focusedTarget: SourceTarget | null;
     focusFlashKey?: number;
 }
 
@@ -24,13 +36,14 @@ export function PagePicker({
     file,
     finalPages,
     onTogglePage,
-    onSetPages,
+    onSetPdfPages,
+    onSetImageIncluded,
     onSelectAll,
     onDeselectAll,
-    onFocusPage,
-    onRotatePage,
+    onFocusTarget,
+    onRotateTarget,
     editsByFile,
-    focusedPageNum,
+    focusedTarget,
     focusFlashKey,
 }: Props) {
     const { t } = useTranslation();
@@ -48,20 +61,26 @@ export function PagePicker({
     }
 
     if (file.kind === 'image') {
-        const isIncluded = finalPages.some((page) => page.fileId === file.id && page.pageNum === 0);
+        const isIncluded = finalPages.some(
+            (page) => page.fileId === file.id && page.kind === 'image',
+        );
         return (
             <>
                 <ImagePanel
                     file={file}
                     editsByFile={editsByFile}
-                    focusedPageNum={focusedPageNum}
+                    isFocused={focusedTarget?.kind === 'image'}
                     focusFlashKey={focusFlashKey}
-                    onRotatePage={onRotatePage}
+                    onRotate={(direction) => onRotateTarget(file.id, { kind: 'image' }, direction)}
                     isIncluded={isIncluded}
-                    onInclude={() => onSetPages(file.id, [0])}
-                    onFocus={() => onFocusPage(file.id, 0)}
+                    onInclude={() => onSetImageIncluded(file.id, true)}
+                    onFocus={() => onFocusTarget(file.id, { kind: 'image' })}
                     onPreview={() =>
-                        setPreviewTarget({ id: `${file.id}:0`, fileId: file.id, pageNum: 0 })
+                        setPreviewTarget({
+                            id: toFinalPageId(file.id, { kind: 'image' }),
+                            fileId: file.id,
+                            kind: 'image',
+                        })
                     }
                 />
 
@@ -71,7 +90,7 @@ export function PagePicker({
                         files={[file]}
                         editsByFile={editsByFile}
                         indicator={{ total: 1, mode: 'page-num' }}
-                        onRotatePage={onRotatePage}
+                        onRotatePage={onRotateTarget}
                         onClose={() => setPreviewTarget(null)}
                     />
                 )}
@@ -85,16 +104,23 @@ export function PagePicker({
                 file={file}
                 finalPages={finalPages}
                 onTogglePage={onTogglePage}
-                onSetPages={onSetPages}
+                onSetPdfPages={onSetPdfPages}
                 onSelectAll={onSelectAll}
                 onDeselectAll={onDeselectAll}
-                onFocusPage={onFocusPage}
-                onRotatePage={onRotatePage}
+                onFocusTarget={onFocusTarget}
+                onRotatePage={(fileId, pageNum, direction) =>
+                    onRotateTarget(fileId, { kind: 'pdf', pageNum }, direction)
+                }
                 editsByFile={editsByFile}
-                focusedPageNum={focusedPageNum}
+                focusedPageNum={focusedTarget?.kind === 'pdf' ? focusedTarget.pageNum : null}
                 focusFlashKey={focusFlashKey}
                 onPreview={(pageNum) =>
-                    setPreviewTarget({ id: `${file.id}:${pageNum}`, fileId: file.id, pageNum })
+                    setPreviewTarget({
+                        id: toFinalPageId(file.id, { kind: 'pdf', pageNum }),
+                        fileId: file.id,
+                        kind: 'pdf',
+                        pageNum,
+                    })
                 }
             />
 
@@ -104,7 +130,7 @@ export function PagePicker({
                     files={[file]}
                     editsByFile={editsByFile}
                     indicator={{ total: file.pageCount, mode: 'page-num' }}
-                    onRotatePage={onRotatePage}
+                    onRotatePage={onRotateTarget}
                     onClose={() => setPreviewTarget(null)}
                 />
             )}

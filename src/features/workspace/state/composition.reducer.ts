@@ -1,38 +1,46 @@
 import type { SourceFile } from '@/shared/domain';
-
+import { parseFinalPageId, toFinalPageId } from '@/shared/domain/utils/final-page-id';
 import { uniqueSortedNumbers } from '@/shared/domain/utils/number-list';
 
 export type CompositionState = {
-    selectedPagesByFile: Record<string, number[]>;
+    selectedPdfPagesByFile: Record<string, number[]>;
+    includedImagesByFile: Record<string, true>;
     pageOrder: string[];
 };
 
 export type CompositionAction =
-    | { type: 'set-file-selection'; fileId: string; pages: number[] }
+    | { type: 'set-pdf-selection'; fileId: string; pages: number[] }
+    | { type: 'set-image-included'; fileId: string; included: boolean }
     | { type: 'remove-file'; fileId: string }
     | { type: 'reset' }
     | { type: 'reorder'; fromId: string; toId: string }
     | { type: 'move-to-index'; id: string; targetIndex: number };
 
 export const initialCompositionState: CompositionState = {
-    selectedPagesByFile: {},
+    selectedPdfPagesByFile: {},
+    includedImagesByFile: {},
     pageOrder: [],
 };
 
-export function toFinalPageId(fileId: string, pageNum: number): string {
-    return `${fileId}:${pageNum}`;
+export function toPdfFinalPageId(fileId: string, pageNum: number): string {
+    return toFinalPageId(fileId, { kind: 'pdf', pageNum });
 }
 
-export function fromFinalPageId(id: string): { fileId: string; pageNum: number } {
-    const separator = id.lastIndexOf(':');
-    return {
-        fileId: id.slice(0, separator),
-        pageNum: Number.parseInt(id.slice(separator + 1), 10),
-    };
+export function toImageFinalPageId(fileId: string): string {
+    return toFinalPageId(fileId, { kind: 'image' });
 }
 
-export function allPagesForFile(file: SourceFile): number[] {
-    return file.kind === 'image' ? [0] : Array.from({ length: file.pageCount }, (_, i) => i + 1);
+export function fromFinalPageId(
+    id: string,
+): { fileId: string; kind: 'pdf'; pageNum: number } | { fileId: string; kind: 'image' } {
+    const parsed = parseFinalPageId(id);
+    return parsed.target.kind === 'image'
+        ? { fileId: parsed.fileId, kind: 'image' }
+        : { fileId: parsed.fileId, kind: 'pdf', pageNum: parsed.target.pageNum };
+}
+
+export function allPdfPagesForFile(file: SourceFile): number[] {
+    return Array.from({ length: file.pageCount }, (_, i) => i + 1);
 }
 
 function moveItem<T>(items: T[], fromIdx: number, toIdx: number): T[] {
@@ -43,8 +51,8 @@ function moveItem<T>(items: T[], fromIdx: number, toIdx: number): T[] {
     return next;
 }
 
-function reconcileFileOrder(pageOrder: string[], fileId: string, pages: number[]): string[] {
-    const idsForFile = pages.map((pageNum) => toFinalPageId(fileId, pageNum));
+function reconcilePdfFileOrder(pageOrder: string[], fileId: string, pages: number[]): string[] {
+    const idsForFile = pages.map((pageNum) => toPdfFinalPageId(fileId, pageNum));
     const idsForFileSet = new Set(idsForFile);
     const prefix = `${fileId}:`;
 
@@ -74,27 +82,50 @@ export function compositionReducer(
     action: CompositionAction,
 ): CompositionState {
     switch (action.type) {
-        case 'set-file-selection': {
+        case 'set-pdf-selection': {
             const pages = uniqueSortedNumbers(action.pages);
-            const selectedPagesByFile = { ...state.selectedPagesByFile };
+            const selectedPdfPagesByFile = { ...state.selectedPdfPagesByFile };
 
             if (pages.length === 0) {
-                delete selectedPagesByFile[action.fileId];
+                delete selectedPdfPagesByFile[action.fileId];
             } else {
-                selectedPagesByFile[action.fileId] = pages;
+                selectedPdfPagesByFile[action.fileId] = pages;
             }
 
             return {
-                selectedPagesByFile,
-                pageOrder: reconcileFileOrder(state.pageOrder, action.fileId, pages),
+                ...state,
+                selectedPdfPagesByFile,
+                pageOrder: reconcilePdfFileOrder(state.pageOrder, action.fileId, pages),
+            };
+        }
+        case 'set-image-included': {
+            const includedImagesByFile = { ...state.includedImagesByFile };
+            const imageId = toImageFinalPageId(action.fileId);
+
+            if (action.included) {
+                includedImagesByFile[action.fileId] = true;
+                if (state.pageOrder.includes(imageId)) {
+                    return { ...state, includedImagesByFile };
+                }
+                return { ...state, includedImagesByFile, pageOrder: [...state.pageOrder, imageId] };
+            }
+
+            delete includedImagesByFile[action.fileId];
+            return {
+                ...state,
+                includedImagesByFile,
+                pageOrder: state.pageOrder.filter((id) => id !== imageId),
             };
         }
         case 'remove-file': {
-            const selectedPagesByFile = { ...state.selectedPagesByFile };
-            delete selectedPagesByFile[action.fileId];
+            const selectedPdfPagesByFile = { ...state.selectedPdfPagesByFile };
+            const includedImagesByFile = { ...state.includedImagesByFile };
+            delete selectedPdfPagesByFile[action.fileId];
+            delete includedImagesByFile[action.fileId];
 
             return {
-                selectedPagesByFile,
+                selectedPdfPagesByFile,
+                includedImagesByFile,
                 pageOrder: state.pageOrder.filter((id) => !id.startsWith(`${action.fileId}:`)),
             };
         }

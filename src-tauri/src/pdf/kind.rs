@@ -1,6 +1,8 @@
 use anyhow::Result;
 use lopdf::Document as PdfDoc;
 
+use crate::vo::DocKind;
+
 /// File extensions treated as images during import.
 ///
 /// The list is compared case-insensitively against the path extension.
@@ -20,11 +22,11 @@ fn is_image_path(path: &str) -> bool {
 /// Detects the document kind from the file extension.
 ///
 /// Returns `"pdf"`, `"image"`, or `None` when the extension is unsupported.
-pub fn detect_kind_from_ext(path: &str) -> Option<&'static str> {
+pub fn detect_kind_from_ext(path: &str) -> Option<DocKind> {
     if is_image_path(path) {
-        Some("image")
+        Some(DocKind::Image)
     } else if path.to_lowercase().ends_with(".pdf") {
-        Some("pdf")
+        Some(DocKind::Pdf)
     } else {
         None
     }

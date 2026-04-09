@@ -1,6 +1,9 @@
 /** Source document kind supported by the app. */
 export type DocKind = 'pdf' | 'image';
 
+/** A specific “thing” within a source file that the user can target (focus/rotate/export). */
+export type SourceTarget = { kind: 'pdf'; pageNum: number } | { kind: 'image' };
+
 /**
  * Rotation expressed in 90° steps.
  *
@@ -31,11 +34,18 @@ export type SourceFile = {
  *
  * `pageNum` is 1-based and refers to the original page number in the source file.
  */
-export type FinalPage = {
-    id: string;
-    fileId: string;
-    pageNum: number;
-};
+export type FinalPage =
+    | {
+          id: string;
+          fileId: string;
+          kind: 'pdf';
+          pageNum: number;
+      }
+    | {
+          id: string;
+          fileId: string;
+          kind: 'image';
+      };
 
 /**
  * Per-source edits applied by the user.
@@ -49,10 +59,9 @@ export type FileEdits = {
     imageRotation?: QuarterTurn;
 };
 
-export type ExportPage = {
-    fileId: string;
-    pageNum: number;
-};
+export type ExportItem =
+    | { kind: 'pdf'; fileId: string; pageNum: number }
+    | { kind: 'image'; fileId: string };
 
 export type JpegQuality = number;
 export type ImageFit = 'fit' | 'contain' | 'cover';
@@ -75,7 +84,7 @@ export type ImageExportPreviewLayout = {
 };
 
 export type MergeRequest = {
-    pages: ExportPage[];
+    pages: ExportItem[];
     edits: Record<string, FileEdits>;
     outputPath: string;
     optimize?: OptimizeOptions;
@@ -83,6 +92,12 @@ export type MergeRequest = {
 
 export type MergeResult = {
     optimizationFailedCount: number;
+    warnings?: MergeWarning[];
+};
+
+export type MergeWarning = {
+    code: string;
+    meta?: Record<string, unknown>;
 };
 
 export type SkippedFile = {

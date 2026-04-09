@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { buildThumbnailRenderRequest, usePdfCache } from '@/infra/pdf';
 import { openFilesDialog, releaseSources } from '@/infra/platform';
-import type { RotationDirection, SourceFile } from '@/shared/domain';
+import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { useFileEdits } from './file-edits.hook';
@@ -70,19 +70,17 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
     }, [clearAllFileEdits, clearFiles, files, releaseFile]);
 
     const rotateSourcePage = useCallback(
-        async (fileId: string, pageNum: number, direction: RotationDirection) => {
+        async (fileId: string, target: SourceTarget, direction: RotationDirection) => {
             const file = files.find((entry) => entry.id === fileId);
             if (!file) return;
 
-            const nextEdits = FileEditsVO.applyRotation(
-                editsByFile[file.id],
-                file.kind,
-                pageNum,
-                direction,
-            );
+            if (file.kind === 'pdf' && target.kind !== 'pdf') return;
+            if (file.kind === 'image' && target.kind !== 'image') return;
+
+            const nextEdits = FileEditsVO.applyRotation(editsByFile[file.id], target, direction);
             setFileEdits(file.id, nextEdits);
-            if (file.kind === 'pdf') {
-                requestRenders(file, [buildThumbnailRenderRequest(pageNum, nextEdits)]);
+            if (file.kind === 'pdf' && target.kind === 'pdf') {
+                requestRenders(file, [buildThumbnailRenderRequest(target.pageNum, nextEdits)]);
             }
         },
         [editsByFile, files, requestRenders, setFileEdits],

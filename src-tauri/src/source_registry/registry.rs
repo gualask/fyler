@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
+use crate::vo::DocKind;
+
 static REGISTRY_LOCK_POISON_LOGGED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone)]
@@ -12,7 +14,7 @@ pub struct RegisteredSource {
     /// Display name (typically filename).
     pub name: String,
     /// `"pdf"` or `"image"`.
-    pub kind: String,
+    pub kind: DocKind,
 }
 
 #[derive(Clone)]

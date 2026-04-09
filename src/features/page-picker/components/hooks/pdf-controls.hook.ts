@@ -1,32 +1,32 @@
 import { useMemo, useState } from 'react';
 
-import type { FinalPage, SourceFile } from '@/shared/domain';
+import type { FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
 
 import { usePageSpecInput } from './page-spec-input.hook';
 
 interface Props {
     file: SourceFile;
     finalPages: FinalPage[];
-    onSetPages: (fileId: string, pages: number[]) => void;
+    onSetPdfPages: (fileId: string, pages: number[]) => void;
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
-    onFocusPage: (fileId: string, pageNum: number) => void;
+    onFocusTarget: (fileId: string, target: SourceTarget) => void;
 }
 
 export function usePdfControls({
     file,
     finalPages,
-    onSetPages,
+    onSetPdfPages,
     onSelectAll,
     onDeselectAll,
-    onFocusPage,
+    onFocusTarget,
 }: Props) {
     const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
 
     const { selectedPages, selectedPageNums } = useMemo(() => {
         const pageNums = new Set<number>();
         for (const page of finalPages) {
-            if (page.fileId === file.id) {
+            if (page.fileId === file.id && page.kind === 'pdf') {
                 pageNums.add(page.pageNum);
             }
         }
@@ -56,7 +56,7 @@ export function usePdfControls({
         pageCount: file.pageCount,
         selectedPages,
         mode,
-        onSetPages,
+        onSetPdfPages,
     });
 
     const handleThumbClick = (pageNum: number, event: React.MouseEvent) => {
@@ -68,18 +68,18 @@ export function usePdfControls({
                     ? [lastClickedPage, pageNum]
                     : [pageNum, lastClickedPage];
             const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
-            onSetPages(file.id, [...Array.from(selectedPageNums), ...rangeNums]);
+            onSetPdfPages(file.id, [...Array.from(selectedPageNums), ...rangeNums]);
             setLastClickedPage(pageNum);
             return;
         }
 
         if (isSelected) {
-            onFocusPage(file.id, pageNum);
+            onFocusTarget(file.id, { kind: 'pdf', pageNum });
             setLastClickedPage(pageNum);
             return;
         }
 
-        onSetPages(file.id, [...Array.from(selectedPageNums), pageNum]);
+        onSetPdfPages(file.id, [...Array.from(selectedPageNums), pageNum]);
         setLastClickedPage(pageNum);
     };
 
@@ -93,7 +93,7 @@ export function usePdfControls({
 
     const handleEnableManual = () => {
         if (file.pageCount <= 0) return;
-        onSetPages(file.id, [1]);
+        onSetPdfPages(file.id, [1]);
     };
 
     return {

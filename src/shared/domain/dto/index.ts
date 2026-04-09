@@ -1,6 +1,6 @@
 export type {
     DocKind,
-    ExportPage,
+    ExportItem,
     FileEdits,
     FinalPage,
     ImageExportPreviewLayout,
@@ -8,12 +8,14 @@ export type {
     JpegQuality,
     MergeRequest,
     MergeResult,
+    MergeWarning,
     OpenFilesResult,
     OptimizeOptions,
     QuarterTurn,
     RotationDirection,
     SkippedFile,
     SourceFile,
+    SourceTarget,
 } from './core.dto';
 export type {
     BasicOptimizationPreset,

@@ -2,26 +2,32 @@ import { useCallback, useMemo, useReducer } from 'react';
 import type { FinalPage, SourceFile } from '@/shared/domain';
 
 import {
-    allPagesForFile,
+    allPdfPagesForFile,
     compositionReducer,
     fromFinalPageId,
     initialCompositionState,
+    toImageFinalPageId,
+    toPdfFinalPageId,
 } from '../state/composition.reducer';
 
 export function useFinalPages() {
     const [state, dispatch] = useReducer(compositionReducer, initialCompositionState);
 
     const finalPages = useMemo<FinalPage[]>(
-        () =>
-            state.pageOrder.map((id) => {
-                const { fileId, pageNum } = fromFinalPageId(id);
-                return { id, fileId, pageNum };
-            }),
+        () => state.pageOrder.map((id) => ({ id, ...fromFinalPageId(id) })),
         [state.pageOrder],
     );
 
     const addAllPagesForFile = useCallback((file: SourceFile) => {
-        dispatch({ type: 'set-file-selection', fileId: file.id, pages: allPagesForFile(file) });
+        if (file.kind === 'image') {
+            dispatch({ type: 'set-image-included', fileId: file.id, included: true });
+            return;
+        }
+        dispatch({
+            type: 'set-pdf-selection',
+            fileId: file.id,
+            pages: allPdfPagesForFile(file),
+        });
     }, []);
 
     const removePagesForFile = useCallback((fileId: string) => {
@@ -34,30 +40,39 @@ export function useFinalPages() {
 
     const togglePage = useCallback(
         (fileId: string, pageNum: number) => {
-            const current = state.selectedPagesByFile[fileId] ?? [];
+            const current = state.selectedPdfPagesByFile[fileId] ?? [];
             const next = current.includes(pageNum)
                 ? current.filter((n) => n !== pageNum)
                 : [...current, pageNum];
-            dispatch({ type: 'set-file-selection', fileId, pages: next });
+            dispatch({ type: 'set-pdf-selection', fileId, pages: next });
         },
-        [state.selectedPagesByFile],
+        [state.selectedPdfPagesByFile],
     );
 
-    const setPagesForFile = useCallback((fileId: string, pages: number[]) => {
-        dispatch({ type: 'set-file-selection', fileId, pages });
+    const setPdfPagesForFile = useCallback((fileId: string, pages: number[]) => {
+        dispatch({ type: 'set-pdf-selection', fileId, pages });
+    }, []);
+
+    const setImageIncluded = useCallback((fileId: string, included: boolean) => {
+        dispatch({ type: 'set-image-included', fileId, included });
     }, []);
 
     const removeFinalPage = useCallback(
         (id: string) => {
-            const { fileId, pageNum } = fromFinalPageId(id);
-            const current = state.selectedPagesByFile[fileId] ?? [];
+            const parsed = fromFinalPageId(id);
+            if (parsed.kind === 'image') {
+                dispatch({ type: 'set-image-included', fileId: parsed.fileId, included: false });
+                return;
+            }
+
+            const current = state.selectedPdfPagesByFile[parsed.fileId] ?? [];
             dispatch({
-                type: 'set-file-selection',
-                fileId,
-                pages: current.filter((n) => n !== pageNum),
+                type: 'set-pdf-selection',
+                fileId: parsed.fileId,
+                pages: current.filter((n) => n !== parsed.pageNum),
             });
         },
-        [state.selectedPagesByFile],
+        [state.selectedPdfPagesByFile],
     );
 
     const reorderFinalPages = useCallback((fromId: string, toId: string) => {
@@ -69,21 +84,29 @@ export function useFinalPages() {
     }, []);
 
     const selectAll = useCallback((file: SourceFile) => {
-        dispatch({ type: 'set-file-selection', fileId: file.id, pages: allPagesForFile(file) });
+        if (file.kind === 'image') {
+            dispatch({ type: 'set-image-included', fileId: file.id, included: true });
+            return;
+        }
+        dispatch({ type: 'set-pdf-selection', fileId: file.id, pages: allPdfPagesForFile(file) });
     }, []);
 
     return {
         finalPages,
-        selectedPagesByFile: state.selectedPagesByFile,
+        selectedPdfPagesByFile: state.selectedPdfPagesByFile,
+        includedImagesByFile: state.includedImagesByFile,
         addAllPagesForFile,
         removePagesForFile,
         clearAllPages,
         togglePage,
-        setPagesForFile,
+        setPdfPagesForFile,
+        setImageIncluded,
         removeFinalPage,
         reorderFinalPages,
         moveFinalPageToIndex,
         selectAll,
         deselectAll: removePagesForFile,
+        toPdfFinalPageId,
+        toImageFinalPageId,
     };
 }

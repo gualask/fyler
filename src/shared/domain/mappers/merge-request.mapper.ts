@@ -1,4 +1,10 @@
-import type { FileEdits, FinalPage, MergeRequest, OptimizeOptions } from '../dto/core.dto';
+import type {
+    ExportItem,
+    FileEdits,
+    FinalPage,
+    MergeRequest,
+    OptimizeOptions,
+} from '../dto/core.dto';
 
 /** Builds the backend export request from the current composition state. */
 export function buildMergeRequest(
@@ -7,8 +13,13 @@ export function buildMergeRequest(
     outputPath: string,
     optimize?: OptimizeOptions,
 ): MergeRequest {
+    const pages: ExportItem[] = finalPages.map((page) =>
+        page.kind === 'pdf'
+            ? { kind: 'pdf', fileId: page.fileId, pageNum: page.pageNum }
+            : { kind: 'image', fileId: page.fileId },
+    );
     return {
-        pages: finalPages.map(({ fileId, pageNum }) => ({ fileId, pageNum })),
+        pages,
         edits,
         outputPath,
         optimize,

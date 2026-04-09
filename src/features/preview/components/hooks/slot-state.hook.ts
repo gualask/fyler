@@ -20,8 +20,11 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
     const useA4Container = isImage && (imageFit === 'contain' || imageFit === 'cover');
     const matchExportedImagesActive = Boolean(matchExportedImages && shouldRender);
     const previewRequest = useMemo(
-        () => (file?.kind === 'pdf' ? buildPreviewRenderRequest(fp.pageNum, edits) : null),
-        [edits, file?.kind, fp.pageNum],
+        () =>
+            file?.kind === 'pdf' && fp.kind === 'pdf'
+                ? buildPreviewRenderRequest(fp.pageNum, edits)
+                : null,
+        [edits, file?.kind, fp],
     );
     const pdfSrc = usePdfRenderSrc(file, previewRequest);
     const pdfAspectRatio =

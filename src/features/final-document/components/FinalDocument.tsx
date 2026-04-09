@@ -1,6 +1,12 @@
 import { IconColumns1, IconColumns2 } from '@tabler/icons-react';
 import { useState } from 'react';
-import type { FileEdits, FinalPage, RotationDirection, SourceFile } from '@/shared/domain';
+import type {
+    FileEdits,
+    FinalPage,
+    RotationDirection,
+    SourceFile,
+    SourceTarget,
+} from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { CardList } from './components/CardList';
@@ -15,8 +21,12 @@ interface Props {
     onReorder: (fromId: string, toId: string) => void;
     onMovePageToIndex: (id: string, targetIndex: number) => void;
     onRemove: (id: string) => void;
-    onSelectPage: (fileId: string, pageNum: number) => void;
-    onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    onSelectPage: (fileId: string, target: SourceTarget) => void;
+    onRotatePage: (
+        fileId: string,
+        target: SourceTarget,
+        direction: RotationDirection,
+    ) => Promise<void>;
     editsByFile: Record<string, FileEdits>;
 }
 

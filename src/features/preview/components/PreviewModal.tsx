@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RotationDirection } from '@/shared/domain';
+import { finalPageToTarget } from '@/shared/domain/utils/final-page-id';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { PageSlot } from './page-slot/PageSlot';
 import type { PreviewModalProps } from './preview.types';
@@ -30,7 +31,9 @@ export function PreviewModal({
     const displayCurrentPage =
         indicator?.current ??
         (indicator?.mode === 'page-num'
-            ? Math.max(currentPage?.pageNum ?? 1, 1)
+            ? currentPage?.kind === 'pdf'
+                ? Math.max(currentPage.pageNum, 1)
+                : 1
             : currentIndex + 1);
     const displayTotalPages = indicator?.total ?? total;
 
@@ -79,7 +82,7 @@ export function PreviewModal({
             if (!onRotatePage || !currentPage) return;
             setIsRotating(true);
             try {
-                await onRotatePage(currentPage.fileId, currentPage.pageNum, direction);
+                await onRotatePage(currentPage.fileId, finalPageToTarget(currentPage), direction);
             } finally {
                 setIsRotating(false);
             }

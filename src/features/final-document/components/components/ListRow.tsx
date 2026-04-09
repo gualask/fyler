@@ -53,11 +53,11 @@ export const ListRow = memo(function ListRow({
 
             <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-ui-text">{item.file?.name ?? '—'}</p>
-                {item.file?.kind === 'pdf' ? (
+                {item.page.kind === 'pdf' ? (
                     <p className="mt-0.5 text-[11px] font-semibold text-ui-kind-pdf">
                         {t('finalDocument.pageLabel', { pageNum: item.page.pageNum })}
                     </p>
-                ) : item.file?.kind === 'image' ? (
+                ) : item.page.kind === 'image' ? (
                     <p className="mt-0.5 text-[11px] font-semibold text-ui-kind-image">
                         {t('finalDocument.imageLabel')}
                     </p>

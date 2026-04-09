@@ -1,4 +1,4 @@
-import type { DocKind, FileEdits, QuarterTurn, RotationDirection } from '../dto/core.dto';
+import type { FileEdits, QuarterTurn, RotationDirection, SourceTarget } from '../dto/core.dto';
 import { QuarterTurnVO } from './quarter-turn.vo';
 
 const EMPTY_PAGE_ROTATIONS: Record<number, QuarterTurn> = {};
@@ -50,14 +50,13 @@ export const FileEditsVO = {
      */
     applyRotation(
         current: FileEdits | undefined,
-        kind: DocKind,
-        pageNum: number,
+        target: SourceTarget,
         direction: RotationDirection,
     ): FileEdits {
         const base = current ?? this.empty();
         const delta = direction === 'cw' ? 1 : 3;
 
-        if (kind === 'image') {
+        if (target.kind === 'image') {
             const nextRotation = QuarterTurnVO.normalize(this.getImageQuarterTurn(base) + delta);
             return {
                 revision: base.revision + 1,
@@ -68,12 +67,12 @@ export const FileEditsVO = {
 
         const pageRotations = { ...(base.pageRotations ?? EMPTY_PAGE_ROTATIONS) };
         const nextRotation = QuarterTurnVO.normalize(
-            this.getPdfPageQuarterTurn(base, pageNum) + delta,
+            this.getPdfPageQuarterTurn(base, target.pageNum) + delta,
         );
         if (nextRotation === 0) {
-            delete pageRotations[pageNum];
+            delete pageRotations[target.pageNum];
         } else {
-            pageRotations[pageNum] = nextRotation;
+            pageRotations[target.pageNum] = nextRotation;
         }
 
         return {

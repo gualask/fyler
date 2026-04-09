@@ -189,8 +189,14 @@ pub async fn save_text_file(
 pub async fn merge_pdfs(
     app: tauri::AppHandle,
     registry: State<'_, SourceRegistry>,
-    req: MergeRequest,
+    req: serde_json::Value,
 ) -> Result<MergeResult, AppError> {
+    let req: MergeRequest = serde_json::from_value(req).map_err(|error| {
+        anyhow::Error::new(crate::error::UserFacingError::with_meta(
+            "invalid_request",
+            serde_json::json!({ "message": error.to_string() }),
+        ))
+    })?;
     let app = app.clone();
     let registry = registry.inner().clone();
     tauri::async_runtime::spawn_blocking(move || export_pdf(&app, &registry, req))

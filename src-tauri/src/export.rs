@@ -2,11 +2,12 @@ use lopdf::Document as PdfDoc;
 use tauri::{AppHandle, Emitter};
 
 use crate::error::UserFacingError;
-use crate::models::{FileEdits, MergeRequest, MergeResult};
+use crate::models::{ExportItem, FileEdits, MergeRequest, MergeResult, MergeWarning};
 use crate::optimize;
 use crate::pdf::quarter_turns_to_degrees;
 use crate::pdf_compose::PdfComposer;
 use crate::source_registry::SourceRegistry;
+use crate::vo::{DocKind, ImageFit};
 
 #[derive(serde::Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -42,11 +43,15 @@ struct CachedPdfSource {
 }
 
 fn build_last_use_index(
-    pages: &[crate::models::ExportPage],
+    pages: &[ExportItem],
 ) -> std::collections::HashMap<String, usize> {
     let mut map = std::collections::HashMap::new();
     for (index, page) in pages.iter().enumerate() {
-        map.insert(page.file_id.clone(), index);
+        let file_id = match page {
+            ExportItem::Pdf { file_id, .. } => file_id,
+            ExportItem::Image { file_id } => file_id,
+        };
+        map.insert(file_id.clone(), index);
     }
     map
 }
@@ -102,25 +107,59 @@ fn compose_document(
 
     emit_progress(app, "merging-pages", 5);
     for (index, page) in req.pages.iter().enumerate() {
+        let (file_id, pdf_page_num) = match page {
+            ExportItem::Pdf { file_id, page_num } => (file_id.as_str(), Some(*page_num)),
+            ExportItem::Image { file_id } => (file_id.as_str(), None),
+        };
+
         // Evict per-source cached PDFs once we've appended their last referenced page.
         // This keeps memory usage bounded even if users export very large compositions.
         let should_evict_pdf_cache =
-            last_use_index_by_file_id.get(&page.file_id).copied() == Some(index);
-        let source = resolve_source(registry, &page.file_id)?;
-        let edits = req.edits.get(&page.file_id);
+            last_use_index_by_file_id.get(file_id).copied() == Some(index);
+        let source = resolve_source(registry, file_id)?;
+        let edits = req.edits.get(file_id);
 
-        if source.kind == "image" {
-            composer.push_image_page(
-                &source.original_path,
-                image_fit,
-                quarter_turns_for_image(edits)?,
-                req.optimize.as_ref(),
-            )?;
-        } else {
+        match page {
+            ExportItem::Image { .. } => {
+                if source.kind != DocKind::Image {
+                    return Err(anyhow::Error::new(UserFacingError::with_meta(
+                        "invalid_export_item_kind",
+                        serde_json::json!({
+                            "fileId": file_id,
+                            "expected": "image",
+                            "actual": source.kind.as_str()
+                        }),
+                    )));
+                }
+                composer.push_image_page(
+                    &source.original_path,
+                    image_fit,
+                    quarter_turns_for_image(edits)?,
+                    req.optimize.as_ref(),
+                )?;
+            }
+            ExportItem::Pdf { .. } => {
+                if source.kind != DocKind::Pdf {
+                    return Err(anyhow::Error::new(UserFacingError::with_meta(
+                        "invalid_export_item_kind",
+                        serde_json::json!({
+                            "fileId": file_id,
+                            "expected": "pdf",
+                            "actual": source.kind.as_str()
+                        }),
+                    )));
+                }
+                let page_num = pdf_page_num.unwrap_or_default();
+                if page_num < 1 {
+                    return Err(anyhow::Error::new(UserFacingError::with_meta(
+                        "invalid_page_num",
+                        serde_json::json!({ "fileId": file_id, "pageNum": page_num }),
+                    )));
+                }
             {
                 let entry = load_cached_pdf_source(
                     &mut pdf_cache,
-                    page.file_id.clone(),
+                    file_id.to_string(),
                     &source.original_path,
                     &source.name,
                 )?;
@@ -128,15 +167,16 @@ fn compose_document(
                     &entry.doc,
                     &mut entry.memo,
                     &source.name,
-                    page.page_num,
-                    quarter_turns_for_pdf_page(edits, page.page_num)?,
+                    page_num,
+                    quarter_turns_for_pdf_page(edits, page_num)?,
                 )?;
             }
 
             if should_evict_pdf_cache {
-                pdf_cache.remove(&page.file_id);
+                pdf_cache.remove(file_id);
             }
-        }
+            }
+        };
 
         if index % 10 == 0 {
             let progress =
@@ -164,18 +204,35 @@ pub fn export_pdf(
             req.optimize.is_some()
         );
         for (index, page) in req.pages.iter().enumerate() {
-            eprintln!(
-                "[fyler]   item[{index}] file_id={} page_num={}",
-                page.file_id, page.page_num
-            );
+            match page {
+                ExportItem::Pdf { file_id, page_num } => {
+                    eprintln!("[fyler]   item[{index}] kind=pdf file_id={file_id} page_num={page_num}");
+                }
+                ExportItem::Image { file_id } => {
+                    eprintln!("[fyler]   item[{index}] kind=image file_id={file_id}");
+                }
+            }
         }
     }
 
+    let mut warnings: Vec<MergeWarning> = Vec::new();
     let image_fit = req
         .optimize
         .as_ref()
         .and_then(|options| options.image_fit.as_deref())
-        .unwrap_or("fit");
+        .and_then(ImageFit::parse)
+        .unwrap_or(ImageFit::Fit);
+
+    if let Some(options) = &req.optimize {
+        if let Some(value) = options.image_fit.as_deref() {
+            if ImageFit::parse(value).is_none() {
+                warnings.push(MergeWarning {
+                    code: "unknown_image_fit_defaulted".to_string(),
+                    meta: Some(serde_json::json!({ "value": value, "defaultedTo": "fit" })),
+                });
+            }
+        }
+    }
 
     if req.pages.is_empty() {
         return Err(anyhow::Error::new(UserFacingError::new(
@@ -183,7 +240,7 @@ pub fn export_pdf(
         )));
     }
 
-    let mut merged = compose_document(app, registry, &req, image_fit)?;
+    let mut merged = compose_document(app, registry, &req, image_fit.as_str())?;
 
     let mut optimization_failed_count = 0;
     if let Some(options) = &req.optimize {
@@ -203,5 +260,6 @@ pub fn export_pdf(
     optimize::save_document(&mut merged, &mut file)?;
     Ok(MergeResult {
         optimization_failed_count,
+        warnings,
     })
 }

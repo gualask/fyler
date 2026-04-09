@@ -17,6 +17,7 @@ mod pdf_compose;
 mod pdf_image;
 mod settings;
 mod source_registry;
+mod vo;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 /// Boots the Tauri app and registers all commands/plugins.
