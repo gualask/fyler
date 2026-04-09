@@ -47,7 +47,12 @@ pub fn load_source_image(path: &str) -> Result<(DynamicImage, SourceImageDescrip
 fn compression_class(path: &str, format: Option<ImageFormat>) -> Result<SourceCompressionClass> {
     Ok(match format {
         Some(ImageFormat::Jpeg) => SourceCompressionClass::Lossy,
-        Some(ImageFormat::WebP) => sniff_webp_compression_class(path)?,
+        // WebP cannot be embedded directly in PDFs, so we always transcode it.
+        // Treat it as lossy to ensure we embed it as JPEG and avoid huge raw streams.
+        Some(ImageFormat::WebP) => {
+            let _ = path;
+            SourceCompressionClass::Lossy
+        }
         Some(ImageFormat::Png)
         | Some(ImageFormat::Bmp)
         | Some(ImageFormat::Gif)
@@ -59,29 +64,10 @@ fn compression_class(path: &str, format: Option<ImageFormat>) -> Result<SourceCo
     })
 }
 
-fn sniff_webp_compression_class(path: &str) -> Result<SourceCompressionClass> {
-    let bytes = std::fs::read(path).with_context(|| format!("Failed to read image '{path}'"))?;
-    if bytes.len() < 16 || &bytes[0..4] != b"RIFF" || &bytes[8..12] != b"WEBP" {
-        return Ok(SourceCompressionClass::LosslessOrUnknown);
-    }
-
-    Ok(match &bytes[12..16] {
-        b"VP8 " => SourceCompressionClass::Lossy,
-        b"VP8L" => SourceCompressionClass::LosslessOrUnknown,
-        _ => SourceCompressionClass::LosslessOrUnknown,
-    })
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{compression_class, sniff_webp_compression_class, SourceCompressionClass};
+    use super::{compression_class, SourceCompressionClass};
     use image::ImageFormat;
-    use std::fs;
-    use std::path::Path;
-
-    fn temp_path(label: &str) -> std::path::PathBuf {
-        std::env::temp_dir().join(format!("fyler-pdf-image-{label}.bin"))
-    }
 
     #[test]
     fn jpeg_maps_to_lossy() -> anyhow::Result<()> {
@@ -98,40 +84,11 @@ mod tests {
     }
 
     #[test]
-    fn webp_sniff_detects_lossy_and_lossless() -> anyhow::Result<()> {
-        let lossy = temp_path("lossy.webp");
-        fs::write(&lossy, b"RIFF\x10\x00\x00\x00WEBPVP8 ")?;
+    fn webp_maps_to_lossy() -> anyhow::Result<()> {
         assert_eq!(
-            sniff_webp_compression_class(lossy.to_string_lossy().as_ref())?,
+            compression_class("photo.webp", Some(ImageFormat::WebP))?,
             SourceCompressionClass::Lossy
         );
-
-        let lossless = temp_path("lossless.webp");
-        fs::write(&lossless, b"RIFF\x10\x00\x00\x00WEBPVP8L")?;
-        assert_eq!(
-            sniff_webp_compression_class(lossless.to_string_lossy().as_ref())?,
-            SourceCompressionClass::LosslessOrUnknown
-        );
-
-        let _ = fs::remove_file(lossy);
-        let _ = fs::remove_file(lossless);
         Ok(())
-    }
-
-    #[test]
-    fn invalid_webp_falls_back_conservatively() -> anyhow::Result<()> {
-        let path = temp_path("invalid.webp");
-        fs::write(&path, b"not-a-webp")?;
-        assert_eq!(
-            sniff_webp_compression_class(path.to_string_lossy().as_ref())?,
-            SourceCompressionClass::LosslessOrUnknown
-        );
-        let _ = fs::remove_file(path);
-        Ok(())
-    }
-
-    #[test]
-    fn temp_paths_are_local() {
-        assert!(Path::new(&temp_path("check")).is_absolute());
     }
 }

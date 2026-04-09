@@ -1,4 +1,5 @@
 use anyhow::Result;
+use image::GenericImageView;
 use lopdf::{Document as PdfDoc, Object, ObjectId};
 
 use crate::models::OptimizeOptions;
@@ -17,14 +18,13 @@ fn int(n: i64) -> Object {
 
 fn append_prepared_image_as_page(
     doc: &mut PdfDoc,
-    image_fit: &str,
+    layout: super::layout::ImageExportPreviewLayout,
     prepared: crate::pdf_image::PreparedPdfImage,
 ) -> Result<ObjectId> {
     use lopdf::{Dictionary, Stream};
 
     let width_px = prepared.width;
     let height_px = prepared.height;
-    let layout = compute_image_export_layout(width_px, height_px, image_fit);
     let page_w = layout.page_width_pt as i64;
     let page_h = layout.page_height_pt as i64;
     let content = if layout.clip_to_page {
@@ -98,6 +98,37 @@ pub fn append_image_as_page(
 ) -> Result<ObjectId> {
     let (img, descriptor) = load_source_image(path)?;
     let img = rotate_dynamic_image(img, quarter_turns)?;
-    let prepared = prepare_pdf_image(img, decide_image_embed(&descriptor, optimize))?;
-    append_prepared_image_as_page(doc, image_fit, prepared)
+    let (source_width_px, source_height_px) = img.dimensions();
+    let layout = compute_image_export_layout(source_width_px, source_height_px, image_fit);
+    let resize_to = resize_to_target_dpi(source_width_px, source_height_px, optimize, &layout);
+    let prepared = prepare_pdf_image(img, decide_image_embed(&descriptor, optimize), resize_to)?;
+    append_prepared_image_as_page(doc, layout, prepared)
+}
+
+fn resize_to_target_dpi(
+    source_width_px: u32,
+    source_height_px: u32,
+    optimize: Option<&OptimizeOptions>,
+    layout: &super::layout::ImageExportPreviewLayout,
+) -> Option<(u32, u32)> {
+    let target_dpi = optimize.and_then(|value| value.target_dpi)?;
+    let desired_width = ((layout.draw_width_pt / 72.0) * f64::from(target_dpi)).round() as i64;
+    let desired_height = ((layout.draw_height_pt / 72.0) * f64::from(target_dpi)).round() as i64;
+    if desired_width <= 0 || desired_height <= 0 {
+        return None;
+    }
+
+    let width = desired_width as u32;
+    let height = desired_height as u32;
+
+    if width == source_width_px && height == source_height_px {
+        return None;
+    }
+
+    // Only downscale during export; upscaling is slow and reduces quality.
+    if width > source_width_px || height > source_height_px {
+        return None;
+    }
+
+    Some((width, height))
 }

@@ -103,7 +103,7 @@ Fyler classifies the source image into a simple compression class:
 Examples:
 
 - JPEG is treated as lossy
-- WebP is sniffed to distinguish lossy vs lossless
+- WebP is treated as lossy (it is transcoded for PDF embedding)
 - PNG, TIFF, BMP, GIF, ICO, QOI and similar formats are treated as
   lossless-or-unknown
 
@@ -116,15 +116,22 @@ Current preset policy for imported image pages:
 
 - `Original`
   - lossy sources stay JPEG
-  - lossless or unknown sources stay raw/lossless inside the PDF
+  - lossless or unknown sources stay raw/lossless inside the PDF (except WebP)
 - `Light`
   - same conservative philosophy as `Original`
   - lossy sources stay JPEG with lighter recompression
-  - lossless or unknown sources are not forced into JPEG
+  - lossless or unknown sources are not forced into JPEG (except WebP)
 - `Balanced`
   - imported image pages default to JPEG
 - `Compact`
   - imported image pages default to JPEG with more aggressive quality
+
+WebP semantic note:
+
+- PDFs cannot embed WebP directly.
+- To avoid huge raw RGB streams (and expensive container compression work),
+  WebP sources are always encoded as JPEG for the final PDF (quality depends on
+  the selected preset).
 
 Important semantic note:
 
@@ -147,6 +154,18 @@ This is a deliberate simplification:
 
 This choice is acceptable for the current product shape, but it should be
 revisited if Fyler later supports richer compositing scenarios.
+
+### Target-DPI resizing for imported image pages
+
+When `targetDpi` is set, imported image pages can be downscaled before encoding.
+
+The target size is derived from:
+
+- the selected image fit mode (`fit`, `contain`, `cover`)
+- the resulting drawn size in PDF points
+- the requested `targetDpi`
+
+Only downscaling is performed (never upscaling).
 
 ## Images already embedded in PDFs
 

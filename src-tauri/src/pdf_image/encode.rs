@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
+use fast_image_resize::{images::Image, FilterType, PixelType, ResizeAlg, ResizeOptions, Resizer};
 use image::{DynamicImage, RgbImage, RgbaImage};
 use jpeg_encoder::{ColorType, Encoder};
 
@@ -18,12 +19,26 @@ pub struct PreparedPdfImage {
 pub fn prepare_pdf_image(
     img: DynamicImage,
     decision: ImageEmbedDecision,
+    resize_to: Option<(u32, u32)>,
 ) -> Result<PreparedPdfImage> {
-    let rgb = if decision.flatten_alpha {
+    let mut rgb = if decision.flatten_alpha {
         flatten_to_white_rgb(img)
     } else {
         img.to_rgb8()
     };
+
+    if let Some((width, height)) = resize_to {
+        let (current_width, current_height) = rgb.dimensions();
+        if width > 0
+            && height > 0
+            && width <= current_width
+            && height <= current_height
+            && (width != current_width || height != current_height)
+        {
+            rgb = resize_rgb(rgb, width, height)?;
+        }
+    }
+
     let (width, height) = rgb.dimensions();
 
     let (data, filter) = match decision.encoding {
@@ -39,6 +54,22 @@ pub fn prepare_pdf_image(
         data,
         filter,
     })
+}
+
+fn resize_rgb(rgb: RgbImage, width: u32, height: u32) -> Result<RgbImage> {
+    let src = Image::from_vec_u8(rgb.width(), rgb.height(), rgb.into_raw(), PixelType::U8x3)
+        .context("failed to map source rgb pixels")?;
+
+    let mut dst = Image::new(width, height, PixelType::U8x3);
+    let options = ResizeOptions::new()
+        .resize_alg(ResizeAlg::Convolution(FilterType::CatmullRom))
+        .use_alpha(false);
+
+    Resizer::new()
+        .resize(&src, &mut dst, &options)
+        .context("failed to resize rgb pixels")?;
+
+    RgbImage::from_raw(width, height, dst.into_vec()).context("failed to create resized rgb image")
 }
 
 fn flatten_to_white_rgb(img: DynamicImage) -> RgbImage {
@@ -93,6 +124,7 @@ mod tests {
                 flatten_alpha: false,
                 encoding: PdfImageEncoding::Jpeg { quality: 82 },
             },
+            None,
         )?;
 
         assert_eq!(prepared.filter, Some(b"DCTDecode".as_ref()));
@@ -113,6 +145,7 @@ mod tests {
                 flatten_alpha: true,
                 encoding: PdfImageEncoding::Jpeg { quality: 82 },
             },
+            None,
         )?;
 
         assert_eq!(prepared.width, 640);
