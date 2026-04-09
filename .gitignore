@@ -27,3 +27,4 @@ dist-ssr
 
 .mcp.json
 .claude
+.pnpm-store

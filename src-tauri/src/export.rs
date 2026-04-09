@@ -42,16 +42,14 @@ struct CachedPdfSource {
     memo: std::collections::HashMap<lopdf::ObjectId, lopdf::ObjectId>,
 }
 
-fn build_last_use_index(
-    pages: &[ExportItem],
-) -> std::collections::HashMap<String, usize> {
+fn build_last_use_index(pages: &[ExportItem]) -> std::collections::HashMap<&str, usize> {
     let mut map = std::collections::HashMap::new();
     for (index, page) in pages.iter().enumerate() {
-        let file_id = match page {
-            ExportItem::Pdf { file_id, .. } => file_id,
-            ExportItem::Image { file_id } => file_id,
+        let file_id: &str = match page {
+            ExportItem::Pdf { file_id, .. } => file_id.as_str(),
+            ExportItem::Image { file_id } => file_id.as_str(),
         };
-        map.insert(file_id.clone(), index);
+        map.insert(file_id, index);
     }
     map
 }
@@ -70,27 +68,32 @@ fn resolve_source(
 
 fn load_cached_pdf_source<'a>(
     cache: &'a mut std::collections::HashMap<String, CachedPdfSource>,
-    file_id: String,
+    file_id: &str,
     path: &str,
     name: &str,
 ) -> anyhow::Result<&'a mut CachedPdfSource> {
-    use std::collections::hash_map::Entry;
+    if cache.contains_key(file_id) {
+        return cache
+            .get_mut(file_id)
+            .ok_or_else(|| anyhow::Error::msg("Missing PDF cache entry"));
+    }
 
-    Ok(match cache.entry(file_id) {
-        Entry::Occupied(existing) => existing.into_mut(),
-        Entry::Vacant(vacant) => {
-            let doc = PdfDoc::load(path).map_err(|_| {
-                anyhow::Error::new(UserFacingError::with_meta(
-                    "open_pdf_failed",
-                    serde_json::json!({ "name": name }),
-                ))
-            })?;
-            vacant.insert(CachedPdfSource {
-                doc,
-                memo: std::collections::HashMap::new(),
-            })
-        }
-    })
+    let doc = PdfDoc::load(path).map_err(|_| {
+        anyhow::Error::new(UserFacingError::with_meta(
+            "open_pdf_failed",
+            serde_json::json!({ "name": name }),
+        ))
+    })?;
+    cache.insert(
+        file_id.to_owned(),
+        CachedPdfSource {
+            doc,
+            memo: std::collections::HashMap::new(),
+        },
+    );
+    cache
+        .get_mut(file_id)
+        .ok_or_else(|| anyhow::Error::msg("Missing PDF cache entry after insert"))
 }
 
 fn compose_document(
@@ -103,6 +106,10 @@ fn compose_document(
     let mut pdf_cache: std::collections::HashMap<String, CachedPdfSource> =
         std::collections::HashMap::new();
     let last_use_index_by_file_id = build_last_use_index(&req.pages);
+    let mut source_cache: std::collections::HashMap<
+        &str,
+        crate::source_registry::RegisteredSource,
+    > = std::collections::HashMap::new();
     let mut composer = PdfComposer::new();
 
     emit_progress(app, "merging-pages", 5);
@@ -114,9 +121,16 @@ fn compose_document(
 
         // Evict per-source cached PDFs once we've appended their last referenced page.
         // This keeps memory usage bounded even if users export very large compositions.
-        let should_evict_pdf_cache =
-            last_use_index_by_file_id.get(file_id).copied() == Some(index);
-        let source = resolve_source(registry, file_id)?;
+        let should_evict_pdf_cache = last_use_index_by_file_id.get(file_id).copied() == Some(index);
+        let source = if let Some(found) = source_cache.get(file_id) {
+            found
+        } else {
+            let loaded = resolve_source(registry, file_id)?;
+            source_cache.insert(file_id, loaded);
+            source_cache
+                .get(file_id)
+                .ok_or_else(|| anyhow::Error::msg("Failed to insert source cache entry"))?
+        };
         let edits = req.edits.get(file_id);
 
         match page {
@@ -156,25 +170,25 @@ fn compose_document(
                         serde_json::json!({ "fileId": file_id, "pageNum": page_num }),
                     )));
                 }
-            {
-                let entry = load_cached_pdf_source(
-                    &mut pdf_cache,
-                    file_id.to_string(),
-                    &source.original_path,
-                    &source.name,
-                )?;
-                composer.push_pdf_page(
-                    &entry.doc,
-                    &mut entry.memo,
-                    &source.name,
-                    page_num,
-                    quarter_turns_for_pdf_page(edits, page_num)?,
-                )?;
-            }
+                {
+                    let entry = load_cached_pdf_source(
+                        &mut pdf_cache,
+                        file_id,
+                        &source.original_path,
+                        &source.name,
+                    )?;
+                    composer.push_pdf_page(
+                        &entry.doc,
+                        &mut entry.memo,
+                        &source.name,
+                        page_num,
+                        quarter_turns_for_pdf_page(edits, page_num)?,
+                    )?;
+                }
 
-            if should_evict_pdf_cache {
-                pdf_cache.remove(file_id);
-            }
+                if should_evict_pdf_cache {
+                    pdf_cache.remove(file_id);
+                }
             }
         };
 
@@ -206,7 +220,9 @@ pub fn export_pdf(
         for (index, page) in req.pages.iter().enumerate() {
             match page {
                 ExportItem::Pdf { file_id, page_num } => {
-                    eprintln!("[fyler]   item[{index}] kind=pdf file_id={file_id} page_num={page_num}");
+                    eprintln!(
+                        "[fyler]   item[{index}] kind=pdf file_id={file_id} page_num={page_num}"
+                    );
                 }
                 ExportItem::Image { file_id } => {
                     eprintln!("[fyler]   item[{index}] kind=image file_id={file_id}");
@@ -216,21 +232,22 @@ pub fn export_pdf(
     }
 
     let mut warnings: Vec<MergeWarning> = Vec::new();
-    let image_fit = req
+    let image_fit_raw = req
         .optimize
         .as_ref()
         .and_then(|options| options.image_fit.as_deref())
+        .map(str::to_owned);
+    let image_fit = image_fit_raw
+        .as_deref()
         .and_then(ImageFit::parse)
         .unwrap_or(ImageFit::Fit);
 
-    if let Some(options) = &req.optimize {
-        if let Some(value) = options.image_fit.as_deref() {
-            if ImageFit::parse(value).is_none() {
-                warnings.push(MergeWarning {
-                    code: "unknown_image_fit_defaulted".to_string(),
-                    meta: Some(serde_json::json!({ "value": value, "defaultedTo": "fit" })),
-                });
-            }
+    if let Some(value) = image_fit_raw.as_deref() {
+        if ImageFit::parse(value).is_none() {
+            warnings.push(MergeWarning {
+                code: "unknown_image_fit_defaulted".to_string(),
+                meta: Some(serde_json::json!({ "value": value, "defaultedTo": "fit" })),
+            });
         }
     }
 
