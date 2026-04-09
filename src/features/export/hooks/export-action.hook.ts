@@ -1,15 +1,16 @@
 import { useCallback } from 'react';
-import type { useAppNotifications } from '@/app/notifications';
+
 import type { WorkspaceApi } from '@/features/workspace';
 import { mergePDFs, savePDFDialog } from '@/infra/platform';
+import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import { toDiagnosticMessage, useDiagnostics } from '@/shared/diagnostics';
-import { buildMergeRequest } from '@/shared/domain';
+import { buildMergeRequest } from '@/shared/domain/mappers/merge-request.mapper';
 import { useTranslation } from '@/shared/i18n';
 import type { useOptimize } from './optimize.hook';
 
 interface ExportActionDeps {
     workspace: WorkspaceApi;
-    notifications: ReturnType<typeof useAppNotifications>;
+    notifications: AppNotificationsApi;
     optimize: ReturnType<typeof useOptimize>;
 }
 

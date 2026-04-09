@@ -1,5 +1,10 @@
-import type { FileEdits, FinalPage, ImageFit, SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
+import type {
+    FileEdits,
+    FinalPage,
+    ImageFit,
+    RotationDirection,
+    SourceFile,
+} from '@/shared/domain';
 
 export type PageIndicator = {
     current?: number;

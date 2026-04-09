@@ -1,9 +1,8 @@
 import { useCallback } from 'react';
 import { buildThumbnailRenderRequest, usePdfCache } from '@/infra/pdf';
 import { openFilesDialog, releaseSources } from '@/infra/platform';
-import type { SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
-import { applyRotationToEdits } from '@/shared/domain/file-edits';
+import type { RotationDirection, SourceFile } from '@/shared/domain';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { useFileEdits } from './file-edits.hook';
 import { useFileList } from './file-list.hook';
@@ -75,7 +74,7 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
             const file = files.find((entry) => entry.id === fileId);
             if (!file) return;
 
-            const nextEdits = applyRotationToEdits(
+            const nextEdits = FileEditsVO.applyRotation(
                 editsByFile[file.id],
                 file.kind,
                 pageNum,

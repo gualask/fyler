@@ -3,7 +3,7 @@ import {
     JPEG_QUALITY_OPTIONS,
     OPTIMIZATION_PRESETS,
     TARGET_DPI_OPTIONS,
-} from '@/shared/domain/optimization-config';
+} from '@/shared/domain/value-objects/optimization-presets.vo';
 import { useTranslation } from '@/shared/i18n';
 
 import { TooltipContent, type TooltipItem } from './InfoTooltip';

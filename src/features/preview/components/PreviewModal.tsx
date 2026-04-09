@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { RotationDirection } from '@/shared/domain/file-edits';
-import { emptyFileEdits } from '@/shared/domain/file-edits';
+import type { RotationDirection } from '@/shared/domain';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { PageSlot } from './page-slot/PageSlot';
 import type { PreviewModalProps } from './preview.types';
 import type { SlotContext } from './slot.types';
@@ -117,7 +117,7 @@ export function PreviewModal({
                         }
                     >
                         {finalPages.map((fp, index) => {
-                            const edits = editsByFile[fp.fileId] ?? emptyFileEdits();
+                            const edits = editsByFile[fp.fileId] ?? FileEditsVO.empty();
                             return (
                                 <PageSlot
                                     key={fp.id}

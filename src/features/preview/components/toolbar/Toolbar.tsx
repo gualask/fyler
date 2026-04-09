@@ -1,5 +1,5 @@
 import { IconX } from '@tabler/icons-react';
-import type { RotationDirection } from '@/shared/domain/file-edits';
+import type { RotationDirection } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import type { MoveControl } from '../preview.types';
 import { MoveToSelect } from './MoveToSelect';

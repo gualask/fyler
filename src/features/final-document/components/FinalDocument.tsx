@@ -1,7 +1,6 @@
 import { IconColumns1, IconColumns2 } from '@tabler/icons-react';
 import { useState } from 'react';
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
+import type { FileEdits, FinalPage, RotationDirection, SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { CardList } from './components/CardList';

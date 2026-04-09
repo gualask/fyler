@@ -1,5 +1,4 @@
-import type { ImageFit } from '@/shared/domain';
-import type { ImageOptimizationPreset } from '@/shared/domain/optimization-config';
+import type { ImageFit, ImageOptimizationPreset } from '@/shared/domain';
 
 export type OptimizeState = {
     imageFit: ImageFit;

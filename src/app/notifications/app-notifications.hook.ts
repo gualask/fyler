@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import type { AppStatusPayload, MergeProgressStep } from '@/shared/diagnostics';
 import { formatUserFacingError } from '@/shared/errors';
 import { formatImportWarning, useTranslation } from '@/shared/i18n';
@@ -18,7 +19,7 @@ type LoadingState =
     | { kind: 'opening-files' }
     | { kind: 'merge-progress'; step: MergeProgressStep; progress: number };
 
-export function useAppNotifications() {
+export function useAppNotifications(): AppNotificationsApi {
     const { t, tp } = useTranslation();
     const [status, setStatus] = useState<StatusState | null>(null);
     const [loading, setLoading] = useState<LoadingState | null>(null);

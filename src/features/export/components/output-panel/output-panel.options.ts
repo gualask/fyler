@@ -1,9 +1,5 @@
-import type { ImageFit } from '@/shared/domain';
-import type {
-    BasicOptimizationPreset,
-    ImageOptimizationPreset,
-} from '@/shared/domain/optimization-config';
-import { OPTIMIZATION_PRESETS } from '@/shared/domain/optimization-config';
+import type { BasicOptimizationPreset, ImageFit, ImageOptimizationPreset } from '@/shared/domain';
+import { OPTIMIZATION_PRESETS } from '@/shared/domain/value-objects/optimization-presets.vo';
 import type { SelectOption } from './SelectControl';
 
 const IMAGE_FIT_OPTIONS: SelectOption<ImageFit>[] = [

@@ -1,4 +1,4 @@
-import type { ImageOptimizationPreset } from '@/shared/domain/optimization-config';
+import type { ImageOptimizationPreset } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { OptimizationAdvancedPanel } from './OptimizationAdvancedPanel';
 import { buildPresetSelectOptions } from './output-panel.options';

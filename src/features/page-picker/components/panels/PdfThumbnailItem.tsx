@@ -1,8 +1,7 @@
 import { IconCheck } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
-import type { FileEdits, SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
+import type { FileEdits, RotationDirection, SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
 import { FocusFlashOverlay } from '@/shared/ui/feedback/FocusFlashOverlay';

@@ -1,33 +1,8 @@
-import { listen } from '@tauri-apps/api/event';
 import { useEffect } from 'react';
 
+import { onTauriEvent } from '@/infra/platform/events';
 import type { AppStatusPayload, MergeProgressStep } from '@/shared/diagnostics';
 import { useDiagnostics } from '@/shared/diagnostics';
-
-function attachEventListener<T>(
-    eventName: string,
-    listener: (event: { payload: T }) => void,
-): () => void {
-    let disposed = false;
-    let unlisten: (() => void) | undefined;
-
-    void listen<T>(eventName, listener)
-        .then((fn) => {
-            if (disposed) {
-                fn();
-            } else {
-                unlisten = fn;
-            }
-        })
-        .catch(() => {
-            /* listener registration failed — swallowed intentionally */
-        });
-
-    return () => {
-        disposed = true;
-        unlisten?.();
-    };
-}
 
 interface TauriNotificationCallbacks {
     onError: (message: string) => void;
@@ -43,14 +18,14 @@ export function useTauriNotificationEvents({
     const { record } = useDiagnostics();
 
     useEffect(() => {
-        return attachEventListener<string>('app-error', (event) => {
+        return onTauriEvent<string>('app-error', (event) => {
             record({ category: 'app', severity: 'error', message: `Rust panic: ${event.payload}` });
             onError(event.payload);
         });
     }, [onError, record]);
 
     useEffect(() => {
-        return attachEventListener<AppStatusPayload>('app-status', (event) => {
+        return onTauriEvent<AppStatusPayload>('app-status', (event) => {
             record({
                 category: 'files',
                 severity: 'warn',
@@ -65,7 +40,7 @@ export function useTauriNotificationEvents({
     }, [onImportWarning, record]);
 
     useEffect(() => {
-        return attachEventListener<{ step: MergeProgressStep; progress: number }>(
+        return onTauriEvent<{ step: MergeProgressStep; progress: number }>(
             'merge-progress',
             (event) => {
                 onMergeProgress(event.payload.step, event.payload.progress);

@@ -13,7 +13,7 @@ import type {
 /**
  * Typed wrapper around the app's native (Tauri) API surface.
  *
- * Keep all `invoke(...)` calls centralized here to make the boundary explicit.
+ * Keep all direct Tauri calls centralized in `src/infra/platform/*` to make the boundary explicit.
  */
 export const openFilesDialog = (filterLabel: string): Promise<OpenFilesResult> =>
     invoke('open_files_dialog', { filterLabel });

@@ -1,5 +1,5 @@
 import { IconRotate2, IconRotateClockwise2 } from '@tabler/icons-react';
-import type { RotationDirection } from '@/shared/domain/file-edits';
+import type { RotationDirection } from '@/shared/domain';
 
 interface Props {
     isRotating: boolean;

@@ -1,12 +1,13 @@
 import { useCallback } from 'react';
-import type { useAppNotifications } from '@/app/notifications';
+
+import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import { toDiagnosticMessage, useDiagnostics } from '@/shared/diagnostics';
 import { formatSkippedFile, useTranslation } from '@/shared/i18n';
 import type { useWorkspace } from './workspace.hook';
 
 interface AddFilesActionDeps {
     workspace: ReturnType<typeof useWorkspace>;
-    notifications: ReturnType<typeof useAppNotifications>;
+    notifications: AppNotificationsApi;
 }
 
 export function useAddFilesAction({ workspace, notifications }: AddFilesActionDeps) {

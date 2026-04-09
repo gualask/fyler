@@ -1,21 +1,23 @@
 export type {
-    BasicOptimizationPreset,
     DocKind,
     ExportPage,
     FileEdits,
     FinalPage,
     ImageExportPreviewLayout,
     ImageFit,
-    ImageOptimizationPreset,
     JpegQuality,
     MergeRequest,
     MergeResult,
     OpenFilesResult,
-    OptimizationSettings,
     OptimizeOptions,
-    PageSpecError,
     QuarterTurn,
     RotationDirection,
     SkippedFile,
     SourceFile,
-} from './dto';
+} from './core.dto';
+export type {
+    BasicOptimizationPreset,
+    ImageOptimizationPreset,
+    OptimizationSettings,
+} from './optimization.dto';
+export type { PageSpecError } from './page-spec.dto';

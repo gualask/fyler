@@ -1,6 +1,6 @@
 import type { SourceFile } from '@/shared/domain';
 
-import { uniqueSortedNumbers } from '@/shared/domain/number-list';
+import { uniqueSortedNumbers } from '@/shared/domain/utils/number-list';
 
 export type CompositionState = {
     selectedPagesByFile: Record<string, number[]>;

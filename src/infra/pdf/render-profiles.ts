@@ -1,5 +1,5 @@
 import type { FileEdits, QuarterTurn } from '@/shared/domain';
-import { emptyFileEdits, getPdfPageQuarterTurn } from '@/shared/domain/file-edits';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import type { PdfRenderRequest } from './pdf-cache.hook';
 
 /** Use device pixel ratio for thumbnails, capped to avoid heavy CPU/memory usage. */
@@ -22,7 +22,7 @@ export function buildThumbnailRenderRequest(
     pageNum: number,
     edits: FileEdits | undefined,
 ): PdfRenderRequest {
-    return withRotation(pageNum, getPdfPageQuarterTurn(edits ?? emptyFileEdits(), pageNum), {
+    return withRotation(pageNum, FileEditsVO.getPdfPageQuarterTurn(edits, pageNum), {
         variant: 'thumb',
         // Canonical thumbnail profile. Keep this large enough to avoid upscaling blur
         // in responsive thumbnail UIs (e.g. Final Document card layout).
@@ -45,7 +45,7 @@ export function buildPreviewRenderRequest(
     pageNum: number,
     edits: FileEdits | undefined,
 ): PdfRenderRequest {
-    return withRotation(pageNum, getPdfPageQuarterTurn(edits ?? emptyFileEdits(), pageNum), {
+    return withRotation(pageNum, FileEditsVO.getPdfPageQuarterTurn(edits, pageNum), {
         variant: 'preview',
         width: 900,
         quality: 0.92,

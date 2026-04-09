@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-    formatAllPagesToSpec,
-    formatSelectedPagesToSpec,
-    parseSelectedPagesFromSpecLoose,
-} from '@/shared/domain/page-spec';
+import { PageSpecVO } from '@/shared/domain/value-objects/page-spec.vo';
 
 function normalizePageInput(value: string): string {
     return value.replace(/[^\d,\-\s]/g, '');
@@ -38,26 +34,26 @@ export function usePageSpecInput({
         }
 
         if (mode === 'all') {
-            setPageInput(formatAllPagesToSpec(pageCount));
+            setPageInput(PageSpecVO.formatAll(pageCount));
             return;
         }
 
-        setPageInput(formatSelectedPagesToSpec(selectedPages));
+        setPageInput(PageSpecVO.formatSelected(selectedPages));
     }, [isEditingInput, mode, pageCount, selectedPages]);
 
     const handlePageInputChange = (value: string) => {
         const nextDraft = normalizePageInput(value);
         setPageInput(nextDraft);
 
-        const parsedPages = parseSelectedPagesFromSpecLoose(nextDraft, pageCount);
+        const parsedPages = PageSpecVO.parseLoose(nextDraft, pageCount);
         onSetPages(fileId, parsedPages);
     };
 
     const commitPageInput = useCallback(() => {
-        const parsedPages = parseSelectedPagesFromSpecLoose(pageInput, pageCount);
+        const parsedPages = PageSpecVO.parseLoose(pageInput, pageCount);
         onSetPages(fileId, parsedPages);
 
-        const formatted = formatSelectedPagesToSpec(parsedPages);
+        const formatted = PageSpecVO.formatSelected(parsedPages);
         setPageInput(formatted);
         setAppliedPageNum(parsedPages[0] ?? null);
         setAppliedPageSignal((signal) => signal + 1);

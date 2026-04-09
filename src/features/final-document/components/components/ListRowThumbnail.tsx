@@ -2,7 +2,7 @@ import { IconFileTypePdf, IconPhoto } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
-import { getImageRotationDegrees } from '@/shared/domain/file-edits';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
 import type { ListItem } from '../list-item.types';
@@ -31,7 +31,8 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', cla
         scrollRoot,
     );
     const imageUrl = item.file?.kind === 'image' ? getPreviewUrl(item.file.originalPath) : null;
-    const imageRotation = item.file?.kind === 'image' ? getImageRotationDegrees(item.edits) : 0;
+    const imageRotation =
+        item.file?.kind === 'image' ? FileEditsVO.getImageRotationDegrees(item.edits) : 0;
 
     const containerClassName =
         size === 'lg'

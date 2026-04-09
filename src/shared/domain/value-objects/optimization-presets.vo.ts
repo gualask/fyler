@@ -1,12 +1,11 @@
-export type BasicOptimizationPreset = 'original' | 'light' | 'balanced' | 'compact';
-export type ImageOptimizationPreset = BasicOptimizationPreset | 'custom';
+import type {
+    BasicOptimizationPreset,
+    ImageOptimizationPreset,
+    OptimizationSettings,
+} from '../dto/optimization.dto';
+
 /** Default preset used for new sessions. */
 export const DEFAULT_OPTIMIZATION_PRESET: BasicOptimizationPreset = 'light';
-
-export type OptimizationSettings = {
-    jpegQuality?: number;
-    targetDpi?: number;
-};
 
 type OptimizationPresetDefinition = OptimizationSettings & {
     value: BasicOptimizationPreset;

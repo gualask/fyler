@@ -1,6 +1,6 @@
-import { relaunch } from '@tauri-apps/plugin-process';
-import { check, type Update } from '@tauri-apps/plugin-updater';
 import { useCallback, useEffect, useState } from 'react';
+
+import { type AvailableUpdate, checkForUpdate, relaunchApp } from '@/infra/platform/updater';
 import { useDiagnostics } from '@/shared/diagnostics';
 import { getErrorMessage } from '@/shared/errors';
 
@@ -23,13 +23,13 @@ export function useAppUpdater() {
         dismissed: false,
         error: null,
     });
-    const [update, setUpdate] = useState<Update | null>(null);
+    const [update, setUpdate] = useState<AvailableUpdate | null>(null);
 
     useEffect(() => {
         let cancelled = false;
-        check()
+        checkForUpdate()
             .then((u) => {
-                if (cancelled || !u?.available) return;
+                if (cancelled || !u) return;
                 setUpdate(u);
                 setState((s) => ({ ...s, available: true, version: u.version }));
             })
@@ -45,22 +45,12 @@ export function useAppUpdater() {
         if (!update) return;
         setState((s) => ({ ...s, installing: true, progress: 0, error: null }));
 
-        let totalBytes = 0;
-        let downloadedBytes = 0;
-
         try {
-            await update.downloadAndInstall((event) => {
-                if (event.event === 'Started' && event.data.contentLength) {
-                    totalBytes = event.data.contentLength;
-                } else if (event.event === 'Progress') {
-                    downloadedBytes += event.data.chunkLength;
-                    const pct =
-                        totalBytes > 0 ? Math.round((downloadedBytes / totalBytes) * 100) : null;
-                    setState((s) => ({ ...s, progress: pct }));
-                }
+            await update.downloadAndInstall((pct) => {
+                setState((s) => ({ ...s, progress: pct }));
             });
 
-            await relaunch();
+            await relaunchApp();
         } catch (error) {
             record({
                 category: 'update',

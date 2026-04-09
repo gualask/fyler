@@ -1,7 +1,6 @@
 import { IconArrowsMinimize, IconChevronDown, IconPhoto } from '@tabler/icons-react';
 import { useState } from 'react';
-import type { ImageFit } from '@/shared/domain';
-import type { ImageOptimizationPreset } from '@/shared/domain/optimization-config';
+import type { ImageFit, ImageOptimizationPreset } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { OptimizationSection } from './output-panel/OptimizationSection';
 import { PageFitSection } from './output-panel/PageFitSection';

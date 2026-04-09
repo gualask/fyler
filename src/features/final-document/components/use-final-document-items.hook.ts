@@ -1,20 +1,22 @@
 import { useMemo } from 'react';
 
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
-import { emptyFileEdits } from '@/shared/domain/file-edits';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import type { ListItem } from './list-item.types';
+
+type UseFinalDocumentItemsArgs = {
+    finalPages: FinalPage[];
+    files: SourceFile[];
+    selectedPageId: string | null;
+    editsByFile: Record<string, FileEdits>;
+};
 
 export function useFinalDocumentItems({
     finalPages,
     files,
     selectedPageId,
     editsByFile,
-}: {
-    finalPages: FinalPage[];
-    files: SourceFile[];
-    selectedPageId: string | null;
-    editsByFile: Record<string, FileEdits>;
-}) {
+}: UseFinalDocumentItemsArgs) {
     const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
 
     const items = useMemo<ListItem[]>(
@@ -22,7 +24,7 @@ export function useFinalDocumentItems({
             finalPages.map((page, index) => ({
                 page,
                 file: fileMap.get(page.fileId),
-                edits: editsByFile[page.fileId] ?? emptyFileEdits(),
+                edits: editsByFile[page.fileId] ?? FileEditsVO.empty(),
                 index,
                 isSelected: page.id === selectedPageId,
             })),

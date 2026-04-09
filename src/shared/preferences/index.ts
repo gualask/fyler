@@ -11,4 +11,5 @@ export {
     type AccentColor,
     type PreferencesSettings,
 } from './preferences.settings';
+export type { PreferencesStorage } from './preferences.storage';
 export { useTheme } from './theme.hook';

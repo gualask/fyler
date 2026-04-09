@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
-import { emptyFileEdits } from '@/shared/domain/file-edits';
+import type { FileEdits, FinalPage, RotationDirection, SourceFile } from '@/shared/domain';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
 import { PdfToolbar } from '../controls/PdfToolbar';
 import { usePdfControls } from '../hooks/pdf-controls.hook';
@@ -108,7 +107,7 @@ export function PdfPanel({
                                 key={`${pageNum}:${focusedPageNum === pageNum ? (focusFlashKey ?? 0) : 0}`}
                                 file={file}
                                 pageNum={pageNum}
-                                edits={editsByFile[file.id] ?? emptyFileEdits()}
+                                edits={editsByFile[file.id] ?? FileEditsVO.empty()}
                                 scrollRoot={gridEl}
                                 isSelected={selectedPageNums.has(pageNum)}
                                 isFocused={focusedPageNum === pageNum}

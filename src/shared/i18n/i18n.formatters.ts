@@ -1,5 +1,5 @@
 import type { AppStatusPayload, ImportWarningSkippedFile } from '@/shared/diagnostics';
-import type { PageSpecError } from '@/shared/domain/page-spec';
+import type { PageSpecError } from '@/shared/domain';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from './i18n.resources';
 
 type Translator = (key: TranslationKey, values?: InterpolationValues) => string;

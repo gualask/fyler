@@ -1,12 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PreferencesContext, type PreferencesContextValue } from './preferences.context';
 import { detectPreferredLocale, isLocale, type Locale } from './preferences.locale';
-import {
-    ACCENT_COLORS,
-    type AccentColor,
-    loadSettings,
-    saveSettings,
-} from './preferences.settings';
+import { ACCENT_COLORS, type AccentColor } from './preferences.settings';
+import type { PreferencesStorage } from './preferences.storage';
 
 type PreferencesState = {
     isDark: boolean;
@@ -23,20 +19,34 @@ function resolveInitialLocale(storedLocale: Locale | undefined): Locale {
 }
 
 /** Persists user preferences and exposes them via context. */
-export function PreferencesProvider({ children }: { children: ReactNode }) {
+export function PreferencesProvider({
+    children,
+    storage,
+}: {
+    children: ReactNode;
+    storage?: PreferencesStorage;
+}) {
     const [preferences, setPreferences] = useState<PreferencesState>({
         isDark: false,
         locale: 'en',
         accent: 'indigo',
         tutorialSeen: false,
     });
+    const canPersist = Boolean(storage);
     const [canPersistPreferences, setCanPersistPreferences] = useState(false);
     const hasLocalChangesRef = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
 
-        void loadSettings()
+        if (!storage) {
+            return () => {
+                cancelled = true;
+            };
+        }
+
+        void storage
+            .load()
             .then((settings) => {
                 if (cancelled || hasLocalChangesRef.current) return;
                 setPreferences({
@@ -61,7 +71,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [storage]);
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', preferences.isDark);
@@ -76,17 +86,17 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     }, [preferences.isDark, preferences.locale, preferences.accent]);
 
     useEffect(() => {
-        if (!canPersistPreferences) return;
-        void saveSettings(preferences);
-    }, [canPersistPreferences, preferences]);
+        if (!storage || !canPersistPreferences) return;
+        void storage.save(preferences);
+    }, [canPersistPreferences, preferences, storage]);
 
     const updatePreferences = useCallback(
         (updater: (current: PreferencesState) => PreferencesState) => {
             hasLocalChangesRef.current = true;
-            setCanPersistPreferences(true);
+            setCanPersistPreferences(canPersist);
             setPreferences((current) => updater(current));
         },
-        [],
+        [canPersist],
     );
 
     const setLocale = useCallback(

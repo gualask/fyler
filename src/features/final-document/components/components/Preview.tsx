@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { PreviewModal } from '@/features/preview';
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
+import type { FileEdits, FinalPage, RotationDirection, SourceFile } from '@/shared/domain';
 
 interface Props {
     previewTargetId: string | null;

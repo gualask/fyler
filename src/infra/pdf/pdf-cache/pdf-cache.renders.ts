@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { QuarterTurn, SourceFile } from '@/shared/domain';
-import { quarterTurnsToDegrees } from '@/shared/domain/file-edits';
+import { QuarterTurnVO } from '@/shared/domain/value-objects/quarter-turn.vo';
 import {
     getAspectRatioCacheKey,
     getPdfRenderCacheKey,
@@ -77,7 +77,7 @@ export function requestRenders({
                     request.pageNum,
                     request.width,
                     request.quality,
-                    quarterTurnsToDegrees(request.quarterTurns),
+                    QuarterTurnVO.toDegrees(request.quarterTurns),
                     request.density ?? 1,
                 );
                 const currentCache = cacheByFileId.get(file.id);

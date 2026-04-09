@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
+import type { RotationDirection, SourceFile } from '@/shared/domain';
 import { useFileDrop } from './file-drop.hook';
 import { useFinalPages } from './final-pages.hook';
 import { useSourceSession } from './source-session.hook';

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { buildPreviewRenderRequest, usePdfCache, usePdfRenderSrc } from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
-import { getImageQuarterTurn, getImageRotationDegrees } from '@/shared/domain/file-edits';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import type { SlotContext, SlotPage } from '../slot.types';
 import { useExportMatchedImage } from './export-matched-image.hook';
 import { useRotatedImagePreview } from './rotated-image-preview.hook';
@@ -15,8 +15,8 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
     const { slotRef, shouldRender } = useSlotVisibility(scrollRoot, index, onVisible);
 
     const isImage = file?.kind === 'image';
-    const imageQuarterTurns = getImageQuarterTurn(edits);
-    const imageRotation = getImageRotationDegrees(edits);
+    const imageQuarterTurns = FileEditsVO.getImageQuarterTurn(edits);
+    const imageRotation = FileEditsVO.getImageRotationDegrees(edits);
     const useA4Container = isImage && (imageFit === 'contain' || imageFit === 'cover');
     const matchExportedImagesActive = Boolean(matchExportedImages && shouldRender);
     const previewRequest = useMemo(

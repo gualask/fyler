@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { getPreviewUrl } from '@/infra/platform';
-import type { FileEdits, SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
-import { getImageQuarterTurn, getImageRotationDegrees } from '@/shared/domain/file-edits';
+import type { FileEdits, RotationDirection, SourceFile } from '@/shared/domain';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
 import { FocusFlashOverlay } from '@/shared/ui/feedback/FocusFlashOverlay';
@@ -61,8 +60,8 @@ export function ImagePanel({
     } | null>(null);
 
     const imageUrl = getPreviewUrl(file.originalPath);
-    const quarterTurns = getImageQuarterTurn(editsByFile[file.id]);
-    const rotation = getImageRotationDegrees(editsByFile[file.id]);
+    const quarterTurns = FileEditsVO.getImageQuarterTurn(editsByFile[file.id]);
+    const rotation = FileEditsVO.getImageRotationDegrees(editsByFile[file.id]);
     const isQuarterTurnOdd = quarterTurns % 2 === 1;
     const maxThumbWidth =
         imagePanelSize.width > 0

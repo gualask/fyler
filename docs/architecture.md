@@ -33,6 +33,8 @@ The goal of the structure is “feature-first” on the frontend, with a small a
 - `src/infra/` may depend on `src/shared/`, but must not depend on `src/features/`.
 - `src/features/` may depend on `src/shared/` and `src/infra/`, but must not depend on `src/app/`.
 - `src/app/` may depend on everything (it wires the graph), but should keep business logic minimal.
+- Direct Tauri imports (`@tauri-apps/*`) must live under `src/infra/` only.
+- Prefer shared interfaces for cross-layer APIs (for example notifications) instead of importing app hooks/types from `src/features/`.
 
 ## Backend
 

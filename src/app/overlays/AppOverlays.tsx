@@ -1,19 +1,11 @@
 import { PreviewModal } from '@/features/preview';
 import { SupportDialog } from '@/features/support';
 import { TutorialOverlay } from '@/features/tutorial';
+import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
 import type { FileEdits, FinalPage, ImageFit, SourceFile } from '@/shared/domain';
 import { ProgressModal } from './ProgressModal';
 import { Toast } from './Toast';
-
-type NotificationsLike = {
-    statusMessage: string | null;
-    statusTone: 'success' | 'error' | 'warning' | null;
-    loadingMessage: string | null;
-    loadingProgress?: number;
-    showToast: (tone: 'success' | 'warning', message: string) => void;
-    showError: (error: unknown) => void;
-};
 
 type SupportLike = {
     supportDialogMode: 'report' | 'about' | null;
@@ -52,7 +44,7 @@ export function AppOverlays({
     workspace,
     imageFit,
 }: {
-    notifications: NotificationsLike;
+    notifications: AppNotificationsApi;
     support: SupportLike;
     tutorial: TutorialLike;
     showFinalPreview: boolean;

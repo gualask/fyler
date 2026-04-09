@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PreviewModal } from '@/features/preview';
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
-import type { RotationDirection } from '@/shared/domain/file-edits';
+import type { FileEdits, FinalPage, RotationDirection, SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { ImagePanel } from './panels/ImagePanel';

@@ -1,6 +1,7 @@
-import { listen } from '@tauri-apps/api/event';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+
 import { openFilesFromPaths } from '@/infra/platform';
+import { onTauriEvent } from '@/infra/platform/events';
 import type { SourceFile } from '@/shared/domain';
 
 interface DragDropPayload {
@@ -24,17 +25,15 @@ export function useFileDrop(
 
     useEffect(() => {
         let active = true;
-        const unlisteners: Array<() => void> = [];
-
-        void Promise.all([
-            listen<DragDropPayload>('tauri://drag-enter', (e) => {
+        const unlisteners = [
+            onTauriEvent<DragDropPayload>('tauri://drag-enter', (e) => {
                 if (e.payload.paths?.length) setIsDragOver(true);
             }),
-            listen<DragDropPayload>('tauri://drag-over', (e) => {
+            onTauriEvent<DragDropPayload>('tauri://drag-over', (e) => {
                 if (e.payload.paths?.length) setIsDragOver(true);
             }),
-            listen('tauri://drag-leave', () => setIsDragOver(false)),
-            listen<DragDropPayload>('tauri://drag-drop', (e) => {
+            onTauriEvent('tauri://drag-leave', () => setIsDragOver(false)),
+            onTauriEvent<DragDropPayload>('tauri://drag-drop', (e) => {
                 setIsDragOver(false);
                 const paths = e.payload.paths;
                 if (!paths?.length) return;
@@ -52,13 +51,7 @@ export function useFileDrop(
                         if (active) onErrorRef.current(error);
                     });
             }),
-        ]).then((fns) => {
-            if (active) {
-                unlisteners.push(...fns);
-            } else {
-                for (const fn of fns) fn();
-            }
-        });
+        ];
 
         return () => {
             active = false;
