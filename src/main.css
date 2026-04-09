@@ -2,12 +2,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ── Semantic UI tokens ─────────────────────────────────────────────────────
-   Cambiare tema = modificare solo i valori qui.
-   I componenti non contengono mai colori hard-coded né classi dark:.
+   Changing the theme = editing token values here.
+   Goal: components use semantic tokens and avoid `dark:` color variants.
+   A few overlays (e.g. preview / quick actions) use hard-coded neutrals for contrast.
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-    /* superfici e testo */
+    /* surfaces and text */
     --ui-bg: #f5f7fa;
     --ui-surface: #ffffff;
     --ui-surface-subtle: #f8fafc;
@@ -59,7 +60,7 @@
 }
 
 .dark {
-    /* superfici e testo */
+    /* surfaces and text */
     --ui-bg: #2e3039;
     --ui-surface: #383a44;
     --ui-surface-subtle: #3d404b;
@@ -253,7 +254,7 @@ body {
 
 /* ── Tailwind utilities ──────────────────────────────────────────────────── */
 @layer components {
-    /* ── Pulsanti ──────────────────────────────────────────────── */
+    /* ── Buttons ──────────────────────────────────────────────── */
     .btn-primary {
         @apply flex items-center gap-2 rounded-lg bg-ui-accent px-5 py-2 text-sm font-semibold text-white shadow-md transition-[colors,transform] hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
     }
@@ -282,7 +283,7 @@ body {
     .btn-icon-active {
         @apply bg-ui-accent-soft text-ui-accent-on-soft;
     }
-    /* ── Toggle (pulsante "Tutti/Nessuna" e opzioni SegmentedControl) ── */
+    /* ── Toggle (e.g. "All/None" and SegmentedControl options) ── */
     .toggle-on {
         @apply bg-ui-accent border-ui-accent text-white;
     }
@@ -318,7 +319,7 @@ body {
     .segmented-control__button-inactive {
         @apply text-ui-text-secondary hover:bg-ui-accent-soft-hover hover:text-ui-accent-on-soft;
     }
-    /* ── Input ─────────────────────────────────────────────────── */
+    /* ── Inputs ─────────────────────────────────────────────────── */
     .input-base,
     .select-base {
         @apply h-8 w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none transition-colors focus:ring-1 focus:ring-ui-accent;
@@ -362,12 +363,12 @@ body {
             0 6px 18px rgba(0, 0, 0, 0.7);
     }
 
-    /* ── Label uppercase ───────────────────────────────────────── */
+    /* ── Uppercase label ───────────────────────────────────────── */
     .label-caps {
         @apply text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
     }
 
-    /* ── Header sezione ────────────────────────────────────────── */
+    /* ── Section header ────────────────────────────────────────── */
     .section-header {
         @apply flex h-10 shrink-0 items-center justify-between gap-3 bg-ui-surface-subtle py-1 pl-4 pr-3 box-border;
     }
@@ -450,7 +451,7 @@ body {
 }
 
 @theme inline {
-    /* superfici */
+    /* surfaces */
     --color-ui-bg: var(--ui-bg);
     --color-ui-surface: var(--ui-surface);
     --color-ui-surface-subtle: var(--ui-surface-subtle);
@@ -459,7 +460,7 @@ body {
     --color-ui-output: var(--ui-output);
     --color-ui-border: var(--ui-border);
     --color-ui-border-hover: var(--ui-border-hover);
-    /* testo */
+    /* text */
     --color-ui-text: var(--ui-text);
     --color-ui-text-secondary: var(--ui-text-secondary);
     --color-ui-text-dim: var(--ui-text-dim);

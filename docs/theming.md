@@ -2,9 +2,12 @@
 
 ## Concept
 
-Components contain no hard-coded colors and no `dark:` classes for colors.
-They exclusively use semantic utility classes (`bg-ui-surface`, `text-ui-text-muted`, `bg-ui-accent`, …)
+Fyler’s UI aims to avoid hard-coded colors and `dark:` color variants in components.
+Most styling uses semantic utility classes (`bg-ui-surface`, `text-ui-text-muted`, `bg-ui-accent`, …)
 generated from CSS custom properties defined in a single stylesheet under `src/`.
+
+Some UX overlays intentionally use fixed neutral colors for contrast (for example the preview modal
+chrome and thumbnail quick-actions). Treat those as explicit exceptions, not as the default styling approach.
 
 **Changing the theme = editing only the theme token values.**
 
@@ -110,6 +113,8 @@ meaning regardless of the active theme:
 
 - **Red** (`red-*`) — destructive actions (Remove button, error messages)
 - **White** (`text-white`) — text on solid accent backgrounds
+- **Neutral overlays** (`black/`, `zinc-*`, `slate-*`, `white/`) — preview and quick-action chrome that
+  intentionally stays high-contrast regardless of theme
 
 There is also one intentional “non-theme” color choice outside UI styling:
 
@@ -122,6 +127,6 @@ There is also one intentional “non-theme” color choice outside UI styling:
 
 Directory-level map (no per-file coupling intended):
 
-- `src/` contains the theme token definitions and Tailwind token mapping
-- `src/components/` consumes only semantic utilities (`bg-ui-*`, `text-ui-*`, `border-ui-*`)
-- `src/preferences/` owns the persisted dark-mode preference and toggles the root `.dark` class
+- `src/main.css` contains the theme token definitions and Tailwind token mapping
+- `src/shared/ui/` and `src/features/**/components/` consume semantic utilities (`bg-ui-*`, `text-ui-*`, `border-ui-*`)
+- `src/shared/preferences/` owns the persisted dark-mode preference and toggles the root `.dark` class

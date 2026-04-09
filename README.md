@@ -69,6 +69,7 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev 
 ## Documentation
 
 - [Theming](docs/theming.md)
+- [Architecture](docs/architecture.md)
 - [PDF export and image handling](docs/pdf-export.md)
 - [Performance notes](docs/performance.md)
 

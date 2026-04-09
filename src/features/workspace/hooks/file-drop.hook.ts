@@ -64,7 +64,7 @@ export function useFileDrop(
             active = false;
             for (const fn of unlisteners) fn();
         };
-    }, []); // listener registrati una sola volta al mount
+    }, []); // listeners registered once on mount
 
     return { isDragOver };
 }
