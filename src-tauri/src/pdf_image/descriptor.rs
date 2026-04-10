@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader};
+use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader, RgbImage, RgbaImage};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Coarse compression class derived from the source image format.
@@ -21,14 +21,52 @@ pub struct SourceImageDescriptor {
 
 /// Loads an image from disk and returns both decoded pixels and a descriptor.
 pub fn load_source_image(path: &str) -> Result<(DynamicImage, SourceImageDescriptor)> {
+    let ext_is_webp = path.to_ascii_lowercase().ends_with(".webp");
+    if ext_is_webp {
+        let bytes =
+            std::fs::read(path).with_context(|| format!("Failed to read image '{path}'"))?;
+        let info =
+            webpx::ImageInfo::from_webp(&bytes).map_err(|error| anyhow::anyhow!("{error}"))?;
+
+        let img = if info.has_alpha {
+            let (pixels, width, height) =
+                webpx::decode_rgba(&bytes).map_err(|error| anyhow::anyhow!("{error}"))?;
+            let rgba = RgbaImage::from_raw(width, height, pixels)
+                .context("Failed to build RGBA buffer for WebP decode")?;
+            DynamicImage::ImageRgba8(rgba)
+        } else {
+            let (pixels, width, height) =
+                webpx::decode_rgb(&bytes).map_err(|error| anyhow::anyhow!("{error}"))?;
+            let rgb = RgbImage::from_raw(width, height, pixels)
+                .context("Failed to build RGB buffer for WebP decode")?;
+            DynamicImage::ImageRgb8(rgb)
+        };
+
+        let (width, height) = img.dimensions();
+        let compression_class = SourceCompressionClass::Lossy;
+        let has_alpha = img.color().has_alpha();
+
+        return Ok((
+            img,
+            SourceImageDescriptor {
+                compression_class,
+                has_alpha,
+                width,
+                height,
+            },
+        ));
+    }
+
     let mut reader =
         ImageReader::open(path).with_context(|| format!("Failed to open image '{path}'"))?;
+
     reader = reader
         .with_guessed_format()
         .context("Failed to detect image format")?;
 
     let format = reader.format();
     let img = reader.decode().context("Failed to decode image")?;
+
     let (width, height) = img.dimensions();
     let compression_class = compression_class(path, format)?;
     let has_alpha = img.color().has_alpha();

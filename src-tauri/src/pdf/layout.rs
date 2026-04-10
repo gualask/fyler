@@ -88,7 +88,14 @@ pub fn image_export_preview_layout(
     image_fit: &str,
     quarter_turns: u8,
 ) -> Result<ImageExportPreviewLayout> {
-    let (width_px, height_px) = image::image_dimensions(path).context("Failed to open image")?;
+    let (width_px, height_px) = if path.to_ascii_lowercase().ends_with(".webp") {
+        let bytes = std::fs::read(path).context("Failed to open image")?;
+        let info =
+            webpx::ImageInfo::from_webp(&bytes).map_err(|error| anyhow::anyhow!("{error}"))?;
+        (info.width, info.height)
+    } else {
+        image::image_dimensions(path).context("Failed to open image")?
+    };
     let (rotated_width_px, rotated_height_px) =
         rotated_dimensions(width_px, height_px, quarter_turns)?;
     Ok(compute_image_export_layout(

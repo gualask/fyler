@@ -4,6 +4,7 @@ use lopdf::{
     content::{Content, Operation},
     Dictionary, Document as PdfDoc, Object, ObjectId,
 };
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, Copy, Default)]
 /// Observed drawn size for an image, expressed in PDF points.
@@ -98,23 +99,35 @@ enum XObjectKind {
 ///
 /// The result is used to estimate effective DPI and decide whether a downscale is worthwhile.
 pub fn analyze_image_usages(doc: &PdfDoc) -> HashMap<ObjectId, Vec<ImageUsage>> {
-    let mut usages = HashMap::new();
-    for page_id in doc.get_pages().into_values() {
-        let resources = page_resources(doc, page_id);
-        let Ok(content) = doc.get_and_decode_page_content(page_id) else {
-            continue;
-        };
-        let mut active_forms = HashSet::new();
-        walk_operations(
-            doc,
-            &resources,
-            &content.operations,
-            AffineTransform::identity(),
-            &mut usages,
-            &mut active_forms,
-        );
+    let page_ids: Vec<ObjectId> = doc.get_pages().into_values().collect();
+    let per_page_usages: Vec<HashMap<ObjectId, Vec<ImageUsage>>> = page_ids
+        .into_par_iter()
+        .map(|page_id| {
+            let mut usages = HashMap::new();
+            let resources = page_resources(doc, page_id);
+            let Ok(content) = doc.get_and_decode_page_content(page_id) else {
+                return usages;
+            };
+            let mut active_forms = HashSet::new();
+            walk_operations(
+                doc,
+                &resources,
+                &content.operations,
+                AffineTransform::identity(),
+                &mut usages,
+                &mut active_forms,
+            );
+            usages
+        })
+        .collect();
+
+    let mut merged: HashMap<ObjectId, Vec<ImageUsage>> = HashMap::new();
+    for map in per_page_usages {
+        for (object_id, mut usages) in map {
+            merged.entry(object_id).or_default().append(&mut usages);
+        }
     }
-    usages
+    merged
 }
 
 fn walk_operations(

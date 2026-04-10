@@ -127,6 +127,10 @@ pub fn discover_candidate(
         return None;
     }
 
+    if stream.dict.get(b"FylerImportedImage").is_ok() {
+        return Some(Err(CandidateSkipReason::Unsupported));
+    }
+
     if has_risky_mask(obj) {
         return Some(Err(CandidateSkipReason::Risky));
     }

@@ -16,10 +16,14 @@ pub struct DecodedRaster {
 
 impl DecodedRaster {
     /// Decodes a candidate image stream into raw pixel data (supports raw and JPEG sources).
-    pub fn decode(stream: &Stream, candidate: &ImageCandidate) -> Result<Self> {
+    pub fn decode(
+        stream: &Stream,
+        candidate: &ImageCandidate,
+        resize_to: Option<(u32, u32)>,
+    ) -> Result<Self> {
         match candidate.source_encoding {
             SourceEncoding::Raw => Self::decode_raw(stream, candidate),
-            SourceEncoding::Jpeg => Self::decode_jpeg(stream, candidate),
+            SourceEncoding::Jpeg => Self::decode_jpeg(stream, candidate, resize_to),
         }
     }
 
@@ -99,8 +103,17 @@ impl DecodedRaster {
         })
     }
 
-    fn decode_jpeg(stream: &Stream, candidate: &ImageCandidate) -> Result<Self> {
+    fn decode_jpeg(
+        stream: &Stream,
+        candidate: &ImageCandidate,
+        resize_to: Option<(u32, u32)>,
+    ) -> Result<Self> {
         let mut decoder = JpegDecoder::new(std::io::Cursor::new(stream.content.as_slice()));
+        if let Some((target_width, target_height)) = resize_to {
+            let requested_width = target_width.min(u16::MAX as u32) as u16;
+            let requested_height = target_height.min(u16::MAX as u32) as u16;
+            let _ = decoder.scale(requested_width, requested_height);
+        }
         let data = decoder.decode().context("failed to decode jpeg image")?;
         let info = decoder
             .info()

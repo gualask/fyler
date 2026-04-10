@@ -261,7 +261,15 @@ pub fn export_pdf(
 
     let mut optimization_failed_count = 0;
     if let Some(options) = &req.optimize {
-        if optimize::has_optimization_work(options) {
+        let has_pdf_sources = req
+            .pages
+            .iter()
+            .any(|page| matches!(page, ExportItem::Pdf { .. }));
+
+        // The optimizer is meant for images already embedded inside PDFs.
+        // Imported image pages are handled by the imported-image pipeline and should not be
+        // re-processed here, especially for image-only exports.
+        if has_pdf_sources && optimize::has_optimization_work(options) {
             emit_progress(app, "optimizing-images", 80);
             optimization_failed_count =
                 optimize::optimize_images(&mut merged, options)?.failed_non_fatal;

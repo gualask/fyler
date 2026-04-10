@@ -87,6 +87,23 @@ fn page_image_filter(doc: &PdfDoc, page_index: usize) -> anyhow::Result<Option<V
     }
 }
 
+fn page_image_stream_bytes(doc: &PdfDoc, page_index: usize) -> anyhow::Result<Vec<u8>> {
+    let page_id = *doc
+        .get_pages()
+        .values()
+        .nth(page_index)
+        .context("missing page")?;
+    let page = doc.get_dictionary(page_id)?;
+    let resources = resolve_dict(doc, page.get(b"Resources")?)?;
+    let xobject = resolve_dict(doc, resources.get(b"XObject")?)?;
+    let image_id = xobject
+        .get(b"Im0")?
+        .as_reference()
+        .context("missing Im0 reference")?;
+    let stream = doc.get_object(image_id)?.as_stream()?;
+    Ok(stream.content.clone())
+}
+
 fn resolve_dict<'a>(doc: &'a PdfDoc, object: &'a Object) -> anyhow::Result<&'a lopdf::Dictionary> {
     match object {
         Object::Dictionary(dict) => Ok(dict),
@@ -217,6 +234,40 @@ fn original_jpeg_input_stays_dct_encoded() -> anyhow::Result<()> {
     let _ = fs::remove_file(path);
 
     assert_eq!(filter.as_deref(), Some(b"DCTDecode".as_slice()));
+    Ok(())
+}
+
+#[test]
+fn original_jpeg_input_embeds_bytes_without_reencode() -> anyhow::Result<()> {
+    let path = temp_image_path("original-jpeg-bytes", "jpg");
+    RgbImage::from_pixel(1200, 800, image::Rgb([96, 132, 184])).save(&path)?;
+    let original_bytes = fs::read(&path)?;
+
+    let mut composer = PdfComposer::new();
+    composer.push_image_page(path.to_string_lossy().as_ref(), "fit", 0, None)?;
+    let doc = composer.finish()?;
+    let embedded_bytes = page_image_stream_bytes(&doc, 0)?;
+
+    let _ = fs::remove_file(path);
+
+    assert_eq!(embedded_bytes, original_bytes);
+    Ok(())
+}
+
+#[test]
+fn rotated_jpeg_input_embeds_bytes_without_reencode() -> anyhow::Result<()> {
+    let path = temp_image_path("rotated-jpeg-bytes", "jpg");
+    RgbImage::from_pixel(1200, 800, image::Rgb([96, 132, 184])).save(&path)?;
+    let original_bytes = fs::read(&path)?;
+
+    let mut composer = PdfComposer::new();
+    composer.push_image_page(path.to_string_lossy().as_ref(), "fit", 1, None)?;
+    let doc = composer.finish()?;
+    let embedded_bytes = page_image_stream_bytes(&doc, 0)?;
+
+    let _ = fs::remove_file(path);
+
+    assert_eq!(embedded_bytes, original_bytes);
     Ok(())
 }
 

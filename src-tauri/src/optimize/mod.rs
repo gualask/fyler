@@ -9,16 +9,11 @@ mod candidate;
 mod plan;
 mod raster;
 mod rewrite;
+mod runner;
 
-use lopdf::{Document as PdfDoc, Object, ObjectId};
+use lopdf::Document as PdfDoc;
 
 use crate::models::OptimizeOptions;
-
-use self::analysis::analyze_image_usages;
-use self::candidate::{discover_candidate, CandidateSkipReason, ImageCandidate};
-use self::plan::{build_passthrough_plan, build_plan, should_keep_original, usages_for};
-use self::raster::DecodedRaster;
-use self::rewrite::rewrite_stream;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 /// Counters describing an optimization run.
@@ -30,11 +25,6 @@ pub struct OptimizationSummary {
     pub failed_non_fatal: usize,
 }
 
-enum CandidateDecision {
-    Optimize(ImageCandidate),
-    Skip(CandidateSkipReason),
-}
-
 fn can_optimize(opts: &OptimizeOptions) -> bool {
     opts.jpeg_quality.is_some() || opts.target_dpi.is_some()
 }
@@ -42,39 +32,6 @@ fn can_optimize(opts: &OptimizeOptions) -> bool {
 /// Returns true if the provided options would perform any optimization work.
 pub fn has_optimization_work(opts: &OptimizeOptions) -> bool {
     can_optimize(opts)
-}
-
-fn classify_object(object_id: ObjectId, obj: &Object) -> Option<CandidateDecision> {
-    discover_candidate(object_id, obj).map(|result| match result {
-        Ok(candidate) => CandidateDecision::Optimize(candidate),
-        Err(reason) => CandidateDecision::Skip(reason),
-    })
-}
-
-fn apply_candidate(
-    obj: &mut Object,
-    candidate: &ImageCandidate,
-    usages: &std::collections::HashMap<ObjectId, Vec<analysis::ImageUsage>>,
-    opts: &OptimizeOptions,
-) -> anyhow::Result<bool> {
-    let usage_slice = usages_for(usages, candidate);
-    let plan = build_plan(candidate, usage_slice, opts)
-        .or_else(|| build_passthrough_plan(candidate, opts));
-    let Some(plan) = plan else {
-        return Ok(false);
-    };
-
-    let stream = obj.as_stream_mut()?;
-    let original_stream = stream.clone();
-    let raster = DecodedRaster::decode(stream, candidate)?;
-    let raster = raster.resize(plan.resize_to)?;
-    let rewritten_size = rewrite_stream(stream, raster, plan.output_encoding)?;
-    if should_keep_original(candidate.original_size, rewritten_size) {
-        *stream = original_stream;
-        return Ok(false);
-    }
-
-    Ok(true)
 }
 
 /// Rewrites embedded images in-place when optimization is requested.
@@ -88,43 +45,7 @@ pub fn optimize_images(
         return Ok(OptimizationSummary::default());
     }
 
-    let usages = analyze_image_usages(doc);
-    let mut summary = OptimizationSummary::default();
-    let object_ids: Vec<_> = doc.objects.keys().copied().collect();
-
-    for object_id in object_ids {
-        let Some(decision) = doc
-            .objects
-            .get(&object_id)
-            .and_then(|obj| classify_object(object_id, obj))
-        else {
-            continue;
-        };
-
-        summary.scanned += 1;
-        match decision {
-            CandidateDecision::Skip(CandidateSkipReason::Unsupported) => {
-                summary.skipped_unsupported += 1;
-            }
-            CandidateDecision::Skip(CandidateSkipReason::Risky) => {
-                summary.skipped_risky += 1;
-            }
-            CandidateDecision::Optimize(candidate) => {
-                let Some(obj) = doc.objects.get_mut(&object_id) else {
-                    summary.failed_non_fatal += 1;
-                    continue;
-                };
-
-                match apply_candidate(obj, &candidate, &usages, opts) {
-                    Ok(true) => summary.optimized += 1,
-                    Ok(false) => {}
-                    Err(_) => summary.failed_non_fatal += 1,
-                }
-            }
-        }
-    }
-
-    Ok(summary)
+    runner::optimize_images(doc, opts)
 }
 
 /// Prunes unused objects and renumbers IDs to keep the final file compact.

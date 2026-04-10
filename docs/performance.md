@@ -91,8 +91,8 @@ Current characteristics:
 - RGB, grayscale, and CMYK support
 - parallel resize support for maximum throughput on the hot path
 
-The code does not parallelize the entire optimizer loop at the document level.
-Instead, it uses a specialized resize implementation that is already optimized
+The optimizer parallelizes work at the per-image level. Candidate decode/resize/rewrite
+tasks are processed concurrently, while the resize implementation itself remains optimized
 for the hot path.
 
 ### Imported image files: cheap decisions before PDF construction

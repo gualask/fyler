@@ -62,7 +62,7 @@ fn resize_rgb(rgb: RgbImage, width: u32, height: u32) -> Result<RgbImage> {
 
     let mut dst = Image::new(width, height, PixelType::U8x3);
     let options = ResizeOptions::new()
-        .resize_alg(ResizeAlg::Convolution(FilterType::CatmullRom))
+        .resize_alg(ResizeAlg::Convolution(FilterType::Lanczos3))
         .use_alpha(false);
 
     Resizer::new()

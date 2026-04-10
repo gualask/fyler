@@ -115,11 +115,11 @@ class** of the source whenever the preset asks for conservative behavior.
 Current preset policy for imported image pages:
 
 - `Original`
-  - lossy sources stay JPEG
+  - JPEG sources are embedded as-is when no resize is required
   - lossless or unknown sources stay raw/lossless inside the PDF (except WebP)
 - `Light`
   - same conservative philosophy as `Original`
-  - lossy sources stay JPEG with lighter recompression
+  - JPEG sources are embedded as-is when no resize is required
   - lossless or unknown sources are not forced into JPEG (except WebP)
 - `Balanced`
   - imported image pages default to JPEG
@@ -140,6 +140,18 @@ Important semantic note:
 
 This avoids the previous failure mode where a JPEG source image could become a
 huge raw RGB stream inside the final PDF.
+
+### JPEG fast path
+
+When the source image is a JPEG and no downscale is required (no effective `targetDpi` resize),
+Fyler embeds the original JPEG bitstream directly in the PDF image XObject (`DCTDecode`).
+
+This avoids:
+
+- unnecessary decode / re-encode work
+- generational quality loss
+
+When `jpegQuality` is explicitly set or a downscale is required, Fyler decodes and re-encodes.
 
 ### Alpha handling
 
@@ -166,6 +178,11 @@ The target size is derived from:
 - the requested `targetDpi`
 
 Only downscaling is performed (never upscaling).
+
+### Rotation handling
+
+For imported JPEG pages that take the fast path, quarter-turn rotation is applied via a PDF
+transform matrix in the page content stream (without rotating pixels).
 
 ## Images already embedded in PDFs
 
