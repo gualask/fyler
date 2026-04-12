@@ -23,11 +23,9 @@ export function useFinalPages() {
             dispatch({ type: 'set-image-included', fileId: file.id, included: true });
             return;
         }
-        dispatch({
-            type: 'set-pdf-selection',
-            fileId: file.id,
-            pages: allPdfPagesForFile(file),
-        });
+        const pages = allPdfPagesForFile(file);
+        if (pages.length === 0) return; // pageCount still null — nothing to add yet
+        dispatch({ type: 'set-pdf-selection', fileId: file.id, pages });
     }, []);
 
     const removePagesForFile = useCallback((fileId: string) => {

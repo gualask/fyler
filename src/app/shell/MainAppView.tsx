@@ -69,16 +69,18 @@ export function MainAppView({
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
                 {isDragOver && <DragOverlay />}
 
-                {workspace.files.length === 0 ? (
-                    <EmptyState onAddFiles={handleAddFiles} />
-                ) : (
-                    <MainWorkspaceLayout
-                        workspace={workspace}
-                        handleAddFiles={handleAddFiles}
-                        focusedSourceTarget={focusedSourceTarget}
-                        focusedSourceFlashKey={focusedSourceFlashKey}
-                        optimize={optimize}
-                    />
+                <MainWorkspaceLayout
+                    workspace={workspace}
+                    handleAddFiles={handleAddFiles}
+                    focusedSourceTarget={focusedSourceTarget}
+                    focusedSourceFlashKey={focusedSourceFlashKey}
+                    optimize={optimize}
+                />
+
+                {workspace.files.length === 0 && (
+                    <div className="absolute inset-0 z-10 flex flex-col bg-ui-bg">
+                        <EmptyState onAddFiles={handleAddFiles} />
+                    </div>
                 )}
             </div>
         </>
