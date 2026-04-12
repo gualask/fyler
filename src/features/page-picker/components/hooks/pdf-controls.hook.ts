@@ -39,7 +39,8 @@ export function usePdfControls({
     const selectedCount = selectedPageNums.size;
     const mode: 'all' | 'none' | 'custom' = (() => {
         if (selectedCount === 0) return 'none';
-        if (file.pageCount > 0 && selectedCount === file.pageCount) return 'all';
+        if (file.pageCount !== null && file.pageCount > 0 && selectedCount === file.pageCount)
+            return 'all';
         return 'custom';
     })();
 
@@ -53,7 +54,7 @@ export function usePdfControls({
         handlePageInputChange,
     } = usePageSpecInput({
         fileId: file.id,
-        pageCount: file.pageCount,
+        pageCount: file.pageCount ?? 0,
         selectedPages,
         mode,
         onSetPdfPages,
@@ -92,7 +93,7 @@ export function usePdfControls({
     };
 
     const handleEnableManual = () => {
-        if (file.pageCount <= 0) return;
+        if (!file.pageCount) return;
         onSetPdfPages(file.id, [1]);
     };
 

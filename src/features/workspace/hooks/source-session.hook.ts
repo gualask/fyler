@@ -20,6 +20,7 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
         removeFile: removeFileFromList,
         clearFiles,
         reorderFiles,
+        updateFilePageCount,
     } = useFileList();
     const { editsByFile, setFileEdits, clearFileEdits, clearAllFileEdits } = useFileEdits();
     const { requestRenders, releaseFile } = usePdfCache();
@@ -95,5 +96,6 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
         clearSourceFiles,
         rotateSourcePage,
         reorderFiles,
+        updateFilePageCount,
     };
 }

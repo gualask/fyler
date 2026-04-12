@@ -89,11 +89,20 @@ export function PdfPanel({
         commitPageInput();
     };
 
+    const pageCount = file.pageCount;
+    if (pageCount === null) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
+            </div>
+        );
+    }
+
     return (
         <div className="flex h-full flex-col overflow-hidden">
             <PdfToolbar
                 fileId={file.id}
-                pageCount={file.pageCount}
+                pageCount={pageCount}
                 pageInput={pageInput}
                 onPageInputChange={handlePageInputChange}
                 onPageInputCommit={handlePageInputCommit}
@@ -107,28 +116,22 @@ export function PdfPanel({
 
             <div ref={setGridEl} className="section-body min-h-0 flex-1 overflow-y-auto p-3">
                 <div className="page-picker-grid">
-                    {Array.from({ length: file.pageCount }, (_, index) => index + 1).map(
-                        (pageNum) => (
-                            <PdfThumbnailItem
-                                key={`${pageNum}:${focusedPageNum === pageNum ? (focusFlashKey ?? 0) : 0}`}
-                                file={file}
-                                pageNum={pageNum}
-                                edits={editsByFile[file.id] ?? FileEditsVO.empty()}
-                                scrollRoot={gridEl}
-                                isSelected={selectedPageNums.has(pageNum)}
-                                isFocused={focusedPageNum === pageNum}
-                                focusFlashKey={
-                                    focusedPageNum === pageNum ? focusFlashKey : undefined
-                                }
-                                onClick={(event) => handleThumbClick(pageNum, event)}
-                                onToggleSelected={() => onTogglePage(file.id, pageNum)}
-                                onPreview={() => onPreview(pageNum)}
-                                onRotate={(direction) =>
-                                    void onRotatePage(file.id, pageNum, direction)
-                                }
-                            />
-                        ),
-                    )}
+                    {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNum) => (
+                        <PdfThumbnailItem
+                            key={`${pageNum}:${focusedPageNum === pageNum ? (focusFlashKey ?? 0) : 0}`}
+                            file={file}
+                            pageNum={pageNum}
+                            edits={editsByFile[file.id] ?? FileEditsVO.empty()}
+                            scrollRoot={gridEl}
+                            isSelected={selectedPageNums.has(pageNum)}
+                            isFocused={focusedPageNum === pageNum}
+                            focusFlashKey={focusedPageNum === pageNum ? focusFlashKey : undefined}
+                            onClick={(event) => handleThumbClick(pageNum, event)}
+                            onToggleSelected={() => onTogglePage(file.id, pageNum)}
+                            onPreview={() => onPreview(pageNum)}
+                            onRotate={(direction) => void onRotatePage(file.id, pageNum, direction)}
+                        />
+                    ))}
                 </div>
             </div>
         </div>

@@ -65,7 +65,13 @@ export function FileRow({ file, selected, onSelect, onRemove }: Props) {
                         {file.kind === 'pdf' ? (
                             <>
                                 <span className="mx-2">•</span>
-                                <span>{t('fileList.pageCount', { count: file.pageCount })}</span>
+                                {file.pageCount === null ? (
+                                    <span className="inline-block h-2 w-10 animate-pulse rounded bg-ui-border" />
+                                ) : (
+                                    <span>
+                                        {t('fileList.pageCount', { count: file.pageCount })}
+                                    </span>
+                                )}
                             </>
                         ) : null}
                     </p>

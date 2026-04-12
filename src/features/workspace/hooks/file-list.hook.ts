@@ -31,5 +31,9 @@ export function useFileList() {
         setFiles((prev) => reorderById(prev, fromId, toId));
     }, []);
 
-    return { files, addFiles, removeFile, clearFiles, reorderFiles };
+    const updateFilePageCount = useCallback((id: string, count: number) => {
+        setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, pageCount: count } : f)));
+    }, []);
+
+    return { files, addFiles, removeFile, clearFiles, reorderFiles, updateFilePageCount };
 }

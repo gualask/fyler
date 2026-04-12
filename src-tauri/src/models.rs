@@ -16,8 +16,8 @@ pub struct SourceFile {
     /// Original file size in bytes.
     pub byte_size: u64,
     #[serde(rename = "pageCount")]
-    /// Total page count for PDFs, or `1` for images.
-    pub page_count: u32,
+    /// Total page count for PDFs (`None` while being counted in background), or `Some(1)` for images.
+    pub page_count: Option<u32>,
     /// `"pdf"` or `"image"`.
     pub kind: DocKind,
 }

@@ -40,6 +40,7 @@ export function fromFinalPageId(
 }
 
 export function allPdfPagesForFile(file: SourceFile): number[] {
+    if (file.pageCount === null) return [];
     return Array.from({ length: file.pageCount }, (_, i) => i + 1);
 }
 

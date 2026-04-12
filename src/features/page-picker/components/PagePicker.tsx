@@ -129,7 +129,7 @@ export function PagePicker({
                     finalPages={[previewTarget]}
                     files={[file]}
                     editsByFile={editsByFile}
-                    indicator={{ total: file.pageCount, mode: 'page-num' }}
+                    indicator={{ total: file.pageCount ?? 1, mode: 'page-num' }}
                     onRotatePage={onRotateTarget}
                     onClose={() => setPreviewTarget(null)}
                 />

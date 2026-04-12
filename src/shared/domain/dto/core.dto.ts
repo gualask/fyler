@@ -18,6 +18,7 @@ export type RotationDirection = 'cw' | 'ccw';
  * A user-imported file tracked by the session.
  *
  * `pageCount` is 1-based and represents the original source; edits are tracked separately.
+ * For PDFs, `pageCount` is `null` while the background page-count task is running.
  */
 export type SourceFile = {
     id: string;
@@ -25,7 +26,8 @@ export type SourceFile = {
     name: string;
     /** Original file size in bytes. */
     byteSize: number;
-    pageCount: number;
+    /** Null for PDFs while page count is being resolved in the background. */
+    pageCount: number | null;
     kind: DocKind;
 };
 

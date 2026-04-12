@@ -8,7 +8,7 @@ use tauri_plugin_opener::OpenerExt;
 use crate::error::AppError;
 use crate::export::export_pdf;
 use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile};
-use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
+use crate::pdf::{count_pages, image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{files_from_paths, SourceRegistry};
 
 #[derive(Clone, serde::Serialize)]
@@ -58,6 +58,39 @@ fn finalize_import(
     OpenFilesResult {
         files: result.files,
         skipped_errors: skipped,
+    }
+}
+
+/// Spawns a detached background task for each PDF file whose page count is not yet known.
+///
+/// When counting completes the task emits `source-page-count` (`{ id, pageCount }`) or
+/// `source-page-count-error` (`{ id }`) so the frontend can update its state.
+fn spawn_page_count_tasks(app: &tauri::AppHandle, files: &[crate::models::SourceFile]) {
+    for file in files {
+        if file.page_count.is_some() {
+            continue;
+        }
+        let app = app.clone();
+        let path = file.original_path.clone();
+        let id = file.id.clone();
+        tauri::async_runtime::spawn(async move {
+            let result =
+                tauri::async_runtime::spawn_blocking(move || count_pages(&path)).await;
+            match result {
+                Ok(Ok(count)) => {
+                    let _ = app.emit(
+                        "source-page-count",
+                        serde_json::json!({ "id": id, "pageCount": count }),
+                    );
+                }
+                _ => {
+                    let _ = app.emit(
+                        "source-page-count-error",
+                        serde_json::json!({ "id": id }),
+                    );
+                }
+            }
+        });
     }
 }
 
@@ -114,7 +147,9 @@ pub async fn open_files_dialog(
     let result = tauri::async_runtime::spawn_blocking(move || files_from_paths(paths, &registry))
         .await
         .map_err(anyhow::Error::from)??;
-    Ok(finalize_import(&app, result, path_skipped))
+    let import_result = finalize_import(&app, result, path_skipped);
+    spawn_page_count_tasks(&app, &import_result.files);
+    Ok(import_result)
 }
 
 #[tauri::command]
@@ -128,7 +163,9 @@ pub async fn open_files_from_paths(
     let result = tauri::async_runtime::spawn_blocking(move || files_from_paths(paths, &registry))
         .await
         .map_err(anyhow::Error::from)??;
-    Ok(finalize_import(&app, result, vec![]))
+    let import_result = finalize_import(&app, result, vec![]);
+    spawn_page_count_tasks(&app, &import_result.files);
+    Ok(import_result)
 }
 
 #[tauri::command]

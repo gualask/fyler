@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 
 use crate::models::{SkippedFile, SourceFile};
-use crate::pdf::{count_pages, detect_kind_from_ext};
+use crate::pdf::detect_kind_from_ext;
 use crate::vo::DocKind;
 
 use super::registry::{RegisteredSource, SourceRegistry};
@@ -36,15 +36,7 @@ fn registered_file_from_path(path: String) -> Result<(SourceFile, RegisteredSour
         });
     };
 
-    let page_count = if kind == DocKind::Pdf {
-        count_pages(&path).map_err(|error| SkippedFile {
-            name: name.clone(),
-            reason: "read_error".into(),
-            detail: Some(error.to_string()),
-        })?
-    } else {
-        1
-    };
+    let page_count: Option<u32> = if kind == DocKind::Pdf { None } else { Some(1) };
     let byte_size = fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
     let id = uuid::Uuid::new_v4().to_string();
 

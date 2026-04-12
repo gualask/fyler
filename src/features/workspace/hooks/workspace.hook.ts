@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { onTauriEvent } from '@/infra/platform/events';
 import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
 import { useFileDrop } from './file-drop.hook';
 import { useFinalPages } from './final-pages.hook';
@@ -48,6 +49,7 @@ export function useWorkspace({
         clearSourceFiles,
         rotateSourcePage,
         reorderFiles,
+        updateFilePageCount,
     } = useSourceSession({
         onFilesAdded: handleSessionFilesAdded,
         onFileRemoved: handleSessionFileRemoved,
@@ -141,6 +143,39 @@ export function useWorkspace({
         },
         [onDropError],
     );
+
+    // Refs to access latest values inside stable event listeners.
+    const filesRef = useRef(files);
+    const addAllPagesForFileRef = useRef(addAllPagesForFile);
+    const removeSourceFileRef = useRef(removeSourceFile);
+    const removePagesForFileRef = useRef(removePagesForFile);
+    const onDropErrorRef = useRef(onDropError);
+    useLayoutEffect(() => {
+        filesRef.current = files;
+        addAllPagesForFileRef.current = addAllPagesForFile;
+        removeSourceFileRef.current = removeSourceFile;
+        onDropErrorRef.current = onDropError;
+        removePagesForFileRef.current = removePagesForFile;
+    });
+
+    useEffect(() => {
+        const unlisten = [
+            onTauriEvent<{ id: string; pageCount: number }>('source-page-count', (e) => {
+                const { id, pageCount } = e.payload;
+                updateFilePageCount(id, pageCount);
+                const file = filesRef.current.find((f) => f.id === id);
+                if (file) addAllPagesForFileRef.current({ ...file, pageCount });
+            }),
+            onTauriEvent<{ id: string }>('source-page-count-error', (e) => {
+                removeSourceFileRef.current(e.payload.id);
+                removePagesForFileRef.current(e.payload.id); // explicit cleanup in case removeSourceFile's stale closure missed it
+                onDropErrorRef.current?.(new Error('page_count_failed'));
+            }),
+        ];
+        return () => {
+            for (const fn of unlisten) fn();
+        };
+    }, [updateFilePageCount]); // updateFilePageCount is stable (no deps on useCallback), so this effect runs once; refs cover everything else
 
     const { isDragOver } = useFileDrop(acceptFiles, selectIfNone, handleDropError);
 
