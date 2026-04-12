@@ -15,8 +15,6 @@
         "title": "Fyler",
         "width": 1100,
         "height": 700,
-        "minWidth": 1100,
-        "minHeight": 600,
         "acceptFirstMouse": true
       }
     ],

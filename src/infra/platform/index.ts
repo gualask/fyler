@@ -60,3 +60,11 @@ export const windowSetSize = (w: number, h: number) =>
     getCurrentWindow().setSize(new LogicalSize(w, h));
 
 export const windowSetAlwaysOnTop = (flag: boolean) => getCurrentWindow().setAlwaysOnTop(flag);
+
+export const windowSetMinSize = (w: number, h: number) =>
+    getCurrentWindow().setMinSize(new LogicalSize(w, h));
+
+export const windowSetMaxSize = (size: { width: number; height: number } | null) =>
+    getCurrentWindow().setMaxSize(size ? new LogicalSize(size.width, size.height) : null);
+
+export const windowSetMaximizable = (flag: boolean) => getCurrentWindow().setMaximizable(flag);
