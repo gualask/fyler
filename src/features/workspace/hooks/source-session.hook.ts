@@ -5,14 +5,15 @@ import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domai
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { useFileEdits } from './file-edits.hook';
-import { useFileList } from './file-list.hook';
+import type { useFileList } from './file-list.hook';
 
 interface Options {
+    fileList: ReturnType<typeof useFileList>;
     onFilesAdded?: (files: SourceFile[]) => void;
     onFileRemoved?: (file: SourceFile | null) => void;
 }
 
-export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) {
+export function useSourceSession({ fileList, onFilesAdded, onFileRemoved }: Options) {
     const { t } = useTranslation();
     const {
         files,
@@ -21,7 +22,7 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options = {}) 
         clearFiles,
         reorderFiles,
         updateFilePageCount,
-    } = useFileList();
+    } = fileList;
     const { editsByFile, setFileEdits, clearFileEdits, clearAllFileEdits } = useFileEdits();
     const { requestRenders, releaseFile } = usePdfCache();
 

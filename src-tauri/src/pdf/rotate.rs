@@ -16,6 +16,13 @@ pub fn quarter_turns_to_degrees(turns: u8) -> Result<i32> {
     }
 }
 
+/// Validates that `turns` is in the range `0..=3`.
+///
+/// Returns a user-facing error for invalid values.
+pub fn validate_quarter_turns(turns: u8) -> Result<()> {
+    quarter_turns_to_degrees(turns).map(|_| ())
+}
+
 pub(super) fn rotate_dynamic_image(img: DynamicImage, quarter_turns: u8) -> Result<DynamicImage> {
     Ok(match quarter_turns_to_degrees(quarter_turns)? {
         0 => img,

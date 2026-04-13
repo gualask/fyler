@@ -39,17 +39,9 @@ fn normalize_common_dict(stream: &mut Stream, raster: &DecodedRaster) {
 }
 
 fn rewrite_raw(stream: &mut Stream, raster: DecodedRaster) {
-    let width = raster.width();
-    let height = raster.height();
-    let color_space = raster.color_space();
     stream.dict.remove(b"Filter");
+    normalize_common_dict(stream, &raster);
     stream.set_plain_content(raster.into_raw());
-    let snapshot = DecodedRasterSnapshot {
-        width,
-        height,
-        color_space,
-    };
-    normalize_common_dict_from_parts(stream, snapshot);
 }
 
 fn rewrite_jpeg(stream: &mut Stream, raster: DecodedRaster, quality: u8) -> Result<()> {
@@ -84,24 +76,3 @@ pub fn rewrite_stream(
     }
 }
 
-#[derive(Clone, Copy)]
-struct DecodedRasterSnapshot {
-    width: u32,
-    height: u32,
-    color_space: SupportedColorSpace,
-}
-
-fn normalize_common_dict_from_parts(stream: &mut Stream, snapshot: DecodedRasterSnapshot) {
-    stream.dict.set("Width", snapshot.width as i64);
-    stream.dict.set("Height", snapshot.height as i64);
-    stream.dict.set("BitsPerComponent", 8);
-    stream.dict.set(
-        "ColorSpace",
-        match snapshot.color_space {
-            SupportedColorSpace::Gray => Object::Name(b"DeviceGray".to_vec()),
-            SupportedColorSpace::Rgb => Object::Name(b"DeviceRGB".to_vec()),
-            SupportedColorSpace::Cmyk => Object::Name(b"DeviceCMYK".to_vec()),
-        },
-    );
-    stream.dict.remove(b"DecodeParms");
-}

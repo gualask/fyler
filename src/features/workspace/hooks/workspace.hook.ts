@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { onTauriEvent } from '@/infra/platform/events';
 import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
 import { useFileDrop } from './file-drop.hook';
+import { useFileList } from './file-list.hook';
 import { useFinalPages } from './final-pages.hook';
 import { useSourceSession } from './source-session.hook';
 
@@ -22,14 +23,13 @@ export function useWorkspace({
     const finalPagesApi = useFinalPages();
     const { addAllPagesForFile, setPdfPagesForFile, removePagesForFile, clearAllPages } =
         finalPagesApi;
+    const fileList = useFileList();
+    const { updateFilePageCount } = fileList;
 
     // source-page-count may fire before React commits the addToList state update (race on fast
     // PDFs / dialog path). This map holds those early page counts so handleSessionFilesAdded can
     // re-queue updateFilePageCount after addToList's setFiles, ensuring React applies them in order.
     const pendingPageCountsRef = useRef<Map<string, number>>(new Map());
-    // Breaks the circular dep: handleSessionFilesAdded is defined before useSourceSession
-    // (which exposes updateFilePageCount), so the function is forwarded via a ref.
-    const updateFilePageCountRef = useRef<(id: string, count: number) => void>(() => {});
 
     const handleSessionFilesAdded = useCallback(
         (addedFiles: SourceFile[]) => {
@@ -44,12 +44,12 @@ export function useWorkspace({
                 const pendingCount = pendingPageCountsRef.current.get(file.id);
                 if (pendingCount !== undefined) {
                     pendingPageCountsRef.current.delete(file.id);
-                    updateFilePageCountRef.current(file.id, pendingCount);
+                    updateFilePageCount(file.id, pendingCount);
                 }
             }
             onFilesAdded?.(addedFiles.map((file) => file.id));
         },
-        [addAllPagesForFile, onFilesAdded],
+        [addAllPagesForFile, onFilesAdded, updateFilePageCount],
     );
 
     const handleSessionFileRemoved = useCallback(
@@ -69,8 +69,8 @@ export function useWorkspace({
         clearSourceFiles,
         rotateSourcePage,
         reorderFiles,
-        updateFilePageCount,
     } = useSourceSession({
+        fileList,
         onFilesAdded: handleSessionFilesAdded,
         onFileRemoved: handleSessionFileRemoved,
     });
@@ -173,7 +173,6 @@ export function useWorkspace({
     useLayoutEffect(() => {
         filesRef.current = files;
         setPdfPagesForFileRef.current = setPdfPagesForFile;
-        updateFilePageCountRef.current = updateFilePageCount;
         removeSourceFileRef.current = removeSourceFile;
         onDropErrorRef.current = onDropError;
         removePagesForFileRef.current = removePagesForFile;

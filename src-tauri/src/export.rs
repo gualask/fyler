@@ -4,7 +4,7 @@ use tauri::{AppHandle, Emitter};
 use crate::error::UserFacingError;
 use crate::models::{ExportItem, FileEdits, MergeRequest, MergeResult, MergeWarning};
 use crate::optimize;
-use crate::pdf::quarter_turns_to_degrees;
+use crate::pdf::validate_quarter_turns;
 use crate::pdf_compose::PdfComposer;
 use crate::source_registry::SourceRegistry;
 use crate::vo::{DocKind, ImageFit};
@@ -24,13 +24,13 @@ fn quarter_turns_for_pdf_page(edits: Option<&FileEdits>, page_num: u32) -> anyho
     let turns = edits
         .and_then(|value| value.page_rotations.get(&page_num).copied())
         .unwrap_or(0);
-    let _ = quarter_turns_to_degrees(turns)?;
+    validate_quarter_turns(turns)?;
     Ok(turns)
 }
 
 fn quarter_turns_for_image(edits: Option<&FileEdits>) -> anyhow::Result<u8> {
     let turns = edits.map(|value| value.image_rotation).unwrap_or(0);
-    let _ = quarter_turns_to_degrees(turns)?;
+    validate_quarter_turns(turns)?;
     Ok(turns)
 }
 
@@ -72,28 +72,22 @@ fn load_cached_pdf_source<'a>(
     path: &str,
     name: &str,
 ) -> anyhow::Result<&'a mut CachedPdfSource> {
-    if cache.contains_key(file_id) {
-        return cache
-            .get_mut(file_id)
-            .ok_or_else(|| anyhow::Error::msg("Missing PDF cache entry"));
+    if !cache.contains_key(file_id) {
+        let doc = PdfDoc::load(path).map_err(|_| {
+            anyhow::Error::new(UserFacingError::with_meta(
+                "open_pdf_failed",
+                serde_json::json!({ "name": name }),
+            ))
+        })?;
+        cache.insert(
+            file_id.to_owned(),
+            CachedPdfSource {
+                doc,
+                memo: std::collections::HashMap::new(),
+            },
+        );
     }
-
-    let doc = PdfDoc::load(path).map_err(|_| {
-        anyhow::Error::new(UserFacingError::with_meta(
-            "open_pdf_failed",
-            serde_json::json!({ "name": name }),
-        ))
-    })?;
-    cache.insert(
-        file_id.to_owned(),
-        CachedPdfSource {
-            doc,
-            memo: std::collections::HashMap::new(),
-        },
-    );
-    cache
-        .get_mut(file_id)
-        .ok_or_else(|| anyhow::Error::msg("Missing PDF cache entry after insert"))
+    Ok(cache.get_mut(file_id).expect("just inserted"))
 }
 
 fn compose_document(
@@ -122,14 +116,12 @@ fn compose_document(
         // Evict per-source cached PDFs once we've appended their last referenced page.
         // This keeps memory usage bounded even if users export very large compositions.
         let should_evict_pdf_cache = last_use_index_by_file_id.get(file_id).copied() == Some(index);
-        let source = if let Some(found) = source_cache.get(file_id) {
-            found
-        } else {
+        let source = if !source_cache.contains_key(file_id) {
             let loaded = resolve_source(registry, file_id)?;
             source_cache.insert(file_id, loaded);
-            source_cache
-                .get(file_id)
-                .ok_or_else(|| anyhow::Error::msg("Failed to insert source cache entry"))?
+            source_cache.get(file_id).expect("just inserted")
+        } else {
+            source_cache.get(file_id).expect("checked above")
         };
         let edits = req.edits.get(file_id);
 
@@ -283,6 +275,7 @@ pub fn export_pdf(
     optimize::cleanup_document(&mut merged);
     let mut file = std::fs::File::create(&req.output_path)?;
     optimize::save_document(&mut merged, &mut file)?;
+    emit_progress(app, "done", 100);
     Ok(MergeResult {
         optimization_failed_count,
         warnings,
