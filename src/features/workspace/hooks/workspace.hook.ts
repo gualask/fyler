@@ -20,12 +20,32 @@ export function useWorkspace({
         flashTarget: 'picker' | 'final';
     } | null>(null);
     const finalPagesApi = useFinalPages();
-    const { addAllPagesForFile, removePagesForFile, clearAllPages } = finalPagesApi;
+    const { addAllPagesForFile, setPdfPagesForFile, removePagesForFile, clearAllPages } =
+        finalPagesApi;
+
+    // source-page-count may fire before React commits the addToList state update (race on fast
+    // PDFs / dialog path). This map holds those early page counts so handleSessionFilesAdded can
+    // re-queue updateFilePageCount after addToList's setFiles, ensuring React applies them in order.
+    const pendingPageCountsRef = useRef<Map<string, number>>(new Map());
+    // Breaks the circular dep: handleSessionFilesAdded is defined before useSourceSession
+    // (which exposes updateFilePageCount), so the function is forwarded via a ref.
+    const updateFilePageCountRef = useRef<(id: string, count: number) => void>(() => {});
 
     const handleSessionFilesAdded = useCallback(
         (addedFiles: SourceFile[]) => {
             for (const file of addedFiles) {
-                addAllPagesForFile(file);
+                if (file.kind === 'image') {
+                    addAllPagesForFile(file);
+                    continue;
+                }
+                // PDF pages are added by the source-page-count event handler. If that event
+                // arrived before this file entered React state, drain the pending count now so
+                // updateFilePageCount is queued after addToList's setFiles (correct batch order).
+                const pendingCount = pendingPageCountsRef.current.get(file.id);
+                if (pendingCount !== undefined) {
+                    pendingPageCountsRef.current.delete(file.id);
+                    updateFilePageCountRef.current(file.id, pendingCount);
+                }
             }
             onFilesAdded?.(addedFiles.map((file) => file.id));
         },
@@ -146,13 +166,14 @@ export function useWorkspace({
 
     // Refs to access latest values inside stable event listeners.
     const filesRef = useRef(files);
-    const addAllPagesForFileRef = useRef(addAllPagesForFile);
+    const setPdfPagesForFileRef = useRef(setPdfPagesForFile);
     const removeSourceFileRef = useRef(removeSourceFile);
     const removePagesForFileRef = useRef(removePagesForFile);
     const onDropErrorRef = useRef(onDropError);
     useLayoutEffect(() => {
         filesRef.current = files;
-        addAllPagesForFileRef.current = addAllPagesForFile;
+        setPdfPagesForFileRef.current = setPdfPagesForFile;
+        updateFilePageCountRef.current = updateFilePageCount;
         removeSourceFileRef.current = removeSourceFile;
         onDropErrorRef.current = onDropError;
         removePagesForFileRef.current = removePagesForFile;
@@ -163,10 +184,16 @@ export function useWorkspace({
             onTauriEvent<{ id: string; pageCount: number }>('source-page-count', (e) => {
                 const { id, pageCount } = e.payload;
                 updateFilePageCount(id, pageCount);
-                const file = filesRef.current.find((f) => f.id === id);
-                if (file) addAllPagesForFileRef.current({ ...file, pageCount });
+                setPdfPagesForFileRef.current(
+                    id,
+                    Array.from({ length: pageCount }, (_, i) => i + 1),
+                );
+                if (!filesRef.current.some((f) => f.id === id)) {
+                    pendingPageCountsRef.current.set(id, pageCount);
+                }
             }),
             onTauriEvent<{ id: string }>('source-page-count-error', (e) => {
+                pendingPageCountsRef.current.delete(e.payload.id);
                 removeSourceFileRef.current(e.payload.id);
                 removePagesForFileRef.current(e.payload.id); // explicit cleanup in case removeSourceFile's stale closure missed it
                 onDropErrorRef.current?.(new Error('page_count_failed'));
