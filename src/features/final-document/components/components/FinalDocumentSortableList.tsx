@@ -29,6 +29,8 @@ export interface FinalDocumentRowProps {
     onSelect: () => void;
     onPreview: () => void;
     flashKey?: number;
+    onMoveTo?: (targetIndex: number) => void;
+    totalItems?: number;
 }
 
 interface Props {
@@ -44,6 +46,7 @@ interface Props {
     onPreviewPage: (id: string) => void;
     gapClassName: string;
     Row: (props: FinalDocumentRowProps) => ReactNode;
+    onMovePageToIndex?: (id: string, targetIndex: number) => void;
 }
 
 export function FinalDocumentSortableList({
@@ -59,6 +62,7 @@ export function FinalDocumentSortableList({
     onPreviewPage,
     gapClassName,
     Row,
+    onMovePageToIndex,
 }: Props) {
     const { t } = useTranslation();
     const { items, sortableItems } = useFinalDocumentItems({
@@ -151,6 +155,13 @@ export function FinalDocumentSortableList({
                                         ? selectedPageScrollKey
                                         : undefined
                                 }
+                                onMoveTo={
+                                    onMovePageToIndex
+                                        ? (targetIndex) =>
+                                              onMovePageToIndex(item.page.id, targetIndex)
+                                        : undefined
+                                }
+                                totalItems={onMovePageToIndex ? items.length : undefined}
                             />
                         );
                     })}

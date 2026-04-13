@@ -61,6 +61,8 @@ interface Props {
     hideDefaultDragHandle?: boolean;
     indexControlsSize?: 'sm' | 'lg';
     children: ReactNode;
+    onMoveTo?: (targetIndex: number) => void;
+    totalItems?: number;
 }
 
 export function FinalDocumentRowShell({
@@ -77,6 +79,8 @@ export function FinalDocumentRowShell({
     hideDefaultDragHandle = false,
     indexControlsSize = 'sm',
     children,
+    onMoveTo,
+    totalItems,
 }: Props) {
     const { t } = useTranslation();
     const {
@@ -114,6 +118,8 @@ export function FinalDocumentRowShell({
                 onMoveUp={onMoveUp}
                 onMoveDown={onMoveDown}
                 size={indexControlsSize}
+                onMoveToIndex={onMoveTo}
+                totalItems={totalItems}
             />
 
             <div onClick={onSelect} className={cardClassName}>

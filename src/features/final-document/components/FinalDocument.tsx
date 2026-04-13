@@ -87,6 +87,7 @@ export function FinalDocument({
                         editsByFile={editsByFile}
                         scrollRoot={scrollRoot}
                         onReorder={onReorder}
+                        onMovePageToIndex={onMovePageToIndex}
                         onRemove={onRemove}
                         onSelectPage={onSelectPage}
                         onPreviewPage={setPreviewTargetId}
@@ -100,6 +101,7 @@ export function FinalDocument({
                         editsByFile={editsByFile}
                         scrollRoot={scrollRoot}
                         onReorder={onReorder}
+                        onMovePageToIndex={onMovePageToIndex}
                         onRemove={onRemove}
                         onSelectPage={onSelectPage}
                         onPreviewPage={setPreviewTargetId}

@@ -122,6 +122,7 @@
     "finalDocument.imageLabel": "Immagine",
     "finalDocument.dragHandle": "Trascina per riordinare",
     "finalDocument.removePage": "Rimuovi pagina",
+    "finalDocument.moveToIndex": "Sposta alla posizione",
     "preview.zoomOut": "Riduci (Ctrl+scroll giù)",
     "preview.zoomIn": "Ingrandisci (Ctrl+scroll su)",
     "preview.resetZoom": "Ripristina zoom (100%)",

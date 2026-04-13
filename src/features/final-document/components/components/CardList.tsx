@@ -13,6 +13,7 @@ interface Props {
     onRemove: (id: string) => void;
     onSelectPage: (fileId: string, target: SourceTarget) => void;
     onPreviewPage: (id: string) => void;
+    onMovePageToIndex?: (id: string, targetIndex: number) => void;
 }
 
 export function CardList({
@@ -26,6 +27,7 @@ export function CardList({
     onRemove,
     onSelectPage,
     onPreviewPage,
+    onMovePageToIndex,
 }: Props) {
     return (
         <FinalDocumentSortableList
@@ -41,6 +43,7 @@ export function CardList({
             onPreviewPage={onPreviewPage}
             gapClassName="gap-4"
             Row={CardRow}
+            onMovePageToIndex={onMovePageToIndex}
         />
     );
 }

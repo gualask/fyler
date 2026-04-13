@@ -1,21 +1,8 @@
 import { memo } from 'react';
 import { useTranslation } from '@/shared/i18n';
-import type { ListItem } from '../list-item.types';
 import { FinalDocumentRowShell } from './FinalDocumentRowShell';
+import type { FinalDocumentRowProps } from './FinalDocumentSortableList';
 import { ListRowThumbnail } from './ListRowThumbnail';
-
-interface Props {
-    item: ListItem;
-    isFirst: boolean;
-    isLast: boolean;
-    scrollRoot: HTMLDivElement | null;
-    onMoveUp: () => void;
-    onMoveDown: () => void;
-    onRemove: (id: string) => void;
-    onSelect: () => void;
-    onPreview: () => void;
-    flashKey?: number;
-}
 
 export const ListRow = memo(function ListRow({
     item,
@@ -28,7 +15,9 @@ export const ListRow = memo(function ListRow({
     onSelect,
     onPreview,
     flashKey,
-}: Props) {
+    onMoveTo,
+    totalItems,
+}: FinalDocumentRowProps) {
     const { t } = useTranslation();
 
     return (
@@ -48,6 +37,8 @@ export const ListRow = memo(function ListRow({
                     ? 'border-ui-accent bg-ui-surface'
                     : 'border-ui-border bg-ui-surface',
             ].join(' ')}
+            onMoveTo={onMoveTo}
+            totalItems={totalItems}
         >
             <ListRowThumbnail item={item} scrollRoot={scrollRoot} onPreview={onPreview} />
 

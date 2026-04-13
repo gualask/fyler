@@ -1,20 +1,7 @@
 import { memo } from 'react';
-import type { ListItem } from '../list-item.types';
 import { FinalDocumentRowShell } from './FinalDocumentRowShell';
+import type { FinalDocumentRowProps } from './FinalDocumentSortableList';
 import { ListRowThumbnail } from './ListRowThumbnail';
-
-interface Props {
-    item: ListItem;
-    isFirst: boolean;
-    isLast: boolean;
-    scrollRoot: HTMLDivElement | null;
-    onMoveUp: () => void;
-    onMoveDown: () => void;
-    onRemove: (id: string) => void;
-    onSelect: () => void;
-    onPreview: () => void;
-    flashKey?: number;
-}
 
 export const CardRow = memo(function CardRow({
     item,
@@ -27,7 +14,9 @@ export const CardRow = memo(function CardRow({
     onSelect,
     onPreview,
     flashKey,
-}: Props) {
+    onMoveTo,
+    totalItems,
+}: FinalDocumentRowProps) {
     return (
         <FinalDocumentRowShell
             item={item}
@@ -42,6 +31,8 @@ export const CardRow = memo(function CardRow({
             cardClassName="group relative flex min-w-0 flex-1 items-center gap-3 transition-colors"
             hideDefaultDragHandle
             indexControlsSize="lg"
+            onMoveTo={onMoveTo}
+            totalItems={totalItems}
         >
             <ListRowThumbnail
                 size="lg"
