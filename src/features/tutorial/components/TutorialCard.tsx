@@ -1,3 +1,5 @@
+import { motion } from 'motion/react';
+
 interface Props {
     text: string;
     stepLabel: string;
@@ -19,7 +21,13 @@ export function TutorialCard({
     onSkip,
 }: Props) {
     return (
-        <div className={className} style={style}>
+        <motion.div
+            className={className}
+            style={style}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        >
             <p className="text-sm text-ui-text">{text}</p>
 
             <div className="mt-3 flex items-center justify-between">
@@ -42,6 +50,6 @@ export function TutorialCard({
                     </button>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }

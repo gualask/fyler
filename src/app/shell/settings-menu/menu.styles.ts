@@ -11,4 +11,4 @@ export const menuItemClass =
     'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-ui-text-secondary transition-colors hover:bg-ui-surface-hover hover:text-ui-text';
 
 export const submenuPanelClass =
-    'absolute left-full top-0 z-30 ml-1 min-w-[11rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg';
+    'absolute left-full top-0 z-50 min-w-[11rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg';

@@ -1,3 +1,4 @@
+import { motion } from 'motion/react';
 import { useEffect, useReducer } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { TutorialCard } from './TutorialCard';
@@ -32,10 +33,21 @@ export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
 
     // Calculate rect during render (no setState needed)
     const rect = getTargetRect(step.target);
+    const fadeProps = {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.2 },
+    };
+
     if (!rect) {
         return (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4">
+            <motion.div
+                className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4"
+                {...fadeProps}
+            >
                 <TutorialCard
+                    key={currentStep}
                     className="w-full max-w-xs rounded-xl border border-ui-border bg-ui-surface p-4 shadow-2xl"
                     text={text}
                     stepLabel={stepLabel}
@@ -44,37 +56,37 @@ export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
                     onNext={onNext}
                     onSkip={onSkip}
                 />
-            </div>
+            </motion.div>
         );
     }
 
     const tooltipStyle = getTooltipStyle(rect);
 
     return (
-        <div className="fixed inset-0 z-[60]">
+        <motion.div className="fixed inset-0 z-[60]" {...fadeProps}>
             {/* Dark backdrop with spotlight cutout via box-shadow */}
-            <div
+            <motion.div
                 className="pointer-events-none absolute rounded-xl"
-                style={{
+                animate={{
                     top: rect.top,
                     left: rect.left,
                     width: rect.width,
                     height: rect.height,
-                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.55)',
                 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                style={{ boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.55)' }}
             />
 
             {/* Click-blocker on the dark area (not the spotlight) */}
             <div
                 className="absolute inset-0"
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                    clipPath: getBackdropClipPath(rect),
-                }}
+                style={{ clipPath: getBackdropClipPath(rect) }}
             />
 
             {/* Tooltip card */}
             <TutorialCard
+                key={currentStep}
                 className="absolute max-w-xs rounded-xl border border-ui-border bg-ui-surface p-4 shadow-2xl"
                 style={tooltipStyle}
                 text={text}
@@ -84,6 +96,6 @@ export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
                 onNext={onNext}
                 onSkip={onSkip}
             />
-        </div>
+        </motion.div>
     );
 }

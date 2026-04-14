@@ -1,3 +1,4 @@
+import { motion } from 'motion/react';
 import { useState } from 'react';
 import { getPreviewUrl } from '@/infra/platform';
 import type { FileEdits, RotationDirection, SourceFile } from '@/shared/domain';
@@ -106,14 +107,17 @@ export function ImagePanel({
                     onClick={handleImageClick}
                 >
                     <div className="relative h-full w-full overflow-hidden rounded-lg bg-white shadow-sm">
-                        <div
+                        <motion.div
                             className="absolute left-1/2 top-1/2"
                             style={{
                                 width: stageSize.width,
                                 height: stageSize.height,
-                                transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                                x: '-50%',
+                                y: '-50%',
                                 transformOrigin: 'center',
                             }}
+                            animate={{ rotate: rotation }}
+                            transition={{ duration: 0.3, ease: 'easeInOut' }}
                         >
                             <img
                                 src={imageUrl}
@@ -126,7 +130,7 @@ export function ImagePanel({
                                     });
                                 }}
                             />
-                        </div>
+                        </motion.div>
                     </div>
                     {isFocused && focusFlashKey && (
                         <FocusFlashOverlay

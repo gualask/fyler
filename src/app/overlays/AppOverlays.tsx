@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react';
 import { PreviewModal } from '@/features/preview';
 import { SupportDialog } from '@/features/support';
 import { TutorialOverlay } from '@/features/tutorial';
@@ -54,23 +55,26 @@ export function AppOverlays({
 }) {
     return (
         <>
-            {notifications.statusMessage && notifications.statusTone && (
-                <Toast
-                    key={notifications.statusMessage}
-                    message={notifications.statusMessage}
-                    tone={notifications.statusTone}
-                />
-            )}
+            <AnimatePresence>
+                {notifications.statusMessage && notifications.statusTone && (
+                    <Toast
+                        key={notifications.statusMessage}
+                        message={notifications.statusMessage}
+                        tone={notifications.statusTone}
+                    />
+                )}
+            </AnimatePresence>
 
-            {notifications.loadingMessage && (
-                <ProgressModal
-                    message={notifications.loadingMessage}
-                    progress={notifications.loadingProgress}
-                />
-            )}
+            <AnimatePresence>
+                {notifications.loadingMessage && (
+                    <ProgressModal
+                        message={notifications.loadingMessage}
+                        progress={notifications.loadingProgress}
+                    />
+                )}
+            </AnimatePresence>
 
             <SupportDialog
-                key={support.supportDialogMode ?? 'closed'}
                 mode={support.supportDialogMode}
                 snapshot={support.diagnosticsSnapshot}
                 onClose={support.closeSupportDialog}
@@ -81,24 +85,28 @@ export function AppOverlays({
                 onShowError={notifications.showError}
             />
 
-            {tutorial.isActive && tutorial.currentStep !== null && (
-                <TutorialOverlay
-                    currentStep={tutorial.currentStep}
-                    onNext={tutorial.next}
-                    onSkip={tutorial.skip}
-                />
-            )}
+            <AnimatePresence>
+                {tutorial.isActive && tutorial.currentStep !== null && (
+                    <TutorialOverlay
+                        currentStep={tutorial.currentStep}
+                        onNext={tutorial.next}
+                        onSkip={tutorial.skip}
+                    />
+                )}
+            </AnimatePresence>
 
-            {showFinalPreview && (
-                <PreviewModal
-                    finalPages={workspace.finalPages}
-                    files={workspace.files}
-                    editsByFile={workspace.editsByFile}
-                    imageFit={imageFit}
-                    matchExportedImages
-                    onClose={() => setShowFinalPreview(false)}
-                />
-            )}
+            <AnimatePresence>
+                {showFinalPreview && (
+                    <PreviewModal
+                        finalPages={workspace.finalPages}
+                        files={workspace.files}
+                        editsByFile={workspace.editsByFile}
+                        imageFit={imageFit}
+                        matchExportedImages
+                        onClose={() => setShowFinalPreview(false)}
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 }

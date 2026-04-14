@@ -1,3 +1,5 @@
+import { motion } from 'motion/react';
+
 interface Props {
     message: string;
     progress?: number; // 0-100, undefined = indeterminato
@@ -5,8 +7,20 @@ interface Props {
 
 export function ProgressModal({ message, progress }: Props) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="flex w-72 flex-col items-center gap-4 rounded-xl bg-ui-surface p-6 shadow-2xl">
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+        >
+            <motion.div
+                className="flex w-72 flex-col items-center gap-4 rounded-xl bg-ui-surface p-6 shadow-2xl"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            >
                 {progress === undefined ? (
                     <svg
                         className="h-10 w-10 animate-spin text-ui-accent"
@@ -42,7 +56,7 @@ export function ProgressModal({ message, progress }: Props) {
                     </div>
                 )}
                 {progress === undefined && <p className="text-sm text-ui-text-muted">{message}</p>}
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }

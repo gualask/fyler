@@ -1,4 +1,5 @@
 import { IconAdjustments } from '@tabler/icons-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import type { AccentColor } from '@/shared/preferences';
@@ -62,54 +63,60 @@ export function AppSettingsMenu({
             >
                 <IconAdjustments className="h-5 w-5" />
             </button>
-            {open ? (
-                <div
-                    role="menu"
-                    aria-label={t('header.settings')}
-                    className="absolute left-0 top-[calc(100%+0.5rem)] z-30 min-w-[13rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg"
-                >
-                    <LanguageSubmenu
-                        activeSubmenu={activeSubmenu}
-                        setActiveSubmenu={setActiveSubmenu}
-                        closeAll={closeAll}
-                    />
-
-                    <ThemeSubmenu
-                        isDark={isDark}
-                        accent={accent}
-                        onToggleTheme={onToggleTheme}
-                        onSetAccent={onSetAccent}
-                        activeSubmenu={activeSubmenu}
-                        setActiveSubmenu={setActiveSubmenu}
-                        closeAll={closeAll}
-                    />
-
-                    <div className="my-1 h-px bg-ui-border" />
-
-                    <button
-                        type="button"
-                        role="menuitem"
-                        className={menuItemClass}
-                        onClick={() => {
-                            onReportBug();
-                            closeAll();
-                        }}
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        role="menu"
+                        aria-label={t('header.settings')}
+                        className="absolute left-0 top-[calc(100%+0.5rem)] z-50 min-w-[13rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg"
+                        initial={{ opacity: 0, scale: 0.97, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.97, y: -4 }}
+                        transition={{ duration: 0.15 }}
                     >
-                        {t('support.reportBug')}
-                    </button>
-                    <button
-                        type="button"
-                        role="menuitem"
-                        className={menuItemClass}
-                        onClick={() => {
-                            onOpenAbout();
-                            closeAll();
-                        }}
-                    >
-                        {t('support.about')}
-                    </button>
-                </div>
-            ) : null}
+                        <LanguageSubmenu
+                            activeSubmenu={activeSubmenu}
+                            setActiveSubmenu={setActiveSubmenu}
+                            closeAll={closeAll}
+                        />
+
+                        <ThemeSubmenu
+                            isDark={isDark}
+                            accent={accent}
+                            onToggleTheme={onToggleTheme}
+                            onSetAccent={onSetAccent}
+                            activeSubmenu={activeSubmenu}
+                            setActiveSubmenu={setActiveSubmenu}
+                            closeAll={closeAll}
+                        />
+
+                        <div className="my-1 h-px bg-ui-border" />
+
+                        <button
+                            type="button"
+                            role="menuitem"
+                            className={menuItemClass}
+                            onClick={() => {
+                                onReportBug();
+                                closeAll();
+                            }}
+                        >
+                            {t('support.reportBug')}
+                        </button>
+                        <button
+                            type="button"
+                            role="menuitem"
+                            className={menuItemClass}
+                            onClick={() => {
+                                onOpenAbout();
+                                closeAll();
+                            }}
+                        >
+                            {t('support.about')}
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

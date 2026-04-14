@@ -2,6 +2,7 @@ import type { DraggableSyntheticListeners } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { IconGripVertical, IconX } from '@tabler/icons-react';
+import { motion } from 'motion/react';
 import type { CSSProperties, ReactNode } from 'react';
 import { createContext, useContext } from 'react';
 
@@ -102,7 +103,7 @@ export function FinalDocumentRowShell({
     };
 
     return (
-        <div
+        <motion.div
             ref={setNodeRef}
             style={style}
             data-final-page-id={item.page.id}
@@ -110,6 +111,8 @@ export function FinalDocumentRowShell({
             className={['flex min-w-0 items-center gap-3', isDragging ? 'opacity-50' : ''].join(
                 ' ',
             )}
+            layout={!isDragging}
+            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
             <ListRowIndexControls
                 indexLabel={item.index + 1}
@@ -147,6 +150,6 @@ export function FinalDocumentRowShell({
                     <IconX className="h-3.5 w-3.5" />
                 </button>
             </div>
-        </div>
+        </motion.div>
     );
 }

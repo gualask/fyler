@@ -1,4 +1,5 @@
 import { IconArrowsMinimize, IconChevronDown, IconPhoto } from '@tabler/icons-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import type { ImageFit, ImageOptimizationPreset } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
@@ -66,30 +67,42 @@ export function OutputPanel({
                         </span>
                     </span>
                 )}
-                <IconChevronDown
-                    className={[
-                        'h-5 w-5 text-ui-text-muted transition-transform',
-                        open ? 'rotate-180' : '',
-                    ]
-                        .filter(Boolean)
-                        .join(' ')}
-                />
+                <motion.span
+                    animate={{ rotate: open ? 180 : 0 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex shrink-0"
+                >
+                    <IconChevronDown className="h-5 w-5 text-ui-text-muted" />
+                </motion.span>
             </button>
 
-            {open ? (
-                <div className="output-panel-content">
-                    <OptimizationSection
-                        optimizationPreset={optimizationPreset}
-                        jpegQuality={jpegQuality}
-                        targetDpi={targetDpi}
-                        onJpegQualityChange={onJpegQualityChange}
-                        onTargetDpiChange={onTargetDpiChange}
-                        onOptimizationPresetChange={onOptimizationPresetChange}
-                    />
+            <AnimatePresence initial={false}>
+                {open && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ overflow: 'hidden' }}
+                    >
+                        <div className="output-panel-content">
+                            <OptimizationSection
+                                optimizationPreset={optimizationPreset}
+                                jpegQuality={jpegQuality}
+                                targetDpi={targetDpi}
+                                onJpegQualityChange={onJpegQualityChange}
+                                onTargetDpiChange={onTargetDpiChange}
+                                onOptimizationPresetChange={onOptimizationPresetChange}
+                            />
 
-                    <PageFitSection imageFit={imageFit} onImageFitChange={onImageFitChange} />
-                </div>
-            ) : null}
+                            <PageFitSection
+                                imageFit={imageFit}
+                                onImageFitChange={onImageFitChange}
+                            />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

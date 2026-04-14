@@ -192,55 +192,6 @@
     --ui-accent-on-soft: #93c5fd;
 }
 
-@keyframes ui-thumb-flash {
-    0% {
-        opacity: 0;
-        transform: scale(1);
-    }
-    18% {
-        opacity: 0.92;
-        transform: scale(1.01);
-    }
-    42% {
-        opacity: 0.76;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(1);
-    }
-}
-
-@keyframes empty-state-enter {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes empty-state-breathe {
-    0%,
-    100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.06);
-    }
-}
-
-.empty-state-enter {
-    animation: empty-state-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.empty-state-breathe {
-    animation: empty-state-breathe 3s ease-in-out infinite;
-    animation-delay: 0.8s;
-}
-
 /* ── Font ────────────────────────────────────────────────────────────────── */
 body {
     font-family: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", system-ui, sans-serif;
@@ -443,10 +394,6 @@ body {
     }
     .file-row-meta {
         @apply mt-0.5 text-[11px] text-ui-text-muted;
-    }
-
-    .flash-accent-thumb {
-        animation: ui-thumb-flash 1.2s ease-out 1;
     }
 }
 

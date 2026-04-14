@@ -1,4 +1,5 @@
 import { IconChevronRight } from '@tabler/icons-react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { SUPPORTED_LOCALES } from '@/shared/preferences';
@@ -37,31 +38,40 @@ export function LanguageSubmenu({ activeSubmenu, setActiveSubmenu, closeAll }: P
                 {t('header.language')}
                 <IconChevronRight className="ml-auto h-3.5 w-3.5" />
             </button>
-            {activeSubmenu === 'language' ? (
-                <div className={submenuPanelClass} role="menu">
-                    {SUPPORTED_LOCALES.map((option) => (
-                        <button
-                            key={option}
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={locale === option}
-                            className={[
-                                menuItemClass,
-                                locale === option ? 'text-ui-accent-text' : '',
-                            ].join(' ')}
-                            onClick={() => {
-                                setLocale(option);
-                                closeAll();
-                            }}
-                        >
-                            {t(`language.name.${option}`)}
-                            <span className="ml-auto text-xs uppercase text-ui-text-muted">
-                                {t(`language.short.${option}`)}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            ) : null}
+            <AnimatePresence>
+                {activeSubmenu === 'language' && (
+                    <motion.div
+                        className={submenuPanelClass}
+                        role="menu"
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -8 }}
+                        transition={{ duration: 0.15 }}
+                    >
+                        {SUPPORTED_LOCALES.map((option) => (
+                            <button
+                                key={option}
+                                type="button"
+                                role="menuitemradio"
+                                aria-checked={locale === option}
+                                className={[
+                                    menuItemClass,
+                                    locale === option ? 'text-ui-accent-text' : '',
+                                ].join(' ')}
+                                onClick={() => {
+                                    setLocale(option);
+                                    closeAll();
+                                }}
+                            >
+                                {t(`language.name.${option}`)}
+                                <span className="ml-auto text-xs uppercase text-ui-text-muted">
+                                    {t(`language.short.${option}`)}
+                                </span>
+                            </button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

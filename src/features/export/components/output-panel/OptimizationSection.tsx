@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import type { ImageOptimizationPreset } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { OptimizationAdvancedPanel } from './OptimizationAdvancedPanel';
@@ -44,14 +45,24 @@ export function OptimizationSection({
                 onChange={onOptimizationPresetChange}
             />
 
-            {optimizationPreset === 'custom' ? (
-                <OptimizationAdvancedPanel
-                    jpegQuality={jpegQuality}
-                    targetDpi={targetDpi}
-                    onJpegQualityChange={onJpegQualityChange}
-                    onTargetDpiChange={onTargetDpiChange}
-                />
-            ) : null}
+            <AnimatePresence initial={false}>
+                {optimizationPreset === 'custom' && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ overflow: 'hidden' }}
+                    >
+                        <OptimizationAdvancedPanel
+                            jpegQuality={jpegQuality}
+                            targetDpi={targetDpi}
+                            onJpegQualityChange={onJpegQualityChange}
+                            onTargetDpiChange={onTargetDpiChange}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

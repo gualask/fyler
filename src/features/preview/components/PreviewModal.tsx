@@ -1,3 +1,4 @@
+import { motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RotationDirection } from '@/shared/domain';
 import { finalPageToTarget } from '@/shared/domain/utils/final-page-id';
@@ -91,13 +92,21 @@ export function PreviewModal({
     );
 
     return (
-        <div
+        <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
             onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
         >
-            <div
+            <motion.div
                 className="relative flex h-[88vh] w-[82vw] flex-col overflow-hidden rounded-xl bg-zinc-900 shadow-2xl"
-                onClick={(event) => event.stopPropagation()}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                onClick={(e) => e.stopPropagation()}
             >
                 <Toolbar
                     displayCurrentPage={displayCurrentPage}
@@ -136,7 +145,7 @@ export function PreviewModal({
                         })}
                     </div>
                 </div>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }

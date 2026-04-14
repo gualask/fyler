@@ -1,5 +1,5 @@
 import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 
 type Tone = 'success' | 'error' | 'warning';
 
@@ -30,29 +30,24 @@ const toneConfig: Record<Tone, { icon: typeof IconCheck; iconClass: string; clas
 };
 
 export function Toast({ message, tone }: Props) {
-    const [visible, setVisible] = useState(false);
-
-    useEffect(() => {
-        const frameId = requestAnimationFrame(() => setVisible(true));
-        return () => cancelAnimationFrame(frameId);
-    }, []);
-
     const { icon: Icon, iconClass, className } = toneConfig[tone];
 
     return (
-        <div
+        <motion.div
             className={[
-                'fixed bottom-6 left-1/2 z-[100] flex max-w-[min(28rem,calc(100vw-2rem))] items-center gap-2.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-300 ease-out',
+                'fixed bottom-6 left-1/2 z-[100] flex max-w-[min(28rem,calc(100vw-2rem))] items-center gap-2.5 rounded-xl border px-4 py-2.5 text-sm font-medium',
                 className,
-                visible
-                    ? 'translate-x-[-50%] translate-y-0 opacity-100'
-                    : 'translate-x-[-50%] translate-y-3 opacity-0',
             ].join(' ')}
+            style={{ x: '-50%' }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             role="status"
             aria-live="polite"
         >
             <Icon className={`h-4 w-4 shrink-0 ${iconClass}`} stroke={2} />
             <span className="min-w-0 truncate">{message}</span>
-        </div>
+        </motion.div>
     );
 }

@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react';
 import { useMemo } from 'react';
 import { PreviewModal } from '@/features/preview';
 import type {
@@ -46,24 +47,24 @@ export function Preview({
         [finalPages, resolvedPreviewTarget],
     );
 
-    if (!resolvedPreviewTarget) {
-        return null;
-    }
-
     return (
-        <PreviewModal
-            finalPages={[resolvedPreviewTarget]}
-            files={files}
-            editsByFile={editsByFile}
-            indicator={{ current: previewTargetPosition, total: finalPages.length }}
-            moveControl={{
-                currentPosition: previewTargetPosition,
-                totalPositions: finalPages.length,
-                onMoveToPosition: (targetIndex) =>
-                    onMovePageToIndex(resolvedPreviewTarget.id, targetIndex),
-            }}
-            onRotatePage={onRotatePage}
-            onClose={onClose}
-        />
+        <AnimatePresence>
+            {resolvedPreviewTarget && (
+                <PreviewModal
+                    finalPages={[resolvedPreviewTarget]}
+                    files={files}
+                    editsByFile={editsByFile}
+                    indicator={{ current: previewTargetPosition, total: finalPages.length }}
+                    moveControl={{
+                        currentPosition: previewTargetPosition,
+                        totalPositions: finalPages.length,
+                        onMoveToPosition: (targetIndex) =>
+                            onMovePageToIndex(resolvedPreviewTarget.id, targetIndex),
+                    }}
+                    onRotatePage={onRotatePage}
+                    onClose={onClose}
+                />
+            )}
+        </AnimatePresence>
     );
 }
