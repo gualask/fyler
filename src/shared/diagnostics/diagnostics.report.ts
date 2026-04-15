@@ -1,10 +1,5 @@
-import type { DiagnosticMetadataValue, DiagnosticsSnapshot } from './diagnostics.types';
-
-function formatMetadata(metadata: Record<string, DiagnosticMetadataValue> | undefined): string {
-    if (!metadata) return '';
-    const pairs = Object.entries(metadata).map(([key, value]) => `${key}=${value}`);
-    return pairs.length ? ` (${pairs.join(', ')})` : '';
-}
+import { formatDiagnosticMetadataInline } from './diagnostics.metadata';
+import type { DiagnosticsSnapshot } from './diagnostics.types';
 
 export function formatDiagnosticsReport(snapshot: DiagnosticsSnapshot): string {
     const lines = [
@@ -40,7 +35,7 @@ export function formatDiagnosticsReport(snapshot: DiagnosticsSnapshot): string {
     } else {
         for (const entry of [...snapshot.recentEvents].reverse()) {
             lines.push(
-                `- [${entry.timestamp}] ${entry.severity.toUpperCase()} ${entry.category}: ${entry.message}${formatMetadata(entry.metadata)}`,
+                `- [${entry.timestamp}] ${entry.severity.toUpperCase()} ${entry.category}: ${entry.message}${formatDiagnosticMetadataInline(entry.metadata)}`,
             );
         }
     }

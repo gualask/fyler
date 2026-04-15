@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 
 import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import { toDiagnosticMessage, useDiagnostics } from '@/shared/diagnostics';
-import { formatSkippedFile, useTranslation } from '@/shared/i18n';
+import { classifyAddFilesResult } from './add-files-action-result';
 import type { useWorkspace } from './workspace.hook';
 
 interface AddFilesActionDeps {
@@ -12,7 +12,6 @@ interface AddFilesActionDeps {
 
 export function useAddFilesAction({ workspace, notifications }: AddFilesActionDeps) {
     const { record } = useDiagnostics();
-    const { t } = useTranslation();
 
     const handleAddFiles = useCallback(() => {
         record({ category: 'files', severity: 'info', message: 'Open files dialog started' });
@@ -20,19 +19,17 @@ export function useAddFilesAction({ workspace, notifications }: AddFilesActionDe
         void workspace
             .addFiles()
             .then(({ files: addedFiles, skippedErrors }) => {
+                const result = classifyAddFilesResult({
+                    addedCount: addedFiles.length,
+                    skippedCount: skippedErrors.length,
+                });
+
                 record({
                     category: 'files',
-                    severity: 'info',
-                    message: addedFiles.length
-                        ? 'Files added to workspace'
-                        : 'Open files dialog canceled',
-                    metadata: { addedCount: addedFiles.length },
+                    severity: result.diagnosticSeverity,
+                    message: result.diagnosticMessage,
+                    metadata: result.metadata,
                 });
-                if (skippedErrors.length > 0 && addedFiles.length === 0) {
-                    notifications.showError(
-                        skippedErrors.map((s) => formatSkippedFile(s, t)).join(', '),
-                    );
-                }
             })
             .catch((error) => {
                 record({
@@ -43,7 +40,7 @@ export function useAddFilesAction({ workspace, notifications }: AddFilesActionDe
                 notifications.showError(error);
             })
             .finally(() => notifications.clearLoading());
-    }, [notifications, record, t, workspace]);
+    }, [notifications, record, workspace]);
 
     return handleAddFiles;
 }

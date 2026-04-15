@@ -8,6 +8,7 @@ import { SupportAboutSection } from './sections/AboutSection';
 import { SupportAppSection } from './sections/AppSection';
 import { SupportIssueFormCard } from './sections/report/IssueFormCard';
 import { SupportReportSections } from './sections/report/ReportSections';
+import { openSupportIssue } from './support-issue-flow';
 
 type SupportDialogMode = 'report' | 'about';
 
@@ -129,8 +130,9 @@ export function SupportDialog({
         if (!canOpenIssue) return;
 
         try {
-            await onCopyDiagnostics();
-            const result = await onOpenGitHubIssue({
+            const result = await openSupportIssue({
+                copyDiagnostics: onCopyDiagnostics,
+                openGitHubIssue: onOpenGitHubIssue,
                 title: normalizedIssueTitle,
                 body: buildGitHubIssueBody({
                     problem: normalizedIssueDescription,
@@ -138,8 +140,13 @@ export function SupportDialog({
                 }),
             });
 
-            if (result === 'blank_fallback') {
+            if (result.openResult === 'blank_fallback') {
                 onShowToast('warning', t('support.feedback.issueOpenedFallback'));
+                return;
+            }
+
+            if (!result.diagnosticsCopied) {
+                onShowToast('warning', t('support.feedback.issueOpenedWithoutDiagnostics'));
                 return;
             }
 
