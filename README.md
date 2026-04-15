@@ -60,6 +60,39 @@ Build the production desktop bundle:
 pnpm tauri:build
 ```
 
+## Dev Fixtures
+
+This project supports small, dev-only fixture pages under `src/dev/` so complex UI states can be
+inspected in a normal browser session without mounting the live Tauri backend.
+
+Use them when you need a deterministic way to inspect DOM structure, layout, and component behavior
+with Playwright or manual debugging.
+
+Conventions:
+
+- keep fixtures under `src/dev/`
+- register fixtures in `src/dev/index.tsx`
+- expose them through the `dev` query-string parameter
+- keep names minimal and scenario-based
+- keep fixtures isolated from Tauri dependencies when the goal is layout or DOM inspection
+
+Routes:
+
+- `?dev=fixtures` opens the fixture index
+- `?dev=workspace-shell` opens the initial browser-safe workspace shell fixture
+- `?dev=workspace-empty` opens the empty-state workspace fixture
+
+What belongs in git:
+
+- fixture pages in `src/dev/`
+- the small gating code needed to open them in development
+- reusable mock data that makes the fixture useful
+
+What should stay local:
+
+- Playwright MCP output folders such as `.playwright-mcp/`
+- screenshots or dumps created only for temporary inspection
+
 On Linux, Tauri also requires system packages. The release workflow installs:
 
 ```bash

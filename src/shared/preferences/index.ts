@@ -9,6 +9,8 @@ export { PreferencesProvider } from './preferences.provider';
 export {
     ACCENT_COLORS,
     type AccentColor,
+    DEFAULT_ACCENT_COLOR,
+    isAccentColor,
     type PreferencesSettings,
 } from './preferences.settings';
 export type { PreferencesStorage } from './preferences.storage';

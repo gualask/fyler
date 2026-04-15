@@ -1,22 +1,17 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
+import { type PreferencesState, resolvePreferencesState } from './preferences.bootstrap';
 import { PreferencesContext, type PreferencesContextValue } from './preferences.context';
-import { detectPreferredLocale, isLocale, type Locale } from './preferences.locale';
+import type { Locale } from './preferences.locale';
 import { ACCENT_COLORS, type AccentColor } from './preferences.settings';
 import type { PreferencesStorage } from './preferences.storage';
-
-type PreferencesState = {
-    isDark: boolean;
-    locale: Locale;
-    accent: AccentColor;
-    tutorialSeen: boolean;
-};
-function resolveInitialLocale(storedLocale: Locale | undefined): Locale {
-    if (isLocale(storedLocale)) {
-        return storedLocale;
-    }
-
-    return detectPreferredLocale(navigator.languages);
-}
 
 /** Persists user preferences and exposes them via context. */
 export function PreferencesProvider({
@@ -26,12 +21,9 @@ export function PreferencesProvider({
     children: ReactNode;
     storage?: PreferencesStorage;
 }) {
-    const [preferences, setPreferences] = useState<PreferencesState>({
-        isDark: false,
-        locale: 'en',
-        accent: 'indigo',
-        tutorialSeen: false,
-    });
+    const [preferences, setPreferences] = useState<PreferencesState>(() =>
+        resolvePreferencesState(storage?.readSnapshot(), navigator.languages),
+    );
     const canPersist = Boolean(storage);
     const [canPersistPreferences, setCanPersistPreferences] = useState(false);
     const hasLocalChangesRef = useRef(false);
@@ -49,22 +41,12 @@ export function PreferencesProvider({
             .load()
             .then((settings) => {
                 if (cancelled || hasLocalChangesRef.current) return;
-                setPreferences({
-                    isDark: settings.isDark,
-                    locale: resolveInitialLocale(settings.locale),
-                    accent: settings.accent ?? 'indigo',
-                    tutorialSeen: settings.tutorialSeen ?? false,
-                });
+                setPreferences(resolvePreferencesState(settings, navigator.languages));
                 setCanPersistPreferences(true);
             })
             .catch(() => {
                 if (cancelled || hasLocalChangesRef.current) return;
-                setPreferences({
-                    isDark: false,
-                    locale: detectPreferredLocale(navigator.languages),
-                    accent: 'indigo',
-                    tutorialSeen: false,
-                });
+                setPreferences(resolvePreferencesState(undefined, navigator.languages));
                 setCanPersistPreferences(false);
             });
 
@@ -73,7 +55,7 @@ export function PreferencesProvider({
         };
     }, [storage]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         document.documentElement.classList.toggle('dark', preferences.isDark);
         document.documentElement.lang = preferences.locale;
 

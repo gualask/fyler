@@ -1,8 +1,13 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
+export interface AppBoundaryError {
+    message: string;
+    componentStack?: string;
+}
+
 type Props = {
     children: ReactNode;
-    onError?: (message: string) => void;
+    onError?: (error: AppBoundaryError) => void;
     title: string;
     reloadLabel: string;
 };
@@ -27,8 +32,10 @@ export class AppErrorBoundary extends Component<Props, State> {
 
     componentDidCatch(error: unknown, info: ErrorInfo) {
         const message = error instanceof Error ? error.message : String(error);
-        void info;
-        this.props.onError?.(message);
+        this.props.onError?.({
+            message,
+            componentStack: info.componentStack || undefined,
+        });
     }
 
     handleReload = () => {

@@ -4,6 +4,7 @@ import { useTranslation } from '@/shared/i18n';
 
 import { AppContent } from './AppContent';
 import { AppErrorBoundary } from './shell/AppErrorBoundary';
+import { toReactBoundaryDiagnostic } from './shell/app-error-diagnostic';
 
 export function AppShell() {
     const { t } = useTranslation();
@@ -13,12 +14,8 @@ export function AppShell() {
         <AppErrorBoundary
             title={t('errors.unhandled')}
             reloadLabel={t('errors.reload')}
-            onError={(message) => {
-                record({
-                    category: 'app',
-                    severity: 'error',
-                    message: `React error boundary caught an error: ${message}`,
-                });
+            onError={(error) => {
+                record(toReactBoundaryDiagnostic(error));
             }}
         >
             <PdfCacheProvider>
