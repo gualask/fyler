@@ -81,6 +81,8 @@ Routes:
 - `?dev=fixtures` opens the fixture index
 - `?dev=workspace-shell` opens the initial browser-safe workspace shell fixture
 - `?dev=workspace-empty` opens the empty-state workspace fixture
+- `?dev=preview-modal` opens the browser-safe preview modal fixture (`&pages=1` for single-page)
+- `?dev=quick-add` opens the browser-safe quick-add fixture
 
 What belongs in git:
 

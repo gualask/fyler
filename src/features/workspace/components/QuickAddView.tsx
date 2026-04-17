@@ -24,16 +24,14 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                     <img src="/icon.svg" alt="Fyler" className="h-6 w-6" />
                     <span className="text-sm font-semibold">{t('header.quickAdd')}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={onExit}
-                        className="btn-icon"
-                        title={t('quickAdd.close')}
-                    >
-                        <IconX className="h-4 w-4" />
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={onExit}
+                    className="btn-icon"
+                    title={t('quickAdd.close')}
+                >
+                    <IconX className="h-4 w-4" />
+                </button>
             </header>
 
             {/* Drop area */}

@@ -1,10 +1,12 @@
 import { AppProviders } from '@/app/providers';
 
 import { DEV_FIXTURE_INDEX_KEY, getDevFixtureHref, getDevFixtureKey } from './dev-mode';
+import { PreviewModalFixturePage } from './preview-modal.fixture';
+import { QuickAddFixturePage } from './quick-add.fixture';
 import { WorkspaceEmptyFixturePage } from './workspace-empty.fixture';
 import { WorkspaceShellFixturePage } from './workspace-shell.fixture';
 
-const FIXTURE_KEYS = ['workspace-shell', 'workspace-empty'] as const;
+const FIXTURE_KEYS = ['workspace-shell', 'workspace-empty', 'preview-modal', 'quick-add'] as const;
 
 function DevIndexPage() {
     return (
@@ -86,6 +88,14 @@ function DevModeContent() {
 
     if (fixtureKey === 'workspace-empty') {
         return <WorkspaceEmptyFixturePage />;
+    }
+
+    if (fixtureKey === 'preview-modal') {
+        return <PreviewModalFixturePage />;
+    }
+
+    if (fixtureKey === 'quick-add') {
+        return <QuickAddFixturePage />;
     }
 
     return <UnknownFixturePage fixtureKey={fixtureKey} />;

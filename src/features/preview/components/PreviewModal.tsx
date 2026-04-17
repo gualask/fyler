@@ -91,6 +91,22 @@ export function PreviewModal({
         [currentPage, onRotatePage],
     );
 
+    const slots = finalPages.map((fp, index) => {
+        const edits = editsByFile[fp.fileId] ?? FileEditsVO.empty();
+        return (
+            <PageSlot
+                key={fp.id}
+                page={{
+                    fp,
+                    file: fileMap.get(fp.fileId),
+                    edits,
+                    index,
+                }}
+                context={slotContext}
+            />
+        );
+    });
+
     return (
         <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
@@ -123,27 +139,11 @@ export function PreviewModal({
                 />
 
                 <div ref={setScrollEl} className="flex-1 overflow-y-auto px-4 pb-10 pt-16">
-                    <div
-                        className={
-                            total === 1 ? 'flex min-h-full items-center justify-center' : undefined
-                        }
-                    >
-                        {finalPages.map((fp, index) => {
-                            const edits = editsByFile[fp.fileId] ?? FileEditsVO.empty();
-                            return (
-                                <PageSlot
-                                    key={fp.id}
-                                    page={{
-                                        fp,
-                                        file: fileMap.get(fp.fileId),
-                                        edits,
-                                        index,
-                                    }}
-                                    context={slotContext}
-                                />
-                            );
-                        })}
-                    </div>
+                    {total === 1 ? (
+                        <div className="flex min-h-full items-center justify-center">{slots}</div>
+                    ) : (
+                        slots
+                    )}
                 </div>
             </motion.div>
         </motion.div>
