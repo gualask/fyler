@@ -9,6 +9,7 @@ import {
     getDevFixtureHref,
     getDevFixtureKey,
 } from './dev-mode';
+import { ErrorBoundaryFixturePage } from './error-boundary.fixture';
 import { FeedbackOverlaysFixturePage } from './feedback-overlays.fixture';
 import { FinalDocumentFixturePage } from './final-document.fixture';
 import { PagePickerFixturePage } from './page-picker.fixture';
@@ -32,6 +33,7 @@ const FIXTURE_KEYS = [
     'final-document',
     'page-picker',
     'update-dialog',
+    'error-boundary',
 ] as const;
 
 function DevIndexPage() {
@@ -163,6 +165,10 @@ function DevModeContent() {
 
     if (fixtureKey === 'update-dialog') {
         return <UpdateDialogFixturePage />;
+    }
+
+    if (fixtureKey === 'error-boundary') {
+        return <ErrorBoundaryFixturePage />;
     }
 
     return <UnknownFixturePage fixtureKey={fixtureKey} />;

@@ -13,7 +13,8 @@ It is meant to be the source map from which separate operational checklists can 
 | Area | Section/Component | Access |
 | --- | --- | --- |
 | Dev fixtures | Index fixture | `?dev=fixtures` |
-| Workspace | Main shell | Normal app, `?dev=runtime-app`, `?dev=workspace-shell` |
+| Workspace | Main shell | Normal app, `?dev=runtime-app` |
+| Workspace | Technical shell baseline | `?dev=workspace-shell` |
 | Workspace | Empty state | Normal app with empty session, `?dev=runtime-app`, `?dev=workspace-empty` |
 | Header | App header | Normal app, `?dev=runtime-app`, `?dev=workspace-shell`, `?dev=workspace-empty` |
 | Header | Settings menu | Toolbar -> `Settings`, `?dev=runtime-app`, `?dev=workspace-shell` |
@@ -37,7 +38,7 @@ It is meant to be the source map from which separate operational checklists can 
 | Overlay | Progress modal | Loading / export progress, `?dev=feedback-overlays&view=progress` |
 | Overlay | Toast | Toast success / warning / error, `?dev=feedback-overlays&view=toast-warning` |
 | Updates | Update dialog | Available update or fixture, `?dev=update-dialog`, `?dev=update-dialog&view=installing` |
-| Error handling | Error boundary UI | Unhandled error in the app |
+| Error handling | Error boundary UI | Unhandled error in the app, `?dev=error-boundary` |
 
 ## Runtime Flows
 
