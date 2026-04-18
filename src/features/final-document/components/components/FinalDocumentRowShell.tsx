@@ -132,7 +132,7 @@ export function FinalDocumentRowShell({
 
                 <FinalDocumentDragHandleContext.Provider value={{ listeners, setActivatorNodeRef }}>
                     {!hideDefaultDragHandle ? (
-                        <FinalDocumentDragHandle className="shrink-0 cursor-grab text-ui-text-muted active:cursor-grabbing" />
+                        <FinalDocumentDragHandle className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md cursor-grab text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text active:cursor-grabbing" />
                     ) : null}
 
                     {children}
@@ -144,7 +144,8 @@ export function FinalDocumentRowShell({
                         event.stopPropagation();
                         onRemove(item.page.id);
                     }}
-                    className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-ui-danger text-white shadow-md transition-colors hover:bg-ui-danger-hover group-hover:flex"
+                    className="absolute -right-2 -top-2 hidden h-9 w-9 items-center justify-center rounded-full bg-ui-danger text-white shadow-md transition-colors hover:bg-ui-danger-hover group-hover:flex group-focus-within:flex"
+                    aria-label={t('finalDocument.removePage')}
                     title={t('finalDocument.removePage')}
                 >
                     <IconX className="h-3.5 w-3.5" />

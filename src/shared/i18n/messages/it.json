@@ -122,6 +122,8 @@
     "finalDocument.pageLabel": "Pagina {pageNum}",
     "finalDocument.imageLabel": "Immagine",
     "finalDocument.dragHandle": "Trascina per riordinare",
+    "finalDocument.movePageUp": "Sposta la pagina in alto",
+    "finalDocument.movePageDown": "Sposta la pagina in basso",
     "finalDocument.removePage": "Rimuovi pagina",
     "finalDocument.moveToIndex": "Sposta alla posizione",
     "preview.zoomOut": "Riduci (Ctrl+scroll giù)",

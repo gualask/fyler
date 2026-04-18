@@ -89,8 +89,8 @@
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--ui-border) 85%, transparent);
     border-radius: 0.2rem;
-    background: white;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    background: var(--ui-fit-preview-page);
+    box-shadow: 0 4px 12px var(--ui-fit-preview-page-shadow);
 }
 
 .fit-preview-media {
@@ -98,13 +98,13 @@
     inset: 0;
     border-radius: 0.14rem;
     background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 34%),
+        linear-gradient(135deg, var(--ui-fit-preview-media-highlight), transparent 34%),
         linear-gradient(
             135deg,
-            color-mix(in srgb, var(--ui-accent) 85%, white),
-            color-mix(in srgb, var(--ui-accent) 55%, #22c55e)
+            color-mix(in srgb, var(--ui-accent) 85%, var(--ui-fit-preview-page)),
+            var(--ui-fit-preview-media-end)
         );
-    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.22);
+    box-shadow: 0 3px 10px var(--ui-fit-preview-media-shadow);
 }
 
 .fit-preview-overflow {
@@ -112,11 +112,11 @@
     display: none;
     border-radius: 0.2rem;
     background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 34%),
+        linear-gradient(135deg, var(--ui-fit-preview-media-highlight), transparent 34%),
         linear-gradient(
             135deg,
-            color-mix(in srgb, var(--ui-accent) 38%, white),
-            color-mix(in srgb, var(--ui-accent) 26%, #22c55e)
+            color-mix(in srgb, var(--ui-accent) 38%, var(--ui-fit-preview-page)),
+            color-mix(in srgb, var(--ui-accent) 26%, var(--ui-fit-preview-media-end))
         );
     opacity: 0.35;
 }
@@ -166,7 +166,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    border: 1px solid rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--ui-fit-preview-frame-border);
     border-radius: inherit;
     pointer-events: none;
 }

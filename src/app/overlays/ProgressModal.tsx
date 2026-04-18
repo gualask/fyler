@@ -1,4 +1,6 @@
 import { motion } from 'motion/react';
+import { useRef } from 'react';
+import { useModalFocus } from '@/shared/ui';
 
 interface Props {
     message: string;
@@ -6,6 +8,12 @@ interface Props {
 }
 
 export function ProgressModal({ message, progress }: Props) {
+    const dialogRef = useRef<HTMLDivElement | null>(null);
+
+    useModalFocus({
+        containerRef: dialogRef,
+    });
+
     return (
         <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -15,6 +23,11 @@ export function ProgressModal({ message, progress }: Props) {
             transition={{ duration: 0.2 }}
         >
             <motion.div
+                ref={dialogRef}
+                role="alertdialog"
+                aria-modal="true"
+                aria-label={message}
+                tabIndex={-1}
                 className="flex w-72 flex-col items-center gap-4 rounded-xl bg-ui-surface p-6 shadow-2xl"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -49,7 +62,7 @@ export function ProgressModal({ message, progress }: Props) {
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-ui-border">
                             <div
-                                className="h-full rounded-full bg-ui-accent transition-all duration-300"
+                                className="h-full rounded-full bg-ui-accent transition-[width] duration-300"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>

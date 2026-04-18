@@ -1,4 +1,6 @@
+import { useId, useRef } from 'react';
 import { useTranslation } from '@/shared/i18n';
+import { useModalFocus } from '@/shared/ui';
 import { useAppUpdater } from './app-updater.hook';
 
 interface UpdateDialogViewProps {
@@ -19,12 +21,30 @@ export function UpdateDialogView({
     onDismiss,
 }: UpdateDialogViewProps) {
     const { t } = useTranslation();
+    const dialogRef = useRef<HTMLDivElement | null>(null);
+    const titleId = useId();
+    const descriptionId = useId();
+
+    useModalFocus({
+        containerRef: dialogRef,
+        onEscape: installing ? undefined : onDismiss,
+    });
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="w-full max-w-sm rounded-xl bg-ui-surface p-6 shadow-2xl">
-                <h2 className="text-base font-semibold text-ui-text">{t('update.title')}</h2>
-                <p className="mt-2 text-sm text-ui-text-muted">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                aria-describedby={descriptionId}
+                tabIndex={-1}
+                className="w-full max-w-sm rounded-xl bg-ui-surface p-6 shadow-2xl"
+            >
+                <h2 id={titleId} className="text-base font-semibold text-ui-text">
+                    {t('update.title')}
+                </h2>
+                <p id={descriptionId} className="mt-2 text-sm text-ui-text-muted">
                     {t('update.message', { version: updateVersion ?? '' })}
                 </p>
 
@@ -38,7 +58,7 @@ export function UpdateDialogView({
                     <div className="mt-4">
                         <div className="h-2 w-full overflow-hidden rounded-full bg-ui-border">
                             <div
-                                className="h-full rounded-full bg-ui-accent transition-all duration-300"
+                                className="h-full rounded-full bg-ui-accent transition-[width] duration-300"
                                 style={{ width: `${progress ?? 0}%` }}
                             />
                         </div>

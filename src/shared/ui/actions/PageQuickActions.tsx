@@ -1,5 +1,5 @@
 import { IconRotate2, IconRotateClockwise2, IconZoomIn } from '@tabler/icons-react';
-import type { ComponentType, SVGProps } from 'react';
+import type { ComponentType, CSSProperties, SVGProps } from 'react';
 import { useTranslation } from '@/shared/i18n';
 
 interface Props {
@@ -17,6 +17,7 @@ interface ActionButtonProps {
     title: string;
     disabled: boolean;
     toneClassName: string;
+    toneStyle: CSSProperties;
     onClick: () => void;
 }
 
@@ -27,6 +28,7 @@ function ActionButton({
     title,
     disabled,
     toneClassName,
+    toneStyle,
     onClick,
 }: ActionButtonProps) {
     return (
@@ -38,6 +40,7 @@ function ActionButton({
             }}
             disabled={disabled}
             className={`flex ${sizeClass} items-center justify-center rounded-full ${toneClassName}`}
+            style={toneStyle}
             title={title}
         >
             <Icon className={iconSizeClass} />
@@ -57,13 +60,13 @@ export function PageQuickActions({
     const rotateSize = compact ? 'h-6 w-6' : 'h-7 w-7';
     const iconSize = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
     const previewButtonTone =
-        'bg-slate-800/80 text-white shadow-lg transition-colors hover:bg-slate-900 disabled:cursor-wait disabled:opacity-40';
+        'shadow-lg transition-colors hover:bg-[var(--ui-overlay-control-strong-hover)] disabled:cursor-wait disabled:opacity-40';
     const rotateButtonTone =
-        'bg-white/85 text-slate-800 shadow-md transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-40';
+        'shadow-md transition-colors hover:bg-[var(--ui-overlay-control-hover)] disabled:cursor-wait disabled:opacity-40';
 
     return (
         <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
-            <div className="absolute inset-0 bg-black/15" />
+            <div className="absolute inset-0 bg-[var(--ui-overlay-scrim)]" />
 
             {onPreview && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -74,6 +77,10 @@ export function PageQuickActions({
                         title={t('quickActions.preview')}
                         disabled={disabled}
                         toneClassName={previewButtonTone}
+                        toneStyle={{
+                            backgroundColor: 'var(--ui-overlay-control-strong)',
+                            color: 'var(--ui-overlay-text)',
+                        }}
                         onClick={onPreview}
                     />
                 </div>
@@ -89,6 +96,10 @@ export function PageQuickActions({
                             title={t('quickActions.rotateLeft')}
                             disabled={disabled}
                             toneClassName={rotateButtonTone}
+                            toneStyle={{
+                                backgroundColor: 'var(--ui-overlay-control)',
+                                color: 'var(--ui-text)',
+                            }}
                             onClick={onRotateLeft}
                         />
                     )}
@@ -100,6 +111,10 @@ export function PageQuickActions({
                             title={t('quickActions.rotateRight')}
                             disabled={disabled}
                             toneClassName={rotateButtonTone}
+                            toneStyle={{
+                                backgroundColor: 'var(--ui-overlay-control)',
+                                color: 'var(--ui-text)',
+                            }}
                             onClick={onRotateRight}
                         />
                     )}

@@ -122,6 +122,8 @@
     "finalDocument.pageLabel": "Page {pageNum}",
     "finalDocument.imageLabel": "Image",
     "finalDocument.dragHandle": "Drag to reorder",
+    "finalDocument.movePageUp": "Move page up",
+    "finalDocument.movePageDown": "Move page down",
     "finalDocument.removePage": "Remove page",
     "finalDocument.moveToIndex": "Move to position",
     "preview.zoomOut": "Zoom out (Ctrl+scroll down)",

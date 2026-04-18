@@ -1,6 +1,6 @@
 import { IconCheck, IconChevronRight, IconMoon, IconSun } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { Dispatch, SetStateAction } from 'react';
+import { useId } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { ACCENT_COLORS, type AccentColor } from '@/shared/preferences';
 import { ACCENT_SWATCHES, menuItemClass, submenuPanelClass } from './menu.styles';
@@ -10,8 +10,8 @@ interface Props {
     accent: AccentColor;
     onToggleTheme: () => void;
     onSetAccent: (accent: AccentColor) => void;
-    activeSubmenu: 'language' | 'theme' | null;
-    setActiveSubmenu: Dispatch<SetStateAction<'language' | 'theme' | null>>;
+    open: boolean;
+    onToggle: () => void;
     closeAll: () => void;
 }
 
@@ -20,33 +20,36 @@ export function ThemeSubmenu({
     accent,
     onToggleTheme,
     onSetAccent,
-    activeSubmenu,
-    setActiveSubmenu,
+    open,
+    onToggle,
     closeAll,
 }: Props) {
     const { t } = useTranslation();
+    const panelId = useId();
 
     return (
-        <div className="relative" onMouseEnter={() => setActiveSubmenu('theme')}>
+        <div className="relative">
             <button
                 type="button"
-                role="menuitem"
-                aria-haspopup="menu"
-                aria-expanded={activeSubmenu === 'theme'}
-                className={[
-                    menuItemClass,
-                    activeSubmenu === 'theme' ? 'bg-ui-surface-hover text-ui-text' : '',
-                ].join(' ')}
-                onClick={() => setActiveSubmenu('theme')}
+                aria-expanded={open}
+                aria-controls={panelId}
+                className={[menuItemClass, open ? 'bg-ui-surface-hover text-ui-text' : ''].join(
+                    ' ',
+                )}
+                onClick={onToggle}
             >
                 {t('header.theme')}
-                <IconChevronRight className="ml-auto h-3.5 w-3.5" />
+                <IconChevronRight
+                    className={['ml-auto h-3.5 w-3.5 transition-transform', open ? 'rotate-90' : '']
+                        .filter(Boolean)
+                        .join(' ')}
+                />
             </button>
             <AnimatePresence>
-                {activeSubmenu === 'theme' && (
+                {open && (
                     <motion.div
+                        id={panelId}
                         className={submenuPanelClass}
-                        role="menu"
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -8 }}
@@ -54,7 +57,6 @@ export function ThemeSubmenu({
                     >
                         <button
                             type="button"
-                            role="menuitem"
                             className={menuItemClass}
                             onClick={() => {
                                 onToggleTheme();
@@ -73,11 +75,12 @@ export function ThemeSubmenu({
                             <button
                                 key={color}
                                 type="button"
-                                role="menuitemradio"
-                                aria-checked={accent === color}
+                                aria-pressed={accent === color}
                                 className={[
                                     menuItemClass,
-                                    accent === color ? 'text-ui-text' : '',
+                                    accent === color
+                                        ? 'bg-ui-accent-soft text-ui-accent-on-soft'
+                                        : '',
                                 ].join(' ')}
                                 onClick={() => {
                                     onSetAccent(color);

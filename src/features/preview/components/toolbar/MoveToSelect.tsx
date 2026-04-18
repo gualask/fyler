@@ -34,11 +34,11 @@ export function MoveToSelect({ moveControl, label, getPositionLabel }: Props) {
     );
 
     return (
-        <div className="relative rounded-lg bg-white/10 text-white">
+        <div className="relative rounded-lg bg-[var(--ui-overlay-control)] text-[var(--ui-overlay-text)]">
             <select
                 value={moveToValue}
                 onChange={(event) => handleChange(event.target.value)}
-                className="h-9 appearance-none rounded-lg bg-transparent py-1 pl-3 pr-9 text-sm outline-none"
+                className="h-10 appearance-none rounded-lg bg-transparent py-1 pl-3 pr-10 text-sm outline-none"
                 title={label}
             >
                 <option value="" className="text-slate-900">
@@ -55,7 +55,7 @@ export function MoveToSelect({ moveControl, label, getPositionLabel }: Props) {
                     </option>
                 ))}
             </select>
-            <IconChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-white/75" />
+            <IconChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ui-overlay-text-muted)]" />
         </div>
     );
 }

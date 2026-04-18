@@ -64,7 +64,7 @@ export function QuickAddView({ files, quickAddFileIds, isDragOver, onRemove, onE
                                     <button
                                         type="button"
                                         onClick={() => onRemove(file.id)}
-                                        className="shrink-0 text-ui-text-muted transition-colors hover:text-ui-danger"
+                                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ui-text-muted transition-colors hover:bg-ui-danger-soft hover:text-ui-danger"
                                         title={t('quickAdd.remove')}
                                     >
                                         <IconX className="h-3.5 w-3.5" />

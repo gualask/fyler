@@ -37,7 +37,7 @@ export function Toolbar({
     const showMoveTo = Boolean(moveControl && moveControl.totalPositions > 1);
 
     return (
-        <div className="absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-black/60 px-4 py-2">
+        <div className="absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-[var(--ui-overlay-toolbar)] px-4 py-2">
             <div className="justify-self-start">
                 <ZoomControls
                     zoomLevel={zoomLevel}
@@ -51,7 +51,7 @@ export function Toolbar({
                 />
             </div>
 
-            <div className="justify-self-center text-sm font-medium text-white/85">
+            <div className="justify-self-center text-sm font-medium text-[var(--ui-overlay-text-muted)]">
                 {t('preview.counter', { current: displayCurrentPage, total: displayTotalPages })}
             </div>
 
@@ -76,7 +76,7 @@ export function Toolbar({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--ui-overlay-control)] text-[var(--ui-overlay-text)] transition-colors hover:bg-[var(--ui-overlay-control-hover)]"
                     title={t('preview.close')}
                 >
                     <IconX className="h-5 w-5" />

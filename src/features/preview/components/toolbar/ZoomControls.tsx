@@ -26,7 +26,7 @@ export function ZoomControls({
             <button
                 type="button"
                 onClick={onZoomOut}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                 title={zoomOutTitle}
             >
                 <IconZoomOut className="h-4 w-4" />
@@ -37,7 +37,7 @@ export function ZoomControls({
             <button
                 type="button"
                 onClick={onZoomIn}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
                 title={zoomInTitle}
             >
                 <IconZoomIn className="h-4 w-4" />
@@ -45,7 +45,7 @@ export function ZoomControls({
             <button
                 type="button"
                 onClick={onZoomReset}
-                className="rounded-md px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20"
+                className="min-h-9 rounded-md px-3 text-sm font-medium text-white transition-colors hover:bg-white/20"
                 title={resetTitle}
             >
                 {resetLabel}

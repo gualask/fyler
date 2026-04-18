@@ -1,40 +1,43 @@
-import { IconChevronRight } from '@tabler/icons-react';
+import { IconCheck, IconChevronRight } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { Dispatch, SetStateAction } from 'react';
+import { useId } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { SUPPORTED_LOCALES } from '@/shared/preferences';
 import { menuItemClass, submenuPanelClass } from './menu.styles';
 
 interface Props {
-    activeSubmenu: 'language' | 'theme' | null;
-    setActiveSubmenu: Dispatch<SetStateAction<'language' | 'theme' | null>>;
+    open: boolean;
+    onToggle: () => void;
     closeAll: () => void;
 }
 
-export function LanguageSubmenu({ activeSubmenu, setActiveSubmenu, closeAll }: Props) {
+export function LanguageSubmenu({ open, onToggle, closeAll }: Props) {
     const { locale, setLocale, t } = useTranslation();
+    const panelId = useId();
 
     return (
-        <div className="relative" onMouseEnter={() => setActiveSubmenu('language')}>
+        <div className="relative">
             <button
                 type="button"
-                role="menuitem"
-                aria-haspopup="menu"
-                aria-expanded={activeSubmenu === 'language'}
-                className={[
-                    menuItemClass,
-                    activeSubmenu === 'language' ? 'bg-ui-surface-hover text-ui-text' : '',
-                ].join(' ')}
-                onClick={() => setActiveSubmenu('language')}
+                aria-expanded={open}
+                aria-controls={panelId}
+                className={[menuItemClass, open ? 'bg-ui-surface-hover text-ui-text' : ''].join(
+                    ' ',
+                )}
+                onClick={onToggle}
             >
                 {t('header.language')}
-                <IconChevronRight className="ml-auto h-3.5 w-3.5" />
+                <IconChevronRight
+                    className={['ml-auto h-3.5 w-3.5 transition-transform', open ? 'rotate-90' : '']
+                        .filter(Boolean)
+                        .join(' ')}
+                />
             </button>
             <AnimatePresence>
-                {activeSubmenu === 'language' && (
+                {open && (
                     <motion.div
+                        id={panelId}
                         className={submenuPanelClass}
-                        role="menu"
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -8 }}
@@ -44,11 +47,12 @@ export function LanguageSubmenu({ activeSubmenu, setActiveSubmenu, closeAll }: P
                             <button
                                 key={option}
                                 type="button"
-                                role="menuitemradio"
-                                aria-checked={locale === option}
+                                aria-pressed={locale === option}
                                 className={[
                                     menuItemClass,
-                                    locale === option ? 'text-ui-accent-text' : '',
+                                    locale === option
+                                        ? 'bg-ui-accent-soft text-ui-accent-on-soft'
+                                        : '',
                                 ].join(' ')}
                                 onClick={() => {
                                     setLocale(option);
@@ -56,8 +60,13 @@ export function LanguageSubmenu({ activeSubmenu, setActiveSubmenu, closeAll }: P
                                 }}
                             >
                                 {t(`language.name.${option}`)}
-                                <span className="ml-auto text-xs uppercase text-ui-text-muted">
-                                    {t(`language.short.${option}`)}
+                                <span className="ml-auto flex items-center gap-2">
+                                    {locale === option ? (
+                                        <IconCheck className="h-3.5 w-3.5 text-ui-accent-text" />
+                                    ) : null}
+                                    <span className="text-xs uppercase text-ui-text-muted">
+                                        {t(`language.short.${option}`)}
+                                    </span>
                                 </span>
                             </button>
                         ))}

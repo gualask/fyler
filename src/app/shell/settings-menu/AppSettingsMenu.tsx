@@ -1,6 +1,6 @@
 import { IconAdjustments } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import type { AccentColor } from '@/shared/preferences';
 import { useDismissableMenu } from '@/shared/ui';
@@ -31,33 +31,40 @@ export function AppSettingsMenu({
     const [open, setOpen] = useState(false);
     const [activeSubmenu, setActiveSubmenu] = useState<Submenu>(null);
     const rootRef = useRef<HTMLDivElement | null>(null);
-
-    useDismissableMenu({
-        open,
-        rootRef,
-        onClose: () => {
-            setOpen(false);
-            setActiveSubmenu(null);
-        },
-    });
+    const triggerRef = useRef<HTMLButtonElement | null>(null);
+    const panelId = useId();
 
     function closeAll() {
         setOpen(false);
         setActiveSubmenu(null);
     }
 
+    useDismissableMenu({
+        open,
+        rootRef,
+        triggerRef,
+        onClose: closeAll,
+    });
+
     return (
         <div ref={rootRef} className="relative">
             <button
+                ref={triggerRef}
                 type="button"
                 className={['btn-icon', open ? 'bg-ui-accent-soft text-ui-accent-on-soft' : '']
                     .filter(Boolean)
                     .join(' ')}
                 aria-label={t('header.settings')}
-                aria-haspopup="menu"
+                aria-haspopup="true"
                 aria-expanded={open}
+                aria-controls={panelId}
                 onClick={() => {
-                    setOpen((current) => !current);
+                    if (open) {
+                        closeAll();
+                        return;
+                    }
+
+                    setOpen(true);
                     setActiveSubmenu(null);
                 }}
             >
@@ -66,17 +73,21 @@ export function AppSettingsMenu({
             <AnimatePresence>
                 {open && (
                     <motion.div
-                        role="menu"
+                        id={panelId}
                         aria-label={t('header.settings')}
-                        className="absolute left-0 top-[calc(100%+0.5rem)] z-50 min-w-[13rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg"
+                        className="absolute left-0 top-[calc(100%+0.5rem)] z-50 min-w-[15rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg"
                         initial={{ opacity: 0, scale: 0.97, y: -4 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.97, y: -4 }}
                         transition={{ duration: 0.15 }}
                     >
                         <LanguageSubmenu
-                            activeSubmenu={activeSubmenu}
-                            setActiveSubmenu={setActiveSubmenu}
+                            open={activeSubmenu === 'language'}
+                            onToggle={() =>
+                                setActiveSubmenu((current) =>
+                                    current === 'language' ? null : 'language',
+                                )
+                            }
                             closeAll={closeAll}
                         />
 
@@ -85,8 +96,12 @@ export function AppSettingsMenu({
                             accent={accent}
                             onToggleTheme={onToggleTheme}
                             onSetAccent={onSetAccent}
-                            activeSubmenu={activeSubmenu}
-                            setActiveSubmenu={setActiveSubmenu}
+                            open={activeSubmenu === 'theme'}
+                            onToggle={() =>
+                                setActiveSubmenu((current) =>
+                                    current === 'theme' ? null : 'theme',
+                                )
+                            }
                             closeAll={closeAll}
                         />
 
@@ -94,7 +109,6 @@ export function AppSettingsMenu({
 
                         <button
                             type="button"
-                            role="menuitem"
                             className={menuItemClass}
                             onClick={() => {
                                 onReportBug();
@@ -105,7 +119,6 @@ export function AppSettingsMenu({
                         </button>
                         <button
                             type="button"
-                            role="menuitem"
                             className={menuItemClass}
                             onClick={() => {
                                 onOpenAbout();

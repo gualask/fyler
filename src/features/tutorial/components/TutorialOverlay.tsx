@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import type { CSSProperties } from 'react';
 import { useEffect, useReducer } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { TutorialCard } from './TutorialCard';
@@ -10,6 +11,13 @@ interface Props {
     onNext: () => void;
     onSkip: () => void;
 }
+
+type TutorialSpotlightVars = CSSProperties & {
+    '--tutorial-spotlight-top': string;
+    '--tutorial-spotlight-left': string;
+    '--tutorial-spotlight-width': string;
+    '--tutorial-spotlight-height': string;
+};
 
 export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
     const { t } = useTranslation();
@@ -61,20 +69,27 @@ export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
     }
 
     const tooltipStyle = getTooltipStyle(rect);
+    const spotlightVars = {
+        '--tutorial-spotlight-top': `${rect.top}px`,
+        '--tutorial-spotlight-left': `${rect.left}px`,
+        '--tutorial-spotlight-width': `${rect.width}px`,
+        '--tutorial-spotlight-height': `${rect.height}px`,
+    } satisfies TutorialSpotlightVars;
 
     return (
         <motion.div className="fixed inset-0 z-[60]" {...fadeProps}>
             {/* Dark backdrop with spotlight cutout via box-shadow */}
             <motion.div
                 className="pointer-events-none absolute rounded-xl"
-                animate={{
-                    top: rect.top,
-                    left: rect.left,
-                    width: rect.width,
-                    height: rect.height,
-                }}
+                animate={spotlightVars}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                style={{ boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.55)' }}
+                style={{
+                    top: 'var(--tutorial-spotlight-top)',
+                    left: 'var(--tutorial-spotlight-left)',
+                    width: 'var(--tutorial-spotlight-width)',
+                    height: 'var(--tutorial-spotlight-height)',
+                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.55)',
+                }}
             />
 
             {/* Click-blocker on the dark area (not the spotlight) */}

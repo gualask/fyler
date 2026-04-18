@@ -52,17 +52,32 @@ export function ListRowIndexControls({
 
     const buttonClassName =
         size === 'lg'
-            ? 'flex h-8 w-8 items-center justify-center rounded-md text-ui-text-muted transition-colors hover:text-ui-text disabled:invisible'
-            : 'cursor-pointer rounded p-0.5 text-ui-text-muted transition-colors hover:text-ui-text disabled:invisible';
+            ? 'flex h-10 w-10 items-center justify-center rounded-md text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text disabled:invisible'
+            : 'flex h-9 w-9 items-center justify-center rounded-md text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text disabled:invisible';
     const iconClassName = size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
     const labelClassName =
         size === 'lg'
             ? 'text-sm font-bold text-ui-text-muted'
             : 'text-xs font-bold text-ui-text-muted';
+    const labelButtonClassName =
+        size === 'lg'
+            ? 'flex h-10 min-w-[2.75rem] items-center justify-center rounded-md px-2 text-sm font-bold text-ui-text-muted transition-colors hover:bg-ui-accent/15 hover:text-ui-accent'
+            : 'flex h-9 min-w-9 items-center justify-center rounded-md px-2 text-xs font-bold text-ui-text-muted transition-colors hover:bg-ui-accent/15 hover:text-ui-accent';
+    const inputClassName =
+        size === 'lg'
+            ? 'h-10 w-11 rounded-md border border-ui-border bg-ui-bg text-center text-sm font-bold text-ui-text outline-none focus:border-ui-accent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+            : 'h-9 w-10 rounded-md border border-ui-border bg-ui-bg text-center text-xs font-bold text-ui-text outline-none focus:border-ui-accent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none';
 
     return (
         <div className="flex shrink-0 flex-col items-center gap-0.5">
-            <button type="button" onClick={onMoveUp} disabled={isFirst} className={buttonClassName}>
+            <button
+                type="button"
+                onClick={onMoveUp}
+                disabled={isFirst}
+                className={buttonClassName}
+                aria-label={t('finalDocument.movePageUp')}
+                title={t('finalDocument.movePageUp')}
+            >
                 <IconChevronUp className={iconClassName} />
             </button>
 
@@ -73,7 +88,8 @@ export function ListRowIndexControls({
                     min={1}
                     max={totalItems}
                     defaultValue={indexLabel}
-                    className={`${labelClassName} w-8 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+                    className={inputClassName}
+                    aria-label={t('finalDocument.moveToIndex')}
                     onBlur={commitEdit}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') commitEdit();
@@ -87,8 +103,9 @@ export function ListRowIndexControls({
                         e.stopPropagation();
                         setIsEditing(true);
                     }}
-                    className={`${labelClassName} cursor-pointer rounded px-0.5 hover:bg-ui-accent/15 hover:text-ui-accent`}
+                    className={labelButtonClassName}
                     title={t('finalDocument.moveToIndex')}
+                    aria-label={t('finalDocument.moveToIndex')}
                 >
                     {indexLabel}
                 </button>
@@ -101,6 +118,8 @@ export function ListRowIndexControls({
                 onClick={onMoveDown}
                 disabled={isLast}
                 className={buttonClassName}
+                aria-label={t('finalDocument.movePageDown')}
+                title={t('finalDocument.movePageDown')}
             >
                 <IconChevronDown className={iconClassName} />
             </button>

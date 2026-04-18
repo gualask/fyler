@@ -15,7 +15,7 @@ export function RotateControls({ isRotating, onRotate, rotateLeftTitle, rotateRi
                 type="button"
                 onClick={() => onRotate('ccw')}
                 disabled={isRotating}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
                 title={rotateLeftTitle}
             >
                 <IconRotate2 className="h-4 w-4" />
@@ -24,7 +24,7 @@ export function RotateControls({ isRotating, onRotate, rotateLeftTitle, rotateRi
                 type="button"
                 onClick={() => onRotate('cw')}
                 disabled={isRotating}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-40"
                 title={rotateRightTitle}
             >
                 <IconRotateClockwise2 className="h-4 w-4" />

@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
 import { useTranslation } from '@/shared/i18n';
+import { useModalFocus } from '@/shared/ui';
 
 import { SupportAboutSection } from './sections/AboutSection';
 import { SupportAppSection } from './sections/AppSection';
@@ -72,19 +73,14 @@ export function SupportDialog({
     const { t } = useTranslation();
     const [issueTitle, setIssueTitle] = useState('');
     const [issueDescription, setIssueDescription] = useState('');
+    const dialogRef = useRef<HTMLDivElement | null>(null);
+    const titleId = useId();
 
-    useEffect(() => {
-        if (!mode) return undefined;
-
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === 'Escape') {
-                onClose();
-            }
-        }
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [mode, onClose]);
+    useModalFocus({
+        active: Boolean(mode),
+        containerRef: dialogRef,
+        onEscape: onClose,
+    });
 
     useEffect(() => {
         if (!mode) {
@@ -172,6 +168,11 @@ export function SupportDialog({
                     }}
                 >
                     <motion.div
+                        ref={dialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby={titleId}
+                        tabIndex={-1}
                         className="w-full max-w-2xl rounded-2xl border border-ui-border bg-ui-surface shadow-2xl"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -179,7 +180,9 @@ export function SupportDialog({
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     >
                         <div className="border-b border-ui-border px-6 py-5">
-                            <h2 className="text-lg font-semibold text-ui-text">{title}</h2>
+                            <h2 id={titleId} className="text-lg font-semibold text-ui-text">
+                                {title}
+                            </h2>
                             {headerDescription ? (
                                 <p className="mt-1 text-sm text-ui-text-muted">
                                     {headerDescription}

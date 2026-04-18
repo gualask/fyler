@@ -34,18 +34,10 @@ export function TutorialCard({
                 <span className="text-xs text-ui-text-muted">{stepLabel}</span>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={onSkip}
-                        className="text-xs font-medium text-ui-text-muted transition-colors hover:text-ui-text"
-                    >
+                    <button type="button" onClick={onSkip} className="btn-ghost-sm">
                         {skipLabel}
                     </button>
-                    <button
-                        type="button"
-                        onClick={onNext}
-                        className="btn-primary px-4 py-1.5 text-xs"
-                    >
+                    <button type="button" onClick={onNext} className="btn-primary">
                         {nextLabel}
                     </button>
                 </div>

@@ -1,8 +1,10 @@
 import { motion } from 'motion/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RotationDirection } from '@/shared/domain';
 import { finalPageToTarget } from '@/shared/domain/utils/final-page-id';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
+import { useTranslation } from '@/shared/i18n';
+import { useModalFocus } from '@/shared/ui';
 import { PageSlot } from './page-slot/PageSlot';
 import type { PreviewModalProps } from './preview.types';
 import type { SlotContext } from './slot.types';
@@ -21,10 +23,12 @@ export function PreviewModal({
     onRotatePage,
     onClose,
 }: PreviewModalProps) {
+    const { t } = useTranslation();
     const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [isRotating, setIsRotating] = useState(false);
     const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
+    const dialogRef = useRef<HTMLDivElement | null>(null);
     const total = finalPages.length;
     const [currentIndex, setCurrentIndex] = useState(0);
     const currentPage = finalPages[currentIndex] ?? null;
@@ -38,13 +42,10 @@ export function PreviewModal({
             : currentIndex + 1);
     const displayTotalPages = indicator?.total ?? total;
 
-    useEffect(() => {
-        const handler = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') onClose();
-        };
-        window.addEventListener('keydown', handler, { capture: true });
-        return () => window.removeEventListener('keydown', handler, { capture: true });
-    }, [onClose]);
+    useModalFocus({
+        containerRef: dialogRef,
+        onEscape: onClose,
+    });
 
     useEffect(() => {
         setCurrentIndex((value) => Math.min(value, Math.max(total - 1, 0)));
@@ -117,6 +118,11 @@ export function PreviewModal({
             transition={{ duration: 0.2 }}
         >
             <motion.div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label={t('header.preview')}
+                tabIndex={-1}
                 className="relative flex h-[88vh] w-[82vw] flex-col overflow-hidden rounded-xl bg-zinc-900 shadow-2xl"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
