@@ -79,6 +79,7 @@ Conventions:
 Routes:
 
 - `?dev=fixtures` opens the fixture index
+- `?dev=runtime-app` mounts the real app shell with the dev browser-safe platform adapter
 - `?dev=workspace-shell` opens the initial browser-safe workspace shell fixture
 - `?dev=workspace-empty` opens the empty-state workspace fixture
 - `?dev=preview-modal` opens the browser-safe preview modal fixture (`&pages=1` for single-page)
@@ -90,9 +91,16 @@ Routes:
 - `?dev=page-picker` opens the PDF page-picker fixture (`&mode=image` for the image panel)
 - `?dev=update-dialog` opens the update dialog fixture (`&view=installing` or `error` for alternate states)
 
+Use:
+
+- `?dev=<fixture>` for isolated UI inspection
+- `?dev=runtime-app` for Playwright/browser audit of the real shell without Tauri
+- `pnpm tauri:dev` for native Tauri and OS-integrated checks
+
 What belongs in git:
 
 - fixture pages in `src/dev/`
+- the dev-only browser-safe adapter support under `src/dev/`
 - the small gating code needed to open them in development
 - reusable mock data that makes the fixture useful
 

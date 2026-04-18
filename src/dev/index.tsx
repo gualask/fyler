@@ -1,6 +1,14 @@
+import { AppShell } from '@/app/AppShell';
 import { AppProviders } from '@/app/providers';
+import { setPlatformAdapter } from '@/infra/platform';
 
-import { DEV_FIXTURE_INDEX_KEY, getDevFixtureHref, getDevFixtureKey } from './dev-mode';
+import { browserPlatformAdapter } from './browser-platform-adapter';
+import {
+    DEV_FIXTURE_INDEX_KEY,
+    DEV_RUNTIME_APP_KEY,
+    getDevFixtureHref,
+    getDevFixtureKey,
+} from './dev-mode';
 import { FeedbackOverlaysFixturePage } from './feedback-overlays.fixture';
 import { FinalDocumentFixturePage } from './final-document.fixture';
 import { PagePickerFixturePage } from './page-picker.fixture';
@@ -13,6 +21,7 @@ import { WorkspaceEmptyFixturePage } from './workspace-empty.fixture';
 import { WorkspaceShellFixturePage } from './workspace-shell.fixture';
 
 const FIXTURE_KEYS = [
+    DEV_RUNTIME_APP_KEY,
     'workspace-shell',
     'workspace-empty',
     'preview-modal',
@@ -36,7 +45,11 @@ function DevIndexPage() {
                     <h1 className="text-3xl font-semibold">Fixture index</h1>
                     <p className="max-w-2xl text-sm leading-6 text-ui-text-secondary">
                         Browser-safe fixture pages for DOM inspection, layout debugging, and
-                        Playwright runs without mounting the normal Tauri-dependent shell.
+                        Playwright runs without depending on the native Tauri runtime. Use
+                        <code className="mx-1 rounded bg-ui-accent-soft px-1.5 py-0.5 text-xs">
+                            {DEV_RUNTIME_APP_KEY}
+                        </code>
+                        to mount the real shell on the dev adapter.
                     </p>
                 </div>
 
@@ -62,6 +75,14 @@ function DevIndexPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function BrowserRuntimeAppPage() {
+    return (
+        <AppProviders>
+            <AppShell />
+        </AppProviders>
     );
 }
 
@@ -94,9 +115,14 @@ function UnknownFixturePage({ fixtureKey }: { fixtureKey: string }) {
 
 function DevModeContent() {
     const fixtureKey = getDevFixtureKey(window.location.search);
+    setPlatformAdapter(browserPlatformAdapter);
 
     if (!fixtureKey || fixtureKey === DEV_FIXTURE_INDEX_KEY) {
         return <DevIndexPage />;
+    }
+
+    if (fixtureKey === DEV_RUNTIME_APP_KEY) {
+        return <BrowserRuntimeAppPage />;
     }
 
     if (fixtureKey === 'workspace-shell') {

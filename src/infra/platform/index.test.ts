@@ -2,6 +2,7 @@
 
 import assert from 'node:assert/strict';
 import { mock } from 'node:test';
+import type { PlatformAdapter } from './platform-adapter.ts';
 
 let invokeCalls: Array<{ command: string; payload: unknown }> = [];
 
@@ -36,49 +37,35 @@ mock.module('@tauri-apps/api/core', {
 
 const platform = await import('./index.ts');
 
-function toFileList(files: File[]): FileList {
-    return Object.assign(files.slice(), {
-        item: (index: number) => files[index] ?? null,
-        length: files.length,
-    }) as unknown as FileList;
-}
-
-function installBrowserGlobals(files: File[]) {
-    const originalWindow = globalThis.window;
-    const originalDocument = globalThis.document;
-    const originalCreateObjectURL = globalThis.URL.createObjectURL;
-
-    const input = {
-        type: '',
-        accept: '',
-        multiple: false,
-        files: toFileList(files),
-        onchange: null as ((event: Event) => void) | null,
-        click() {
-            this.onchange?.(new Event('change'));
+function createStubPlatformAdapter(overrides: Partial<PlatformAdapter> = {}): PlatformAdapter {
+    return {
+        openFilesDialog: async () => ({ files: [], skippedErrors: [] }),
+        savePDFDialog: async () => '',
+        saveTextFile: async () => '',
+        mergePDFs: async () => {
+            throw new Error('not implemented');
         },
-        remove() {},
-    };
-
-    Object.assign(globalThis, {
-        window: {
-            location: { protocol: 'http:' },
+        getAppMetadata: async () => ({
+            appName: 'Fyler',
+            version: 'test',
+            identifier: 'test',
+            platform: 'test',
+            arch: 'test',
+        }),
+        openExternalUrl: async () => undefined,
+        openFilesFromPaths: async () => ({ files: [], skippedErrors: [] }),
+        releaseSources: async () => undefined,
+        getImageExportPreviewLayout: async () => {
+            throw new Error('not implemented');
         },
-        document: {
-            createElement: (tagName: string) => {
-                assert.equal(tagName, 'input');
-                return input;
-            },
-        },
-    });
-    globalThis.URL.createObjectURL = (file) => `blob:${(file as File).name}`;
-
-    return () => {
-        Object.assign(globalThis, {
-            window: originalWindow,
-            document: originalDocument,
-        });
-        globalThis.URL.createObjectURL = originalCreateObjectURL;
+        getPreviewUrl: (path) => path,
+        windowGetLogicalSize: async () => ({ width: 0, height: 0 }),
+        windowSetSize: async () => undefined,
+        windowSetAlwaysOnTop: async () => undefined,
+        windowSetMinSize: async () => undefined,
+        windowSetMaxSize: async () => undefined,
+        windowSetMaximizable: async () => undefined,
+        ...overrides,
     };
 }
 
@@ -95,44 +82,28 @@ function installBrowserGlobals(files: File[]) {
 
 {
     invokeCalls = [];
-    const restoreGlobals = installBrowserGlobals([
-        new File(['image'], 'sample-image.jpg', { type: 'image/jpeg' }),
-        new File(['notes'], 'notes.txt', { type: 'text/plain' }),
-    ]);
+    const adapter = createStubPlatformAdapter({
+        openFilesDialog: async () => ({
+            files: [],
+            skippedErrors: [{ name: 'stub.pdf', reason: 'unsupported_format' }],
+        }),
+        getPreviewUrl: (path) => `preview:${path}`,
+    });
 
     try {
+        platform.setPlatformAdapter(adapter);
         const result = await platform.openFilesDialog('Documents and images');
 
         assert.equal(invokeCalls.length, 0);
-        assert.equal(result.files.length, 1);
-        assert.deepEqual(result.files[0], {
-            id: result.files[0]?.id,
-            originalPath: 'blob:sample-image.jpg',
-            name: 'sample-image.jpg',
-            byteSize: 5,
-            pageCount: 1,
-            kind: 'image',
+        assert.deepEqual(result, {
+            files: [],
+            skippedErrors: [{ name: 'stub.pdf', reason: 'unsupported_format' }],
         });
-        assert.match(result.files[0]?.id ?? '', /^web-/);
-        assert.deepEqual(result.skippedErrors, [
-            {
-                name: 'notes.txt',
-                reason: 'unsupported_format',
-            },
-        ]);
+        assert.equal(
+            platform.getPreviewUrl('/fixtures/sample-document.pdf'),
+            'preview:/fixtures/sample-document.pdf',
+        );
     } finally {
-        restoreGlobals();
-    }
-}
-
-{
-    invokeCalls = [];
-    const restoreGlobals = installBrowserGlobals([]);
-
-    try {
-        await assert.doesNotReject(platform.releaseSources(['source-1']));
-        assert.equal(invokeCalls.length, 0);
-    } finally {
-        restoreGlobals();
+        platform.resetPlatformAdapter();
     }
 }

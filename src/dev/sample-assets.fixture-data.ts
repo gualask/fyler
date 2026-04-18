@@ -6,7 +6,7 @@ export const SAMPLE_PDF_FILE: SourceFile = {
     originalPath: '/fixtures/sample-document.pdf',
     name: 'sample-document.pdf',
     byteSize: 469_513,
-    pageCount: 7,
+    pageCount: 5,
     kind: 'pdf',
 };
 

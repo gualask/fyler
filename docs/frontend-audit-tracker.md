@@ -13,22 +13,22 @@ It is meant to be the source map from which separate operational checklists can 
 | Area | Section/Component | Access |
 | --- | --- | --- |
 | Dev fixtures | Index fixture | `?dev=fixtures` |
-| Workspace | Main shell | Normal app, `?dev=workspace-shell` |
-| Workspace | Empty state | Normal app with empty session, `?dev=workspace-empty` |
-| Header | App header | Normal app, `?dev=workspace-shell`, `?dev=workspace-empty` |
-| Header | Settings menu | Toolbar -> `Settings`, `?dev=workspace-shell` |
-| Header | Theme submenu | `Settings` -> `Theme`, `?dev=workspace-shell` |
-| Header | Language submenu | `Settings` -> `Language`, `?dev=workspace-shell` |
-| Quick Add | Quick Add view | Toolbar -> `Quick Add`, `?dev=quick-add` |
+| Workspace | Main shell | Normal app, `?dev=runtime-app`, `?dev=workspace-shell` |
+| Workspace | Empty state | Normal app with empty session, `?dev=runtime-app`, `?dev=workspace-empty` |
+| Header | App header | Normal app, `?dev=runtime-app`, `?dev=workspace-shell`, `?dev=workspace-empty` |
+| Header | Settings menu | Toolbar -> `Settings`, `?dev=runtime-app`, `?dev=workspace-shell` |
+| Header | Theme submenu | `Settings` -> `Theme`, `?dev=runtime-app`, `?dev=workspace-shell` |
+| Header | Language submenu | `Settings` -> `Language`, `?dev=runtime-app`, `?dev=workspace-shell` |
+| Quick Add | Quick Add view | Toolbar -> `Quick Add`, `?dev=runtime-app`, `?dev=quick-add` |
 | Preview | Preview modal | `Open preview`, `?dev=preview-modal` |
 | Preview | Toolbar preview | Preview modal -> toolbar, `?dev=preview-modal` |
-| Support | Support dialog | `Settings` -> `Report a bug`, `?dev=support-dialog` |
-| Support | About section | `Settings` -> `About Fyler`, `?dev=support-dialog&mode=about` |
-| Support | Report issue section | Support dialog -> report issue, `?dev=support-dialog` |
-| Tutorial | Tutorial overlay | First file add, `Help`, `?dev=tutorial-overlay&step=0..3` |
-| Export | Output panel | Footer workspace, `?dev=workspace-shell` |
-| Export | Optimization section | Output panel -> preset, `?dev=workspace-shell` |
-| Export | Advanced optimization panel | Output panel -> `Custom` preset, `?dev=workspace-shell` |
+| Support | Support dialog | `Settings` -> `Report a bug`, `?dev=runtime-app`, `?dev=support-dialog` |
+| Support | About section | `Settings` -> `About Fyler`, `?dev=runtime-app`, `?dev=support-dialog&mode=about` |
+| Support | Report issue section | Support dialog -> report issue, `?dev=runtime-app`, `?dev=support-dialog` |
+| Tutorial | Tutorial overlay | First file add, `Help`, `?dev=runtime-app`, `?dev=tutorial-overlay&step=0..3` |
+| Export | Output panel | Footer workspace, `?dev=runtime-app`, `?dev=workspace-shell` |
+| Export | Optimization section | Output panel -> preset, `?dev=runtime-app`, `?dev=workspace-shell` |
+| Export | Advanced optimization panel | Output panel -> `Custom` preset, `?dev=runtime-app`, `?dev=workspace-shell` |
 | Final document | Final list | Right workspace column, `?dev=final-document` |
 | Final document | Final empty state | Right workspace column with 0 pages, `?dev=final-document` |
 | Page picker | Picker placeholder | No file selected, `?dev=page-picker` |
