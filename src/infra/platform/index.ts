@@ -47,7 +47,17 @@ export const getImageExportPreviewLayout = (
     invoke('get_image_export_preview_layout', { path, imageFit, quarterTurns });
 
 /** Converts a local filesystem path into a URL that the Tauri webview can load. */
-export const getPreviewUrl = (path: string): string => convertFileSrc(path);
+export const getPreviewUrl = (path: string): string => {
+    if (
+        typeof window !== 'undefined' &&
+        (window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
+        path.startsWith('/fixtures/')
+    ) {
+        return path;
+    }
+
+    return convertFileSrc(path);
+};
 
 export const windowGetLogicalSize = async () => {
     const win = getCurrentWindow();

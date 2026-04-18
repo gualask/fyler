@@ -83,6 +83,12 @@ Routes:
 - `?dev=workspace-empty` opens the empty-state workspace fixture
 - `?dev=preview-modal` opens the browser-safe preview modal fixture (`&pages=1` for single-page)
 - `?dev=quick-add` opens the browser-safe quick-add fixture
+- `?dev=support-dialog` opens the support dialog fixture (`&mode=about` for about mode)
+- `?dev=tutorial-overlay` opens the tutorial overlay fixture (`&step=0..3` to inspect targets)
+- `?dev=feedback-overlays` opens feedback overlay fixtures (`&view=progress`, `progress-indeterminate`, `toast-success`, `toast-warning`)
+- `?dev=final-document` opens the populated final-document fixture
+- `?dev=page-picker` opens the PDF page-picker fixture (`&mode=image` for the image panel)
+- `?dev=update-dialog` opens the update dialog fixture (`&view=installing` or `error` for alternate states)
 
 What belongs in git:
 

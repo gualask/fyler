@@ -11,9 +11,10 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-fn test_fixture(name: &str) -> PathBuf {
+fn public_fixture(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
+        .join("..")
+        .join("public")
         .join("fixtures")
         .join(name)
 }
@@ -125,21 +126,24 @@ fn temp_image_path(label: &str, extension: &str) -> PathBuf {
 }
 
 #[test]
-fn composer_export_preserves_valid_page_tree_for_fisio_fixture() -> anyhow::Result<()> {
-    let fixture = test_fixture("fisio.pdf");
+fn composer_export_preserves_valid_page_tree_for_sample_fixture() -> anyhow::Result<()> {
+    let fixture = public_fixture("sample-document.pdf");
     let input_size = fs::metadata(&fixture)?.len();
     let source_doc = PdfDoc::load(&fixture).context("load fixture")?;
+    let total_pages = source_doc.get_pages().len();
+    anyhow::ensure!(total_pages >= 2, "sample fixture must have at least 2 pages");
+    let last_page = total_pages as u32;
 
     let mut composer = PdfComposer::new();
     let mut memo = std::collections::HashMap::new();
-    for page_num in 2..=15 {
+    for page_num in 2..=last_page {
         composer
-            .push_pdf_page(&source_doc, &mut memo, "fisio.pdf", page_num, 0)
+            .push_pdf_page(&source_doc, &mut memo, "sample-document.pdf", page_num, 0)
             .with_context(|| format!("compose page {page_num}"))?;
     }
     let mut merged = composer.finish().context("finish composition")?;
 
-    let output = save_doc_classic_for_test(&mut merged, "fisio-regression")
+    let output = save_doc_classic_for_test(&mut merged, "sample-regression")
         .unwrap_or_else(|error| panic!("merged document failed to save: {error:#}"));
 
     let output_doc = PdfDoc::load(&output).context("reload merged output")?;
@@ -148,7 +152,7 @@ fn composer_export_preserves_valid_page_tree_for_fisio_fixture() -> anyhow::Resu
 
     remove_temp_output(&output);
 
-    assert_eq!(output_doc.get_pages().len(), 14);
+    assert_eq!(output_doc.get_pages().len(), total_pages - 1);
     assert!(
         output_size < input_size * 2,
         "composed output unexpectedly inflated: input={} output={}",
@@ -160,16 +164,20 @@ fn composer_export_preserves_valid_page_tree_for_fisio_fixture() -> anyhow::Resu
 
 #[test]
 fn composer_single_page_export_is_smaller_than_full_fixture() -> anyhow::Result<()> {
-    let fixture = test_fixture("fisio.pdf");
+    let fixture = public_fixture("sample-document.pdf");
     let input_size = fs::metadata(&fixture)?.len();
     let source_doc = PdfDoc::load(&fixture).context("load fixture")?;
+    anyhow::ensure!(
+        source_doc.get_pages().len() >= 3,
+        "sample fixture must have at least 3 pages"
+    );
 
     let mut composer = PdfComposer::new();
     let mut memo = std::collections::HashMap::new();
-    composer.push_pdf_page(&source_doc, &mut memo, "fisio.pdf", 3, 0)?;
+    composer.push_pdf_page(&source_doc, &mut memo, "sample-document.pdf", 3, 0)?;
     let mut merged = composer.finish().context("finish composition")?;
 
-    let output = save_doc_classic_for_test(&mut merged, "fisio-single-page")
+    let output = save_doc_classic_for_test(&mut merged, "sample-single-page")
         .unwrap_or_else(|error| panic!("single-page export failed to save: {error:#}"));
     let output_size = fs::metadata(&output)?.len();
     let output_doc = PdfDoc::load(&output).context("reload single-page output")?;
@@ -189,17 +197,21 @@ fn composer_single_page_export_is_smaller_than_full_fixture() -> anyhow::Result<
 #[test]
 fn composer_merge_image_and_single_pdf_page_stays_smaller_than_full_fixture() -> anyhow::Result<()>
 {
-    let fixture = test_fixture("fisio.pdf");
+    let fixture = public_fixture("sample-document.pdf");
 
     let input_size = fs::metadata(&fixture)?.len();
     let image_path = std::env::temp_dir().join("fyler-merge-regression-image.png");
     RgbImage::new(800, 400).save(&image_path)?;
 
     let source_doc = PdfDoc::load(&fixture).context("load fixture")?;
+    anyhow::ensure!(
+        source_doc.get_pages().len() >= 3,
+        "sample fixture must have at least 3 pages"
+    );
     let mut composer = PdfComposer::new();
     composer.push_image_page(image_path.to_string_lossy().as_ref(), "contain", 0, None)?;
     let mut memo = std::collections::HashMap::new();
-    composer.push_pdf_page(&source_doc, &mut memo, "fisio.pdf", 3, 0)?;
+    composer.push_pdf_page(&source_doc, &mut memo, "sample-document.pdf", 3, 0)?;
     let mut merged = composer.finish().context("finish composition")?;
 
     let output = save_doc_classic_for_test(&mut merged, "image-plus-single-page")

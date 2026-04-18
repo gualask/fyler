@@ -1,19 +1,24 @@
 import { useTranslation } from '@/shared/i18n';
 import { useAppUpdater } from './app-updater.hook';
 
-export function UpdateDialog() {
-    const { t } = useTranslation();
-    const {
-        updateAvailable,
-        updateVersion,
-        installing,
-        progress,
-        error,
-        downloadAndInstall,
-        dismiss,
-    } = useAppUpdater();
+interface UpdateDialogViewProps {
+    updateVersion: string | null;
+    installing: boolean;
+    progress: number | null;
+    error: string | null;
+    onInstall: () => void;
+    onDismiss: () => void;
+}
 
-    if (!updateAvailable) return null;
+export function UpdateDialogView({
+    updateVersion,
+    installing,
+    progress,
+    error,
+    onInstall,
+    onDismiss,
+}: UpdateDialogViewProps) {
+    const { t } = useTranslation();
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -47,19 +52,40 @@ export function UpdateDialog() {
 
                 {!installing && (
                     <div className="mt-5 flex justify-end gap-2">
-                        <button type="button" className="btn-ghost" onClick={dismiss}>
+                        <button type="button" className="btn-ghost" onClick={onDismiss}>
                             {t('update.notNow')}
                         </button>
-                        <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={() => void downloadAndInstall()}
-                        >
+                        <button type="button" className="btn-primary" onClick={onInstall}>
                             {t('update.install')}
                         </button>
                     </div>
                 )}
             </div>
         </div>
+    );
+}
+
+export function UpdateDialog() {
+    const {
+        updateAvailable,
+        updateVersion,
+        installing,
+        progress,
+        error,
+        downloadAndInstall,
+        dismiss,
+    } = useAppUpdater();
+
+    if (!updateAvailable) return null;
+
+    return (
+        <UpdateDialogView
+            updateVersion={updateVersion}
+            installing={installing}
+            progress={progress}
+            error={error}
+            onInstall={() => void downloadAndInstall()}
+            onDismiss={dismiss}
+        />
     );
 }

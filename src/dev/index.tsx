@@ -1,12 +1,29 @@
 import { AppProviders } from '@/app/providers';
 
 import { DEV_FIXTURE_INDEX_KEY, getDevFixtureHref, getDevFixtureKey } from './dev-mode';
+import { FeedbackOverlaysFixturePage } from './feedback-overlays.fixture';
+import { FinalDocumentFixturePage } from './final-document.fixture';
+import { PagePickerFixturePage } from './page-picker.fixture';
 import { PreviewModalFixturePage } from './preview-modal.fixture';
 import { QuickAddFixturePage } from './quick-add.fixture';
+import { SupportDialogFixturePage } from './support-dialog.fixture';
+import { TutorialOverlayFixturePage } from './tutorial-overlay.fixture';
+import { UpdateDialogFixturePage } from './update-dialog.fixture';
 import { WorkspaceEmptyFixturePage } from './workspace-empty.fixture';
 import { WorkspaceShellFixturePage } from './workspace-shell.fixture';
 
-const FIXTURE_KEYS = ['workspace-shell', 'workspace-empty', 'preview-modal', 'quick-add'] as const;
+const FIXTURE_KEYS = [
+    'workspace-shell',
+    'workspace-empty',
+    'preview-modal',
+    'quick-add',
+    'support-dialog',
+    'tutorial-overlay',
+    'feedback-overlays',
+    'final-document',
+    'page-picker',
+    'update-dialog',
+] as const;
 
 function DevIndexPage() {
     return (
@@ -96,6 +113,30 @@ function DevModeContent() {
 
     if (fixtureKey === 'quick-add') {
         return <QuickAddFixturePage />;
+    }
+
+    if (fixtureKey === 'support-dialog') {
+        return <SupportDialogFixturePage />;
+    }
+
+    if (fixtureKey === 'tutorial-overlay') {
+        return <TutorialOverlayFixturePage />;
+    }
+
+    if (fixtureKey === 'feedback-overlays') {
+        return <FeedbackOverlaysFixturePage />;
+    }
+
+    if (fixtureKey === 'final-document') {
+        return <FinalDocumentFixturePage />;
+    }
+
+    if (fixtureKey === 'page-picker') {
+        return <PagePickerFixturePage />;
+    }
+
+    if (fixtureKey === 'update-dialog') {
+        return <UpdateDialogFixturePage />;
     }
 
     return <UnknownFixturePage fixtureKey={fixtureKey} />;
