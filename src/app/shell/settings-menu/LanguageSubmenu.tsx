@@ -5,11 +5,9 @@ import { useTranslation } from '@/shared/i18n';
 import { SUPPORTED_LOCALES } from '@/shared/preferences';
 import { menuItemClass, submenuPanelClass } from './menu.styles';
 
-type Submenu = 'language' | 'theme' | null;
-
 interface Props {
-    activeSubmenu: Submenu;
-    setActiveSubmenu: Dispatch<SetStateAction<Submenu>>;
+    activeSubmenu: 'language' | 'theme' | null;
+    setActiveSubmenu: Dispatch<SetStateAction<'language' | 'theme' | null>>;
     closeAll: () => void;
 }
 
@@ -17,11 +15,7 @@ export function LanguageSubmenu({ activeSubmenu, setActiveSubmenu, closeAll }: P
     const { locale, setLocale, t } = useTranslation();
 
     return (
-        <div
-            className="relative"
-            onMouseEnter={() => setActiveSubmenu('language')}
-            onMouseLeave={() => setActiveSubmenu(null)}
-        >
+        <div className="relative" onMouseEnter={() => setActiveSubmenu('language')}>
             <button
                 type="button"
                 role="menuitem"
@@ -31,9 +25,7 @@ export function LanguageSubmenu({ activeSubmenu, setActiveSubmenu, closeAll }: P
                     menuItemClass,
                     activeSubmenu === 'language' ? 'bg-ui-surface-hover text-ui-text' : '',
                 ].join(' ')}
-                onClick={() =>
-                    setActiveSubmenu((current) => (current === 'language' ? null : 'language'))
-                }
+                onClick={() => setActiveSubmenu('language')}
             >
                 {t('header.language')}
                 <IconChevronRight className="ml-auto h-3.5 w-3.5" />

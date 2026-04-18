@@ -5,15 +5,13 @@ import { useTranslation } from '@/shared/i18n';
 import { ACCENT_COLORS, type AccentColor } from '@/shared/preferences';
 import { ACCENT_SWATCHES, menuItemClass, submenuPanelClass } from './menu.styles';
 
-type Submenu = 'language' | 'theme' | null;
-
 interface Props {
     isDark: boolean;
     accent: AccentColor;
     onToggleTheme: () => void;
     onSetAccent: (accent: AccentColor) => void;
-    activeSubmenu: Submenu;
-    setActiveSubmenu: Dispatch<SetStateAction<Submenu>>;
+    activeSubmenu: 'language' | 'theme' | null;
+    setActiveSubmenu: Dispatch<SetStateAction<'language' | 'theme' | null>>;
     closeAll: () => void;
 }
 
@@ -29,11 +27,7 @@ export function ThemeSubmenu({
     const { t } = useTranslation();
 
     return (
-        <div
-            className="relative"
-            onMouseEnter={() => setActiveSubmenu('theme')}
-            onMouseLeave={() => setActiveSubmenu(null)}
-        >
+        <div className="relative" onMouseEnter={() => setActiveSubmenu('theme')}>
             <button
                 type="button"
                 role="menuitem"
@@ -43,9 +37,7 @@ export function ThemeSubmenu({
                     menuItemClass,
                     activeSubmenu === 'theme' ? 'bg-ui-surface-hover text-ui-text' : '',
                 ].join(' ')}
-                onClick={() =>
-                    setActiveSubmenu((current) => (current === 'theme' ? null : 'theme'))
-                }
+                onClick={() => setActiveSubmenu('theme')}
             >
                 {t('header.theme')}
                 <IconChevronRight className="ml-auto h-3.5 w-3.5" />

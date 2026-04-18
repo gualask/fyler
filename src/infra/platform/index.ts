@@ -8,6 +8,7 @@ import type {
     MergeResult,
     OpenFilesResult,
     QuarterTurn,
+    SourceFile,
 } from '@/shared/domain';
 
 /**
@@ -15,8 +16,83 @@ import type {
  *
  * Keep all direct Tauri calls centralized in `src/infra/platform/*` to make the boundary explicit.
  */
-export const openFilesDialog = (filterLabel: string): Promise<OpenFilesResult> =>
-    invoke('open_files_dialog', { filterLabel });
+function hasNativePlatformRuntime(): boolean {
+    return (
+        typeof window !== 'undefined' &&
+        typeof (
+            window as {
+                __TAURI_INTERNALS__?: {
+                    invoke?: unknown;
+                };
+            }
+        ).__TAURI_INTERNALS__?.invoke === 'function'
+    );
+}
+
+function isBrowserHttpRuntime(): boolean {
+    return (
+        typeof window !== 'undefined' &&
+        (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+    );
+}
+
+function toBrowserSourceFile(file: File): SourceFile | null {
+    const normalizedName = file.name.toLowerCase();
+    const isPdf = file.type === 'application/pdf' || normalizedName.endsWith('.pdf');
+    const isImage = file.type.startsWith('image/');
+
+    if (!isPdf && !isImage) {
+        return null;
+    }
+
+    return {
+        id: `web-${crypto.randomUUID()}`,
+        originalPath: URL.createObjectURL(file),
+        name: file.name,
+        byteSize: file.size,
+        pageCount: isPdf ? null : 1,
+        kind: isPdf ? 'pdf' : 'image',
+    };
+}
+
+function openFilesDialogInBrowser(): Promise<OpenFilesResult> {
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.pdf,image/*';
+        input.multiple = true;
+        input.onchange = () => {
+            const result: OpenFilesResult = {
+                files: [],
+                skippedErrors: [],
+            };
+
+            for (const file of Array.from(input.files ?? [])) {
+                const sourceFile = toBrowserSourceFile(file);
+                if (sourceFile) {
+                    result.files.push(sourceFile);
+                } else {
+                    result.skippedErrors.push({
+                        name: file.name,
+                        reason: 'unsupported_format',
+                    });
+                }
+            }
+
+            input.remove();
+            resolve(result);
+        };
+        input.click();
+    });
+}
+
+export const openFilesDialog = (filterLabel: string): Promise<OpenFilesResult> => {
+    if (!hasNativePlatformRuntime() && isBrowserHttpRuntime() && typeof document !== 'undefined') {
+        return openFilesDialogInBrowser();
+    }
+
+    return invoke('open_files_dialog', { filterLabel });
+};
 
 export const savePDFDialog = (defaultFilename: string, filterLabel: string): Promise<string> =>
     invoke('save_pdf_dialog', { defaultFilename, filterLabel });
@@ -36,8 +112,13 @@ export const openExternalUrl = (url: string): Promise<void> => invoke('open_exte
 export const openFilesFromPaths = (paths: string[]): Promise<OpenFilesResult> =>
     invoke('open_files_from_paths', { paths });
 
-export const releaseSources = (fileIds: string[]): Promise<void> =>
-    invoke('release_sources', { fileIds });
+export const releaseSources = (fileIds: string[]): Promise<void> => {
+    if (!hasNativePlatformRuntime() && isBrowserHttpRuntime()) {
+        return Promise.resolve();
+    }
+
+    return invoke('release_sources', { fileIds });
+};
 
 export const getImageExportPreviewLayout = (
     path: string,
@@ -48,11 +129,7 @@ export const getImageExportPreviewLayout = (
 
 /** Converts a local filesystem path into a URL that the Tauri webview can load. */
 export const getPreviewUrl = (path: string): string => {
-    if (
-        typeof window !== 'undefined' &&
-        (window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
-        path.startsWith('/fixtures/')
-    ) {
+    if (isBrowserHttpRuntime() && (path.startsWith('/fixtures/') || path.startsWith('blob:'))) {
         return path;
     }
 
@@ -66,15 +143,17 @@ export const windowGetLogicalSize = async () => {
     return physical.toLogical(scale);
 };
 
-export const windowSetSize = (w: number, h: number) =>
+export const windowSetSize = async (w: number, h: number) =>
     getCurrentWindow().setSize(new LogicalSize(w, h));
 
-export const windowSetAlwaysOnTop = (flag: boolean) => getCurrentWindow().setAlwaysOnTop(flag);
+export const windowSetAlwaysOnTop = async (flag: boolean) =>
+    getCurrentWindow().setAlwaysOnTop(flag);
 
-export const windowSetMinSize = (w: number, h: number) =>
+export const windowSetMinSize = async (w: number, h: number) =>
     getCurrentWindow().setMinSize(new LogicalSize(w, h));
 
-export const windowSetMaxSize = (size: { width: number; height: number } | null) =>
+export const windowSetMaxSize = async (size: { width: number; height: number } | null) =>
     getCurrentWindow().setMaxSize(size ? new LogicalSize(size.width, size.height) : null);
 
-export const windowSetMaximizable = (flag: boolean) => getCurrentWindow().setMaximizable(flag);
+export const windowSetMaximizable = async (flag: boolean) =>
+    getCurrentWindow().setMaximizable(flag);
