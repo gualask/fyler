@@ -30,6 +30,9 @@
     --ui-accent-soft: #eef2ff;
     --ui-accent-soft-hover: #e0e7ff;
     --ui-accent-on-soft: #4338ca;
+    --ui-accent-solid: #4f46e5;
+    --ui-accent-solid-hover: #4338ca;
+    --ui-accent-on-solid: #ffffff;
     --ui-swatch-indigo: #6366f1;
     --ui-swatch-teal: #14b8a6;
     --ui-swatch-amber: #f59e0b;
@@ -79,16 +82,21 @@
     /* scrollbar */
     --ui-scrollbar-thumb: color-mix(in srgb, var(--ui-border-hover) 82%, transparent);
     --ui-scrollbar-thumb-hover: color-mix(in srgb, var(--ui-border-hover) 98%, transparent);
+
+    /* shadows */
+    --ui-shadow-panel: rgba(15, 23, 42, 0.16);
+    --ui-shadow-float: rgba(15, 23, 42, 0.18);
+    --ui-shadow-soft: rgba(15, 23, 42, 0.12);
 }
 
 .dark {
     /* surfaces and text */
-    --ui-bg: #2e3039;
-    --ui-surface: #383a44;
-    --ui-surface-subtle: #3d404b;
-    --ui-surface-hover: #444752;
-    --ui-source: #333541;
-    --ui-output: #292b34;
+    --ui-bg: #323541;
+    --ui-surface: #3c404c;
+    --ui-surface-subtle: #414551;
+    --ui-surface-hover: #494d5a;
+    --ui-source: #373b47;
+    --ui-output: #30333d;
     --ui-border: rgba(255, 255, 255, 0.12);
     --ui-border-hover: rgba(255, 255, 255, 0.2);
     --ui-text: #f4f6fb;
@@ -147,6 +155,11 @@
     /* scrollbar */
     --ui-scrollbar-thumb: color-mix(in srgb, var(--ui-border-hover) 78%, transparent);
     --ui-scrollbar-thumb-hover: color-mix(in srgb, var(--ui-border-hover) 96%, transparent);
+
+    /* shadows */
+    --ui-shadow-panel: rgba(2, 6, 23, 0.48);
+    --ui-shadow-float: rgba(2, 6, 23, 0.58);
+    --ui-shadow-soft: rgba(2, 6, 23, 0.34);
 }
 
 /* ── Scrollbar (global) ─────────────────────────────────────────────────── */
@@ -184,6 +197,8 @@
     --ui-accent-soft: #f0fdfa;
     --ui-accent-soft-hover: #ccfbf1;
     --ui-accent-on-soft: #0f766e;
+    --ui-accent-solid: #0f766e;
+    --ui-accent-solid-hover: #115e59;
 }
 .dark.accent-teal,
 .dark .accent-teal {
@@ -203,6 +218,8 @@
     --ui-accent-soft: #fffbeb;
     --ui-accent-soft-hover: #fef3c7;
     --ui-accent-on-soft: #b45309;
+    --ui-accent-solid: #b45309;
+    --ui-accent-solid-hover: #92400e;
 }
 .dark.accent-amber,
 .dark .accent-amber {
@@ -222,6 +239,8 @@
     --ui-accent-soft: #eff6ff;
     --ui-accent-soft-hover: #dbeafe;
     --ui-accent-on-soft: #1d4ed8;
+    --ui-accent-solid: #2563eb;
+    --ui-accent-solid-hover: #1d4ed8;
 }
 .dark.accent-blue,
 .dark .accent-blue {
@@ -247,10 +266,18 @@ body {
 @layer components {
     /* ── Buttons ──────────────────────────────────────────────── */
     .btn-primary {
-        @apply flex min-h-10 items-center gap-2 rounded-lg bg-ui-accent px-5 py-2 text-sm font-semibold text-white shadow-md transition-[colors,transform] hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
+        @apply flex min-h-10 items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold shadow-md transition-[colors,transform] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
+        background-color: var(--ui-accent-solid);
+        color: var(--ui-accent-on-solid);
     }
     .btn-primary-lg {
-        @apply flex items-center gap-2 rounded-lg bg-ui-accent px-6 py-3 text-base font-semibold text-white shadow-md transition-[colors,transform] hover:bg-ui-accent-hover active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
+        @apply flex items-center gap-2 rounded-lg px-6 py-3 text-base font-semibold shadow-md transition-[colors,transform] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
+        background-color: var(--ui-accent-solid);
+        color: var(--ui-accent-on-solid);
+    }
+    .btn-primary:hover:not(:disabled),
+    .btn-primary-lg:hover:not(:disabled) {
+        background-color: var(--ui-accent-solid-hover);
     }
     .btn-ghost {
         @apply flex min-h-10 items-center gap-2 rounded-lg bg-ui-surface-hover px-4 py-2 text-sm font-medium text-ui-text-secondary transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
@@ -279,7 +306,9 @@ body {
     }
     /* ── Toggle (e.g. "All/None" and SegmentedControl options) ── */
     .toggle-on {
-        @apply bg-ui-accent border-ui-accent text-white;
+        color: var(--ui-accent-on-solid);
+        background-color: var(--ui-accent-solid);
+        border-color: var(--ui-accent-solid);
     }
     .toggle-off {
         @apply border-ui-border text-ui-text-secondary hover:border-ui-accent/30 hover:bg-ui-accent-soft hover:text-ui-accent-on-soft;
@@ -308,7 +337,10 @@ body {
         outline-offset: 2px;
     }
     .segmented-control__button-active {
-        @apply text-white;
+        color: var(--ui-accent-on-solid);
+    }
+    .segmented-control__pill {
+        background-color: var(--ui-accent-solid);
     }
     .segmented-control__button-inactive {
         @apply text-ui-text-secondary hover:bg-ui-accent-soft-hover hover:text-ui-accent-on-soft;
@@ -345,6 +377,10 @@ body {
         @apply absolute right-2 top-2 z-30 flex items-center justify-center rounded-md shadow-md transition-colors;
         width: 2.25rem;
         height: 2.25rem;
+    }
+    .page-picker-thumb-toggle-selected {
+        background-color: var(--ui-accent-solid);
+        color: var(--ui-accent-on-solid);
     }
     .page-picker-thumb-label {
         margin-top: 0.5rem;
@@ -461,7 +497,7 @@ body {
     }
     .workspace-surface {
         @apply min-w-0 min-h-0 overflow-hidden rounded-[1.25rem] border border-ui-border;
-        box-shadow: 0 18px 32px -28px color-mix(in srgb, var(--ui-text) 38%, transparent);
+        box-shadow: 0 18px 32px -28px var(--ui-shadow-panel);
     }
     .workspace-surface-source {
         background: linear-gradient(
@@ -528,7 +564,10 @@ body {
         @apply inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-source disabled:cursor-not-allowed disabled:opacity-40;
     }
     .file-list-action-add {
-        @apply text-ui-accent hover:text-ui-accent-hover;
+        color: var(--ui-accent-text);
+    }
+    .file-list-action-add:hover:not(:disabled) {
+        color: var(--ui-accent-on-soft);
     }
     .file-list-action-clear {
         @apply text-ui-text-muted hover:text-ui-text-secondary disabled:hover:text-ui-text-muted;
@@ -546,13 +585,16 @@ body {
         @apply right-2;
     }
     .file-row {
-        @apply cursor-pointer select-none rounded-xl border border-transparent px-2.5 py-2 transition-colors;
+        @apply cursor-pointer select-none rounded-xl border border-transparent px-2.5 py-2 transition-[background-color,border-color,transform,box-shadow];
     }
     .file-row-idle {
-        @apply hover:bg-ui-surface-hover;
+        @apply hover:-translate-y-px hover:bg-ui-surface-hover;
+        box-shadow: 0 10px 22px -20px var(--ui-shadow-soft);
     }
     .file-row-selected {
         @apply border-ui-accent/30 bg-ui-accent-soft;
+        box-shadow: 0 14px 26px -22px
+            color-mix(in srgb, var(--ui-accent) 28%, var(--ui-shadow-float));
     }
     .file-row-title {
         @apply block w-full truncate bg-transparent p-0 text-left text-[13px] font-semibold text-ui-text;

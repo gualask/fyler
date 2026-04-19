@@ -64,7 +64,7 @@ export function SegmentButtons<T extends string>({
         >
             <div
                 aria-hidden
-                className="segmented-control__pill absolute top-1 left-0 rounded-md bg-ui-accent shadow-sm"
+                className="segmented-control__pill absolute top-1 left-0 rounded-md shadow-sm"
                 style={pillStyle}
             />
             {options.map((opt) => (

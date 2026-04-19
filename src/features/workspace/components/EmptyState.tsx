@@ -39,12 +39,9 @@ export function EmptyState({ onAddFiles }: EmptyStateProps) {
                     className="flex h-20 w-20 items-center justify-center rounded-[1.35rem] bg-ui-surface-hover text-ui-text-secondary transition-colors group-hover:bg-ui-accent-soft group-hover:text-ui-accent-on-soft"
                     variants={itemVariants}
                 >
-                    <motion.span
-                        animate={{ scale: [1, 1.06, 1] }}
-                        transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity }}
-                    >
+                    <span>
                         <IconFileUpload className="h-10 w-10" stroke={1.75} />
-                    </motion.span>
+                    </span>
                 </motion.div>
 
                 <motion.p

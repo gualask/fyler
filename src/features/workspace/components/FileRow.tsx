@@ -82,10 +82,10 @@ export function FileRow({ file, selected, onSelect, onRemove }: Props) {
                     onRemove();
                 }}
                 className={[
-                    'btn-icon h-7 w-7 self-center hover:text-ui-danger transition-opacity',
+                    'btn-icon h-7 w-7 self-center hover:text-ui-danger transition-[opacity,transform,color]',
                     selected
-                        ? 'opacity-100'
-                        : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100',
+                        ? 'opacity-100 scale-100'
+                        : 'pointer-events-none opacity-0 scale-95 group-hover:pointer-events-auto group-hover:opacity-100 group-hover:scale-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:scale-100',
                 ].join(' ')}
                 title={t('fileList.remove')}
             >

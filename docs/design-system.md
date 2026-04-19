@@ -4,6 +4,32 @@ Fyler uses a lightweight shared UI layer built from semantic theme tokens in `sr
 
 The current extraction baseline is intentionally small. The goal is to consolidate patterns that already repeat across the app, not to introduce a large component framework.
 
+## Design context
+
+Fyler is a desktop app for merging PDF files and images into a single PDF. It is meant for a very broad audience: people with low confidence using computers, casual home users, office workers, freelancers, students, and also more experienced users who want fast, precise control over document assembly.
+
+The product should feel simple, precise, and quietly capable.
+
+The UI must reduce anxiety for less technical users without becoming toy-like or vague. At the same time, it must communicate enough rigor and control that more experienced users trust it for real document work. The core workflow should feel obvious within seconds: add files, review what is included, make a few confident adjustments, and export.
+
+Visually, Fyler should stay primarily clean and editorial, with a light premium layer. That means:
+
+- strong hierarchy
+- restrained surfaces
+- deliberate spacing
+- clear typography
+- subtle but polished emphasis on important actions
+
+The current light/dark system and accent behavior should remain in place. Layout, typography, and hierarchy should do most of the work before adding color or motion.
+
+## Design principles
+
+- Make the primary workflow obvious at first glance.
+- Reduce cognitive load through clarity, not oversimplification.
+- Preserve depth for expert workflows through progressive disclosure and strong component consistency.
+- Use polish sparingly and intentionally: premium in finish, not flashy in expression.
+- Prefer calm, trustworthy interfaces over trendy or decorative ones.
+
 ## Shared primitives
 
 ### Dialog primitives

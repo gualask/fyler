@@ -80,7 +80,7 @@ export function PdfThumbnailItem({
                     className={[
                         'page-picker-thumb-toggle',
                         isSelected
-                            ? 'bg-ui-accent text-white'
+                            ? 'page-picker-thumb-toggle-selected'
                             : 'bg-white/90 text-slate-800 ring-1 ring-black/20 hover:bg-white',
                     ].join(' ')}
                     title={t(isSelected ? 'pagePicker.removePage' : 'pagePicker.addPage')}
