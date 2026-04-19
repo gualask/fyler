@@ -1,17 +1,14 @@
+import { IconChevronDown } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
 import { useTranslation } from '@/shared/i18n';
 import { useModalFocus } from '@/shared/ui';
 
-import { SupportAboutSection } from './sections/AboutSection';
-import { SupportAppSection } from './sections/AppSection';
 import { SupportIssueFormCard } from './sections/report/IssueFormCard';
 import { SupportReportSections } from './sections/report/ReportSections';
 import { openSupportIssue } from './support-issue-flow';
-
-type SupportDialogMode = 'report' | 'about';
 
 function buildGitHubIssueBody({
     problem,
@@ -44,7 +41,7 @@ function buildGitHubIssueBody({
 }
 
 interface Props {
-    mode: SupportDialogMode | null;
+    open: boolean;
     snapshot: DiagnosticsSnapshot;
     onClose: () => void;
     onCopyDiagnostics: () => Promise<void>;
@@ -61,7 +58,7 @@ interface Props {
 }
 
 export function SupportDialog({
-    mode,
+    open,
     snapshot,
     onClose,
     onCopyDiagnostics,
@@ -73,29 +70,29 @@ export function SupportDialog({
     const { t } = useTranslation();
     const [issueTitle, setIssueTitle] = useState('');
     const [issueDescription, setIssueDescription] = useState('');
+    const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
     const dialogRef = useRef<HTMLDivElement | null>(null);
     const titleId = useId();
+    const technicalDetailsId = useId();
 
     useModalFocus({
-        active: Boolean(mode),
+        active: open,
         containerRef: dialogRef,
         onEscape: onClose,
     });
 
     useEffect(() => {
-        if (!mode) {
+        if (!open) {
             setIssueTitle('');
             setIssueDescription('');
+            setShowTechnicalDetails(false);
         }
-    }, [mode]);
+    }, [open]);
 
-    const isReport = mode === 'report';
-    const recentEvents = isReport ? [...snapshot.recentEvents].reverse() : [];
-
-    const title = mode
-        ? t(isReport ? 'support.dialog.reportTitle' : 'support.dialog.aboutTitle')
-        : '';
-    const headerDescription = isReport ? t('support.dialog.reportDescription') : null;
+    const recentEvents = useMemo(
+        () => [...snapshot.recentEvents].reverse(),
+        [snapshot.recentEvents],
+    );
 
     const normalizedIssueTitle = issueTitle.trim();
     const normalizedIssueDescription = issueDescription.trim();
@@ -154,7 +151,7 @@ export function SupportDialog({
 
     return (
         <AnimatePresence>
-            {mode && (
+            {open && (
                 <motion.div
                     className="dialog-backdrop dialog-backdrop-padded"
                     initial={{ opacity: 0 }}
@@ -179,87 +176,92 @@ export function SupportDialog({
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <div className="border-b border-ui-border px-6 py-5">
-                            <h2 id={titleId} className="text-lg font-semibold text-ui-text">
-                                {title}
+                        <div className="flex items-start justify-between gap-4 border-b border-ui-border px-6 py-5">
+                            <h2 id={titleId} className="min-w-0 text-lg font-semibold text-ui-text">
+                                {t('support.dialog.reportTitle')}
                             </h2>
-                            {headerDescription ? (
-                                <p className="mt-1 text-sm text-ui-text-muted">
-                                    {headerDescription}
-                                </p>
-                            ) : null}
+                            <span className="shrink-0 pt-1 text-[10px] font-medium tracking-[0.12em] text-ui-text-muted/85 select-text">
+                                v{snapshot.app.version}
+                            </span>
                         </div>
 
-                        <div className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
-                            {isReport ? (
-                                <>
-                                    <SupportIssueFormCard
-                                        title={issueTitle}
-                                        description={issueDescription}
-                                        onTitleChange={setIssueTitle}
-                                        onDescriptionChange={setIssueDescription}
-                                    />
+                        <div className="max-h-[70vh] space-y-4 overflow-y-auto px-6 py-5">
+                            <SupportIssueFormCard
+                                title={issueTitle}
+                                description={issueDescription}
+                                onTitleChange={setIssueTitle}
+                                onDescriptionChange={setIssueDescription}
+                            />
 
-                                    <details className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-                                        <summary className="cursor-pointer text-sm font-semibold text-ui-text">
-                                            {t('support.dialog.diagnosticsPreview')}
-                                        </summary>
-                                        <div className="mt-4 space-y-5">
-                                            <SupportAppSection snapshot={snapshot} />
-                                            <SupportReportSections
-                                                snapshot={snapshot}
-                                                recentEvents={recentEvents}
-                                            />
-                                        </div>
-                                    </details>
-                                </>
-                            ) : (
-                                <>
-                                    <SupportAboutSection />
-                                    <SupportAppSection
-                                        snapshot={snapshot}
-                                        showIdentifier={false}
-                                        showGeneratedAt={false}
+                            <section className="border-t border-ui-border/70 pt-4">
+                                <button
+                                    type="button"
+                                    aria-expanded={showTechnicalDetails}
+                                    aria-controls={technicalDetailsId}
+                                    className="group flex w-full items-start justify-between gap-4 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-ui-bg/20 hover:text-ui-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface"
+                                    onClick={() => setShowTechnicalDetails((current) => !current)}
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-ui-text">
+                                            {t('support.dialog.technicalDetailsTitle')}
+                                        </p>
+                                        <p className="mt-1 max-w-[54ch] text-xs leading-5 text-ui-text-muted">
+                                            {t('support.dialog.technicalDetailsDescription')}
+                                        </p>
+                                    </div>
+                                    <IconChevronDown
+                                        aria-hidden="true"
+                                        className={[
+                                            'mt-0.5 h-4 w-4 shrink-0 text-ui-text-muted transition-transform duration-200 group-hover:text-ui-text-secondary',
+                                            showTechnicalDetails ? 'rotate-180' : '',
+                                        ].join(' ')}
                                     />
-                                </>
-                            )}
+                                </button>
+
+                                {showTechnicalDetails ? (
+                                    <div
+                                        id={technicalDetailsId}
+                                        className="mt-3 rounded-xl border border-ui-border/70 bg-ui-bg/20 px-4 py-4"
+                                    >
+                                        <SupportReportSections
+                                            snapshot={snapshot}
+                                            recentEvents={recentEvents}
+                                        />
+                                    </div>
+                                ) : null}
+                            </section>
                         </div>
 
-                        <div
-                            className={[
-                                'flex flex-wrap items-center gap-3 border-t border-ui-border px-6 py-4',
-                                isReport ? 'justify-between' : 'justify-end',
-                            ].join(' ')}
-                        >
-                            {isReport ? (
-                                <div className="flex flex-wrap gap-2">
-                                    <button
-                                        type="button"
-                                        className="btn-ghost"
-                                        onClick={() => void handleCopyDiagnostics()}
-                                    >
-                                        {t('support.copyDiagnostics')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn-ghost"
-                                        onClick={() => void handleSaveDiagnostics()}
-                                    >
-                                        {t('support.saveDiagnostics')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn-ghost"
-                                        disabled={!canOpenIssue}
-                                        onClick={() => void handleOpenGitHubIssue()}
-                                    >
-                                        {t('support.openGitHubIssue')}
-                                    </button>
-                                </div>
-                            ) : null}
-                            <button type="button" className="btn-primary" onClick={onClose}>
-                                {t('support.close')}
-                            </button>
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ui-border px-6 py-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    className="inline-flex min-h-9 items-center rounded-md px-2 text-xs font-medium text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface"
+                                    onClick={() => void handleCopyDiagnostics()}
+                                >
+                                    {t('support.copyDiagnostics')}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="inline-flex min-h-9 items-center rounded-md px-2 text-xs font-medium text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface"
+                                    onClick={() => void handleSaveDiagnostics()}
+                                >
+                                    {t('support.saveDiagnostics')}
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                                <button type="button" className="btn-ghost" onClick={onClose}>
+                                    {t('support.close')}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-primary"
+                                    disabled={!canOpenIssue}
+                                    onClick={() => void handleOpenGitHubIssue()}
+                                >
+                                    {t('support.openGitHubIssue')}
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 </motion.div>

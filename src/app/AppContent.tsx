@@ -80,7 +80,6 @@ export function AppContent() {
                     toggleTheme={toggleTheme}
                     setAccent={setAccent}
                     openReportBug={support.openReportBug}
-                    openAbout={support.openAbout}
                     tutorialStart={tutorial.start}
                     canHelp={workspace.files.length > 0}
                     onQuickAdd={handleEnterQuickAdd}

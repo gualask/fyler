@@ -16,7 +16,6 @@ export interface AppSettingsMenuProps {
     onToggleTheme: () => void;
     onSetAccent: (accent: AccentColor) => void;
     onReportBug: () => void;
-    onOpenAbout: () => void;
 }
 
 export function AppSettingsMenu({
@@ -25,7 +24,6 @@ export function AppSettingsMenu({
     onToggleTheme,
     onSetAccent,
     onReportBug,
-    onOpenAbout,
 }: AppSettingsMenuProps) {
     const { locale, setLocale, t } = useTranslation();
     const [open, setOpen] = useState(false);
@@ -152,16 +150,6 @@ export function AppSettingsMenu({
                         }}
                     >
                         {t('support.reportBug')}
-                    </button>
-                    <button
-                        type="button"
-                        className={menuItemClass}
-                        onClick={() => {
-                            onOpenAbout();
-                            closeAll();
-                        }}
-                    >
-                        {t('support.about')}
                     </button>
                 </fieldset>
             ) : null}

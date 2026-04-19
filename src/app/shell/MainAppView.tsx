@@ -11,7 +11,6 @@ export function MainAppView({
     toggleTheme,
     setAccent,
     openReportBug,
-    openAbout,
     tutorialStart,
     canHelp,
     onQuickAdd,
@@ -31,7 +30,6 @@ export function MainAppView({
     toggleTheme: () => void;
     setAccent: (accent: AccentColor) => void;
     openReportBug: () => void;
-    openAbout: () => void;
     tutorialStart: () => void;
     canHelp: boolean;
     onQuickAdd: () => void;
@@ -55,7 +53,6 @@ export function MainAppView({
                     onToggleTheme: toggleTheme,
                     onSetAccent: setAccent,
                     onReportBug: openReportBug,
-                    onOpenAbout: openAbout,
                 }}
                 onPreview={() => setShowFinalPreview(true)}
                 canPreview={canPreview}

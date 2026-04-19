@@ -9,7 +9,7 @@ import { ProgressModal } from './ProgressModal';
 import { Toast } from './Toast';
 
 type SupportLike = {
-    supportDialogMode: 'report' | 'about' | null;
+    isSupportDialogOpen: boolean;
     diagnosticsSnapshot: DiagnosticsSnapshot;
     closeSupportDialog: () => void;
     copyDiagnostics: () => Promise<void>;
@@ -75,7 +75,7 @@ export function AppOverlays({
             </AnimatePresence>
 
             <SupportDialog
-                mode={support.supportDialogMode}
+                open={support.isSupportDialogOpen}
                 snapshot={support.diagnosticsSnapshot}
                 onClose={support.closeSupportDialog}
                 onCopyDiagnostics={support.copyDiagnostics}

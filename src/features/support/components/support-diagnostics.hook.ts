@@ -35,8 +35,6 @@ interface Params {
     jpegQuality?: number;
 }
 
-type SupportDialogMode = 'report' | 'about' | null;
-
 /**
  * Collects a `DiagnosticsSnapshot` for the support dialog and exposes user actions
  * (open/close, copy report, open GitHub issues).
@@ -55,7 +53,7 @@ export function useSupportDiagnostics({
 }: Params) {
     const { locale } = useTranslation();
     const { entries, record } = useDiagnostics();
-    const [supportDialogMode, setSupportDialogMode] = useState<SupportDialogMode>(null);
+    const [isSupportDialogOpen, setIsSupportDialogOpen] = useState(false);
     const [appMetadata, setAppMetadata] = useState<AppMetadata>(FALLBACK_APP_METADATA);
 
     useEffect(() => {
@@ -101,9 +99,8 @@ export function useSupportDiagnostics({
         ],
     );
 
-    const openReportBug = useCallback(() => setSupportDialogMode('report'), []);
-    const openAbout = useCallback(() => setSupportDialogMode('about'), []);
-    const closeSupportDialog = useCallback(() => setSupportDialogMode(null), []);
+    const openReportBug = useCallback(() => setIsSupportDialogOpen(true), []);
+    const closeSupportDialog = useCallback(() => setIsSupportDialogOpen(false), []);
 
     const buildDiagnosticsReport = useCallback(
         () => formatDiagnosticsReport(diagnosticsSnapshot),
@@ -187,10 +184,9 @@ export function useSupportDiagnostics({
     );
 
     return {
-        supportDialogMode,
+        isSupportDialogOpen,
         diagnosticsSnapshot,
         openReportBug,
-        openAbout,
         closeSupportDialog,
         copyDiagnostics,
         saveDiagnosticsFile,

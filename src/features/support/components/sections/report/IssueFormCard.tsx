@@ -18,7 +18,7 @@ export function SupportIssueFormCard({
     const descriptionId = useId();
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
             <h3 className="text-sm font-semibold text-ui-text">
                 {t('support.dialog.reportIssueSection')}
             </h3>
@@ -48,7 +48,9 @@ export function SupportIssueFormCard({
                     onChange={(event) => onDescriptionChange(event.target.value)}
                     className="input-base h-auto min-h-[120px] resize-y py-2"
                 />
-                <p className="text-xs text-ui-text-muted">{t('support.dialog.issueHint')}</p>
+                <p className="max-w-[58ch] text-xs leading-5 text-ui-text-muted">
+                    {t('support.dialog.issueHint')}
+                </p>
             </div>
         </div>
     );

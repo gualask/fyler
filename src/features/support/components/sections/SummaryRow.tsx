@@ -1,8 +1,23 @@
-export function SummaryRow({ label, value }: { label: string; value: string | number }) {
+export function SummaryRow({
+    label,
+    value,
+    wrapValue = false,
+}: {
+    label: string;
+    value: string | number;
+    wrapValue?: boolean;
+}) {
     return (
-        <div className="flex items-center justify-between gap-4 border-b border-ui-border/80 py-2 text-sm last:border-b-0">
-            <span className="text-ui-text-muted">{label}</span>
-            <span className="truncate text-right font-medium text-ui-text">{value}</span>
+        <div className="flex items-start justify-between gap-4 py-2.5 text-[13px] last:border-b-0">
+            <dt className="min-w-0 text-ui-text-muted">{label}</dt>
+            <dd
+                className={[
+                    'min-w-0 text-right font-medium text-ui-text',
+                    wrapValue ? 'max-w-[58%] [overflow-wrap:anywhere]' : 'truncate',
+                ].join(' ')}
+            >
+                {value}
+            </dd>
         </div>
     );
 }

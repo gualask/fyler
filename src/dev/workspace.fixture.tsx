@@ -252,7 +252,6 @@ export function WorkspaceFixturePage({
                     toggleTheme={toggleTheme}
                     setAccent={setAccent}
                     openReportBug={() => undefined}
-                    openAbout={() => undefined}
                     tutorialStart={() => undefined}
                     canHelp={files.length > 0}
                     onQuickAdd={() => undefined}
