@@ -41,7 +41,8 @@ export function List({
             onRemove={onRemove}
             onSelectPage={onSelectPage}
             onPreviewPage={onPreviewPage}
-            gapClassName="gap-3"
+            gapClassName="gap-4"
+            stackClassName="max-w-5xl"
             Row={ListRow}
             onMovePageToIndex={onMovePageToIndex}
         />

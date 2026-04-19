@@ -160,12 +160,12 @@ export function FileList({
 
             {isClearConfirmOpen ? (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    className="dialog-backdrop dialog-backdrop-padded"
                     onMouseDown={(event) => {
                         if (event.target === event.currentTarget) setIsClearConfirmOpen(false);
                     }}
                 >
-                    <div className="w-full max-w-md rounded-2xl border border-ui-border bg-ui-surface shadow-2xl">
+                    <div className="dialog-panel dialog-panel-bordered w-full max-w-md rounded-2xl">
                         <div className="border-b border-ui-border px-6 py-5">
                             <h2 className="text-lg font-semibold text-ui-text">
                                 {t('fileList.clearConfirmTitle')}
@@ -184,7 +184,7 @@ export function FileList({
                             </button>
                             <button
                                 type="button"
-                                className="flex items-center gap-2 rounded-lg bg-ui-danger px-5 py-2 text-sm font-semibold text-white shadow-md transition-[colors,transform] hover:bg-ui-danger-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-danger/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface"
+                                className="btn-danger"
                                 onClick={() => {
                                     setIsClearConfirmOpen(false);
                                     onClearFiles();

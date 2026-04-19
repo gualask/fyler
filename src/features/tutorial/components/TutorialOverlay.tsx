@@ -51,12 +51,12 @@ export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
     if (!rect) {
         return (
             <motion.div
-                className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4"
+                className="dialog-backdrop dialog-backdrop-padded bg-black/55 z-[60]"
                 {...fadeProps}
             >
                 <TutorialCard
                     key={currentStep}
-                    className="w-full max-w-xs rounded-xl border border-ui-border bg-ui-surface p-4 shadow-2xl"
+                    className="dialog-panel dialog-panel-bordered w-full max-w-xs rounded-xl p-4"
                     text={text}
                     stepLabel={stepLabel}
                     skipLabel={skipLabel}
@@ -102,7 +102,7 @@ export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
             {/* Tooltip card */}
             <TutorialCard
                 key={currentStep}
-                className="absolute max-w-xs rounded-xl border border-ui-border bg-ui-surface p-4 shadow-2xl"
+                className="dialog-panel dialog-panel-bordered absolute max-w-xs rounded-xl p-4"
                 style={tooltipStyle}
                 text={text}
                 stepLabel={stepLabel}

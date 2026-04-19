@@ -45,6 +45,7 @@ interface Props {
     onSelectPage: (fileId: string, target: SourceTarget) => void;
     onPreviewPage: (id: string) => void;
     gapClassName: string;
+    stackClassName?: string;
     Row: (props: FinalDocumentRowProps) => ReactNode;
     onMovePageToIndex?: (id: string, targetIndex: number) => void;
 }
@@ -61,6 +62,7 @@ export function FinalDocumentSortableList({
     onSelectPage,
     onPreviewPage,
     gapClassName,
+    stackClassName,
     Row,
     onMovePageToIndex,
 }: Props) {
@@ -121,9 +123,11 @@ export function FinalDocumentSortableList({
 
     if (items.length === 0) {
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-ui-text-muted">
-                <IconFile className="h-8 w-8 opacity-25" />
-                <p className="text-center text-xs">{t('finalDocument.empty')}</p>
+            <div className="flex h-full items-center justify-center">
+                <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl border border-ui-border bg-ui-surface px-6 py-8 text-center text-ui-text-muted shadow-sm">
+                    <IconFile className="h-8 w-8 opacity-30" />
+                    <p className="text-sm font-medium text-ui-text">{t('finalDocument.empty')}</p>
+                </div>
             </div>
         );
     }
@@ -131,40 +135,42 @@ export function FinalDocumentSortableList({
     return (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
-                <div className={['flex flex-col', gapClassName].filter(Boolean).join(' ')}>
-                    {items.map((item, i) => {
-                        const previousId = items[i - 1]?.page.id ?? null;
-                        const nextId = items[i + 1]?.page.id ?? null;
+                <div className={['mx-auto w-full', stackClassName].filter(Boolean).join(' ')}>
+                    <div className={['flex flex-col', gapClassName].filter(Boolean).join(' ')}>
+                        {items.map((item, i) => {
+                            const previousId = items[i - 1]?.page.id ?? null;
+                            const nextId = items[i + 1]?.page.id ?? null;
 
-                        return (
-                            <Row
-                                key={item.page.id}
-                                item={item}
-                                isFirst={i === 0}
-                                isLast={i === items.length - 1}
-                                scrollRoot={scrollRoot}
-                                onMoveUp={() => move(item, previousId)}
-                                onMoveDown={() => move(item, nextId)}
-                                onRemove={onRemove}
-                                onSelect={() =>
-                                    onSelectPage(item.page.fileId, finalPageToTarget(item.page))
-                                }
-                                onPreview={() => onPreviewPage(item.page.id)}
-                                flashKey={
-                                    item.page.id === selectedPageId
-                                        ? selectedPageScrollKey
-                                        : undefined
-                                }
-                                onMoveTo={
-                                    onMovePageToIndex
-                                        ? (targetIndex) =>
-                                              onMovePageToIndex(item.page.id, targetIndex)
-                                        : undefined
-                                }
-                                totalItems={onMovePageToIndex ? items.length : undefined}
-                            />
-                        );
-                    })}
+                            return (
+                                <Row
+                                    key={item.page.id}
+                                    item={item}
+                                    isFirst={i === 0}
+                                    isLast={i === items.length - 1}
+                                    scrollRoot={scrollRoot}
+                                    onMoveUp={() => move(item, previousId)}
+                                    onMoveDown={() => move(item, nextId)}
+                                    onRemove={onRemove}
+                                    onSelect={() =>
+                                        onSelectPage(item.page.fileId, finalPageToTarget(item.page))
+                                    }
+                                    onPreview={() => onPreviewPage(item.page.id)}
+                                    flashKey={
+                                        item.page.id === selectedPageId
+                                            ? selectedPageScrollKey
+                                            : undefined
+                                    }
+                                    onMoveTo={
+                                        onMovePageToIndex
+                                            ? (targetIndex) =>
+                                                  onMovePageToIndex(item.page.id, targetIndex)
+                                            : undefined
+                                    }
+                                    totalItems={onMovePageToIndex ? items.length : undefined}
+                                />
+                            );
+                        })}
+                    </div>
                 </div>
             </SortableContext>
         </DndContext>

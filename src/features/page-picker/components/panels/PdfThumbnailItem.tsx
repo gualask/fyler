@@ -43,7 +43,7 @@ export function PdfThumbnailItem({
                 data-page={pageNum}
                 onClick={onClick}
                 className={[
-                    'thumb-card group relative mx-auto aspect-[3/4] w-full max-w-[352px] cursor-pointer overflow-hidden rounded-lg border-2 transition-all active:scale-[0.97]',
+                    'thumb-card group relative mx-auto aspect-[3/4] w-full max-w-[17rem] cursor-pointer overflow-hidden rounded-xl border-2 transition-all active:scale-[0.97]',
                     isFocused
                         ? 'thumb-card-focused border-[3px] border-ui-accent'
                         : 'border-transparent hover:border-ui-accent/50 thumb-card-idle',
@@ -78,7 +78,7 @@ export function PdfThumbnailItem({
                         onToggleSelected();
                     }}
                     className={[
-                        'absolute right-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-md shadow-md transition-colors',
+                        'page-picker-thumb-toggle',
                         isSelected
                             ? 'bg-ui-accent text-white'
                             : 'bg-white/90 text-slate-800 ring-1 ring-black/20 hover:bg-white',
@@ -92,8 +92,8 @@ export function PdfThumbnailItem({
 
             <p
                 className={[
-                    'mt-1 text-center text-[9px]',
-                    isFocused ? 'font-bold text-ui-accent' : 'font-medium text-ui-text-muted',
+                    'page-picker-thumb-label mx-auto w-full max-w-[17rem] text-left text-[10px] uppercase tracking-[0.14em]',
+                    isFocused ? 'font-bold text-ui-accent' : 'font-semibold text-ui-text-muted',
                 ].join(' ')}
             >
                 {t('pagePicker.pageLabel', { pageNum })}

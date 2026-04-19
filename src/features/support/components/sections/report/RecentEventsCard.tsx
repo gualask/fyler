@@ -1,6 +1,7 @@
 import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
 import { getDiagnosticMetadataEntries } from '@/shared/diagnostics/diagnostics.metadata';
 import { useTranslation } from '@/shared/i18n';
+import { PanelSurface } from '@/shared/ui';
 
 export function SupportRecentEventsCard({
     recentEvents,
@@ -10,10 +11,7 @@ export function SupportRecentEventsCard({
     const { t } = useTranslation();
 
     return (
-        <section className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-            <h3 className="mb-3 text-sm font-semibold text-ui-text">
-                {t('support.dialog.recentEvents')}
-            </h3>
+        <PanelSurface title={t('support.dialog.recentEvents')}>
             {recentEvents.length ? (
                 <div className="space-y-2">
                     {recentEvents.map((entry) => {
@@ -50,6 +48,6 @@ export function SupportRecentEventsCard({
             ) : (
                 <p className="text-sm text-ui-text-muted">{t('support.dialog.noEvents')}</p>
             )}
-        </section>
+        </PanelSurface>
     );
 }

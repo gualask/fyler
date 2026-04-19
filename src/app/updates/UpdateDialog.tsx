@@ -31,7 +31,7 @@ export function UpdateDialogView({
     });
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="dialog-backdrop">
             <div
                 ref={dialogRef}
                 role="dialog"
@@ -39,7 +39,7 @@ export function UpdateDialogView({
                 aria-labelledby={titleId}
                 aria-describedby={descriptionId}
                 tabIndex={-1}
-                className="w-full max-w-sm rounded-xl bg-ui-surface p-6 shadow-2xl"
+                className="dialog-panel w-full max-w-sm rounded-xl p-6"
             >
                 <h2 id={titleId} className="text-base font-semibold text-ui-text">
                     {t('update.title')}

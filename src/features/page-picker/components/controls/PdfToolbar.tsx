@@ -86,7 +86,7 @@ export function PdfToolbar({
                         onPageInputBlur();
                         onPageInputCommit();
                     }}
-                    className="input-base w-full min-w-0"
+                    className="input-base h-8 w-full min-w-0 max-w-[18rem] bg-ui-bg"
                 />
             </div>
         </SectionHeader>

@@ -1,5 +1,6 @@
 import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
 import { useTranslation } from '@/shared/i18n';
+import { PanelSurface } from '@/shared/ui';
 import { SummaryRow } from '../SummaryRow';
 import { SupportOutputSettingsCard } from './OutputSettingsCard';
 import { SupportRecentEventsCard } from './RecentEventsCard';
@@ -8,13 +9,10 @@ function SupportPreferencesCard({ snapshot }: { snapshot: DiagnosticsSnapshot })
     const { t } = useTranslation();
 
     return (
-        <div className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-            <h3 className="mb-2 text-sm font-semibold text-ui-text">
-                {t('support.dialog.preferences')}
-            </h3>
+        <PanelSurface as="div" title={t('support.dialog.preferences')}>
             <SummaryRow label={t('support.dialog.locale')} value={snapshot.preferences.locale} />
             <SummaryRow label={t('support.dialog.theme')} value={snapshot.preferences.theme} />
-        </div>
+        </PanelSurface>
     );
 }
 
@@ -22,10 +20,7 @@ function SupportSessionCard({ snapshot }: { snapshot: DiagnosticsSnapshot }) {
     const { t } = useTranslation();
 
     return (
-        <div className="rounded-xl border border-ui-border bg-ui-bg/60 p-4">
-            <h3 className="mb-2 text-sm font-semibold text-ui-text">
-                {t('support.dialog.session')}
-            </h3>
+        <PanelSurface as="div" title={t('support.dialog.session')}>
             <SummaryRow
                 label={t('support.dialog.quickAdd')}
                 value={snapshot.session.quickAdd ? t('support.on') : t('support.off')}
@@ -35,7 +30,7 @@ function SupportSessionCard({ snapshot }: { snapshot: DiagnosticsSnapshot }) {
                 label={t('support.dialog.finalPageCount')}
                 value={snapshot.session.finalPageCount}
             />
-        </div>
+        </PanelSurface>
     );
 }
 

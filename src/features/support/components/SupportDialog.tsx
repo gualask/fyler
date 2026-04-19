@@ -156,7 +156,7 @@ export function SupportDialog({
         <AnimatePresence>
             {mode && (
                 <motion.div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    className="dialog-backdrop dialog-backdrop-padded"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -173,7 +173,7 @@ export function SupportDialog({
                         aria-modal="true"
                         aria-labelledby={titleId}
                         tabIndex={-1}
-                        className="w-full max-w-2xl rounded-2xl border border-ui-border bg-ui-surface shadow-2xl"
+                        className="dialog-panel dialog-panel-bordered w-full max-w-2xl rounded-2xl"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}

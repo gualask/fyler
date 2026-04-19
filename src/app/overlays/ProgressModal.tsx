@@ -16,7 +16,7 @@ export function ProgressModal({ message, progress }: Props) {
 
     return (
         <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            className="dialog-backdrop dialog-backdrop-strong dialog-backdrop-blur"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -28,7 +28,7 @@ export function ProgressModal({ message, progress }: Props) {
                 aria-modal="true"
                 aria-label={message}
                 tabIndex={-1}
-                className="flex w-72 flex-col items-center gap-4 rounded-xl bg-ui-surface p-6 shadow-2xl"
+                className="dialog-panel flex w-72 flex-col items-center gap-4 rounded-xl p-6"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}

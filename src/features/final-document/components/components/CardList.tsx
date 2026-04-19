@@ -41,7 +41,8 @@ export function CardList({
             onRemove={onRemove}
             onSelectPage={onSelectPage}
             onPreviewPage={onPreviewPage}
-            gapClassName="gap-4"
+            gapClassName="gap-5"
+            stackClassName="max-w-6xl"
             Row={CardRow}
             onMovePageToIndex={onMovePageToIndex}
         />

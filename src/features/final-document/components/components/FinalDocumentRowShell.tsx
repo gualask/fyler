@@ -108,7 +108,7 @@ export function FinalDocumentRowShell({
             style={style}
             data-final-page-id={item.page.id}
             {...attributes}
-            className={['flex min-w-0 items-center gap-3', isDragging ? 'opacity-50' : ''].join(
+            className={['flex min-w-0 items-stretch gap-4', isDragging ? 'opacity-50' : ''].join(
                 ' ',
             )}
             layout={!isDragging}

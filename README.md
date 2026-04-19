@@ -81,6 +81,7 @@ Routes:
 - `?dev=fixtures` opens the fixture index
 - `?dev=runtime-app` mounts the real app shell with the dev browser-safe platform adapter
 - `?dev=workspace-shell` opens the technical browser-safe workspace shell baseline, not a representative working-session view
+- `?dev=workspace-preview` opens a realistic working-session shell with sample PDF/image assets (`&selected=image` to start on the image picker)
 - `?dev=workspace-empty` opens the empty-state workspace fixture
 - `?dev=preview-modal` opens the browser-safe preview modal fixture (`&pages=1` for single-page)
 - `?dev=quick-add` opens the browser-safe quick-add fixture
@@ -97,6 +98,7 @@ Use:
 - `?dev=<fixture>` for isolated UI inspection
 - `?dev=runtime-app` for Playwright/browser audit of the real shell without Tauri
 - `?dev=workspace-shell` when you only need the static shell frame without selection, preview, or export flows
+- `?dev=workspace-preview` when you need the real workspace proportions with a selectable PDF/image session
 - `pnpm tauri:dev` for native Tauri and OS-integrated checks
 
 What belongs in git:
@@ -120,6 +122,7 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev 
 ## Documentation
 
 - [Theming](docs/theming.md)
+- [Design system notes](docs/design-system.md)
 - [Architecture](docs/architecture.md)
 - [PDF export and image handling](docs/pdf-export.md)
 - [Performance notes](docs/performance.md)

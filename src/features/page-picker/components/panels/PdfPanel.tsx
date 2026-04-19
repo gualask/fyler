@@ -114,8 +114,11 @@ export function PdfPanel({
                 mode={mode}
             />
 
-            <div ref={setGridEl} className="section-body min-h-0 flex-1 overflow-y-auto p-3">
-                <div className="page-picker-grid">
+            <div
+                ref={setGridEl}
+                className="pdf-panel-scroller section-body min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3"
+            >
+                <div className="page-picker-grid mx-auto w-full max-w-6xl">
                     {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNum) => (
                         <PdfThumbnailItem
                             key={`${pageNum}:${focusedPageNum === pageNum ? (focusFlashKey ?? 0) : 0}`}

@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { MainAppView } from '@/app/shell/MainAppView';
 import type { OptimizeState } from '@/app/shell/main-app.types';
 import type { WorkspaceApi } from '@/features/workspace';
+import { PdfCacheProvider } from '@/infra/pdf';
 import type {
     FileEdits,
     FinalPage,
@@ -12,6 +13,8 @@ import type {
     SourceFile,
     SourceTarget,
 } from '@/shared/domain';
+import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import {
     DEFAULT_OPTIMIZATION_PRESET,
     getOptimizationSettings,
@@ -20,11 +23,29 @@ import { useTheme } from '@/shared/preferences';
 
 export function WorkspaceFixturePage({
     createInitialFiles,
+    initialSelectedId = null,
+    initialFinalPages,
+    initialEditsByFile,
 }: {
     createInitialFiles: () => SourceFile[];
+    initialSelectedId?: string | null;
+    initialFinalPages?: FinalPage[] | (() => FinalPage[]);
+    initialEditsByFile?: Record<string, FileEdits> | (() => Record<string, FileEdits>);
 }) {
     const { isDark, toggleTheme, accent, setAccent } = useTheme();
     const [files, setFiles] = useState(createInitialFiles);
+    const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId);
+    const [finalPages, setFinalPages] = useState<FinalPage[]>(
+        () =>
+            (typeof initialFinalPages === 'function' ? initialFinalPages() : initialFinalPages) ??
+            [],
+    );
+    const [editsByFile, setEditsByFile] = useState<Record<string, FileEdits>>(
+        () =>
+            (typeof initialEditsByFile === 'function'
+                ? initialEditsByFile()
+                : initialEditsByFile) ?? {},
+    );
     const [imageFit, setImageFit] = useState<ImageFit>('contain');
     const defaultOptimization = getOptimizationSettings(DEFAULT_OPTIMIZATION_PRESET);
     const [jpegQuality, setJpegQuality] = useState<number | undefined>(
@@ -35,6 +56,10 @@ export function WorkspaceFixturePage({
         DEFAULT_OPTIMIZATION_PRESET,
     );
     const [, setShowFinalPreview] = useState(false);
+    const selectedFile = useMemo(
+        () => files.find((file) => file.id === selectedId) ?? null,
+        [files, selectedId],
+    );
 
     const setOptimizationPreset = useCallback((preset: ImageOptimizationPreset) => {
         if (preset === 'custom') {
@@ -72,70 +97,176 @@ export function WorkspaceFixturePage({
         () =>
             ({
                 files,
-                editsByFile: {} as Record<string, FileEdits>,
-                selectedId: null,
-                selectedFile: null,
+                editsByFile,
+                selectedId,
+                selectedFile,
                 focusedSource: null,
-                finalPages: [] as FinalPage[],
+                finalPages,
                 selectedPdfPagesByFile: {},
                 includedImagesByFile: {},
-                selectFile: (_id: string) => {
-                    // Intentionally disabled in browser-safe fixtures:
-                    // selecting a file would enter Tauri-backed preview flows.
+                selectFile: (id: string) => {
+                    setSelectedId(id);
                 },
                 addFiles: async () => ({ files: [], skippedErrors: [] }),
                 removeFile: (id: string) => {
                     setFiles((current) => current.filter((file) => file.id !== id));
+                    setFinalPages((current) => current.filter((page) => page.fileId !== id));
+                    setSelectedId((current) => {
+                        if (current !== id) return current;
+                        const remaining = files.filter((file) => file.id !== id);
+                        return remaining[0]?.id ?? null;
+                    });
                 },
                 clearAllFiles: () => {
                     setFiles([]);
+                    setSelectedId(null);
+                    setFinalPages([]);
                 },
                 rotatePage: async (
-                    _fileId: string,
-                    _target: SourceTarget,
-                    _direction: RotationDirection,
-                ) => undefined,
-                focusFinalPageSource: (_fileId: string, _target: SourceTarget) => undefined,
-                focusFinalPageInDocument: (_fileId: string, _target: SourceTarget) => undefined,
+                    fileId: string,
+                    target: SourceTarget,
+                    direction: RotationDirection,
+                ) => {
+                    setEditsByFile((current) => ({
+                        ...current,
+                        [fileId]: FileEditsVO.applyRotation(current[fileId], target, direction),
+                    }));
+                },
+                focusFinalPageSource: (fileId: string, _target: SourceTarget) =>
+                    setSelectedId(fileId),
+                focusFinalPageInDocument: (fileId: string, _target: SourceTarget) =>
+                    setSelectedId(fileId),
                 reorderFiles: (_fromId: string, _toId: string) => undefined,
                 isDragOver: false,
-                togglePage: (_fileId: string, _pageNum: number) => undefined,
-                setPdfPagesForFile: (_fileId: string, _pages: number[]) => undefined,
-                setImageIncluded: (_fileId: string, _included: boolean) => undefined,
-                addAllPagesForFile: (_file: SourceFile) => undefined,
-                removePagesForFile: (_fileId: string) => undefined,
-                clearAllPages: () => undefined,
-                selectAll: (_file: SourceFile) => undefined,
-                deselectAll: (_fileId: string) => undefined,
-                removeFinalPage: (_id: string) => undefined,
+                togglePage: (fileId: string, pageNum: number) => {
+                    const pageId = toFinalPageId(fileId, { kind: 'pdf', pageNum });
+                    setFinalPages((current) =>
+                        current.some((page) => page.id === pageId)
+                            ? current.filter((page) => page.id !== pageId)
+                            : [...current, { id: pageId, fileId, kind: 'pdf', pageNum }],
+                    );
+                },
+                setPdfPagesForFile: (fileId: string, pages: number[]) => {
+                    setFinalPages((current) => [
+                        ...current.filter((page) => page.fileId !== fileId),
+                        ...pages.map((pageNum) => ({
+                            id: toFinalPageId(fileId, { kind: 'pdf', pageNum }),
+                            fileId,
+                            kind: 'pdf' as const,
+                            pageNum,
+                        })),
+                    ]);
+                },
+                setImageIncluded: (fileId: string, included: boolean) => {
+                    setFinalPages((current) => [
+                        ...current.filter((page) => page.fileId !== fileId),
+                        ...(included
+                            ? [
+                                  {
+                                      id: toFinalPageId(fileId, { kind: 'image' }),
+                                      fileId,
+                                      kind: 'image' as const,
+                                  },
+                              ]
+                            : []),
+                    ]);
+                },
+                addAllPagesForFile: (file: SourceFile) => {
+                    if (file.kind === 'image') {
+                        setFinalPages((current) => [
+                            ...current.filter((page) => page.fileId !== file.id),
+                            {
+                                id: toFinalPageId(file.id, { kind: 'image' }),
+                                fileId: file.id,
+                                kind: 'image',
+                            },
+                        ]);
+                        return;
+                    }
+                    const total = file.pageCount ?? 0;
+                    setFinalPages((current) => [
+                        ...current.filter((page) => page.fileId !== file.id),
+                        ...Array.from({ length: total }, (_, index) => ({
+                            id: toFinalPageId(file.id, {
+                                kind: 'pdf',
+                                pageNum: index + 1,
+                            }),
+                            fileId: file.id,
+                            kind: 'pdf' as const,
+                            pageNum: index + 1,
+                        })),
+                    ]);
+                },
+                removePagesForFile: (fileId: string) => {
+                    setFinalPages((current) => current.filter((page) => page.fileId !== fileId));
+                },
+                clearAllPages: () => {
+                    setFinalPages([]);
+                },
+                selectAll: (file: SourceFile) => {
+                    if (file.kind === 'image') {
+                        setFinalPages((current) => [
+                            ...current.filter((page) => page.fileId !== file.id),
+                            {
+                                id: toFinalPageId(file.id, { kind: 'image' }),
+                                fileId: file.id,
+                                kind: 'image',
+                            },
+                        ]);
+                        return;
+                    }
+                    const total = file.pageCount ?? 0;
+                    setFinalPages((current) => [
+                        ...current.filter((page) => page.fileId !== file.id),
+                        ...Array.from({ length: total }, (_, index) => ({
+                            id: toFinalPageId(file.id, {
+                                kind: 'pdf',
+                                pageNum: index + 1,
+                            }),
+                            fileId: file.id,
+                            kind: 'pdf' as const,
+                            pageNum: index + 1,
+                        })),
+                    ]);
+                },
+                deselectAll: (fileId: string) => {
+                    setFinalPages((current) => current.filter((page) => page.fileId !== fileId));
+                },
+                removeFinalPage: (id: string) => {
+                    setFinalPages((current) => current.filter((page) => page.id !== id));
+                },
                 reorderFinalPages: (_fromId: string, _toId: string) => undefined,
                 moveFinalPageToIndex: (_id: string, _targetIndex: number) => undefined,
                 toPdfFinalPageId: (fileId: string, pageNum: number) => `${fileId}:${pageNum}`,
                 toImageFinalPageId: (fileId: string) => `${fileId}:image`,
             }) satisfies Partial<WorkspaceApi>,
-        [files],
+        [editsByFile, files, finalPages, selectedFile, selectedId],
     ) as WorkspaceApi;
 
     return (
-        <MainAppView
-            isDark={isDark}
-            accent={accent}
-            toggleTheme={toggleTheme}
-            setAccent={setAccent}
-            openReportBug={() => undefined}
-            openAbout={() => undefined}
-            tutorialStart={() => undefined}
-            canHelp={files.length > 0}
-            onQuickAdd={() => undefined}
-            canExport={false}
-            canPreview={false}
-            isDragOver={false}
-            workspace={workspace}
-            handleAddFiles={() => undefined}
-            focusedSourceTarget={null}
-            optimize={optimize}
-            exportMerged={async () => undefined}
-            setShowFinalPreview={setShowFinalPreview}
-        />
+        <div className="flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text">
+            <PdfCacheProvider>
+                <MainAppView
+                    isDark={isDark}
+                    accent={accent}
+                    toggleTheme={toggleTheme}
+                    setAccent={setAccent}
+                    openReportBug={() => undefined}
+                    openAbout={() => undefined}
+                    tutorialStart={() => undefined}
+                    canHelp={files.length > 0}
+                    onQuickAdd={() => undefined}
+                    canExport={finalPages.length > 0}
+                    canPreview={finalPages.length > 0}
+                    isDragOver={false}
+                    workspace={workspace}
+                    handleAddFiles={() => undefined}
+                    focusedSourceTarget={null}
+                    optimize={optimize}
+                    exportMerged={async () => undefined}
+                    setShowFinalPreview={setShowFinalPreview}
+                />
+            </PdfCacheProvider>
+        </div>
     );
 }

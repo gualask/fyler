@@ -78,7 +78,7 @@ export function MainAppView({
                 />
 
                 {workspace.files.length === 0 && (
-                    <div className="absolute inset-0 z-10 flex flex-col bg-ui-bg">
+                    <div className="absolute inset-0 z-10 flex flex-col bg-ui-bg p-3 md:p-4">
                         <EmptyState onAddFiles={handleAddFiles} />
                     </div>
                 )}

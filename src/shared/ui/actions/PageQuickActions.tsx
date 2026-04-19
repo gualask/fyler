@@ -62,7 +62,7 @@ export function PageQuickActions({
     const previewButtonTone =
         'shadow-lg transition-colors hover:bg-[var(--ui-overlay-control-strong-hover)] disabled:cursor-wait disabled:opacity-40';
     const rotateButtonTone =
-        'shadow-md transition-colors hover:bg-[var(--ui-overlay-control-hover)] disabled:cursor-wait disabled:opacity-40';
+        'shadow-md transition-colors hover:bg-[var(--ui-overlay-control-strong-hover)] disabled:cursor-wait disabled:opacity-40';
 
     return (
         <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
@@ -97,8 +97,8 @@ export function PageQuickActions({
                             disabled={disabled}
                             toneClassName={rotateButtonTone}
                             toneStyle={{
-                                backgroundColor: 'var(--ui-overlay-control)',
-                                color: 'var(--ui-text)',
+                                backgroundColor: 'var(--ui-overlay-control-strong)',
+                                color: 'var(--ui-overlay-text)',
                             }}
                             onClick={onRotateLeft}
                         />
@@ -112,8 +112,8 @@ export function PageQuickActions({
                             disabled={disabled}
                             toneClassName={rotateButtonTone}
                             toneStyle={{
-                                backgroundColor: 'var(--ui-overlay-control)',
-                                color: 'var(--ui-text)',
+                                backgroundColor: 'var(--ui-overlay-control-strong)',
+                                color: 'var(--ui-overlay-text)',
                             }}
                             onClick={onRotateRight}
                         />

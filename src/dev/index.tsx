@@ -19,11 +19,13 @@ import { SupportDialogFixturePage } from './support-dialog.fixture';
 import { TutorialOverlayFixturePage } from './tutorial-overlay.fixture';
 import { UpdateDialogFixturePage } from './update-dialog.fixture';
 import { WorkspaceEmptyFixturePage } from './workspace-empty.fixture';
+import { WorkspacePreviewFixturePage } from './workspace-preview.fixture';
 import { WorkspaceShellFixturePage } from './workspace-shell.fixture';
 
 const FIXTURE_KEYS = [
     DEV_RUNTIME_APP_KEY,
     'workspace-shell',
+    'workspace-preview',
     'workspace-empty',
     'preview-modal',
     'quick-add',
@@ -129,6 +131,10 @@ function DevModeContent() {
 
     if (fixtureKey === 'workspace-shell') {
         return <WorkspaceShellFixturePage />;
+    }
+
+    if (fixtureKey === 'workspace-preview') {
+        return <WorkspacePreviewFixturePage />;
     }
 
     if (fixtureKey === 'workspace-empty') {

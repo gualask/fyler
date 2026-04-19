@@ -55,7 +55,7 @@ export function FinalDocument({
             >
                 <button
                     type="button"
-                    className={['btn-icon', layout === 'columns-1' ? 'btn-icon-active' : '']
+                    className={['btn-icon h-9 w-9', layout === 'columns-1' ? 'btn-icon-active' : '']
                         .filter(Boolean)
                         .join(' ')}
                     onClick={() => setLayout('columns-1')}
@@ -66,7 +66,7 @@ export function FinalDocument({
                 </button>
                 <button
                     type="button"
-                    className={['btn-icon', layout === 'columns-2' ? 'btn-icon-active' : '']
+                    className={['btn-icon h-9 w-9', layout === 'columns-2' ? 'btn-icon-active' : '']
                         .filter(Boolean)
                         .join(' ')}
                     onClick={() => setLayout('columns-2')}
@@ -77,7 +77,10 @@ export function FinalDocument({
                 </button>
             </SectionHeader>
 
-            <div ref={setScrollRoot} className="min-h-0 flex-1 overflow-y-auto p-4">
+            <div
+                ref={setScrollRoot}
+                className="min-h-0 flex-1 overflow-y-auto px-5 py-4 md:px-6 md:py-5"
+            >
                 {layout === 'columns-2' ? (
                     <List
                         finalPages={finalPages}

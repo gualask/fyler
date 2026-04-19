@@ -1,3 +1,4 @@
+import { IconFile } from '@tabler/icons-react';
 import { useState } from 'react';
 import { PreviewModal } from '@/features/preview';
 import type {
@@ -53,8 +54,13 @@ export function PagePicker({
         return (
             <div className="flex h-full flex-col overflow-hidden">
                 <SectionHeader title={t('pagePicker.title')} className="border-b-0" />
-                <div className="section-body flex min-h-0 flex-1 items-center justify-center text-ui-text-muted">
-                    <p className="text-xs">{t('pagePicker.selectAFile')}</p>
+                <div className="section-body flex min-h-0 flex-1 items-center justify-center p-6 text-ui-text-muted">
+                    <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl border border-ui-border bg-ui-surface px-6 py-8 text-center shadow-sm">
+                        <IconFile className="h-8 w-8 opacity-30" />
+                        <p className="text-sm font-medium text-ui-text">
+                            {t('pagePicker.selectAFile')}
+                        </p>
+                    </div>
                 </div>
             </div>
         );
