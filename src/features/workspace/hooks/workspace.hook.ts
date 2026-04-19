@@ -193,9 +193,14 @@ export function useWorkspace({
             }),
             onTauriEvent<{ id: string }>('source-page-count-error', (e) => {
                 pendingPageCountsRef.current.delete(e.payload.id);
+                const failedFile = filesRef.current.find((file) => file.id === e.payload.id);
                 removeSourceFileRef.current(e.payload.id);
                 removePagesForFileRef.current(e.payload.id); // explicit cleanup in case removeSourceFile's stale closure missed it
-                onDropErrorRef.current?.(new Error('page_count_failed'));
+                onDropErrorRef.current?.(
+                    failedFile
+                        ? { code: 'open_pdf_failed', meta: { name: failedFile.name } }
+                        : new Error('page_count_failed'),
+                );
             }),
         ];
         return () => {

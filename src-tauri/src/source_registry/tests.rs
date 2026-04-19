@@ -15,7 +15,7 @@ fn temp_path(name: &str, ext: &str) -> std::path::PathBuf {
 }
 
 #[test]
-fn keeps_valid_files_when_batch_contains_a_broken_pdf() -> anyhow::Result<()> {
+fn defers_pdf_validation_without_failing_the_batch() -> anyhow::Result<()> {
     let image_path = temp_path("valid-image", "png");
     let broken_pdf_path = temp_path("broken-pdf", "pdf");
     RgbImage::new(1, 1).save(&image_path)?;
@@ -30,11 +30,23 @@ fn keeps_valid_files_when_batch_contains_a_broken_pdf() -> anyhow::Result<()> {
         &registry,
     )?;
 
-    assert_eq!(result.files.len(), 1);
-    assert_eq!(result.files[0].kind, DocKind::Image);
-    assert_eq!(result.skipped.len(), 1);
-    assert!(result.skipped[0].name.contains("broken-pdf"));
-    assert_eq!(result.skipped[0].reason, "read_error");
+    assert_eq!(result.files.len(), 2);
+    assert!(result.skipped.is_empty());
+
+    let image = result
+        .files
+        .iter()
+        .find(|file| file.kind == DocKind::Image)
+        .expect("image should be imported");
+    assert_eq!(image.page_count, Some(1));
+
+    let pdf = result
+        .files
+        .iter()
+        .find(|file| file.kind == DocKind::Pdf)
+        .expect("pdf should be accepted by extension and validated later");
+    assert!(pdf.name.contains("broken-pdf"));
+    assert_eq!(pdf.page_count, None);
 
     let _ = fs::remove_file(image_path);
     let _ = fs::remove_file(broken_pdf_path);
