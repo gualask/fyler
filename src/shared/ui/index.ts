@@ -1,6 +1,6 @@
 export { PageQuickActions } from './actions/PageQuickActions';
-export type { SegmentOption } from './controls/SegmentButtons';
-export { SegmentButtons } from './controls/SegmentButtons';
+export type { ToggleOption } from './controls/ToggleGroup';
+export { ToggleGroup } from './controls/ToggleGroup';
 export { FocusFlashOverlay } from './feedback/FocusFlashOverlay';
 export type { TooltipAlign } from './feedback/Tooltip';
 export { Tooltip } from './feedback/Tooltip';

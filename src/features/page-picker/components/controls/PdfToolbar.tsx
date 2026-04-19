@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { useTranslation } from '@/shared/i18n';
-import type { SegmentOption } from '@/shared/ui/controls/SegmentButtons';
-import { SegmentButtons } from '@/shared/ui/controls/SegmentButtons';
+import { ToggleGroup, type ToggleOption } from '@/shared/ui';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 
 interface Props {
@@ -34,7 +33,7 @@ export function PdfToolbar({
     const { t } = useTranslation();
     const inputRef = useRef<HTMLInputElement | null>(null);
 
-    const options: SegmentOption<'all' | 'none' | 'custom'>[] = [
+    const options: ToggleOption<'all' | 'none' | 'custom'>[] = [
         { value: 'all', label: t('pagePicker.selectAll') },
         { value: 'none', label: t('pagePicker.clearAll') },
         { value: 'custom', label: t('pagePicker.manual') },
@@ -60,7 +59,7 @@ export function PdfToolbar({
             className="border-b-0"
             toolbarClassName="flex-1 justify-start gap-3"
         >
-            <SegmentButtons
+            <ToggleGroup
                 className="shrink-0"
                 options={options}
                 value={mode}

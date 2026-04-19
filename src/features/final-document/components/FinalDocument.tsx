@@ -8,6 +8,7 @@ import type {
     SourceTarget,
 } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
+import { ToggleGroup, type ToggleOption } from '@/shared/ui';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { CardList } from './components/CardList';
 import { List } from './components/List';
@@ -46,6 +47,22 @@ export function FinalDocument({
     const [layout, setLayout] = useState<'columns-2' | 'columns-1'>('columns-2');
     const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
     const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
+    const layoutOptions: ToggleOption<'columns-2' | 'columns-1'>[] = [
+        {
+            value: 'columns-1',
+            label: <IconColumns1 className="h-4 w-4" />,
+            ariaLabel: t('finalDocument.layoutColumns1'),
+            title: t('finalDocument.layoutColumns1'),
+            buttonClassName: 'min-w-0 px-0',
+        },
+        {
+            value: 'columns-2',
+            label: <IconColumns2 className="h-4 w-4 rotate-90" />,
+            ariaLabel: t('finalDocument.layoutColumns2'),
+            title: t('finalDocument.layoutColumns2'),
+            buttonClassName: 'min-w-0 px-0',
+        },
+    ];
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
@@ -53,28 +70,12 @@ export function FinalDocument({
                 title={t('finalDocument.sectionTitle', { count: finalPages.length })}
                 className="border-b border-ui-border"
             >
-                <button
-                    type="button"
-                    className={['btn-icon h-9 w-9', layout === 'columns-1' ? 'btn-icon-active' : '']
-                        .filter(Boolean)
-                        .join(' ')}
-                    onClick={() => setLayout('columns-1')}
-                    aria-label={t('finalDocument.layoutColumns1')}
-                    title={t('finalDocument.layoutColumns1')}
-                >
-                    <IconColumns1 className="h-5 w-5" />
-                </button>
-                <button
-                    type="button"
-                    className={['btn-icon h-9 w-9', layout === 'columns-2' ? 'btn-icon-active' : '']
-                        .filter(Boolean)
-                        .join(' ')}
-                    onClick={() => setLayout('columns-2')}
-                    aria-label={t('finalDocument.layoutColumns2')}
-                    title={t('finalDocument.layoutColumns2')}
-                >
-                    <IconColumns2 className="h-5 w-5 rotate-90" />
-                </button>
+                <ToggleGroup
+                    className="w-16 shrink-0"
+                    options={layoutOptions}
+                    value={layout}
+                    onChange={setLayout}
+                />
             </SectionHeader>
 
             <div

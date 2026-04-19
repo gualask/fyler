@@ -8,7 +8,7 @@ const IMAGE_FIT_OPTIONS: SelectOption<ImageFit>[] = [
     { value: 'cover', label: '' },
 ];
 
-/** Builds translated options for the Image Fit segmented control (stable order). */
+/** Builds translated options for the Image Fit toggle group (stable order). */
 export function buildImageFitOptions(
     getLabel: (fit: ImageFit) => string,
 ): SelectOption<ImageFit>[] {
