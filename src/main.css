@@ -314,13 +314,6 @@ body {
         @apply border-ui-border text-ui-text-secondary hover:border-ui-accent/30 hover:bg-ui-accent-soft hover:text-ui-accent-on-soft;
     }
     /* ── ToggleGroup (footer + page picker) ────────────────────── */
-    .toggle-group {
-        @apply flex min-w-0 flex-col gap-1;
-        width: 100%;
-    }
-    .toggle-group__label {
-        @apply flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-ui-text-muted;
-    }
     .toggle-group__buttons {
         @apply flex h-8 min-w-0 gap-0.5 rounded-lg bg-ui-surface-hover p-1;
     }
@@ -345,20 +338,10 @@ body {
     .toggle-group__button-active {
         color: var(--ui-accent-on-solid);
     }
-    .toggle-group__buttons[data-pill-ready="false"] .toggle-group__button-active {
+    .toggle-group__indicator--default {
         background-color: var(--ui-accent-solid);
     }
-    .toggle-group__buttons[data-pill-ready="false"]
-        .toggle-group__button--swatch.toggle-group__button-active {
-        background-color: var(--ui-accent-soft);
-    }
-    .toggle-group__pill {
-        opacity: 0;
-    }
-    .toggle-group__pill--default {
-        background-color: var(--ui-accent-solid);
-    }
-    .toggle-group__pill--swatch {
+    .toggle-group__indicator--swatch {
         background-color: var(--ui-accent-soft);
     }
     .toggle-group__button-inactive {

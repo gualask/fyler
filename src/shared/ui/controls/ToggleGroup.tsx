@@ -1,4 +1,5 @@
-import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { motion } from 'motion/react';
+import { type ReactNode, useId } from 'react';
 
 export type ToggleOption<T extends string> = {
     value: T;
@@ -22,48 +23,10 @@ export function ToggleGroup<T extends string>({
     value: T;
     onChange: (v: T) => void;
 }) {
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const pillRef = useRef<HTMLDivElement | null>(null);
-    const hasAnimated = useRef(false);
-
-    const sync = useCallback(() => {
-        const container = containerRef.current;
-        const pill = pillRef.current;
-        if (!container || !pill) return;
-        const active = container.querySelector<HTMLElement>(`[data-toggle-value="${value}"]`);
-        if (!active) {
-            container.dataset.pillReady = 'false';
-            pill.style.opacity = '0';
-            return;
-        }
-
-        container.dataset.pillReady = 'true';
-        pill.style.transform = `translateX(${active.offsetLeft}px)`;
-        pill.style.width = `${active.offsetWidth}px`;
-        pill.style.height = `${active.offsetHeight}px`;
-        pill.style.opacity = '1';
-        pill.style.transition = hasAnimated.current
-            ? 'transform 250ms cubic-bezier(0.16, 1, 0.3, 1), width 250ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms'
-            : 'none';
-
-        hasAnimated.current = true;
-    }, [value]);
-
-    useEffect(() => {
-        const el = containerRef.current;
-        if (!el) return;
-        const observer = new ResizeObserver(() => sync());
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, [sync]);
-
-    useLayoutEffect(() => {
-        sync();
-    }, [sync]);
+    const indicatorId = useId();
 
     return (
         <div
-            ref={containerRef}
             className={[
                 'toggle-group__buttons relative',
                 variant === 'swatch' ? 'toggle-group__buttons--swatch' : '',
@@ -71,18 +34,7 @@ export function ToggleGroup<T extends string>({
             ]
                 .filter(Boolean)
                 .join(' ')}
-            data-pill-ready="false"
         >
-            <div
-                ref={pillRef}
-                aria-hidden
-                className={[
-                    'toggle-group__pill absolute left-0 shadow-sm',
-                    variant === 'swatch'
-                        ? 'toggle-group__pill--swatch top-0.5 rounded-full'
-                        : 'toggle-group__pill--default top-1 rounded-md',
-                ].join(' ')}
-            />
             {options.map((opt) => (
                 <button
                     key={opt.value}
@@ -102,7 +54,23 @@ export function ToggleGroup<T extends string>({
                         opt.buttonClassName ?? '',
                     ].join(' ')}
                 >
-                    {opt.label}
+                    {value === opt.value ? (
+                        <motion.span
+                            layoutId={indicatorId}
+                            initial={false}
+                            aria-hidden
+                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                            className={[
+                                'toggle-group__indicator absolute inset-0 pointer-events-none shadow-sm',
+                                variant === 'swatch'
+                                    ? 'toggle-group__indicator--swatch rounded-full'
+                                    : 'toggle-group__indicator--default rounded-md',
+                            ].join(' ')}
+                        />
+                    ) : null}
+                    <span className="relative z-[1] inline-flex items-center justify-center">
+                        {opt.label}
+                    </span>
                 </button>
             ))}
         </div>

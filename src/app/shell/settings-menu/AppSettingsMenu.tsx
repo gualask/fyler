@@ -1,5 +1,4 @@
 import { IconAdjustments, IconMoon, IconSun } from '@tabler/icons-react';
-import { motion } from 'motion/react';
 import { useId, useRef, useState } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { ACCENT_COLORS, type AccentColor, type Locale } from '@/shared/preferences';
@@ -103,14 +102,11 @@ export function AppSettingsMenu({
                 <IconAdjustments className="h-5 w-5" />
             </button>
             {open ? (
-                <motion.div
+                <fieldset
                     id={panelId}
-                    aria-label={t('header.settings')}
                     className="absolute left-0 top-[calc(100%+0.5rem)] z-50 min-w-[15rem] rounded-xl border border-ui-border bg-ui-surface p-1.5 shadow-lg"
-                    initial={{ opacity: 0, scale: 0.97, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 0.15 }}
                 >
+                    <legend className="sr-only">{t('header.settings')}</legend>
                     <div className={menuInlineRowClass}>
                         <p className={menuInlineLabelClass}>{t('header.language')}</p>
                         <ToggleGroup
@@ -167,7 +163,7 @@ export function AppSettingsMenu({
                     >
                         {t('support.about')}
                     </button>
-                </motion.div>
+                </fieldset>
             ) : null}
         </div>
     );
