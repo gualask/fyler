@@ -102,7 +102,7 @@
     "finalDocument.layoutColumns2": "Compact list",
     "finalDocument.layoutColumns1": "Large thumbnails",
     "finalDocument.empty": "No selected pages",
-    "finalDocument.pageLabel": "Page {pageNum}",
+    "finalDocument.pdfPageLabel": "PDF • Page {pageNum}",
     "finalDocument.imageLabel": "Image",
     "finalDocument.dragHandle": "Drag to reorder",
     "finalDocument.movePageUp": "Move page up",

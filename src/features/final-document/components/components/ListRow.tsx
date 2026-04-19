@@ -19,6 +19,10 @@ export const ListRow = memo(function ListRow({
     totalItems,
 }: FinalDocumentRowProps) {
     const { t } = useTranslation();
+    const detailLabel =
+        item.page.kind === 'pdf'
+            ? t('finalDocument.pdfPageLabel', { pageNum: item.page.pageNum })
+            : t('finalDocument.imageLabel');
 
     return (
         <FinalDocumentRowShell
@@ -42,25 +46,20 @@ export const ListRow = memo(function ListRow({
         >
             <ListRowThumbnail item={item} scrollRoot={scrollRoot} onPreview={onPreview} />
 
-            <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-1 items-start">
                 <div className="min-w-0">
-                    {item.page.kind === 'pdf' ? (
-                        <p className="label-caps text-ui-kind-pdf">
-                            {t('finalDocument.pageLabel', { pageNum: item.page.pageNum })}
-                        </p>
-                    ) : item.page.kind === 'image' ? (
-                        <p className="label-caps text-ui-kind-image">
-                            {t('finalDocument.imageLabel')}
-                        </p>
-                    ) : null}
+                    <p
+                        className={[
+                            'label-caps',
+                            item.page.kind === 'pdf' ? 'text-ui-kind-pdf' : 'text-ui-kind-image',
+                        ].join(' ')}
+                    >
+                        {detailLabel}
+                    </p>
                     <p className="mt-1 truncate text-sm font-semibold text-ui-text">
                         {item.file?.name ?? '—'}
                     </p>
                 </div>
-
-                <span className="hidden shrink-0 rounded-full bg-ui-surface-hover px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-ui-text-muted md:inline-flex">
-                    {item.file?.kind === 'image' ? 'IMG' : 'PDF'}
-                </span>
             </div>
         </FinalDocumentRowShell>
     );

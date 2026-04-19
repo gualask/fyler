@@ -19,6 +19,10 @@ interface Props {
 
 export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', className }: Props) {
     const { t } = useTranslation();
+    const detailLabel =
+        item.page.kind === 'pdf'
+            ? t('finalDocument.pdfPageLabel', { pageNum: item.page.pageNum })
+            : t('finalDocument.imageLabel');
     const thumbRequest = useMemo(
         () =>
             item.page.kind === 'pdf'
@@ -90,15 +94,9 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', cla
                             <p className="truncate text-[11px] font-semibold">
                                 {item.file?.name ?? '—'}
                             </p>
-                            {item.page.kind === 'pdf' ? (
-                                <p className="truncate text-[10px] font-medium opacity-90">
-                                    {t('finalDocument.pageLabel', { pageNum: item.page.pageNum })}
-                                </p>
-                            ) : item.page.kind === 'image' ? (
-                                <p className="truncate text-[10px] font-medium opacity-90">
-                                    {t('finalDocument.imageLabel')}
-                                </p>
-                            ) : null}
+                            <p className="truncate text-[10px] font-medium opacity-90">
+                                {detailLabel}
+                            </p>
                         </div>
                     </div>
                 </div>

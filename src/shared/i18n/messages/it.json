@@ -102,7 +102,7 @@
     "finalDocument.layoutColumns2": "Lista compatta",
     "finalDocument.layoutColumns1": "Miniature grandi",
     "finalDocument.empty": "Nessuna pagina selezionata",
-    "finalDocument.pageLabel": "Pagina {pageNum}",
+    "finalDocument.pdfPageLabel": "PDF • Pagina {pageNum}",
     "finalDocument.imageLabel": "Immagine",
     "finalDocument.dragHandle": "Trascina per riordinare",
     "finalDocument.movePageUp": "Sposta la pagina in alto",
