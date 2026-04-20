@@ -4,7 +4,7 @@
 [![CI](https://github.com/gualask/fyler/actions/workflows/ci.yml/badge.svg)](https://github.com/gualask/fyler/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/gualask/fyler?style=flat-square)](LICENSE)
 
-Desktop app for merging PDF files and images into a single PDF, built with Tauri 2.
+Desktop app for merging PDF files and images into a single PDF.
 
 ![Fyler main window](docs/assets/fyler-main-window.png)
 

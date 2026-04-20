@@ -4,6 +4,11 @@ import { useTranslation } from '@/shared/i18n';
 import type { MoveControl } from '../preview.types';
 import { MoveToSelect } from './MoveToSelect';
 import { RotateControls } from './RotateControls';
+import {
+    toolbarCounterClassName,
+    toolbarFloatingRailClassName,
+    toolbarPanelClassName,
+} from './toolbar.styles';
 import { ZoomControls } from './ZoomControls';
 
 interface Props {
@@ -37,7 +42,7 @@ export function Toolbar({
     const showMoveTo = Boolean(moveControl && moveControl.totalPositions > 1);
 
     return (
-        <div className="absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-[var(--ui-overlay-toolbar)] px-4 py-2">
+        <div className={toolbarFloatingRailClassName}>
             <div className="justify-self-start">
                 <ZoomControls
                     zoomLevel={zoomLevel}
@@ -51,7 +56,7 @@ export function Toolbar({
                 />
             </div>
 
-            <div className="justify-self-center text-sm font-medium text-[var(--ui-overlay-text-muted)]">
+            <div className={`${toolbarCounterClassName} justify-self-center`}>
                 {t('preview.counter', { current: displayCurrentPage, total: displayTotalPages })}
             </div>
 
@@ -76,10 +81,14 @@ export function Toolbar({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--ui-overlay-control)] text-[var(--ui-overlay-text)] transition-colors hover:bg-[var(--ui-overlay-control-hover)]"
+                    className={`${toolbarPanelClassName} gap-2 px-3 transition-[background-color,transform,border-color] hover:bg-[var(--ui-overlay-control-hover)] active:scale-[0.97]`}
                     title={t('preview.close')}
+                    aria-label={t('preview.close')}
                 >
-                    <IconX className="h-5 w-5" />
+                    <IconX className="h-4 w-4" />
+                    <span className="text-[13px] font-medium text-[var(--ui-overlay-text)]">
+                        {t('preview.close')}
+                    </span>
                 </button>
             </div>
         </div>

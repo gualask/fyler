@@ -1,6 +1,7 @@
 import { IconChevronDown } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
 import type { MoveControl } from '../preview.types';
+import { toolbarSelectClassName, toolbarSelectWrapperClassName } from './toolbar.styles';
 
 interface Props {
     moveControl: MoveControl;
@@ -34,12 +35,13 @@ export function MoveToSelect({ moveControl, label, getPositionLabel }: Props) {
     );
 
     return (
-        <div className="relative rounded-lg bg-[var(--ui-overlay-control)] text-[var(--ui-overlay-text)]">
+        <div className={toolbarSelectWrapperClassName}>
             <select
                 value={moveToValue}
                 onChange={(event) => handleChange(event.target.value)}
-                className="h-10 appearance-none rounded-lg bg-transparent py-1 pl-3 pr-10 text-sm outline-none"
+                className={toolbarSelectClassName}
                 title={label}
+                aria-label={label}
             >
                 <option value="" className="text-slate-900">
                     {label}

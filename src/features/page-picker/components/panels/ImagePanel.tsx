@@ -142,6 +142,11 @@ export function ImagePanel({
                                         }}
                                     />
                                 </motion.div>
+                                <PageQuickActions
+                                    onPreview={onPreview}
+                                    onRotateLeft={() => void onRotate('ccw')}
+                                    onRotateRight={() => void onRotate('cw')}
+                                />
                             </div>
                             {isFocused && focusFlashKey && (
                                 <FocusFlashOverlay
@@ -149,11 +154,6 @@ export function ImagePanel({
                                     className="inset-2 rounded-xl"
                                 />
                             )}
-                            <PageQuickActions
-                                onPreview={onPreview}
-                                onRotateLeft={() => void onRotate('ccw')}
-                                onRotateRight={() => void onRotate('cw')}
-                            />
                         </div>
                     </div>
 

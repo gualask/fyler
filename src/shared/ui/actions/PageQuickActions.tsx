@@ -87,7 +87,7 @@ export function PageQuickActions({
             )}
 
             {(onRotateLeft || onRotateRight) && (
-                <div className="absolute inset-x-0 bottom-1.5 flex items-center justify-center gap-1">
+                <div className="absolute inset-x-0 bottom-2.5 flex items-center justify-center gap-1">
                     {onRotateLeft && (
                         <ActionButton
                             sizeClass={rotateSize}

@@ -1,4 +1,10 @@
 import { IconZoomIn, IconZoomOut } from '@tabler/icons-react';
+import {
+    toolbarIconButtonClassName,
+    toolbarPanelClassName,
+    toolbarTextButtonClassName,
+    toolbarValueClassName,
+} from './toolbar.styles';
 
 interface Props {
     zoomLevel: number;
@@ -22,31 +28,32 @@ export function ZoomControls({
     resetLabel,
 }: Props) {
     return (
-        <div className="flex items-center gap-1 rounded-lg bg-white/10 p-1">
+        <div className={`${toolbarPanelClassName} gap-0.5 px-1`}>
             <button
                 type="button"
                 onClick={onZoomOut}
-                className="flex h-9 w-9 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
+                className={toolbarIconButtonClassName}
                 title={zoomOutTitle}
+                aria-label={zoomOutTitle}
             >
                 <IconZoomOut className="h-4 w-4" />
             </button>
-            <span className="min-w-[3rem] text-center font-mono text-xs font-medium text-white/80">
-                {Math.round(zoomLevel * 100)}%
-            </span>
+            <span className={toolbarValueClassName}>{Math.round(zoomLevel * 100)}%</span>
             <button
                 type="button"
                 onClick={onZoomIn}
-                className="flex h-9 w-9 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
+                className={toolbarIconButtonClassName}
                 title={zoomInTitle}
+                aria-label={zoomInTitle}
             >
                 <IconZoomIn className="h-4 w-4" />
             </button>
             <button
                 type="button"
                 onClick={onZoomReset}
-                className="min-h-9 rounded-md px-3 text-sm font-medium text-white transition-colors hover:bg-white/20"
+                className={toolbarTextButtonClassName}
                 title={resetTitle}
+                aria-label={resetTitle}
             >
                 {resetLabel}
             </button>

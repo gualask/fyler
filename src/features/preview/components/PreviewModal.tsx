@@ -144,7 +144,7 @@ export function PreviewModal({
                     onClose={onClose}
                 />
 
-                <div ref={setScrollEl} className="flex-1 overflow-y-auto px-4 pb-10 pt-16">
+                <div ref={setScrollEl} className="flex-1 overflow-y-auto px-4 pb-10 pt-20">
                     {total === 1 ? (
                         <div className="flex min-h-full items-center justify-center">{slots}</div>
                     ) : (
