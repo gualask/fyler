@@ -2,6 +2,7 @@
 
 import assert from 'node:assert/strict';
 import type { ErrorInfo, ReactNode } from 'react';
+import { describe, test } from 'vitest';
 import { type AppBoundaryError, AppErrorBoundary } from './AppErrorBoundary.js';
 
 function createBoundary(onError?: (error: AppBoundaryError) => void) {
@@ -13,38 +14,40 @@ function createBoundary(onError?: (error: AppBoundaryError) => void) {
     });
 }
 
-{
-    const reported: AppBoundaryError[] = [];
-    const boundary = createBoundary((error) => {
-        reported.push(error);
-    });
+describe('AppErrorBoundary', () => {
+    test('reports Error objects through onError', () => {
+        const reported: AppBoundaryError[] = [];
+        const boundary = createBoundary((error) => {
+            reported.push(error);
+        });
 
-    boundary.componentDidCatch(new Error('Renderer crashed'), {
-        componentStack: '\n    at AppShell\n    at MainAppView',
-    } as ErrorInfo);
-
-    assert.deepEqual(reported, [
-        {
-            message: 'Renderer crashed',
+        boundary.componentDidCatch(new Error('Renderer crashed'), {
             componentStack: '\n    at AppShell\n    at MainAppView',
-        },
-    ]);
-}
+        } as ErrorInfo);
 
-{
-    const reported: AppBoundaryError[] = [];
-    const boundary = createBoundary((error) => {
-        reported.push(error);
+        assert.deepEqual(reported, [
+            {
+                message: 'Renderer crashed',
+                componentStack: '\n    at AppShell\n    at MainAppView',
+            },
+        ]);
     });
 
-    boundary.componentDidCatch('String failure', {
-        componentStack: '',
-    } as ErrorInfo);
+    test('reports non-Error failures through onError', () => {
+        const reported: AppBoundaryError[] = [];
+        const boundary = createBoundary((error) => {
+            reported.push(error);
+        });
 
-    assert.deepEqual(reported, [
-        {
-            message: 'String failure',
-            componentStack: undefined,
-        },
-    ]);
-}
+        boundary.componentDidCatch('String failure', {
+            componentStack: '',
+        } as ErrorInfo);
+
+        assert.deepEqual(reported, [
+            {
+                message: 'String failure',
+                componentStack: undefined,
+            },
+        ]);
+    });
+});

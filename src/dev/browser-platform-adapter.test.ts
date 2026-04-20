@@ -2,8 +2,9 @@
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { describe, test } from 'vitest';
 
-const { browserPlatformAdapter } = await import('./browser-platform-adapter.ts');
+import { browserPlatformAdapter } from './browser-platform-adapter.ts';
 
 function toFileList(files: File[]): FileList {
     return Object.assign(files.slice(), {
@@ -51,55 +52,59 @@ function installBrowserGlobals(files: File[]) {
     };
 }
 
-{
-    const samplePdf = readFileSync(
-        new URL('../../public/fixtures/sample-document.pdf', import.meta.url),
-    );
-    const restoreGlobals = installBrowserGlobals([
-        new File(['image'], 'sample-image.jpg', { type: 'image/jpeg' }),
-        new File([samplePdf], 'sample-document.pdf', { type: 'application/pdf' }),
-        new File(['notes'], 'notes.txt', { type: 'text/plain' }),
-    ]);
-
-    try {
-        const result = await browserPlatformAdapter.openFilesDialog('Documents and images');
-
-        assert.equal(result.files.length, 2);
-        assert.deepEqual(result.files[0], {
-            id: result.files[0]?.id,
-            originalPath: 'blob:sample-image.jpg',
-            name: 'sample-image.jpg',
-            byteSize: 5,
-            pageCount: 1,
-            kind: 'image',
-        });
-        assert.deepEqual(result.files[1], {
-            id: result.files[1]?.id,
-            originalPath: 'blob:sample-document.pdf',
-            name: 'sample-document.pdf',
-            byteSize: samplePdf.byteLength,
-            pageCount: 5,
-            kind: 'pdf',
-        });
-        assert.match(result.files[0]?.id ?? '', /^web-/);
-        assert.match(result.files[1]?.id ?? '', /^web-/);
-        assert.deepEqual(result.skippedErrors, [
-            {
-                name: 'notes.txt',
-                reason: 'unsupported_format',
-            },
+describe('browserPlatformAdapter', () => {
+    test('filters supported files and classifies unsupported ones', async () => {
+        const samplePdf = readFileSync(
+            new URL('../../public/fixtures/sample-document.pdf', import.meta.url),
+        );
+        const restoreGlobals = installBrowserGlobals([
+            new File(['image'], 'sample-image.jpg', { type: 'image/jpeg' }),
+            new File([samplePdf], 'sample-document.pdf', { type: 'application/pdf' }),
+            new File(['notes'], 'notes.txt', { type: 'text/plain' }),
         ]);
-    } finally {
-        restoreGlobals();
-    }
-}
 
-await assert.doesNotReject(browserPlatformAdapter.releaseSources(['source-1']));
-assert.equal(
-    browserPlatformAdapter.getPreviewUrl('/fixtures/sample-document.pdf'),
-    '/fixtures/sample-document.pdf',
-);
-assert.equal(
-    browserPlatformAdapter.getPreviewUrl('blob:sample-document.pdf'),
-    'blob:sample-document.pdf',
-);
+        try {
+            const result = await browserPlatformAdapter.openFilesDialog('Documents and images');
+
+            assert.equal(result.files.length, 2);
+            assert.deepEqual(result.files[0], {
+                id: result.files[0]?.id,
+                originalPath: 'blob:sample-image.jpg',
+                name: 'sample-image.jpg',
+                byteSize: 5,
+                pageCount: 1,
+                kind: 'image',
+            });
+            assert.deepEqual(result.files[1], {
+                id: result.files[1]?.id,
+                originalPath: 'blob:sample-document.pdf',
+                name: 'sample-document.pdf',
+                byteSize: samplePdf.byteLength,
+                pageCount: 5,
+                kind: 'pdf',
+            });
+            assert.match(result.files[0]?.id ?? '', /^web-/);
+            assert.match(result.files[1]?.id ?? '', /^web-/);
+            assert.deepEqual(result.skippedErrors, [
+                {
+                    name: 'notes.txt',
+                    reason: 'unsupported_format',
+                },
+            ]);
+        } finally {
+            restoreGlobals();
+        }
+    });
+
+    test('keeps browser-safe preview URLs and releaseSources as no-ops', async () => {
+        await assert.doesNotReject(browserPlatformAdapter.releaseSources(['source-1']));
+        assert.equal(
+            browserPlatformAdapter.getPreviewUrl('/fixtures/sample-document.pdf'),
+            '/fixtures/sample-document.pdf',
+        );
+        assert.equal(
+            browserPlatformAdapter.getPreviewUrl('blob:sample-document.pdf'),
+            'blob:sample-document.pdf',
+        );
+    });
+});
