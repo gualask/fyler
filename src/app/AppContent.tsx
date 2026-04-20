@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useAppNotifications } from '@/app/notifications';
 import { useExportAction, useOptimize } from '@/features/export';
@@ -59,6 +59,13 @@ export function AppContent() {
         quickAdd,
         notifications,
     });
+    const handleQuickAddFileRemove = useCallback(
+        (id: string) => {
+            quickAdd.onFileRemoved(id);
+            workspace.removeFile(id);
+        },
+        [quickAdd.onFileRemoved, workspace.removeFile],
+    );
     const isTutorialReady =
         !quickAdd.isQuickAdd &&
         !quickAdd.isTransitioning &&
@@ -78,9 +85,9 @@ export function AppContent() {
             {quickAdd.isQuickAdd ? (
                 <QuickAddView
                     files={workspace.files}
-                    quickAddFileIds={quickAdd.quickAddFileIds}
+                    quickAddFileOrder={quickAdd.quickAddFileOrder}
                     isDragOver={workspace.isDragOver}
-                    onRemove={workspace.removeFile}
+                    onRemove={handleQuickAddFileRemove}
                     onExit={handleExitQuickAdd}
                 />
             ) : (

@@ -62,14 +62,15 @@
     --ui-kind-image: #38bdf8;
 
     /* overlays */
-    --ui-overlay-toolbar: rgba(15, 23, 42, 0.72);
-    --ui-overlay-control: rgba(255, 255, 255, 0.12);
+    --ui-overlay-border: rgba(255, 255, 255, 0.08);
     --ui-overlay-control-hover: rgba(255, 255, 255, 0.2);
     --ui-overlay-control-strong: rgba(15, 23, 42, 0.78);
     --ui-overlay-control-strong-hover: rgba(15, 23, 42, 0.9);
     --ui-overlay-text: rgba(255, 255, 255, 0.95);
     --ui-overlay-text-muted: rgba(255, 255, 255, 0.78);
     --ui-overlay-scrim: rgba(0, 0, 0, 0.15);
+    --ui-overlay-shadow: rgba(15, 23, 42, 0.28);
+    --ui-overlay-shadow-muted: rgba(15, 23, 42, 0.24);
 
     /* output fit previews */
     --ui-fit-preview-page: var(--ui-surface);
@@ -133,16 +134,6 @@
     /* document kinds */
     --ui-kind-pdf: #fda4af;
     --ui-kind-image: #7dd3fc;
-
-    /* overlays */
-    --ui-overlay-toolbar: rgba(15, 23, 42, 0.76);
-    --ui-overlay-control: rgba(255, 255, 255, 0.12);
-    --ui-overlay-control-hover: rgba(255, 255, 255, 0.18);
-    --ui-overlay-control-strong: rgba(15, 23, 42, 0.82);
-    --ui-overlay-control-strong-hover: rgba(15, 23, 42, 0.92);
-    --ui-overlay-text: rgba(255, 255, 255, 0.96);
-    --ui-overlay-text-muted: rgba(255, 255, 255, 0.8);
-    --ui-overlay-scrim: rgba(0, 0, 0, 0.18);
 
     /* output fit previews */
     --ui-fit-preview-page: color-mix(in srgb, var(--ui-surface) 92%, var(--ui-bg));

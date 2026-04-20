@@ -15,9 +15,18 @@ const NORMAL_MIN_SIZE = { width: 1100, height: 600 } as const;
 const TRANSITION_MS = 400;
 const PAINT_MS = 30;
 
+export function prependRecentQuickAddIds(previousIds: string[], addedIds: string[]): string[] {
+    const addedSet = new Set(addedIds);
+    return [...addedIds, ...previousIds.filter((id) => !addedSet.has(id))];
+}
+
+export function removeQuickAddId(previousIds: string[], removedId: string): string[] {
+    return previousIds.filter((id) => id !== removedId);
+}
+
 export function useQuickAdd() {
     const [isQuickAdd, setIsQuickAdd] = useState(false);
-    const [quickAddFileIds, setQuickAddFileIds] = useState<Set<string>>(new Set());
+    const [quickAddFileOrder, setQuickAddFileOrder] = useState<string[]>([]);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const savedSizeRef = useRef<{ width: number; height: number } | null>(null);
     const isQuickAddSessionRef = useRef(false);
@@ -40,12 +49,17 @@ export function useQuickAdd() {
 
     const onFilesAdded = useCallback((ids: string[]) => {
         if (!isQuickAddSessionRef.current) return;
-        setQuickAddFileIds((prev) => new Set([...prev, ...ids]));
+        setQuickAddFileOrder((prev) => prependRecentQuickAddIds(prev, ids));
+    }, []);
+
+    const onFileRemoved = useCallback((id: string) => {
+        if (!isQuickAddSessionRef.current) return;
+        setQuickAddFileOrder((prev) => removeQuickAddId(prev, id));
     }, []);
 
     const enterQuickAdd = useCallback(() => {
         isQuickAddSessionRef.current = true;
-        setQuickAddFileIds(new Set());
+        setQuickAddFileOrder([]);
 
         return withTransition(async () => {
             try {
@@ -81,15 +95,16 @@ export function useQuickAdd() {
                 /* no-op */
             }
             setIsQuickAdd(false);
-            setQuickAddFileIds(new Set());
+            setQuickAddFileOrder([]);
         });
     }, [withTransition]);
 
     return {
         isQuickAdd,
-        quickAddFileIds,
+        quickAddFileOrder,
         isTransitioning,
         onFilesAdded,
+        onFileRemoved,
         enterQuickAdd,
         exitQuickAdd,
     };

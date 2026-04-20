@@ -1,132 +1,226 @@
-# Theming system
+# Theming System
 
 ## Concept
 
-Fyler’s UI aims to avoid hard-coded colors and `dark:` color variants in components.
-Most styling uses semantic utility classes (`bg-ui-surface`, `text-ui-text-muted`, `bg-ui-accent`, …)
-generated from CSS custom properties defined in a single stylesheet under `src/`.
+Fyler avoids hard-coded component colors and local `dark:` color variants for normal UI.
+Most styling flows from semantic tokens defined in `src/main.css`, then consumed through:
 
-Some UX overlays intentionally use fixed neutral colors for contrast (for example the preview modal
-chrome and thumbnail quick-actions). Treat those as explicit exceptions, not as the default styling approach.
+- semantic Tailwind utilities such as `bg-ui-surface`, `text-ui-text-muted`, `border-ui-border`
+- shared primitives in `src/shared/ui/`
+- direct `var(--ui-...)` usage in component CSS when a feature needs a specialized visual subsystem
 
-**Changing the theme = editing only the theme token values.**
+The rule of thumb is:
 
----
+- general app UI should use semantic `ui-*` utilities
+- specialized rendering layers may consume dedicated token families directly
+- changing the theme should primarily mean changing token values in `src/main.css`
 
 ## Architecture
 
-The theming mechanism has three layers:
+The theming mechanism has four layers:
 
-- light mode values (a base token set)
-- dark mode overrides (applied when a `.dark` class is present on the root element)
-- a Tailwind mapping that exposes the tokens as semantic utilities (`bg-ui-*`, `text-ui-*`, `border-ui-*`)
+1. `:root` defines the light-mode token set
+2. `.dark` overrides the same token families for dark mode
+3. `.accent-*` classes override the accent family for palette switching
+4. the `@theme inline` mapping exposes many of those tokens as semantic utilities such as `bg-ui-*`, `text-ui-*`, `border-ui-*`, and `ring-ui-*`
 
-The mechanism relies on Tailwind 4 features that (1) bind dark mode to a root
-`.dark` class and (2) expose CSS custom properties as design tokens so the UI
-can use semantic utilities instead of raw colors.
+This means most components can stay free of raw color values and free of theme-specific branching.
 
----
-
-## Available tokens
+## Token Families
 
 ### Surfaces and text
 
-| CSS token | Tailwind utility | Typical use |
+These are the core desktop app surfaces and text colors.
+
+| CSS token | Utility | Typical use |
 |---|---|---|
 | `--ui-bg` | `bg-ui-bg` | App root background |
-| `--ui-surface` | `bg-ui-surface` | Header, footer, cards, panels |
-| `--ui-surface-hover` | `bg-ui-surface-hover` | Hover state on interactive elements |
-| `--ui-source` | `bg-ui-source` | Source panel surface |
-| `--ui-output` | `bg-ui-output` | Output panel surface |
+| `--ui-surface` | `bg-ui-surface` | Primary panels, headers, cards, floating surfaces |
+| `--ui-surface-subtle` | `bg-ui-surface-subtle` | Inset rows, quiet header bars, subdued chips |
+| `--ui-surface-hover` | `bg-ui-surface-hover` | Hover state for neutral interactive surfaces |
+| `--ui-source` | `bg-ui-source` | Source-side workspace surface and derived source gradients |
+| `--ui-output` | `bg-ui-output` | Output-side workspace surface and derived output sections |
 | `--ui-border` | `border-ui-border` | Default borders |
-| `--ui-border-hover` | `border-ui-border-hover` | Hover / active borders |
+| `--ui-border-hover` | `border-ui-border-hover` | Hover or emphasis borders |
 | `--ui-text` | `text-ui-text` | Primary text |
-| `--ui-text-secondary` | `text-ui-text-secondary` | Body text, input values |
-| `--ui-text-dim` | `text-ui-text-dim` | Labels, counters, secondary text |
-| `--ui-text-muted` | `text-ui-text-muted` | Placeholders, hints, faded text |
+| `--ui-text-secondary` | `text-ui-text-secondary` | Body copy, control labels, medium-emphasis text |
+| `--ui-text-dim` | `text-ui-text-dim` | Counters and secondary metadata |
+| `--ui-text-muted` | `text-ui-text-muted` | Hints, placeholders, low-emphasis labels |
 
-### Accent (brand color)
+### Accent
 
-| CSS token | Tailwind utility | Typical use |
+Fyler uses two related accent groups:
+
+- a general accent family for text, soft states, selection, and derived visuals
+- a solid accent family for filled controls such as primary buttons and active toggles
+
+| CSS token | Utility | Typical use |
 |---|---|---|
-| `--ui-accent` | `bg-ui-accent` | Primary action buttons (e.g. "Export PDF") |
-| `--ui-accent-hover` | `bg-ui-accent-hover` | Hover on primary button |
-| `--ui-accent-text` | `text-ui-accent-text` | Accent-colored text (icons, labels) |
-| `--ui-accent-muted` | `border-ui-accent-muted` | Selection borders, focus rings, spinner |
-| `--ui-accent-soft` | `bg-ui-accent-soft` | Soft background (secondary buttons, selected row) |
-| `--ui-accent-soft-hover` | `bg-ui-accent-soft-hover` | Hover on soft background |
-| `--ui-accent-on-soft` | `text-ui-accent-on-soft` | Text on soft background |
+| `--ui-accent` | `bg-ui-accent`, `border-ui-accent`, `text-ui-accent` | Base accent hue for derived visuals and direct accent highlights |
+| `--ui-accent-hover` | `bg-ui-accent-hover` | Legacy/simple accent hover utility |
+| `--ui-accent-text` | `text-ui-accent` | Accent-colored text and icon labels |
+| `--ui-accent-muted` | `border-ui-accent-muted`, `ring-ui-accent-muted` | Selection borders, focus rings, spinners |
+| `--ui-accent-soft` | `bg-ui-accent-soft` | Soft selected state and gentle accent surfaces |
+| `--ui-accent-soft-hover` | `bg-ui-accent-soft-hover` | Hover on soft accent surfaces |
+| `--ui-accent-on-soft` | `text-ui-accent-on-soft` | Text on soft accent backgrounds |
+| `--ui-accent-solid` | no direct utility by convention | Filled primary controls |
+| `--ui-accent-solid-hover` | no direct utility by convention | Hover for filled primary controls |
+| `--ui-accent-on-solid` | no direct utility by convention | Text/icons on filled primary controls |
 
-### Status colors
+Notes:
 
-Fyler keeps a small set of semantic status tokens for UI feedback:
+- `btn-primary` and other filled controls use the `solid` trio directly in CSS.
+- The soft and muted accent tokens are the normal choice for selection, hover, and focus treatments.
 
-- danger (destructive actions and error emphasis)
-- success (positive confirmation)
-- warning (caution / potentially risky actions)
+### Status
 
-These tokens intentionally stay “semantic-first”: they communicate meaning
-independently from the active accent palette.
+Fyler uses semantic status families instead of raw `red-*`, `green-*`, or `yellow-*` classes for most product UI.
 
-### Document kind colors
+Each status family contains:
 
-Fyler also has a couple of stable “kind” tokens to quickly distinguish content types:
+- a solid token for strong emphasis
+- a hover token when needed
+- a soft background token
+- a soft text token
+- a border token
 
-| CSS token | Tailwind utility | Typical use |
+Current families:
+
+- danger: `--ui-danger`, `--ui-danger-hover`, `--ui-danger-soft`, `--ui-danger-soft-text`, `--ui-danger-border`
+- success: `--ui-success`, `--ui-success-soft`, `--ui-success-soft-text`, `--ui-success-border`
+- warning: `--ui-warning`, `--ui-warning-soft`, `--ui-warning-soft-text`, `--ui-warning-border`
+
+These map to utilities such as:
+
+- `bg-ui-danger`, `bg-ui-danger-soft`
+- `text-ui-danger`, `text-ui-danger-soft-text`
+- `border-ui-danger-border`
+
+and the equivalent success/warning variants.
+
+### Document kind
+
+These tokens provide stable visual distinction between PDFs and images.
+
+| CSS token | Utility | Typical use |
 |---|---|---|
 | `--ui-kind-pdf` | `text-ui-kind-pdf`, `bg-ui-kind-pdf` | PDF file/page indicators |
 | `--ui-kind-image` | `text-ui-kind-image`, `bg-ui-kind-image` | Image file/page indicators |
 
----
+### Overlay tokens
 
-## Changing the accent color
+Fyler has a dedicated overlay token family for preview chrome and thumbnail quick actions.
 
-Fyler supports switching the accent palette without changing individual
-components.
+These tokens are part of the theme system, but they are usually consumed through `var(--ui-overlay-...)`
+inside feature CSS or inline styles rather than generic Tailwind utilities.
 
-Conceptually, there are two approaches:
+Current overlay tokens:
 
-- **Pick a built-in palette** by applying a single accent class at the app root
-  (e.g. teal/amber/blue). This updates all accent-related tokens at once.
-- **Define a new palette** by providing a new group of accent token values.
+- `--ui-overlay-border`
+- `--ui-overlay-control-hover`
+- `--ui-overlay-control-strong`
+- `--ui-overlay-control-strong-hover`
+- `--ui-overlay-text`
+- `--ui-overlay-text-muted`
+- `--ui-overlay-scrim`
+- `--ui-overlay-shadow`
+- `--ui-overlay-shadow-muted`
 
-Dark mode typically overrides only the “soft” accent variants and the
-text-on-soft color to preserve contrast (dark UIs need different opacity
-handling than light UIs).
+This family exists because preview chrome needs a different contrast model than standard app surfaces.
+The current overlay tokens are intentionally stable across light and dark mode so the preview controls
+keep the same visual behavior regardless of the app shell theme.
 
----
+### Output fit preview tokens
 
-## Changing the dark theme (surfaces)
+The export panel preview uses its own token family for miniature page-fit illustrations.
 
-The `.dark` block controls background and text colors in dark mode.
-Currently uses the **gray** palette. To switch to another palette (e.g. slate):
-change the dark-mode surface and text token values as a group. The goal is to
-keep contrast predictable across the whole app, rather than tweaking individual
-components.
+Current fit preview tokens:
 
----
+- `--ui-fit-preview-page`
+- `--ui-fit-preview-page-shadow`
+- `--ui-fit-preview-media-highlight`
+- `--ui-fit-preview-media-end`
+- `--ui-fit-preview-media-shadow`
+- `--ui-fit-preview-frame-border`
 
-## Colors outside the system
+These are specialized implementation tokens and are mainly consumed from feature CSS.
 
-Some colors remain as explicit Tailwind classes because they carry fixed semantic
-meaning regardless of the active theme:
+### Internal UI infrastructure tokens
 
-- **Red** (`red-*`) — destructive actions (Remove button, error messages)
-- **White** (`text-white`) — text on solid accent backgrounds
-- **Neutral overlays** (`black/`, `zinc-*`, `slate-*`, `white/`) — preview and quick-action chrome that
-  intentionally stays high-contrast regardless of theme
+Some token families support implementation details rather than direct component styling APIs:
 
-There is also one intentional “non-theme” color choice outside UI styling:
+- scrollbar: `--ui-scrollbar-thumb`, `--ui-scrollbar-thumb-hover`
+- shadows: `--ui-shadow-panel`, `--ui-shadow-float`, `--ui-shadow-soft`
 
-- PDF page thumbnails/previews are rasterized onto a white background before
-  JPEG encoding (so transparent PDF content produces a predictable result).
+These are still part of the theme system. They just are not intended as first-choice application-level utilities.
 
----
+## Accent Palette Switching
 
-## Where the system lives
+Fyler supports accent switching by applying a single accent class at the app root, such as:
 
-Directory-level map (no per-file coupling intended):
+- `accent-indigo`
+- `accent-teal`
+- `accent-amber`
+- `accent-blue`
 
-- `src/main.css` contains the theme token definitions and Tailwind token mapping
-- `src/shared/ui/` and `src/features/**/components/` consume semantic utilities (`bg-ui-*`, `text-ui-*`, `border-ui-*`)
-- `src/shared/preferences/` owns the persisted dark-mode preference and toggles the root `.dark` class
+An accent palette must override the whole accent family coherently, including:
+
+- base accent
+- soft accent
+- text accent
+- muted accent
+- solid accent
+
+Dark mode usually overrides only the soft/text-oriented accent tokens to preserve contrast, while keeping the filled control model stable.
+
+## Dark Theme
+
+The `.dark` block overrides the same token families as light mode.
+Dark mode should be adjusted by changing tokens as a group, not by tweaking individual components.
+
+In practice this means:
+
+- surfaces and text shift together
+- status tokens shift together
+- fit-preview tokens get their own dark tuning
+
+Overlay tokens are currently shared across light and dark mode by design. Add dark-specific overlay
+overrides only if the preview chrome develops a real contrast problem that cannot be solved by the
+stable overlay palette.
+
+## Colors Outside the System
+
+Fyler still allows a small set of deliberate exceptions.
+
+### Allowed exceptions
+
+- high-contrast neutral preview shells or backdrops such as `bg-black/40` or `bg-zinc-900`
+- small image-bound overlay text and chrome such as `text-white/90`, `bg-black/55`, or `hover:bg-white/10`
+- `text-white` on solid accent or destructive backgrounds
+- platform-limited native select option text when browser rendering does not respect the overlay palette
+- the white raster background used when rendering PDF previews/export intermediates
+
+### Not the default approach
+
+These exceptions should stay contained to specialized rendering layers.
+For normal app UI, prefer semantic `ui-*` tokens instead of raw Tailwind colors.
+
+Also note:
+
+- raw `red-*` utilities are not the current standard for product UI status styling
+- semantic `ui-danger`, `ui-success`, and `ui-warning` tokens are the preferred path
+
+## Usage Rules
+
+- Prefer semantic `bg-ui-*`, `text-ui-*`, `border-ui-*`, and `ring-ui-*` utilities in components.
+- Prefer shared primitives such as `btn-*`, `panel-*`, and dialog classes when the intent already exists.
+- Use direct `var(--ui-...)` access when a feature has a specialized token family that is not meant to become a generic utility API.
+- Avoid local `dark:` color branches for normal theme behavior.
+- If a new visual intent repeats, promote it into the token system instead of hard-coding values in multiple components.
+
+## Where the System Lives
+
+- `src/main.css` defines token values, dark overrides, accent palette overrides, and the Tailwind mapping
+- `src/shared/ui/` contains shared primitives that consume the semantic utilities
+- `src/features/**/components/` consume the utilities directly or use feature-scoped CSS backed by `var(--ui-...)`
+- `src/shared/preferences/` owns persisted theme preferences and toggles the root `.dark` class
