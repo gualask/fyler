@@ -1,6 +1,8 @@
 # Fyler
 
-![version](https://img.shields.io/github/package-json/v/gualask/fyler)
+[![Release](https://img.shields.io/github/v/release/gualask/fyler?style=flat-square)](https://github.com/gualask/fyler/releases)
+[![CI](https://github.com/gualask/fyler/actions/workflows/ci.yml/badge.svg)](https://github.com/gualask/fyler/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/gualask/fyler?style=flat-square)](LICENSE)
 
 Desktop app for merging PDF files and images into a single PDF, built with Tauri 2.
 
