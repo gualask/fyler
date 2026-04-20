@@ -7,6 +7,7 @@ export function useTutorial() {
     const [currentStep, setCurrentStep] = useState<number | null>(null);
     const startTimeoutRef = useRef<number | null>(null);
     const markSeenOnCloseRef = useRef(false);
+    const autoStartRequestedRef = useRef(false);
 
     const isActive = currentStep !== null;
 
@@ -16,6 +17,7 @@ export function useTutorial() {
             startTimeoutRef.current = null;
         }
         markSeenOnCloseRef.current = false;
+        autoStartRequestedRef.current = false;
         setCurrentStep(null);
         markTutorialSeen();
     }, [markTutorialSeen]);
@@ -25,6 +27,7 @@ export function useTutorial() {
             window.clearTimeout(startTimeoutRef.current);
             startTimeoutRef.current = null;
         }
+        autoStartRequestedRef.current = false;
         setCurrentStep(0);
     }, []);
 
@@ -39,18 +42,32 @@ export function useTutorial() {
         });
     }, []);
 
-    // Called when files are first added — triggers tutorial if not seen
-    const maybeAutoStartAfterFilesAdded = useCallback(() => {
+    const requestAutoStart = useCallback(() => {
         if (tutorialSeen) return;
-        if (currentStep !== null) return;
-        if (startTimeoutRef.current !== null) return;
+        autoStartRequestedRef.current = true;
+    }, [tutorialSeen]);
 
-        // Delay to let the 3-column layout render before measuring
-        startTimeoutRef.current = window.setTimeout(() => {
-            startTimeoutRef.current = null;
-            setCurrentStep(0);
-        }, 300);
-    }, [currentStep, tutorialSeen]);
+    const maybeAutoStart = useCallback(
+        (isReady: boolean) => {
+            if (!isReady) return;
+            if (tutorialSeen) {
+                autoStartRequestedRef.current = false;
+                return;
+            }
+            if (!autoStartRequestedRef.current) return;
+            if (currentStep !== null) return;
+            if (startTimeoutRef.current !== null) return;
+
+            // Delay to let the workspace layout settle before measuring tutorial targets.
+            startTimeoutRef.current = window.setTimeout(() => {
+                startTimeoutRef.current = null;
+                if (!autoStartRequestedRef.current) return;
+                autoStartRequestedRef.current = false;
+                setCurrentStep(0);
+            }, 300);
+        },
+        [currentStep, tutorialSeen],
+    );
 
     useEffect(
         () => () => {
@@ -69,5 +86,13 @@ export function useTutorial() {
         markTutorialSeen();
     }, [currentStep, markTutorialSeen]);
 
-    return { currentStep, isActive, start, next, skip: complete, maybeAutoStartAfterFilesAdded };
+    return {
+        currentStep,
+        isActive,
+        start,
+        next,
+        skip: complete,
+        requestAutoStart,
+        maybeAutoStart,
+    };
 }

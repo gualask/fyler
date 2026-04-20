@@ -7,7 +7,7 @@ type QuickAddLike = {
 };
 
 type TutorialLike = {
-    maybeAutoStartAfterFilesAdded: () => void;
+    requestAutoStart: () => void;
 };
 
 export function useTutorialFilesAddedHandler({
@@ -17,16 +17,14 @@ export function useTutorialFilesAddedHandler({
     quickAdd: QuickAddLike;
     tutorial: TutorialLike;
 }) {
-    const { onFilesAdded: onQuickAddFilesAdded, isQuickAdd, isTransitioning } = quickAdd;
-    const { maybeAutoStartAfterFilesAdded } = tutorial;
+    const { onFilesAdded: onQuickAddFilesAdded } = quickAdd;
+    const { requestAutoStart } = tutorial;
 
     return useCallback(
         (ids: string[]) => {
             onQuickAddFilesAdded(ids);
-            if (!isQuickAdd && !isTransitioning) {
-                maybeAutoStartAfterFilesAdded();
-            }
+            requestAutoStart();
         },
-        [isQuickAdd, isTransitioning, maybeAutoStartAfterFilesAdded, onQuickAddFilesAdded],
+        [onQuickAddFilesAdded, requestAutoStart],
     );
 }

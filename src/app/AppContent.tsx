@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useAppNotifications } from '@/app/notifications';
 import { useExportAction, useOptimize } from '@/features/export';
@@ -59,6 +59,16 @@ export function AppContent() {
         quickAdd,
         notifications,
     });
+    const isTutorialReady =
+        !quickAdd.isQuickAdd &&
+        !quickAdd.isTransitioning &&
+        workspace.files.length > 0 &&
+        workspace.selectedFile !== null &&
+        workspace.finalPages.length > 0;
+
+    useEffect(() => {
+        tutorial.maybeAutoStart(isTutorialReady);
+    }, [isTutorialReady, tutorial.maybeAutoStart]);
 
     const rootClassName = `flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`;
 
