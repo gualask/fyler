@@ -1,8 +1,11 @@
 [package]
 name = "fyler"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+version = "1.0.0"
+description = "Desktop app for merging PDF files and images into a single PDF."
+authors = ["gualask"]
+license = "MIT"
+repository = "https://github.com/gualask/fyler"
+homepage = "https://github.com/gualask/fyler"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -1486,7 +1486,7 @@ dependencies = [
 
 [[package]]
 name = "fyler"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "fast_image_resize",

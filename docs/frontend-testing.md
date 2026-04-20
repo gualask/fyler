@@ -1,14 +1,89 @@
-# Frontend Audit Map
+# Frontend Testing
 
-This file collects in one place:
+This document covers Fyler's browser-safe frontend fixtures, how to use them with Playwright or manual inspection, and the audit map of surfaces and flows that need coverage.
 
-- the UI surfaces exposed by the app
-- the runtime flows and side effects that need analysis
+## Scope
 
-It does not track check status.
-It is meant to be the source map from which separate operational checklists can be derived, whether manual or LLM-driven.
+Use this document when you need to:
 
-## UI Surfaces
+- inspect UI states in a normal browser session without mounting the live Tauri backend
+- choose between isolated fixtures, the browser-safe runtime shell, and native Tauri checks
+- audit which frontend surfaces and runtime flows need verification
+
+## Start a frontend session
+
+```bash
+corepack enable
+pnpm install
+pnpm dev
+```
+
+Use `pnpm tauri:dev` when you need native windowing, OS integrations, or plugin-backed behavior.
+
+## Choosing the right mode
+
+| Mode | Use when |
+| --- | --- |
+| `?dev=fixtures` | You want the fixture index and quick navigation during UI work. |
+| `?dev=<fixture>` | You need deterministic, isolated inspection of a specific component or state. |
+| `?dev=runtime-app` | You want the real app shell in the browser without the Tauri runtime. |
+| `?dev=workspace-shell` | You only need the static workspace frame, not a representative session. |
+| `?dev=workspace-preview` | You want realistic workspace proportions and selectable sample content. |
+| `pnpm tauri:dev` | You need native Tauri behavior, OS dialogs, updater flows, or platform integration checks. |
+
+## Fixture conventions
+
+- keep fixtures under `src/dev/`
+- register fixtures in `src/dev/index.tsx`
+- expose fixtures through the `dev` query-string parameter
+- keep names minimal and scenario-based
+- keep fixtures isolated from Tauri dependencies when the goal is layout or DOM inspection
+
+## Available routes
+
+| Route | Purpose |
+| --- | --- |
+| `?dev=fixtures` | Opens the fixture index. |
+| `?dev=runtime-app` | Mounts the real app shell with the dev browser-safe platform adapter. |
+| `?dev=workspace-shell` | Opens the technical browser-safe workspace shell baseline. |
+| `?dev=workspace-preview` | Opens a realistic working-session shell with sample PDF/image assets. Use `&selected=image` to start on the image picker. |
+| `?dev=workspace-empty` | Opens the empty-state workspace fixture. |
+| `?dev=preview-modal` | Opens the browser-safe preview modal fixture. Use `&pages=1` for the single-page variant. |
+| `?dev=quick-add` | Opens the browser-safe quick-add fixture. |
+| `?dev=support-dialog` | Opens the support dialog fixture. Use `&mode=about` for about mode. |
+| `?dev=tutorial-overlay` | Opens the tutorial overlay fixture. Use `&step=0..3` to inspect targets. |
+| `?dev=feedback-overlays` | Opens feedback overlay fixtures. Use `&view=progress`, `progress-indeterminate`, `toast-success`, or `toast-warning`. |
+| `?dev=final-document` | Opens the populated final-document fixture. |
+| `?dev=page-picker` | Opens the PDF page-picker fixture. Use `&mode=image` for the image panel. |
+| `?dev=update-dialog` | Opens the update dialog fixture. Use `&view=installing` or `error` for alternate states. |
+| `?dev=error-boundary` | Opens the app error boundary fallback fixture. Use `&message=...` to override the crash text. |
+
+## Playwright and manual audit workflow
+
+- use `?dev=<fixture>` when you need deterministic DOM, layout, and visual inspection
+- use `?dev=runtime-app` for browser-based audit of the real shell without Tauri
+- use `?dev=workspace-preview` when proportions and mixed PDF/image states matter more than isolated components
+- use `pnpm tauri:dev` for native Tauri and OS-integrated checks that browser-safe fixtures cannot cover
+
+## Repo hygiene
+
+Keep in git:
+
+- fixture pages in `src/dev/`
+- browser-safe adapter support under `src/dev/`
+- the gating code needed to expose fixtures in development
+- reusable mock data that makes a fixture useful
+
+Keep local:
+
+- Playwright MCP output folders such as `.playwright-mcp/`
+- screenshots, dumps, or temporary artifacts created only for inspection
+
+## Audit Map
+
+This section is the coverage map for frontend review. It does not track pass or fail status. Use it as the source map from which manual or automated checklists can be derived.
+
+### UI Surfaces
 
 | Area | Section/Component | Access |
 | --- | --- | --- |
@@ -40,7 +115,7 @@ It is meant to be the source map from which separate operational checklists can 
 | Updates | Update dialog | Available update or fixture, `?dev=update-dialog`, `?dev=update-dialog&view=installing` |
 | Error handling | Error boundary UI | Unhandled error in the app, `?dev=error-boundary` |
 
-## Runtime Flows
+### Runtime Flows
 
 | Area | Flow / Action | Real Trigger | Integration / Side effect |
 | --- | --- | --- | --- |
