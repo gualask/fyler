@@ -35,6 +35,7 @@ function readSnapshot(): PreferencesSettings | null {
             locale: settings.locale,
             accent: settings.accent,
             tutorialSeen: settings.tutorialSeen,
+            finalDocumentLayout: settings.finalDocumentLayout,
         };
     } catch {
         return null;

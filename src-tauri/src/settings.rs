@@ -8,6 +8,7 @@ const KEY_IS_DARK: &str = "isDark";
 const KEY_LOCALE: &str = "locale";
 const KEY_ACCENT: &str = "accent";
 const KEY_TUTORIAL_SEEN: &str = "tutorialSeen";
+const KEY_FINAL_DOCUMENT_LAYOUT: &str = "finalDocumentLayout";
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -17,6 +18,7 @@ pub struct StoredSettings {
     locale: Option<String>,
     accent: Option<String>,
     tutorial_seen: Option<bool>,
+    final_document_layout: Option<String>,
 }
 
 fn sanitize_locale(locale: Option<String>) -> Option<String> {
@@ -29,6 +31,13 @@ fn sanitize_locale(locale: Option<String>) -> Option<String> {
 fn sanitize_accent(accent: Option<String>) -> Option<String> {
     match accent.as_deref() {
         Some("indigo" | "teal" | "amber" | "blue") => accent,
+        _ => None,
+    }
+}
+
+fn sanitize_final_document_layout(layout: Option<String>) -> Option<String> {
+    match layout.as_deref() {
+        Some("columns-2" | "columns-1") => layout,
         _ => None,
     }
 }
@@ -55,6 +64,11 @@ pub async fn load_settings(app: tauri::AppHandle) -> Result<StoredSettings, AppE
                 .and_then(|v| v.as_str().map(|a| a.to_owned())),
         ),
         tutorial_seen: store.get(KEY_TUTORIAL_SEEN).and_then(|v| v.as_bool()),
+        final_document_layout: sanitize_final_document_layout(
+            store
+                .get(KEY_FINAL_DOCUMENT_LAYOUT)
+                .and_then(|v| v.as_str().map(|layout| layout.to_owned())),
+        ),
     })
 }
 
@@ -86,6 +100,13 @@ pub async fn save_settings(
     } else {
         store.delete(KEY_TUTORIAL_SEEN);
     }
+
+    if let Some(layout) = sanitize_final_document_layout(settings.final_document_layout) {
+        store.set(KEY_FINAL_DOCUMENT_LAYOUT, layout);
+    } else {
+        store.delete(KEY_FINAL_DOCUMENT_LAYOUT);
+    }
+
     store.save().context("failed to save settings store")?;
     Ok(())
 }

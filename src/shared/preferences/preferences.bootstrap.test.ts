@@ -11,6 +11,7 @@ test('resolves preferences state with safe fallbacks', () => {
         locale: 'it',
         accent: 'indigo',
         tutorialSeen: false,
+        finalDocumentLayout: 'columns-2',
     });
 
     assert.deepEqual(
@@ -20,6 +21,7 @@ test('resolves preferences state with safe fallbacks', () => {
                 locale: 'fr' as never,
                 accent: 'pink' as never,
                 tutorialSeen: true,
+                finalDocumentLayout: 'gallery' as never,
             },
             ['en-GB'],
         ),
@@ -28,6 +30,7 @@ test('resolves preferences state with safe fallbacks', () => {
             locale: 'en',
             accent: 'indigo',
             tutorialSeen: true,
+            finalDocumentLayout: 'columns-2',
         },
     );
 });

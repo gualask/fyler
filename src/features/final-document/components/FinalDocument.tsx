@@ -8,6 +8,7 @@ import type {
     SourceTarget,
 } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
+import { usePreferences, type FinalDocumentLayout } from '@/shared/preferences';
 import { ToggleGroup, type ToggleOption } from '@/shared/ui';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { CardList } from './components/CardList';
@@ -44,10 +45,10 @@ export function FinalDocument({
     editsByFile,
 }: Props) {
     const { t } = useTranslation();
-    const [layout, setLayout] = useState<'columns-2' | 'columns-1'>('columns-2');
+    const { finalDocumentLayout, setFinalDocumentLayout } = usePreferences();
     const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
     const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
-    const layoutOptions: ToggleOption<'columns-2' | 'columns-1'>[] = [
+    const layoutOptions: ToggleOption<FinalDocumentLayout>[] = [
         {
             value: 'columns-1',
             label: <IconColumns1 className="h-4 w-4" />,
@@ -73,8 +74,8 @@ export function FinalDocument({
                 <ToggleGroup
                     className="w-16 shrink-0"
                     options={layoutOptions}
-                    value={layout}
-                    onChange={setLayout}
+                    value={finalDocumentLayout}
+                    onChange={setFinalDocumentLayout}
                 />
             </SectionHeader>
 
@@ -82,7 +83,7 @@ export function FinalDocument({
                 ref={setScrollRoot}
                 className="min-h-0 flex-1 overflow-y-auto px-5 py-4 md:px-6 md:py-5"
             >
-                {layout === 'columns-2' ? (
+                {finalDocumentLayout === 'columns-2' ? (
                     <List
                         finalPages={finalPages}
                         files={files}

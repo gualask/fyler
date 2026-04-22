@@ -10,6 +10,7 @@ const snapshot = {
     locale: 'it' as const,
     accent: 'teal' as const,
     tutorialSeen: true,
+    finalDocumentLayout: 'columns-1' as const,
 };
 
 test('keeps browser-only storage writes local', async () => {
@@ -44,6 +45,7 @@ test('mirrors native settings when the runtime is available', async () => {
         locale: 'en' as const,
         accent: 'blue' as const,
         tutorialSeen: false,
+        finalDocumentLayout: 'columns-2' as const,
     };
 
     const storage = createMirroredPreferencesStorage({

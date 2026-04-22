@@ -10,7 +10,11 @@ import {
 import { type PreferencesState, resolvePreferencesState } from './preferences.bootstrap';
 import { PreferencesContext, type PreferencesContextValue } from './preferences.context';
 import type { Locale } from './preferences.locale';
-import { ACCENT_COLORS, type AccentColor } from './preferences.settings';
+import {
+    ACCENT_COLORS,
+    type AccentColor,
+    type FinalDocumentLayout,
+} from './preferences.settings';
 import type { PreferencesStorage } from './preferences.storage';
 
 /** Persists user preferences and exposes them via context. */
@@ -109,26 +113,41 @@ export function PreferencesProvider({
         );
     }, [updatePreferences]);
 
+    const setFinalDocumentLayout = useCallback(
+        (finalDocumentLayout: FinalDocumentLayout) => {
+            updatePreferences((current) =>
+                current.finalDocumentLayout === finalDocumentLayout
+                    ? current
+                    : { ...current, finalDocumentLayout },
+            );
+        },
+        [updatePreferences],
+    );
+
     const value = useMemo<PreferencesContextValue>(
         () => ({
             isDark: preferences.isDark,
             locale: preferences.locale,
             accent: preferences.accent,
             tutorialSeen: preferences.tutorialSeen,
+            finalDocumentLayout: preferences.finalDocumentLayout,
             setLocale,
             toggleTheme,
             setAccent,
             markTutorialSeen,
+            setFinalDocumentLayout,
         }),
         [
             preferences.isDark,
             preferences.locale,
             preferences.accent,
             preferences.tutorialSeen,
+            preferences.finalDocumentLayout,
             setLocale,
             toggleTheme,
             setAccent,
             markTutorialSeen,
+            setFinalDocumentLayout,
         ],
     );
 

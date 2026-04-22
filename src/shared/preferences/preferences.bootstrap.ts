@@ -2,7 +2,10 @@ import { detectPreferredLocale, isLocale, type Locale } from './preferences.loca
 import {
     type AccentColor,
     DEFAULT_ACCENT_COLOR,
+    DEFAULT_FINAL_DOCUMENT_LAYOUT,
+    type FinalDocumentLayout,
     isAccentColor,
+    isFinalDocumentLayout,
     type PreferencesSettings,
 } from './preferences.settings';
 
@@ -11,6 +14,7 @@ export type PreferencesState = {
     locale: Locale;
     accent: AccentColor;
     tutorialSeen: boolean;
+    finalDocumentLayout: FinalDocumentLayout;
 };
 
 export function resolvePreferencesState(
@@ -22,5 +26,8 @@ export function resolvePreferencesState(
         locale: isLocale(settings?.locale) ? settings.locale : detectPreferredLocale(languages),
         accent: isAccentColor(settings?.accent) ? settings.accent : DEFAULT_ACCENT_COLOR,
         tutorialSeen: settings?.tutorialSeen ?? false,
+        finalDocumentLayout: isFinalDocumentLayout(settings?.finalDocumentLayout)
+            ? settings.finalDocumentLayout
+            : DEFAULT_FINAL_DOCUMENT_LAYOUT,
     };
 }
