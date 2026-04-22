@@ -1,37 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 
-import { type AvailableUpdate, checkForUpdate, relaunchApp } from '@/infra/platform/updater';
+import { checkForUpdate, relaunchApp } from '@/infra/platform/updater';
 import { useDiagnostics } from '@/shared/diagnostics';
 import { getErrorMessage } from '@/shared/errors';
-
-interface UpdateState {
-    available: boolean;
-    version: string | null;
-    installing: boolean;
-    progress: number | null;
-    dismissed: boolean;
-    error: string | null;
-}
+import { appUpdaterReducer, initialAppUpdaterState } from './app-updater.reducer';
 
 export function useAppUpdater() {
     const { record } = useDiagnostics();
-    const [state, setState] = useState<UpdateState>({
-        available: false,
-        version: null,
-        installing: false,
-        progress: null,
-        dismissed: false,
-        error: null,
-    });
-    const [update, setUpdate] = useState<AvailableUpdate | null>(null);
+    const [state, dispatch] = useReducer(appUpdaterReducer, initialAppUpdaterState);
+    const update = state.update;
 
     useEffect(() => {
         let cancelled = false;
         checkForUpdate()
             .then((u) => {
                 if (cancelled || !u) return;
-                setUpdate(u);
-                setState((s) => ({ ...s, available: true, version: u.version }));
+                dispatch({ type: 'update-found', update: u });
             })
             .catch(() => {
                 // Silently ignore — dev mode or no network
@@ -43,11 +27,11 @@ export function useAppUpdater() {
 
     const downloadAndInstall = useCallback(async () => {
         if (!update) return;
-        setState((s) => ({ ...s, installing: true, progress: 0, error: null }));
+        dispatch({ type: 'install-started' });
 
         try {
             await update.downloadAndInstall((pct) => {
-                setState((s) => ({ ...s, progress: pct }));
+                dispatch({ type: 'install-progress', progress: pct });
             });
 
             await relaunchApp();
@@ -57,17 +41,12 @@ export function useAppUpdater() {
                 severity: 'error',
                 message: `Updater install failed: ${getErrorMessage(error)}`,
             });
-            setState((s) => ({
-                ...s,
-                installing: false,
-                progress: null,
-                error: getErrorMessage(error),
-            }));
+            dispatch({ type: 'install-failed', error: getErrorMessage(error) });
         }
     }, [record, update]);
 
     const dismiss = useCallback(() => {
-        setState((s) => ({ ...s, dismissed: true, error: null }));
+        dispatch({ type: 'dismissed' });
     }, []);
 
     return {

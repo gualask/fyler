@@ -44,16 +44,16 @@
     },
     "devDependencies": {
         "@biomejs/biome": "2.4.12",
-        "@tailwindcss/vite": "^4.2.2",
+        "@tailwindcss/vite": "^4.2.4",
         "@tauri-apps/cli": "^2.10.1",
         "@types/node": "^24.12.2",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^6.0.1",
-        "tailwindcss": "^4.2.2",
+        "tailwindcss": "^4.2.4",
         "typescript": "~6.0.3",
-        "vite": "^8.0.8",
-        "vitest": "^4.1.4"
+        "vite": "^8.0.9",
+        "vitest": "^4.1.5"
     },
     "pnpm": {
         "onlyBuiltDependencies": [

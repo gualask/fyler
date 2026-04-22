@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { prependRecentQuickAddIds, removeQuickAddId } from './quick-add.hook';
+import { prependRecentQuickAddIds, removeQuickAddId } from './quick-add.reducer';
 
 describe('prependRecentQuickAddIds', () => {
     test('prepends the latest batch while preserving the batch order', () => {

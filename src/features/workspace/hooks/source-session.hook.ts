@@ -1,40 +1,31 @@
-import { useCallback } from 'react';
+import { useCallback, useReducer } from 'react';
 import { buildThumbnailRenderRequest, usePdfCache } from '@/infra/pdf';
 import { openFilesDialog, releaseSources } from '@/infra/platform';
 import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
-import { useFileEdits } from './file-edits.hook';
-import type { useFileList } from './file-list.hook';
+import { initialSourceSessionState, sourceSessionReducer } from '../state/source-session.reducer';
 
 interface Options {
-    fileList: ReturnType<typeof useFileList>;
     onFilesAdded?: (files: SourceFile[]) => void;
     onFileRemoved?: (file: SourceFile | null) => void;
 }
 
-export function useSourceSession({ fileList, onFilesAdded, onFileRemoved }: Options) {
+export function useSourceSession({ onFilesAdded, onFileRemoved }: Options) {
     const { t } = useTranslation();
-    const {
-        files,
-        addFiles: addToList,
-        removeFile: removeFileFromList,
-        clearFiles,
-        reorderFiles,
-        updateFilePageCount,
-    } = fileList;
-    const { editsByFile, setFileEdits, clearFileEdits, clearAllFileEdits } = useFileEdits();
+    const [state, dispatch] = useReducer(sourceSessionReducer, initialSourceSessionState);
+    const { files, editsByFile } = state;
     const { requestRenders, releaseFile } = usePdfCache();
 
     const addSourceFiles = useCallback(
         (newFiles: SourceFile[]) => {
             if (!newFiles.length) return [];
 
-            addToList(newFiles);
+            dispatch({ type: 'add-files', files: newFiles });
             onFilesAdded?.(newFiles);
             return newFiles;
         },
-        [addToList, onFilesAdded],
+        [onFilesAdded],
     );
 
     const openAndAddSourceFiles = useCallback(async () => {
@@ -49,13 +40,12 @@ export function useSourceSession({ fileList, onFilesAdded, onFileRemoved }: Opti
             if (removed?.kind === 'pdf') {
                 releaseFile(id);
             }
-            clearFileEdits(id);
             void releaseSources([id]);
-            removeFileFromList(id);
+            dispatch({ type: 'remove-file', fileId: id });
             onFileRemoved?.(removed);
             return removed;
         },
-        [clearFileEdits, files, onFileRemoved, releaseFile, removeFileFromList],
+        [files, onFileRemoved, releaseFile],
     );
 
     const clearSourceFiles = useCallback(() => {
@@ -66,10 +56,17 @@ export function useSourceSession({ fileList, onFilesAdded, onFileRemoved }: Opti
                 releaseFile(file.id);
             }
         }
-        clearAllFileEdits();
         void releaseSources(files.map((file) => file.id));
-        clearFiles();
-    }, [clearAllFileEdits, clearFiles, files, releaseFile]);
+        dispatch({ type: 'clear' });
+    }, [files, releaseFile]);
+
+    const reorderFiles = useCallback((fromId: string, toId: string) => {
+        dispatch({ type: 'reorder-files', fromId, toId });
+    }, []);
+
+    const updateFilePageCount = useCallback((id: string, count: number) => {
+        dispatch({ type: 'update-file-page-count', fileId: id, count });
+    }, []);
 
     const rotateSourcePage = useCallback(
         async (fileId: string, target: SourceTarget, direction: RotationDirection) => {
@@ -80,12 +77,12 @@ export function useSourceSession({ fileList, onFilesAdded, onFileRemoved }: Opti
             if (file.kind === 'image' && target.kind !== 'image') return;
 
             const nextEdits = FileEditsVO.applyRotation(editsByFile[file.id], target, direction);
-            setFileEdits(file.id, nextEdits);
+            dispatch({ type: 'set-file-edits', fileId: file.id, edits: nextEdits });
             if (file.kind === 'pdf' && target.kind === 'pdf') {
                 requestRenders(file, [buildThumbnailRenderRequest(target.pageNum, nextEdits)]);
             }
         },
-        [editsByFile, files, requestRenders, setFileEdits],
+        [editsByFile, files, requestRenders],
     );
 
     return {

@@ -99,6 +99,7 @@ export function WorkspaceFixturePage({
                 files,
                 editsByFile,
                 selectedId,
+                selectedFileScrollKey: undefined,
                 selectedFile,
                 focusedSource: null,
                 finalPages,

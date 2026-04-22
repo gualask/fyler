@@ -8,11 +8,13 @@ import {
 import { useEffect, useState } from 'react';
 import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
+import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
 import { FileRow } from './FileRow';
 
 interface Props {
     files: SourceFile[];
     selectedId: string | null;
+    selectedScrollKey?: number;
     onSelect: (id: string) => void;
     onRemove: (id: string) => void;
     onAddFiles: () => void;
@@ -22,6 +24,7 @@ interface Props {
 export function FileList({
     files,
     selectedId,
+    selectedScrollKey,
     onSelect,
     onRemove,
     onAddFiles,
@@ -74,6 +77,17 @@ export function FileList({
         };
     }, [scrollerEl, wrapEl]);
 
+    useEffect(() => {
+        if (!selectedId || !scrollerEl) return;
+        return scrollIntoViewByDataAttr({
+            root: scrollerEl,
+            attr: 'data-source-file-id',
+            value: selectedId,
+            inline: 'nearest',
+            signal: selectedScrollKey,
+        });
+    }, [scrollerEl, selectedId, selectedScrollKey]);
+
     const scrollByCard = (direction: -1 | 1) => {
         if (!scrollerEl) return;
         const step = 240 + 8; // w-60 + gap-2
@@ -121,7 +135,11 @@ export function FileList({
                             <div ref={setScrollerEl} className="file-list-scroller">
                                 <div ref={setWrapEl} className="file-list-wrap">
                                     {files.map((f) => (
-                                        <div key={f.id} className="w-60 shrink-0">
+                                        <div
+                                            key={f.id}
+                                            className="w-60 shrink-0"
+                                            data-source-file-id={f.id}
+                                        >
                                             <FileRow
                                                 file={f}
                                                 selected={f.id === selectedId}

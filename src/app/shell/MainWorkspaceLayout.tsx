@@ -36,6 +36,7 @@ export function MainWorkspaceLayout({
                     <FileList
                         files={workspace.files}
                         selectedId={workspace.selectedId}
+                        selectedScrollKey={workspace.selectedFileScrollKey}
                         onSelect={workspace.selectFile}
                         onRemove={workspace.removeFile}
                         onAddFiles={handleAddFiles}

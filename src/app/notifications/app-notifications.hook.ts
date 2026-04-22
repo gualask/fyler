@@ -1,45 +1,35 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer } from 'react';
 
 import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import type { AppStatusPayload, MergeProgressStep } from '@/shared/diagnostics';
 import { formatUserFacingError } from '@/shared/errors';
 import { formatImportWarning, useTranslation } from '@/shared/i18n';
 
+import { appNotificationsReducer, initialAppNotificationsState } from './app-notifications.reducer';
 import { useGlobalErrorHandlers } from './global-error-handlers.hook';
 import { useTauriNotificationEvents } from './tauri-notification-events.hook';
 
-type StatusState =
-    | { kind: 'error'; message: string }
-    | { kind: 'toast'; tone: 'success' | 'warning'; message: string }
-    | { kind: 'export-completed' }
-    | { kind: 'export-completed-with-optimization-warning'; count: number }
-    | { kind: 'import-warning'; payload: AppStatusPayload };
-
-type LoadingState =
-    | { kind: 'opening-files' }
-    | { kind: 'merge-progress'; step: MergeProgressStep; progress: number };
-
 export function useAppNotifications(): AppNotificationsApi {
     const { t, tp } = useTranslation();
-    const [status, setStatus] = useState<StatusState | null>(null);
-    const [loading, setLoading] = useState<LoadingState | null>(null);
+    const [state, dispatch] = useReducer(appNotificationsReducer, initialAppNotificationsState);
+    const { status, loading } = state;
 
     useEffect(() => {
         if (!status) return;
-        const timeoutId = window.setTimeout(() => setStatus(null), 4000);
+        const timeoutId = window.setTimeout(() => dispatch({ type: 'clear-status' }), 4000);
         return () => window.clearTimeout(timeoutId);
     }, [status]);
 
     const handleError = useCallback((message: string) => {
-        setStatus({ kind: 'error', message });
+        dispatch({ type: 'show-error', message });
     }, []);
 
     const handleImportWarning = useCallback((payload: AppStatusPayload) => {
-        setStatus({ kind: 'import-warning', payload });
+        dispatch({ type: 'show-import-warning', payload });
     }, []);
 
     const handleMergeProgress = useCallback((step: MergeProgressStep, progress: number) => {
-        setLoading({ kind: 'merge-progress', step, progress });
+        dispatch({ type: 'show-merge-progress', step, progress });
     }, []);
 
     useGlobalErrorHandlers(handleError);
@@ -50,34 +40,37 @@ export function useAppNotifications(): AppNotificationsApi {
     });
 
     const showOpeningFiles = useCallback(() => {
-        setLoading({ kind: 'opening-files' });
+        dispatch({ type: 'show-opening-files' });
     }, []);
 
     const showMergePreparing = useCallback(() => {
-        setLoading({ kind: 'merge-progress', step: 'preparing-documents', progress: 0 });
+        dispatch({ type: 'show-merge-preparing' });
     }, []);
 
     const clearLoading = useCallback(() => {
-        setLoading(null);
+        dispatch({ type: 'clear-loading' });
     }, []);
 
     const showExportCompleted = useCallback(() => {
-        setStatus({ kind: 'export-completed' });
+        dispatch({ type: 'show-export-completed' });
     }, []);
 
     const showExportCompletedWithOptimizationWarning = useCallback((count: number) => {
-        setStatus({ kind: 'export-completed-with-optimization-warning', count });
+        dispatch({ type: 'show-export-completed-with-optimization-warning', count });
     }, []);
 
     const showError = useCallback(
         (error: unknown) => {
-            setStatus({ kind: 'error', message: formatUserFacingError(error, t) });
+            dispatch({
+                type: 'show-error',
+                message: formatUserFacingError(error, t),
+            });
         },
         [t],
     );
 
     const showToast = useCallback((tone: 'success' | 'warning', message: string) => {
-        setStatus({ kind: 'toast', tone, message });
+        dispatch({ type: 'show-toast', tone, message });
     }, []);
 
     const statusMessage = useMemo(() => {

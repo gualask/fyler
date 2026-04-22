@@ -4,6 +4,7 @@ export function scrollIntoViewByDataAttr({
     value,
     behavior = 'smooth',
     block = 'nearest',
+    inline = 'nearest',
     signal,
     maxFrames = 3,
 }: {
@@ -12,6 +13,7 @@ export function scrollIntoViewByDataAttr({
     value: string;
     behavior?: ScrollBehavior;
     block?: ScrollLogicalPosition;
+    inline?: ScrollLogicalPosition;
     signal?: unknown;
     maxFrames?: number;
 }): () => void {
@@ -25,7 +27,7 @@ export function scrollIntoViewByDataAttr({
         void signal;
         const el = root.querySelector(selector) as HTMLElement | null;
         if (el) {
-            el.scrollIntoView({ behavior, block });
+            el.scrollIntoView({ behavior, block, inline });
             return;
         }
 

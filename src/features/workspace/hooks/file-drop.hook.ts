@@ -10,16 +10,13 @@ interface DragDropPayload {
 
 export function useFileDrop(
     addFiles: (files: SourceFile[]) => Promise<SourceFile[]> | SourceFile[],
-    setSelectedId: (id: string) => void,
     onError: (error: unknown) => void,
 ): { isDragOver: boolean } {
     const [isDragOver, setIsDragOver] = useState(false);
     const addFilesRef = useRef(addFiles);
-    const setSelectedIdRef = useRef(setSelectedId);
     const onErrorRef = useRef(onError);
     useLayoutEffect(() => {
         addFilesRef.current = addFiles;
-        setSelectedIdRef.current = setSelectedId;
         onErrorRef.current = onError;
     });
 
@@ -40,12 +37,7 @@ export function useFileDrop(
                 void openFilesFromPaths(paths)
                     .then((result) => {
                         if (!active || !result.files.length) return;
-                        void Promise.resolve(addFilesRef.current(result.files)).then(
-                            (addedFiles) => {
-                                if (!active || !addedFiles.length) return;
-                                setSelectedIdRef.current(addedFiles[0].id);
-                            },
-                        );
+                        void Promise.resolve(addFilesRef.current(result.files));
                     })
                     .catch((error) => {
                         if (active) onErrorRef.current(error);

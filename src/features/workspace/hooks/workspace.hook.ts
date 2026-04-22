@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef } from 'react';
 import { onTauriEvent } from '@/infra/platform/events';
 import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
+import { initialWorkspaceUiState, workspaceUiReducer } from '../state/workspace-ui.reducer';
 import { useFileDrop } from './file-drop.hook';
-import { useFileList } from './file-list.hook';
 import { useFinalPages } from './final-pages.hook';
 import { useSourceSession } from './source-session.hook';
 
@@ -13,23 +13,17 @@ export function useWorkspace({
     onFilesAdded?: (ids: string[]) => void;
     onDropError?: (error: unknown) => void;
 } = {}) {
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [focusedSource, setFocusedSource] = useState<{
-        fileId: string;
-        target: SourceTarget;
-        flashKey: number;
-        flashTarget: 'picker' | 'final';
-    } | null>(null);
+    const [uiState, dispatchUi] = useReducer(workspaceUiReducer, initialWorkspaceUiState);
     const finalPagesApi = useFinalPages();
     const { addAllPagesForFile, setPdfPagesForFile, removePagesForFile, clearAllPages } =
         finalPagesApi;
-    const fileList = useFileList();
-    const { updateFilePageCount } = fileList;
 
     // source-page-count may fire before React commits the addToList state update (race on fast
     // PDFs / dialog path). This map holds those early page counts so handleSessionFilesAdded can
-    // re-queue updateFilePageCount after addToList's setFiles, ensuring React applies them in order.
+    // re-queue updateFilePageCount after the reducer adds the files, ensuring React applies them
+    // in order.
     const pendingPageCountsRef = useRef<Map<string, number>>(new Map());
+    const updateFilePageCountRef = useRef<(id: string, count: number) => void>(() => undefined);
 
     const handleSessionFilesAdded = useCallback(
         (addedFiles: SourceFile[]) => {
@@ -44,12 +38,12 @@ export function useWorkspace({
                 const pendingCount = pendingPageCountsRef.current.get(file.id);
                 if (pendingCount !== undefined) {
                     pendingPageCountsRef.current.delete(file.id);
-                    updateFilePageCount(file.id, pendingCount);
+                    updateFilePageCountRef.current(file.id, pendingCount);
                 }
             }
             onFilesAdded?.(addedFiles.map((file) => file.id));
         },
-        [addAllPagesForFile, onFilesAdded, updateFilePageCount],
+        [addAllPagesForFile, onFilesAdded],
     );
 
     const handleSessionFileRemoved = useCallback(
@@ -69,57 +63,64 @@ export function useWorkspace({
         clearSourceFiles,
         rotateSourcePage,
         reorderFiles,
+        updateFilePageCount,
     } = useSourceSession({
-        fileList,
         onFilesAdded: handleSessionFilesAdded,
         onFileRemoved: handleSessionFileRemoved,
     });
 
     const selectedFile = useMemo(
-        () => files.find((file) => file.id === selectedId) ?? null,
-        [files, selectedId],
+        () => files.find((file) => file.id === uiState.selectedId) ?? null,
+        [files, uiState.selectedId],
     );
+
+    const focusSource = useCallback(
+        (fileId: string, target: SourceTarget, flashTarget: 'picker' | 'final') => {
+            dispatchUi({
+                type: 'source-focused',
+                fileId,
+                target,
+                flashTarget,
+            });
+        },
+        [],
+    );
+
+    const applySelectionAfterAdd = useCallback((addedFiles: typeof files) => {
+        dispatchUi({ type: 'files-added', files: addedFiles });
+    }, []);
 
     const acceptFiles = useCallback(
         async (newFiles: typeof files) => {
             const addedFiles = addSourceFiles(newFiles);
-            if (addedFiles.length) {
-                setSelectedId((prev) => prev ?? addedFiles[0].id);
-            }
+            applySelectionAfterAdd(addedFiles);
             return addedFiles;
         },
-        [addSourceFiles],
+        [addSourceFiles, applySelectionAfterAdd],
     );
 
     const addFiles = useCallback(async () => {
         const { files: addedFiles, skippedErrors } = await openAndAddSourceFiles();
-        if (addedFiles.length) {
-            setSelectedId((prev) => prev ?? addedFiles[0].id);
-        }
+        applySelectionAfterAdd(addedFiles);
         return { files: addedFiles, skippedErrors };
-    }, [openAndAddSourceFiles]);
+    }, [applySelectionAfterAdd, openAndAddSourceFiles]);
 
     const selectFile = useCallback((id: string) => {
-        setSelectedId(id);
-        setFocusedSource(null);
+        dispatchUi({ type: 'file-selected', fileId: id });
     }, []);
 
     const removeFile = useCallback(
         (id: string) => {
-            if (id === selectedId) {
-                const remaining = files.filter((file) => file.id !== id);
-                setSelectedId(remaining.length ? remaining[0].id : null);
-            }
-            setFocusedSource((prev) => (prev?.fileId === id ? null : prev));
+            const remainingIds = files.filter((file) => file.id !== id).map((file) => file.id);
+            dispatchUi({ type: 'file-removed', fileId: id, remainingIds });
             removeSourceFile(id);
         },
-        [files, removeSourceFile, selectedId],
+        [files, removeSourceFile],
     );
 
     const clearAllFiles = useCallback(() => {
         if (!files.length) return;
-        setSelectedId(null);
-        setFocusedSource(null);
+        dispatchUi({ type: 'cleared' });
         clearAllPages();
         clearSourceFiles();
     }, [clearAllPages, clearSourceFiles, files.length]);
@@ -129,18 +130,6 @@ export function useWorkspace({
             await rotateSourcePage(fileId, target, direction);
         },
         [rotateSourcePage],
-    );
-
-    const selectIfNone = useCallback((id: string) => {
-        setSelectedId((prev) => prev ?? id);
-    }, []);
-
-    const focusSource = useCallback(
-        (fileId: string, target: SourceTarget, flashTarget: 'picker' | 'final') => {
-            setSelectedId(fileId);
-            setFocusedSource({ fileId, target, flashKey: Date.now(), flashTarget });
-        },
-        [],
     );
 
     const focusFinalPageSource = useCallback(
@@ -172,11 +161,19 @@ export function useWorkspace({
     const onDropErrorRef = useRef(onDropError);
     useLayoutEffect(() => {
         filesRef.current = files;
+        updateFilePageCountRef.current = updateFilePageCount;
         setPdfPagesForFileRef.current = setPdfPagesForFile;
         removeSourceFileRef.current = removeSourceFile;
         onDropErrorRef.current = onDropError;
         removePagesForFileRef.current = removePagesForFile;
-    });
+    }, [
+        files,
+        onDropError,
+        removePagesForFile,
+        removeSourceFile,
+        setPdfPagesForFile,
+        updateFilePageCount,
+    ]);
 
     useEffect(() => {
         const unlisten = [
@@ -208,15 +205,16 @@ export function useWorkspace({
         };
     }, [updateFilePageCount]); // updateFilePageCount is stable (no deps on useCallback), so this effect runs once; refs cover everything else
 
-    const { isDragOver } = useFileDrop(acceptFiles, selectIfNone, handleDropError);
+    const { isDragOver } = useFileDrop(acceptFiles, handleDropError);
 
     return {
         files,
         editsByFile,
-        selectedId,
+        selectedId: uiState.selectedId,
+        selectedFileScrollKey: uiState.selectedFileScrollKey,
         selectedFile,
         selectFile,
-        focusedSource,
+        focusedSource: uiState.focusedSource,
         addFiles,
         removeFile,
         clearAllFiles,

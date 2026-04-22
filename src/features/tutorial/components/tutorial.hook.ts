@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { usePreferences } from '@/shared/preferences';
+import { initialTutorialState, tutorialReducer } from './tutorial.reducer';
 import { TUTORIAL_STEPS } from './tutorial.steps';
 
 export function useTutorial() {
     const { tutorialSeen, markTutorialSeen } = usePreferences();
-    const [currentStep, setCurrentStep] = useState<number | null>(null);
+    const [state, dispatch] = useReducer(tutorialReducer, initialTutorialState);
+    const { currentStep, autoStartRequested, markSeenOnClose } = state;
     const startTimeoutRef = useRef<number | null>(null);
-    const markSeenOnCloseRef = useRef(false);
-    const autoStartRequestedRef = useRef(false);
 
     const isActive = currentStep !== null;
 
@@ -16,9 +16,7 @@ export function useTutorial() {
             window.clearTimeout(startTimeoutRef.current);
             startTimeoutRef.current = null;
         }
-        markSeenOnCloseRef.current = false;
-        autoStartRequestedRef.current = false;
-        setCurrentStep(null);
+        dispatch({ type: 'complete' });
         markTutorialSeen();
     }, [markTutorialSeen]);
 
@@ -27,46 +25,36 @@ export function useTutorial() {
             window.clearTimeout(startTimeoutRef.current);
             startTimeoutRef.current = null;
         }
-        autoStartRequestedRef.current = false;
-        setCurrentStep(0);
+        dispatch({ type: 'start' });
     }, []);
 
     const next = useCallback(() => {
-        setCurrentStep((step) => {
-            if (step === null) return null;
-            if (step >= TUTORIAL_STEPS.length - 1) {
-                markSeenOnCloseRef.current = true;
-                return null;
-            }
-            return step + 1;
-        });
+        dispatch({ type: 'next', totalSteps: TUTORIAL_STEPS.length });
     }, []);
 
     const requestAutoStart = useCallback(() => {
         if (tutorialSeen) return;
-        autoStartRequestedRef.current = true;
+        dispatch({ type: 'request-auto-start' });
     }, [tutorialSeen]);
 
     const maybeAutoStart = useCallback(
         (isReady: boolean) => {
             if (!isReady) return;
             if (tutorialSeen) {
-                autoStartRequestedRef.current = false;
+                dispatch({ type: 'cancel-auto-start-request' });
                 return;
             }
-            if (!autoStartRequestedRef.current) return;
+            if (!autoStartRequested) return;
             if (currentStep !== null) return;
             if (startTimeoutRef.current !== null) return;
 
             // Delay to let the workspace layout settle before measuring tutorial targets.
             startTimeoutRef.current = window.setTimeout(() => {
                 startTimeoutRef.current = null;
-                if (!autoStartRequestedRef.current) return;
-                autoStartRequestedRef.current = false;
-                setCurrentStep(0);
+                dispatch({ type: 'auto-start-fired' });
             }, 300);
         },
-        [currentStep, tutorialSeen],
+        [autoStartRequested, currentStep, tutorialSeen],
     );
 
     useEffect(
@@ -81,10 +69,10 @@ export function useTutorial() {
 
     useEffect(() => {
         if (currentStep !== null) return;
-        if (!markSeenOnCloseRef.current) return;
-        markSeenOnCloseRef.current = false;
+        if (!markSeenOnClose) return;
         markTutorialSeen();
-    }, [currentStep, markTutorialSeen]);
+        dispatch({ type: 'mark-seen-handled' });
+    }, [currentStep, markSeenOnClose, markTutorialSeen]);
 
     return {
         currentStep,
