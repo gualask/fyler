@@ -1,6 +1,6 @@
 import { IconRotate2, IconRotateClockwise2 } from '@tabler/icons-react';
 import type { RotationDirection } from '@/shared/domain';
-import { toolbarIconButtonClassName, toolbarPanelClassName } from './toolbar.styles';
+import { toolbarIconButtonClassName } from './toolbar.styles';
 
 interface Props {
     isRotating: boolean;
@@ -11,7 +11,7 @@ interface Props {
 
 export function RotateControls({ isRotating, onRotate, rotateLeftTitle, rotateRightTitle }: Props) {
     return (
-        <div className={`${toolbarPanelClassName} gap-0.5 px-1`}>
+        <>
             <button
                 type="button"
                 onClick={() => onRotate('ccw')}
@@ -32,6 +32,6 @@ export function RotateControls({ isRotating, onRotate, rotateLeftTitle, rotateRi
             >
                 <IconRotateClockwise2 className="h-4 w-4" />
             </button>
-        </div>
+        </>
     );
 }

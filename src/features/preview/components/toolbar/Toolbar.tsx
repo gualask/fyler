@@ -7,7 +7,8 @@ import { RotateControls } from './RotateControls';
 import {
     toolbarCounterClassName,
     toolbarFloatingRailClassName,
-    toolbarPanelClassName,
+    toolbarIconButtonClassName,
+    toolbarPanelGroupClassName,
 } from './toolbar.styles';
 import { ZoomControls } from './ZoomControls';
 
@@ -61,35 +62,40 @@ export function Toolbar({
             </div>
 
             <div className="flex items-center gap-2 justify-self-end">
-                {canRotate && (
-                    <RotateControls
-                        isRotating={isRotating}
-                        onRotate={onRotate}
-                        rotateLeftTitle={t('preview.rotateLeft')}
-                        rotateRightTitle={t('preview.rotateRight')}
-                    />
-                )}
+                {canRotate || (showMoveTo && moveControl) ? (
+                    <div className={toolbarPanelGroupClassName}>
+                        {canRotate ? (
+                            <RotateControls
+                                isRotating={isRotating}
+                                onRotate={onRotate}
+                                rotateLeftTitle={t('preview.rotateLeft')}
+                                rotateRightTitle={t('preview.rotateRight')}
+                            />
+                        ) : null}
 
-                {showMoveTo && moveControl ? (
-                    <MoveToSelect
-                        moveControl={moveControl}
-                        label={t('preview.moveTo')}
-                        getPositionLabel={(position) => t('preview.moveToPosition', { position })}
-                    />
+                        {showMoveTo && moveControl ? (
+                            <MoveToSelect
+                                moveControl={moveControl}
+                                label={t('preview.moveTo')}
+                                getPositionLabel={(position) =>
+                                    t('preview.moveToPosition', { position })
+                                }
+                            />
+                        ) : null}
+                    </div>
                 ) : null}
 
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className={`${toolbarPanelClassName} gap-2 px-3 transition-[background-color,transform,border-color] hover:bg-[var(--ui-overlay-control-hover)] active:scale-[0.97]`}
-                    title={t('preview.close')}
-                    aria-label={t('preview.close')}
-                >
-                    <IconX className="h-4 w-4" />
-                    <span className="text-[13px] font-medium text-[var(--ui-overlay-text)]">
-                        {t('preview.close')}
-                    </span>
-                </button>
+                <div className={toolbarPanelGroupClassName}>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className={toolbarIconButtonClassName}
+                        title={t('preview.close')}
+                        aria-label={t('preview.close')}
+                    >
+                        <IconX className="h-4 w-4" />
+                    </button>
+                </div>
             </div>
         </div>
     );

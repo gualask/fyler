@@ -1,7 +1,7 @@
 import { IconZoomIn, IconZoomOut } from '@tabler/icons-react';
 import {
     toolbarIconButtonClassName,
-    toolbarPanelClassName,
+    toolbarPanelGroupClassName,
     toolbarTextButtonClassName,
     toolbarValueClassName,
 } from './toolbar.styles';
@@ -28,7 +28,7 @@ export function ZoomControls({
     resetLabel,
 }: Props) {
     return (
-        <div className={`${toolbarPanelClassName} gap-0.5 px-1`}>
+        <div className={toolbarPanelGroupClassName}>
             <button
                 type="button"
                 onClick={onZoomOut}

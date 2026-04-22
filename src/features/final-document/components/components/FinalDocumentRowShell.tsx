@@ -144,7 +144,7 @@ export function FinalDocumentRowShell({
                         event.stopPropagation();
                         onRemove(item.page.id);
                     }}
-                    className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-ui-danger text-white shadow-md opacity-0 scale-95 pointer-events-none transition-[opacity,transform,background-color] hover:bg-ui-danger-hover group-hover:pointer-events-auto group-hover:opacity-100 group-hover:scale-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:scale-100"
+                    className="btn-icon absolute right-2 top-2 h-7 w-7 rounded-md bg-ui-surface shadow-sm opacity-0 scale-95 pointer-events-none transition-[opacity,transform,color,background-color,box-shadow] hover:bg-ui-surface-hover hover:text-ui-danger group-hover:pointer-events-auto group-hover:opacity-100 group-hover:scale-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:scale-100"
                     aria-label={t('finalDocument.removePage')}
                     title={t('finalDocument.removePage')}
                 >
