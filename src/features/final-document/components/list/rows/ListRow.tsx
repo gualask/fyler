@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useTranslation } from '@/shared/i18n';
+import type { FinalDocumentRowProps } from '../FinalDocumentSortableList';
 import { FinalDocumentRowShell } from './FinalDocumentRowShell';
-import type { FinalDocumentRowProps } from './FinalDocumentSortableList';
 import { ListRowThumbnail } from './ListRowThumbnail';
 
 export const ListRow = memo(function ListRow({

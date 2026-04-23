@@ -8,12 +8,12 @@ import type {
     SourceTarget,
 } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
-import { usePreferences, type FinalDocumentLayout } from '@/shared/preferences';
+import { type FinalDocumentLayout, usePreferences } from '@/shared/preferences';
 import { ToggleGroup, type ToggleOption } from '@/shared/ui';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
-import { CardList } from './components/CardList';
-import { List } from './components/List';
-import { Preview } from './components/Preview';
+import { CardList } from './list/CardList';
+import { List } from './list/List';
+import { Preview } from './Preview';
 
 interface Props {
     finalPages: FinalPage[];

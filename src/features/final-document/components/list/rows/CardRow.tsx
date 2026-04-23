@@ -1,6 +1,6 @@
 import { memo } from 'react';
+import type { FinalDocumentRowProps } from '../FinalDocumentSortableList';
 import { FinalDocumentRowShell } from './FinalDocumentRowShell';
-import type { FinalDocumentRowProps } from './FinalDocumentSortableList';
 import { ListRowThumbnail } from './ListRowThumbnail';
 
 export const CardRow = memo(function CardRow({

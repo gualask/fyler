@@ -1,6 +1,6 @@
 import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
-import { CardRow } from './CardRow';
 import { FinalDocumentSortableList } from './FinalDocumentSortableList';
+import { CardRow } from './rows/CardRow';
 
 interface Props {
     finalPages: FinalPage[];

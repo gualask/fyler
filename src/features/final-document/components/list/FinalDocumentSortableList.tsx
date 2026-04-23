@@ -15,8 +15,8 @@ import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/do
 import { finalPageToTarget } from '@/shared/domain/utils/final-page-id';
 import { useTranslation } from '@/shared/i18n';
 import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
-import type { ListItem } from '../list-item.types';
-import { useFinalDocumentItems } from '../use-final-document-items.hook';
+import type { ListItem } from './list-item.types';
+import { useFinalDocumentItems } from './use-final-document-items.hook';
 
 export interface FinalDocumentRowProps {
     item: ListItem;

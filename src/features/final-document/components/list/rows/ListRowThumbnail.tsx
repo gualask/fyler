@@ -1,5 +1,4 @@
 import { IconFileTypePdf, IconPhoto } from '@tabler/icons-react';
-import { motion } from 'motion/react';
 import { useMemo } from 'react';
 import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
@@ -8,6 +7,7 @@ import { useTranslation } from '@/shared/i18n';
 import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
 import type { ListItem } from '../list-item.types';
 import { FinalDocumentDragHandle } from './FinalDocumentRowShell';
+import { RotatedThumbnailImage } from './RotatedThumbnailImage';
 
 interface Props {
     item: ListItem;
@@ -63,12 +63,11 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', cla
             {thumbUrl ? (
                 <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
             ) : imageUrl ? (
-                <motion.img
+                <RotatedThumbnailImage
                     src={imageUrl}
                     alt=""
                     className="h-full w-full object-cover"
-                    animate={{ rotate: imageRotation }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    imageRotation={imageRotation}
                 />
             ) : (
                 <div className="flex h-full items-center justify-center">
