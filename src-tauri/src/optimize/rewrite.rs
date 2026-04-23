@@ -75,4 +75,3 @@ pub fn rewrite_stream(
         }
     }
 }
-

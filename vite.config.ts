@@ -2,8 +2,24 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-// @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
+
+function vendorChunkName(moduleId: string): string | null {
+    const id = moduleId.replaceAll('\\', '/');
+    if (!id.includes('/node_modules/')) return null;
+    if (id.includes('/node_modules/@dnd-kit/')) return 'dnd-vendor';
+    if (id.includes('/node_modules/@tabler/')) return 'icons-vendor';
+    if (id.includes('/node_modules/motion/')) return 'motion-vendor';
+    if (id.includes('/node_modules/pdfjs-dist/')) return 'pdf-vendor';
+    if (
+        id.includes('/node_modules/react/') ||
+        id.includes('/node_modules/react-dom/') ||
+        id.includes('/node_modules/scheduler/')
+    ) {
+        return 'react-vendor';
+    }
+    return 'vendor';
+}
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
@@ -16,6 +32,20 @@ export default defineConfig(async () => ({
     //
     // 1. prevent Vite from obscuring rust errors
     clearScreen: false,
+    build: {
+        rolldownOptions: {
+            output: {
+                codeSplitting: {
+                    groups: [
+                        {
+                            name: vendorChunkName,
+                            test: 'node_modules',
+                        },
+                    ],
+                },
+            },
+        },
+    },
     // 2. tauri expects a fixed port, fail if that port is not available
     server: {
         port: 1420,

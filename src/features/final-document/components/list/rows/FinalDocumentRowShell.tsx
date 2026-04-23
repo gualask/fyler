@@ -1,4 +1,4 @@
-import type { DraggableSyntheticListeners } from '@dnd-kit/core';
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { IconGripVertical, IconX } from '@tabler/icons-react';
@@ -12,6 +12,7 @@ import type { ListItem } from '../list-item.types';
 import { ListRowIndexControls } from './ListRowIndexControls';
 
 type DragHandleContextValue = {
+    attributes: DraggableAttributes;
     listeners: DraggableSyntheticListeners;
     setActivatorNodeRef: (element: HTMLElement | null) => void;
 };
@@ -37,6 +38,7 @@ export function FinalDocumentDragHandle({
         <button
             type="button"
             ref={dragHandle.setActivatorNodeRef}
+            {...dragHandle.attributes}
             {...dragHandle.listeners}
             onClick={(e) => e.stopPropagation()}
             className={className}
@@ -107,7 +109,6 @@ export function FinalDocumentRowShell({
             ref={setNodeRef}
             style={style}
             data-final-page-id={item.page.id}
-            {...attributes}
             className={['flex min-w-0 items-stretch gap-4', isDragging ? 'opacity-50' : ''].join(
                 ' ',
             )}
@@ -130,7 +131,9 @@ export function FinalDocumentRowShell({
                     <FocusFlashOverlay flashKey={flashKey} className={flashOverlayClassName} />
                 )}
 
-                <FinalDocumentDragHandleContext.Provider value={{ listeners, setActivatorNodeRef }}>
+                <FinalDocumentDragHandleContext.Provider
+                    value={{ attributes, listeners, setActivatorNodeRef }}
+                >
                     {!hideDefaultDragHandle ? (
                         <FinalDocumentDragHandle className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md cursor-grab text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text active:cursor-grabbing" />
                     ) : null}

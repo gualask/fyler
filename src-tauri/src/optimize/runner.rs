@@ -130,4 +130,3 @@ pub(super) fn optimize_images(
 
     Ok(summary)
 }
-

@@ -1,7 +1,6 @@
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 import { getPreviewUrl } from '@/infra/platform';
 import type { SourceFile } from '@/shared/domain';
-import { pdfjsLib } from '../render';
 
 /**
  * Internal caches for pdf.js loading tasks and resolved `PDFDocumentProxy` promises.
@@ -25,14 +24,28 @@ export function getOrCreatePdfDocument(
     const existing = promisesByFileId.get(file.id);
     if (existing) return existing;
 
-    const loadingTask = pdfjsLib.getDocument({ url: getPreviewUrl(file.originalPath) });
-    tasksByFileId.set(file.id, loadingTask);
-    const promise = loadingTask.promise.catch((error) => {
-        promisesByFileId.delete(file.id);
-        tasksByFileId.delete(file.id);
-        void loadingTask.destroy();
-        throw error;
-    });
+    const promiseRef: { current?: Promise<PDFDocumentProxy> } = {};
+    const promise = (async () => {
+        let loadingTask: PDFDocumentLoadingTask | undefined;
+        try {
+            const { pdfjsLib } = await import('../render');
+            if (promisesByFileId.get(file.id) !== promiseRef.current) {
+                throw new Error('PDF load cancelled');
+            }
+
+            loadingTask = pdfjsLib.getDocument({ url: getPreviewUrl(file.originalPath) });
+            tasksByFileId.set(file.id, loadingTask);
+            return await loadingTask.promise;
+        } catch (error) {
+            promisesByFileId.delete(file.id);
+            if (tasksByFileId.get(file.id) === loadingTask) {
+                tasksByFileId.delete(file.id);
+            }
+            void loadingTask?.destroy();
+            throw error;
+        }
+    })();
+    promiseRef.current = promise;
     promisesByFileId.set(file.id, promise);
     return promise;
 }

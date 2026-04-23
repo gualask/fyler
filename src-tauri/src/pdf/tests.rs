@@ -131,7 +131,10 @@ fn composer_export_preserves_valid_page_tree_for_sample_fixture() -> anyhow::Res
     let input_size = fs::metadata(&fixture)?.len();
     let source_doc = PdfDoc::load(&fixture).context("load fixture")?;
     let total_pages = source_doc.get_pages().len();
-    anyhow::ensure!(total_pages >= 2, "sample fixture must have at least 2 pages");
+    anyhow::ensure!(
+        total_pages >= 2,
+        "sample fixture must have at least 2 pages"
+    );
     let last_page = total_pages as u32;
 
     let mut composer = PdfComposer::new();

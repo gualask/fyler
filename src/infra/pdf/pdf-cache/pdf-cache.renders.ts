@@ -6,7 +6,6 @@ import {
     getPdfRenderCacheKey,
     type PdfRenderRequest,
 } from '../pdf-cache.hook';
-import { renderPdfPage } from '../render';
 import { buildTaskKey } from './pdf-cache.listeners';
 
 function getOrCreateFileCache(cacheByFileId: Map<string, Map<string, string>>, fileId: string) {
@@ -71,7 +70,10 @@ export function requestRenders({
 
         const task = (async () => {
             try {
-                const pdfDoc = await getPdfDocument(file);
+                const [{ renderPdfPage }, pdfDoc] = await Promise.all([
+                    import('../render'),
+                    getPdfDocument(file),
+                ]);
                 const { blob, aspectRatio } = await renderPdfPage(
                     pdfDoc,
                     request.pageNum,

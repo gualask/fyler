@@ -8,6 +8,7 @@ import {
     useDiagnostics,
 } from '@/shared/diagnostics';
 import { useTranslation } from '@/shared/i18n';
+import { buildGitHubIssueOpenTarget } from './support-github-issue-url';
 
 const FALLBACK_APP_METADATA: AppMetadata = {
     appName: 'Fyler',
@@ -16,13 +17,6 @@ const FALLBACK_APP_METADATA: AppMetadata = {
     platform: 'unknown',
     arch: 'unknown',
 };
-const GITHUB_NEW_ISSUE_URL = 'https://github.com/gualask/fyler/issues/new';
-const MAX_GITHUB_ISSUE_URL_LENGTH = 8000;
-
-function buildGitHubNewIssueUrl({ title, body }: { title: string; body: string }) {
-    const url = `${GITHUB_NEW_ISSUE_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
-    return url.length <= MAX_GITHUB_ISSUE_URL_LENGTH ? url : null;
-}
 
 interface Params {
     isDark: boolean;
@@ -160,17 +154,18 @@ export function useSupportDiagnostics({
 
     const openGitHubIssue = useCallback(
         async ({ title, body }: { title: string; body: string }) => {
-            const url = buildGitHubNewIssueUrl({ title, body });
+            const target = buildGitHubIssueOpenTarget({ title, body });
             try {
-                await openExternalUrl(url ?? GITHUB_NEW_ISSUE_URL);
+                await openExternalUrl(target.url);
                 record({
                     category: 'support',
                     severity: 'info',
-                    message: url
-                        ? 'Opened GitHub new issue (prefilled)'
-                        : 'Opened GitHub new issue (blank fallback)',
+                    message:
+                        target.kind === 'prefilled'
+                            ? 'Opened GitHub new issue (prefilled)'
+                            : 'Opened GitHub new issue (blank fallback)',
                 });
-                return url ? 'prefilled' : 'blank_fallback';
+                return target.kind;
             } catch (error) {
                 record({
                     category: 'support',

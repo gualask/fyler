@@ -8,7 +8,9 @@ use tauri_plugin_opener::OpenerExt;
 use crate::error::AppError;
 use crate::export::export_pdf;
 use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile};
-use crate::pdf::{count_pages, image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
+use crate::pdf::{
+    count_pages, image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS,
+};
 use crate::source_registry::{files_from_paths, SourceRegistry};
 
 #[derive(Clone, serde::Serialize)]
@@ -74,8 +76,7 @@ fn spawn_page_count_tasks(app: &tauri::AppHandle, files: &[crate::models::Source
         let path = file.original_path.clone();
         let id = file.id.clone();
         tauri::async_runtime::spawn(async move {
-            let result =
-                tauri::async_runtime::spawn_blocking(move || count_pages(&path)).await;
+            let result = tauri::async_runtime::spawn_blocking(move || count_pages(&path)).await;
             match result {
                 Ok(Ok(count)) => {
                     let _ = app.emit(
@@ -84,10 +85,7 @@ fn spawn_page_count_tasks(app: &tauri::AppHandle, files: &[crate::models::Source
                     );
                 }
                 _ => {
-                    let _ = app.emit(
-                        "source-page-count-error",
-                        serde_json::json!({ "id": id }),
-                    );
+                    let _ = app.emit("source-page-count-error", serde_json::json!({ "id": id }));
                 }
             }
         });

@@ -9,36 +9,7 @@ import { useModalFocus } from '@/shared/ui';
 import { SupportIssueFormCard } from './sections/report/IssueFormCard';
 import { SupportReportSections } from './sections/report/ReportSections';
 import { openSupportIssue } from './support-issue-flow';
-
-function buildGitHubIssueBody({
-    problem,
-    snapshot,
-}: {
-    problem: string;
-    snapshot: DiagnosticsSnapshot;
-}) {
-    return [
-        '## Problem',
-        problem,
-        '',
-        '## Steps to reproduce',
-        '1. ',
-        '',
-        '## Expected',
-        '',
-        '## Actual',
-        '',
-        '## Environment',
-        `- Fyler version: ${snapshot.app.version}`,
-        `- Platform: ${snapshot.app.platform} (${snapshot.app.arch})`,
-        `- Locale: ${snapshot.preferences.locale}`,
-        `- Theme: ${snapshot.preferences.theme}`,
-        '',
-        '## Diagnostics',
-        '_Paste the diagnostics from clipboard here (Copy diagnostics)._',
-        '',
-    ].join('\n');
-}
+import { buildGitHubIssueBody } from './support-issue-report';
 
 interface Props {
     open: boolean;
