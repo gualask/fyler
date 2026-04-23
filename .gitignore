@@ -31,3 +31,4 @@ dist-ssr
 .playwright-mcp/
 .codex
 .impeccable.md
+.agents
