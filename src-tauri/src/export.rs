@@ -2,7 +2,9 @@ use lopdf::Document as PdfDoc;
 use tauri::{AppHandle, Emitter};
 
 use crate::error::UserFacingError;
-use crate::models::{ExportItem, FileEdits, MergeRequest, MergeResult, MergeWarning};
+use crate::models::{
+    ExportItem, FileEdits, MergeRequest, MergeResult, MergeWarning, OptimizeOptions,
+};
 use crate::optimize;
 use crate::pdf::validate_quarter_turns;
 use crate::pdf_compose::PdfComposer;
@@ -95,6 +97,62 @@ fn load_cached_pdf_source<'a>(
         );
     }
     Ok(cache.get_mut(file_id).expect("just inserted"))
+}
+
+struct ExportPlan {
+    image_fit: ImageFit,
+    warnings: Vec<MergeWarning>,
+    should_optimize_images: bool,
+}
+
+fn resolve_image_fit(options: Option<&OptimizeOptions>) -> (ImageFit, Option<MergeWarning>) {
+    let Some(value) = options.and_then(|value| value.image_fit.as_deref()) else {
+        return (ImageFit::Fit, None);
+    };
+
+    match ImageFit::parse(value) {
+        Some(image_fit) => (image_fit, None),
+        None => (
+            ImageFit::Fit,
+            Some(MergeWarning {
+                code: "unknown_image_fit_defaulted".to_string(),
+                meta: Some(serde_json::json!({ "value": value, "defaultedTo": "fit" })),
+            }),
+        ),
+    }
+}
+
+fn has_pdf_sources(pages: &[ExportItem]) -> bool {
+    pages
+        .iter()
+        .any(|page| matches!(page, ExportItem::Pdf { .. }))
+}
+
+fn should_optimize_images(pages: &[ExportItem], options: &OptimizeOptions) -> bool {
+    has_pdf_sources(pages) && optimize::has_optimization_work(options)
+}
+
+fn prepare_export_plan(req: &MergeRequest) -> anyhow::Result<ExportPlan> {
+    if req.pages.is_empty() {
+        return Err(anyhow::Error::new(UserFacingError::new(
+            "no_documents_to_merge",
+        )));
+    }
+
+    let (image_fit, warning) = resolve_image_fit(req.optimize.as_ref());
+    let mut warnings = Vec::new();
+    if let Some(warning) = warning {
+        warnings.push(warning);
+    }
+
+    Ok(ExportPlan {
+        image_fit,
+        warnings,
+        should_optimize_images: req
+            .optimize
+            .as_ref()
+            .is_some_and(|options| should_optimize_images(&req.pages, options)),
+    })
 }
 
 fn compose_document(
@@ -202,6 +260,34 @@ fn compose_document(
     composer.finish()
 }
 
+fn maybe_optimize_document(
+    app: &AppHandle,
+    merged: &mut PdfDoc,
+    req: &MergeRequest,
+    plan: &ExportPlan,
+) -> anyhow::Result<usize> {
+    if let Some(options) = &req.optimize {
+        if plan.should_optimize_images {
+            emit_progress(app, "optimizing-images", 80);
+            return Ok(optimize::optimize_images(merged, options)?.failed_non_fatal);
+        }
+    }
+
+    Ok(0)
+}
+
+fn save_document(app: &AppHandle, merged: &mut PdfDoc, output_path: &str) -> anyhow::Result<()> {
+    emit_progress(app, "saving", 90);
+    if let Some(parent) = std::path::Path::new(output_path).parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    optimize::cleanup_document(merged);
+    let mut file = std::fs::File::create(output_path)?;
+    optimize::save_document(merged, &mut file)?;
+    emit_progress(app, "done", 100);
+    Ok(())
+}
+
 /// Performs the full export pipeline: compose pages, optionally optimize images, then save.
 ///
 /// Progress is emitted via `"merge-progress"` events on the provided `app` handle.
@@ -231,68 +317,26 @@ pub fn export_pdf(
         }
     }
 
-    let mut warnings: Vec<MergeWarning> = Vec::new();
-    let image_fit_raw = req
-        .optimize
-        .as_ref()
-        .and_then(|options| options.image_fit.as_deref())
-        .map(str::to_owned);
-    let image_fit = image_fit_raw
-        .as_deref()
-        .and_then(ImageFit::parse)
-        .unwrap_or(ImageFit::Fit);
-
-    if let Some(value) = image_fit_raw.as_deref() {
-        if ImageFit::parse(value).is_none() {
-            warnings.push(MergeWarning {
-                code: "unknown_image_fit_defaulted".to_string(),
-                meta: Some(serde_json::json!({ "value": value, "defaultedTo": "fit" })),
-            });
-        }
-    }
-
-    if req.pages.is_empty() {
-        return Err(anyhow::Error::new(UserFacingError::new(
-            "no_documents_to_merge",
-        )));
-    }
-
-    let mut merged = compose_document(app, registry, &req, image_fit.as_str())?;
-
-    let mut optimization_failed_count = 0;
-    if let Some(options) = &req.optimize {
-        let has_pdf_sources = req
-            .pages
-            .iter()
-            .any(|page| matches!(page, ExportItem::Pdf { .. }));
-
-        // The optimizer is meant for images already embedded inside PDFs.
-        // Imported image pages are handled by the imported-image pipeline and should not be
-        // re-processed here, especially for image-only exports.
-        if has_pdf_sources && optimize::has_optimization_work(options) {
-            emit_progress(app, "optimizing-images", 80);
-            optimization_failed_count =
-                optimize::optimize_images(&mut merged, options)?.failed_non_fatal;
-        }
-    }
-
-    emit_progress(app, "saving", 90);
-    if let Some(parent) = std::path::Path::new(&req.output_path).parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    optimize::cleanup_document(&mut merged);
-    let mut file = std::fs::File::create(&req.output_path)?;
-    optimize::save_document(&mut merged, &mut file)?;
-    emit_progress(app, "done", 100);
+    let plan = prepare_export_plan(&req)?;
+    let mut merged = compose_document(app, registry, &req, plan.image_fit.as_str())?;
+    let optimization_failed_count = maybe_optimize_document(app, &mut merged, &req, &plan)?;
+    save_document(app, &mut merged, &req.output_path)?;
     Ok(MergeResult {
         optimization_failed_count,
-        warnings,
+        warnings: plan.warnings,
     })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::merge_pages_progress;
+    use std::collections::HashMap;
+
+    use super::{
+        merge_pages_progress, prepare_export_plan, resolve_image_fit, should_optimize_images,
+    };
+    use crate::error::UserFacingError;
+    use crate::models::{ExportItem, MergeRequest, OptimizeOptions};
+    use crate::vo::ImageFit;
 
     #[test]
     fn merge_pages_progress_spans_the_full_merge_range() {
@@ -307,5 +351,83 @@ mod tests {
         assert_eq!(merge_pages_progress(0, 0), 5);
         assert_eq!(merge_pages_progress(1, 0), 60);
         assert_eq!(merge_pages_progress(8, 3), 60);
+    }
+
+    #[test]
+    fn resolve_image_fit_warns_and_defaults_for_unknown_values() {
+        let (image_fit, warning) = resolve_image_fit(Some(&OptimizeOptions {
+            jpeg_quality: None,
+            image_fit: Some("sideways".to_string()),
+            target_dpi: None,
+        }));
+
+        assert_eq!(image_fit, ImageFit::Fit);
+        let warning = warning.expect("unknown value should add a warning");
+        assert_eq!(warning.code, "unknown_image_fit_defaulted");
+        assert_eq!(
+            warning
+                .meta
+                .as_ref()
+                .and_then(|meta| meta.get("value"))
+                .and_then(|value| value.as_str()),
+            Some("sideways"),
+        );
+    }
+
+    #[test]
+    fn should_optimize_images_requires_pdf_sources_and_real_work() {
+        let work_options = OptimizeOptions {
+            jpeg_quality: Some(80),
+            image_fit: Some("cover".to_string()),
+            target_dpi: None,
+        };
+        let image_fit_only = OptimizeOptions {
+            jpeg_quality: None,
+            image_fit: Some("contain".to_string()),
+            target_dpi: None,
+        };
+
+        assert!(!should_optimize_images(
+            &[ExportItem::Image {
+                file_id: "image-1".to_string(),
+            }],
+            &work_options,
+        ));
+        assert!(!should_optimize_images(
+            &[ExportItem::Pdf {
+                file_id: "pdf-1".to_string(),
+                page_num: 1,
+            }],
+            &image_fit_only,
+        ));
+        assert!(should_optimize_images(
+            &[ExportItem::Pdf {
+                file_id: "pdf-1".to_string(),
+                page_num: 1,
+            }],
+            &work_options,
+        ));
+    }
+
+    #[test]
+    fn prepare_export_plan_rejects_empty_requests() {
+        let err = match prepare_export_plan(&merge_request(vec![], None)) {
+            Ok(_) => panic!("empty export should fail before composition"),
+            Err(err) => err,
+        };
+
+        let user = err
+            .downcast_ref::<UserFacingError>()
+            .expect("expected a user-facing error");
+        assert_eq!(user.code, "no_documents_to_merge");
+    }
+
+    fn merge_request(pages: Vec<ExportItem>, optimize: Option<OptimizeOptions>) -> MergeRequest {
+        MergeRequest {
+            pages,
+            edits: HashMap::new(),
+            output_path: "/tmp/fyler-test-output.pdf".to_string(),
+            optimize,
+        }
     }
 }

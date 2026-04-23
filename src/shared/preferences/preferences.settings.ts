@@ -14,8 +14,7 @@ export function isAccentColor(value: unknown): value is AccentColor {
 
 export function isFinalDocumentLayout(value: unknown): value is FinalDocumentLayout {
     return (
-        typeof value === 'string' &&
-        FINAL_DOCUMENT_LAYOUTS.includes(value as FinalDocumentLayout)
+        typeof value === 'string' && FINAL_DOCUMENT_LAYOUTS.includes(value as FinalDocumentLayout)
     );
 }
 

@@ -9,8 +9,8 @@ export { PreferencesProvider } from './preferences.provider';
 export {
     ACCENT_COLORS,
     type AccentColor,
-    DEFAULT_FINAL_DOCUMENT_LAYOUT,
     DEFAULT_ACCENT_COLOR,
+    DEFAULT_FINAL_DOCUMENT_LAYOUT,
     FINAL_DOCUMENT_LAYOUTS,
     type FinalDocumentLayout,
     isAccentColor,

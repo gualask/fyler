@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 import { useAppNotifications } from '@/app/notifications';
 import { useExportAction, useOptimize } from '@/features/export';
-import { useSupportDiagnostics } from '@/features/support';
 import { useTutorial, useTutorialFilesAddedHandler } from '@/features/tutorial';
 import {
     QuickAddView,
@@ -14,11 +13,12 @@ import {
 import { useTheme } from '@/shared/preferences';
 
 import { AppOverlays } from './overlays/AppOverlays';
+import { useAppOverlayState } from './overlays/use-app-overlay-state.hook';
 import { MainAppView } from './shell/MainAppView';
 import { UpdateDialog } from './updates';
+import { useAppContentViewState } from './use-app-content-view-state.hook';
 
 export function AppContent() {
-    const [showFinalPreview, setShowFinalPreview] = useState(false);
     const quickAdd = useQuickAdd();
     const notifications = useAppNotifications();
     const tutorial = useTutorial();
@@ -30,27 +30,16 @@ export function AppContent() {
     const { isDark, toggleTheme, accent, setAccent } = useTheme();
     const optimize = useOptimize();
 
-    const focusedSourceMatchesSelected = Boolean(
-        workspace.focusedSource && workspace.focusedSource.fileId === workspace.selectedFile?.id,
-    );
-    const focusedSourceTarget = focusedSourceMatchesSelected
-        ? (workspace.focusedSource?.target ?? null)
-        : null;
-    const focusedSourceFlashKey = focusedSourceMatchesSelected
-        ? workspace.focusedSource?.flashTarget === 'picker'
-            ? workspace.focusedSource.flashKey
-            : undefined
-        : undefined;
-
-    const support = useSupportDiagnostics({
+    const { focusedSourceTarget, focusedSourceFlashKey, rootClassName } = useAppContentViewState({
+        quickAdd,
+        tutorial,
+        workspace,
+    });
+    const { support, showFinalPreview, setShowFinalPreview } = useAppOverlayState({
         isDark,
-        isQuickAdd: quickAdd.isQuickAdd,
-        fileCount: workspace.files.length,
-        finalPageCount: workspace.finalPages.length,
-        optimizationPreset: optimize.optimizationPreset,
-        imageFit: optimize.imageFit,
-        targetDpi: optimize.targetDpi,
-        jpegQuality: optimize.jpegQuality,
+        quickAdd,
+        workspace,
+        optimize,
     });
 
     const exportMerged = useExportAction({ workspace, notifications, optimize });
@@ -66,18 +55,6 @@ export function AppContent() {
         },
         [quickAdd.onFileRemoved, workspace.removeFile],
     );
-    const isTutorialReady =
-        !quickAdd.isQuickAdd &&
-        !quickAdd.isTransitioning &&
-        workspace.files.length > 0 &&
-        workspace.selectedFile !== null &&
-        workspace.finalPages.length > 0;
-
-    useEffect(() => {
-        tutorial.maybeAutoStart(isTutorialReady);
-    }, [isTutorialReady, tutorial.maybeAutoStart]);
-
-    const rootClassName = `flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${quickAdd.isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`;
 
     return (
         <div className={rootClassName}>

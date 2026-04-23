@@ -6,27 +6,18 @@ import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { initialSourceSessionState, sourceSessionReducer } from '../state/source-session.reducer';
 
-interface Options {
-    onFilesAdded?: (files: SourceFile[]) => void;
-    onFileRemoved?: (file: SourceFile | null) => void;
-}
-
-export function useSourceSession({ onFilesAdded, onFileRemoved }: Options) {
+export function useSourceSession() {
     const { t } = useTranslation();
     const [state, dispatch] = useReducer(sourceSessionReducer, initialSourceSessionState);
     const { files, editsByFile } = state;
     const { requestRenders, releaseFile } = usePdfCache();
 
-    const addSourceFiles = useCallback(
-        (newFiles: SourceFile[]) => {
-            if (!newFiles.length) return [];
+    const addSourceFiles = useCallback((newFiles: SourceFile[]) => {
+        if (!newFiles.length) return [];
 
-            dispatch({ type: 'add-files', files: newFiles });
-            onFilesAdded?.(newFiles);
-            return newFiles;
-        },
-        [onFilesAdded],
-    );
+        dispatch({ type: 'add-files', files: newFiles });
+        return newFiles;
+    }, []);
 
     const openAndAddSourceFiles = useCallback(async () => {
         const result = await openFilesDialog(t('dialogs.filters.documentsAndImages'));
@@ -42,10 +33,9 @@ export function useSourceSession({ onFilesAdded, onFileRemoved }: Options) {
             }
             void releaseSources([id]);
             dispatch({ type: 'remove-file', fileId: id });
-            onFileRemoved?.(removed);
             return removed;
         },
-        [files, onFileRemoved, releaseFile],
+        [files, releaseFile],
     );
 
     const clearSourceFiles = useCallback(() => {
