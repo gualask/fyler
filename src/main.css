@@ -20,12 +20,12 @@
     --ui-text: #0f172a;
     --ui-text-secondary: #334155;
     --ui-text-dim: #475569;
-    --ui-text-muted: #64748b;
+    --ui-text-muted: #5b677a;
 
     /* accent — default indigo, overridden by accent-* classes below */
     --ui-accent: #6366f1;
     --ui-accent-hover: #4f46e5;
-    --ui-accent-text: #6366f1;
+    --ui-accent-text: #4f46e5;
     --ui-accent-muted: #a5b4fc;
     --ui-accent-soft: #eef2ff;
     --ui-accent-soft-hover: #e0e7ff;
@@ -58,8 +58,8 @@
     --ui-warning-border: #fde68a;
 
     /* document kinds */
-    --ui-kind-pdf: #fb7185;
-    --ui-kind-image: #38bdf8;
+    --ui-kind-pdf: #be123c;
+    --ui-kind-image: #0369a1;
 
     /* overlays */
     --ui-overlay-border: rgba(255, 255, 255, 0.08);
@@ -103,7 +103,7 @@
     --ui-text: #f4f6fb;
     --ui-text-secondary: #dde3ee;
     --ui-text-dim: #b1bacb;
-    --ui-text-muted: #9ba5b9;
+    --ui-text-muted: #b7c0d0;
 
     /* accent in dark — indigo default */
     --ui-accent-text: #a5b4fc;
@@ -183,7 +183,7 @@
 .accent-teal {
     --ui-accent: #14b8a6;
     --ui-accent-hover: #0d9488;
-    --ui-accent-text: #0d9488;
+    --ui-accent-text: #0f766e;
     --ui-accent-muted: #5eead4;
     --ui-accent-soft: #f0fdfa;
     --ui-accent-soft-hover: #ccfbf1;
@@ -204,7 +204,7 @@
 .accent-amber {
     --ui-accent: #f59e0b;
     --ui-accent-hover: #d97706;
-    --ui-accent-text: #d97706;
+    --ui-accent-text: #92400e;
     --ui-accent-muted: #fcd34d;
     --ui-accent-soft: #fffbeb;
     --ui-accent-soft-hover: #fef3c7;
@@ -225,7 +225,7 @@
 .accent-blue {
     --ui-accent: #3b82f6;
     --ui-accent-hover: #2563eb;
-    --ui-accent-text: #2563eb;
+    --ui-accent-text: #1d4ed8;
     --ui-accent-muted: #93c5fd;
     --ui-accent-soft: #eff6ff;
     --ui-accent-soft-hover: #dbeafe;
@@ -328,6 +328,10 @@ body {
     }
     .toggle-group__button-active {
         color: var(--ui-accent-on-solid);
+        background-color: var(--ui-accent-solid);
+    }
+    .toggle-group__button-active.toggle-group__button--swatch {
+        background-color: transparent;
     }
     .toggle-group__indicator--default {
         background-color: var(--ui-accent-solid);

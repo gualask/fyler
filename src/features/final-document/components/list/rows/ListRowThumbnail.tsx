@@ -1,7 +1,9 @@
 import { IconFileTypePdf, IconPhoto } from '@tabler/icons-react';
 import { useMemo } from 'react';
+import { useExportMatchedImage } from '@/features/export-preview';
 import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
+import type { ImageFit } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
@@ -11,13 +13,21 @@ import { RotatedThumbnailImage } from './RotatedThumbnailImage';
 
 interface Props {
     item: ListItem;
+    imageFit: ImageFit;
     scrollRoot: HTMLDivElement | null;
     onPreview: () => void;
     size?: 'sm' | 'lg';
     className?: string;
 }
 
-export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', className }: Props) {
+export function ListRowThumbnail({
+    item,
+    imageFit,
+    scrollRoot,
+    onPreview,
+    size = 'sm',
+    className,
+}: Props) {
     const { t } = useTranslation();
     const detailLabel =
         item.page.kind === 'pdf'
@@ -35,9 +45,29 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', cla
         thumbRequest,
         scrollRoot,
     );
-    const imageUrl = item.file?.kind === 'image' ? getPreviewUrl(item.file.originalPath) : null;
+    const imageOriginalPath = item.file?.kind === 'image' ? item.file.originalPath : undefined;
+    const imageUrl = imageOriginalPath ? getPreviewUrl(imageOriginalPath) : null;
+    const imageQuarterTurns =
+        item.file?.kind === 'image' ? FileEditsVO.getImageQuarterTurn(item.edits) : 0;
     const imageRotation =
         item.file?.kind === 'image' ? FileEditsVO.getImageRotationDegrees(item.edits) : 0;
+    const { exportMatchedImageSrc } = useExportMatchedImage(
+        imageUrl ?? undefined,
+        imageOriginalPath,
+        imageFit,
+        imageQuarterTurns,
+        item.file?.kind === 'image',
+        size === 'lg' ? 360 : 120,
+    );
+    const imageThumbUrl = exportMatchedImageSrc ?? imageUrl;
+    const imageThumbClassName = [
+        'h-full w-full bg-white',
+        exportMatchedImageSrc
+            ? 'object-contain'
+            : imageFit === 'cover'
+              ? 'object-cover'
+              : 'object-contain',
+    ].join(' ');
 
     const containerClassName =
         size === 'lg'
@@ -62,12 +92,12 @@ export function ListRowThumbnail({ item, scrollRoot, onPreview, size = 'sm', cla
         >
             {thumbUrl ? (
                 <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
-            ) : imageUrl ? (
+            ) : imageThumbUrl ? (
                 <RotatedThumbnailImage
-                    src={imageUrl}
+                    src={imageThumbUrl}
                     alt=""
-                    className="h-full w-full object-cover"
-                    imageRotation={imageRotation}
+                    className={imageThumbClassName}
+                    imageRotation={exportMatchedImageSrc ? 0 : imageRotation}
                 />
             ) : (
                 <div className="flex h-full items-center justify-center">

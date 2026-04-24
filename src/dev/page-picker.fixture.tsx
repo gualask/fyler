@@ -101,6 +101,7 @@ export function PagePickerFixturePage() {
                     <div className="h-[78vh] overflow-hidden rounded-3xl border border-ui-border bg-ui-surface shadow-sm">
                         <PagePicker
                             file={selectedFile}
+                            imageFit="contain"
                             finalPages={finalPages}
                             onTogglePage={(fileId, pageNum) =>
                                 setFinalPages((current) => togglePdfPage(current, fileId, pageNum))

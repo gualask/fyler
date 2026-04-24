@@ -8,7 +8,7 @@ use crate::models::{
 use crate::optimize;
 use crate::pdf::validate_quarter_turns;
 use crate::pdf_compose::PdfComposer;
-use crate::source_registry::SourceRegistry;
+use crate::source_registry::{RegisteredSource, SourceRegistry};
 use crate::vo::{DocKind, ImageFit};
 
 #[derive(serde::Serialize, Clone)]
@@ -51,16 +51,23 @@ struct CachedPdfSource {
     memo: std::collections::HashMap<lopdf::ObjectId, lopdf::ObjectId>,
 }
 
-fn build_last_use_index(pages: &[ExportItem]) -> std::collections::HashMap<&str, usize> {
+type LastUseIndex<'a> = std::collections::HashMap<&'a str, usize>;
+type PdfSourceCache = std::collections::HashMap<String, CachedPdfSource>;
+type SourceCache<'a> = std::collections::HashMap<&'a str, RegisteredSource>;
+
+fn build_last_use_index(pages: &[ExportItem]) -> LastUseIndex<'_> {
     let mut map = std::collections::HashMap::new();
     for (index, page) in pages.iter().enumerate() {
-        let file_id: &str = match page {
-            ExportItem::Pdf { file_id, .. } => file_id.as_str(),
-            ExportItem::Image { file_id } => file_id.as_str(),
-        };
-        map.insert(file_id, index);
+        map.insert(export_item_file_id(page), index);
     }
     map
+}
+
+fn export_item_file_id(page: &ExportItem) -> &str {
+    match page {
+        ExportItem::Pdf { file_id, .. } => file_id.as_str(),
+        ExportItem::Image { file_id } => file_id.as_str(),
+    }
 }
 
 fn resolve_source(
@@ -75,8 +82,20 @@ fn resolve_source(
     })
 }
 
+fn resolve_cached_source<'cache, 'request>(
+    cache: &'cache mut SourceCache<'request>,
+    registry: &SourceRegistry,
+    file_id: &'request str,
+) -> anyhow::Result<&'cache RegisteredSource> {
+    if !cache.contains_key(file_id) {
+        let loaded = resolve_source(registry, file_id)?;
+        cache.insert(file_id, loaded);
+    }
+    Ok(cache.get(file_id).expect("just inserted"))
+}
+
 fn load_cached_pdf_source<'a>(
-    cache: &'a mut std::collections::HashMap<String, CachedPdfSource>,
+    cache: &'a mut PdfSourceCache,
     file_id: &str,
     path: &str,
     name: &str,
@@ -97,6 +116,48 @@ fn load_cached_pdf_source<'a>(
         );
     }
     Ok(cache.get_mut(file_id).expect("just inserted"))
+}
+
+fn invalid_export_item_kind_error(
+    file_id: &str,
+    expected: DocKind,
+    actual: DocKind,
+) -> anyhow::Error {
+    anyhow::Error::new(UserFacingError::with_meta(
+        "invalid_export_item_kind",
+        serde_json::json!({
+            "fileId": file_id,
+            "expected": expected.as_str(),
+            "actual": actual.as_str()
+        }),
+    ))
+}
+
+fn validate_source_kind(
+    source: &RegisteredSource,
+    file_id: &str,
+    expected: DocKind,
+) -> anyhow::Result<()> {
+    if source.kind == expected {
+        return Ok(());
+    }
+
+    Err(invalid_export_item_kind_error(
+        file_id,
+        expected,
+        source.kind,
+    ))
+}
+
+fn validate_pdf_page_num(file_id: &str, page_num: u32) -> anyhow::Result<()> {
+    if page_num >= 1 {
+        return Ok(());
+    }
+
+    Err(anyhow::Error::new(UserFacingError::with_meta(
+        "invalid_page_num",
+        serde_json::json!({ "fileId": file_id, "pageNum": page_num }),
+    )))
 }
 
 struct ExportPlan {
@@ -132,6 +193,67 @@ fn should_optimize_images(pages: &[ExportItem], options: &OptimizeOptions) -> bo
     has_pdf_sources(pages) && optimize::has_optimization_work(options)
 }
 
+fn is_last_reference_to_source(
+    last_use_index_by_file_id: &LastUseIndex<'_>,
+    file_id: &str,
+    index: usize,
+) -> bool {
+    last_use_index_by_file_id.get(file_id).copied() == Some(index)
+}
+
+fn append_image_export_item(
+    composer: &mut PdfComposer,
+    source: &RegisteredSource,
+    file_id: &str,
+    image_fit: &str,
+    edits: Option<&FileEdits>,
+    optimize: Option<&OptimizeOptions>,
+) -> anyhow::Result<()> {
+    validate_source_kind(source, file_id, DocKind::Image)?;
+    composer.push_image_page(
+        &source.original_path,
+        image_fit,
+        quarter_turns_for_image(edits)?,
+        optimize,
+    )?;
+    Ok(())
+}
+
+fn append_pdf_export_item(
+    composer: &mut PdfComposer,
+    pdf_cache: &mut PdfSourceCache,
+    source: &RegisteredSource,
+    file_id: &str,
+    page_num: u32,
+    edits: Option<&FileEdits>,
+) -> anyhow::Result<()> {
+    validate_source_kind(source, file_id, DocKind::Pdf)?;
+    validate_pdf_page_num(file_id, page_num)?;
+
+    let entry = load_cached_pdf_source(pdf_cache, file_id, &source.original_path, &source.name)?;
+    composer.push_pdf_page(
+        &entry.doc,
+        &mut entry.memo,
+        &source.name,
+        page_num,
+        quarter_turns_for_pdf_page(edits, page_num)?,
+    )?;
+    Ok(())
+}
+
+fn emit_merge_progress_if_advanced(
+    app: &AppHandle,
+    completed_pages: usize,
+    total_pages: usize,
+    last_merge_progress: &mut u8,
+) {
+    let progress = merge_pages_progress(completed_pages, total_pages).min(60);
+    if progress > *last_merge_progress {
+        emit_progress(app, "merging-pages", progress);
+        *last_merge_progress = progress;
+    }
+}
+
 fn prepare_export_plan(req: &MergeRequest) -> anyhow::Result<ExportPlan> {
     if req.pages.is_empty() {
         return Err(anyhow::Error::new(UserFacingError::new(
@@ -162,99 +284,50 @@ fn compose_document(
     image_fit: &str,
 ) -> anyhow::Result<PdfDoc> {
     emit_progress(app, "preparing-documents", 0);
-    let mut pdf_cache: std::collections::HashMap<String, CachedPdfSource> =
-        std::collections::HashMap::new();
+    let mut pdf_cache = PdfSourceCache::new();
     let last_use_index_by_file_id = build_last_use_index(&req.pages);
-    let mut source_cache: std::collections::HashMap<
-        &str,
-        crate::source_registry::RegisteredSource,
-    > = std::collections::HashMap::new();
+    let mut source_cache = SourceCache::new();
     let mut composer = PdfComposer::new();
     let mut last_merge_progress = 5;
 
     emit_progress(app, "merging-pages", 5);
     for (index, page) in req.pages.iter().enumerate() {
-        let (file_id, pdf_page_num) = match page {
-            ExportItem::Pdf { file_id, page_num } => (file_id.as_str(), Some(*page_num)),
-            ExportItem::Image { file_id } => (file_id.as_str(), None),
-        };
-
         // Evict per-source cached PDFs once we've appended their last referenced page.
         // This keeps memory usage bounded even if users export very large compositions.
-        let should_evict_pdf_cache = last_use_index_by_file_id.get(file_id).copied() == Some(index);
-        let source = if !source_cache.contains_key(file_id) {
-            let loaded = resolve_source(registry, file_id)?;
-            source_cache.insert(file_id, loaded);
-            source_cache.get(file_id).expect("just inserted")
-        } else {
-            source_cache.get(file_id).expect("checked above")
-        };
+        let file_id = export_item_file_id(page);
+        let is_last_source_reference =
+            is_last_reference_to_source(&last_use_index_by_file_id, file_id, index);
+        let source = resolve_cached_source(&mut source_cache, registry, file_id)?;
         let edits = req.edits.get(file_id);
 
         match page {
             ExportItem::Image { .. } => {
-                if source.kind != DocKind::Image {
-                    return Err(anyhow::Error::new(UserFacingError::with_meta(
-                        "invalid_export_item_kind",
-                        serde_json::json!({
-                            "fileId": file_id,
-                            "expected": "image",
-                            "actual": source.kind.as_str()
-                        }),
-                    )));
-                }
-                composer.push_image_page(
-                    &source.original_path,
+                append_image_export_item(
+                    &mut composer,
+                    source,
+                    file_id,
                     image_fit,
-                    quarter_turns_for_image(edits)?,
+                    edits,
                     req.optimize.as_ref(),
                 )?;
             }
-            ExportItem::Pdf { .. } => {
-                if source.kind != DocKind::Pdf {
-                    return Err(anyhow::Error::new(UserFacingError::with_meta(
-                        "invalid_export_item_kind",
-                        serde_json::json!({
-                            "fileId": file_id,
-                            "expected": "pdf",
-                            "actual": source.kind.as_str()
-                        }),
-                    )));
-                }
-                let page_num = pdf_page_num.unwrap_or_default();
-                if page_num < 1 {
-                    return Err(anyhow::Error::new(UserFacingError::with_meta(
-                        "invalid_page_num",
-                        serde_json::json!({ "fileId": file_id, "pageNum": page_num }),
-                    )));
-                }
-                {
-                    let entry = load_cached_pdf_source(
-                        &mut pdf_cache,
-                        file_id,
-                        &source.original_path,
-                        &source.name,
-                    )?;
-                    composer.push_pdf_page(
-                        &entry.doc,
-                        &mut entry.memo,
-                        &source.name,
-                        page_num,
-                        quarter_turns_for_pdf_page(edits, page_num)?,
-                    )?;
-                }
+            ExportItem::Pdf { page_num, .. } => {
+                append_pdf_export_item(
+                    &mut composer,
+                    &mut pdf_cache,
+                    source,
+                    file_id,
+                    *page_num,
+                    edits,
+                )?;
 
-                if should_evict_pdf_cache {
+                if is_last_source_reference {
                     pdf_cache.remove(file_id);
                 }
             }
         };
 
-        let progress = merge_pages_progress(index + 1, req.pages.len()).min(60);
-        if progress > last_merge_progress {
-            emit_progress(app, "merging-pages", progress);
-            last_merge_progress = progress;
-        }
+        emit_merge_progress_if_advanced(app, index + 1, req.pages.len(), &mut last_merge_progress);
     }
 
     composer.finish()

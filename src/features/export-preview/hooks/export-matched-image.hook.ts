@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getImageExportPreviewLayout } from '@/infra/platform';
 import type { ImageFit, QuarterTurn } from '@/shared/domain';
-import { renderExportMatchedImage } from '../utils/render-image';
+import { renderExportMatchedImage } from '@/shared/ui/image-preview';
 
 function maybeRevokeObjectUrl(url: string | null | undefined) {
     if (url?.startsWith('blob:')) {
@@ -15,6 +15,7 @@ export function useExportMatchedImage(
     imageFit: ImageFit,
     imageQuarterTurns: QuarterTurn,
     matchExportedImages: boolean,
+    previewWidth = 900,
 ) {
     const [exportMatchedImage, setExportMatchedImage] = useState<{
         key: string;
@@ -23,7 +24,7 @@ export function useExportMatchedImage(
 
     const exportPreviewKey =
         matchExportedImages && imageSrc && imageOriginalPath
-            ? `${imageOriginalPath}:${imageFit}:${imageQuarterTurns}`
+            ? `${imageOriginalPath}:${imageFit}:${imageQuarterTurns}:${previewWidth}`
             : null;
 
     useEffect(() => {
@@ -33,7 +34,9 @@ export function useExportMatchedImage(
 
         let active = true;
         void getImageExportPreviewLayout(imageOriginalPath, imageFit, imageQuarterTurns)
-            .then((layout) => renderExportMatchedImage(imageSrc, layout, imageQuarterTurns))
+            .then((layout) =>
+                renderExportMatchedImage(imageSrc, layout, imageQuarterTurns, previewWidth),
+            )
             .then((src) => {
                 if (active) {
                     setExportMatchedImage((current) => {
@@ -62,7 +65,7 @@ export function useExportMatchedImage(
                 return current;
             });
         };
-    }, [exportPreviewKey, imageFit, imageOriginalPath, imageQuarterTurns, imageSrc]);
+    }, [exportPreviewKey, imageFit, imageOriginalPath, imageQuarterTurns, imageSrc, previewWidth]);
 
     const exportSettled = exportMatchedImage?.key === exportPreviewKey;
     const exportMatchedImageSrc =

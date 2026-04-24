@@ -1,8 +1,93 @@
 import type { PageSpecError } from '../dto/page-spec.dto';
 import { uniqueSortedNumbers } from '../utils/number-list';
 
+const PAGE_RANGE_TOKEN_PATTERN = /^(\d+)(?:-(\d+))?$/;
+const OPEN_PAGE_RANGE_TOKEN_PATTERN = /^(\d+)-$/;
+
+interface PageRange {
+    start: number;
+    end: number;
+}
+
+type StrictPageRangeResult =
+    | { range: PageRange; error: null }
+    | { range: null; error: PageSpecError };
+
 function clampPage(pageNum: number, total: number): number {
     return Math.min(Math.max(pageNum, 1), Math.max(total, 1));
+}
+
+function parseStrictPageRange(rawToken: string, total: number): StrictPageRangeResult {
+    const token = rawToken.trim();
+    if (!token) {
+        return { range: null, error: { kind: 'empty-token' } };
+    }
+
+    const match = token.match(PAGE_RANGE_TOKEN_PATTERN);
+    if (!match) {
+        return { range: null, error: { kind: 'invalid-token', token } };
+    }
+
+    const start = Number.parseInt(match[1], 10);
+    const end = match[2] ? Number.parseInt(match[2], 10) : start;
+
+    if (start === 0 || end === 0) {
+        return { range: null, error: { kind: 'non-positive-page' } };
+    }
+
+    if (start > end) {
+        return { range: null, error: { kind: 'reversed-range', start, end } };
+    }
+
+    if (end > total) {
+        return { range: null, error: { kind: 'out-of-range', page: end, total } };
+    }
+
+    return { range: { start, end }, error: null };
+}
+
+function parseLoosePageRange(rawToken: string, total: number): PageRange | null {
+    const token = rawToken.trim().replace(/\s+/g, '');
+    if (!token) return null;
+
+    const match =
+        token.match(PAGE_RANGE_TOKEN_PATTERN) ?? token.match(OPEN_PAGE_RANGE_TOKEN_PATTERN);
+    if (!match) return null;
+
+    const a = Number.parseInt(match[1], 10);
+    const b = match[2] ? Number.parseInt(match[2], 10) : a;
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+
+    return {
+        start: clampPage(Math.min(a, b), total),
+        end: clampPage(Math.max(a, b), total),
+    };
+}
+
+function compactPageRanges(pages: number[]): PageRange[] {
+    const normalized = uniqueSortedNumbers(pages);
+    const ranges: PageRange[] = [];
+    let start = normalized[0];
+    let end = normalized[0];
+
+    for (let i = 1; i < normalized.length; i += 1) {
+        const current = normalized[i];
+        if (current === end + 1) {
+            end = current;
+            continue;
+        }
+
+        ranges.push({ start, end });
+        start = current;
+        end = current;
+    }
+
+    ranges.push({ start, end });
+    return ranges;
+}
+
+function formatPageRange({ start, end }: PageRange): string {
+    return start === end ? String(start) : `${start}-${end}`;
 }
 
 export const PageSpecVO = {
@@ -30,32 +115,12 @@ export const PageSpecVO = {
         const pages = new Set<number>();
 
         for (const rawToken of spec.split(',')) {
-            const token = rawToken.trim();
-            if (!token) {
-                return { pages: null, error: { kind: 'empty-token' } };
+            const parsed = parseStrictPageRange(rawToken, total);
+            if (parsed.error) {
+                return { pages: null, error: parsed.error };
             }
 
-            const match = token.match(/^(\d+)(?:-(\d+))?$/);
-            if (!match) {
-                return { pages: null, error: { kind: 'invalid-token', token } };
-            }
-
-            const start = Number.parseInt(match[1], 10);
-            const end = match[2] ? Number.parseInt(match[2], 10) : start;
-
-            if (start === 0 || end === 0) {
-                return { pages: null, error: { kind: 'non-positive-page' } };
-            }
-
-            if (start > end) {
-                return { pages: null, error: { kind: 'reversed-range', start, end } };
-            }
-
-            if (end > total) {
-                return { pages: null, error: { kind: 'out-of-range', page: end, total } };
-            }
-
-            for (let pageNum = start; pageNum <= end; pageNum += 1) {
+            for (let pageNum = parsed.range.start; pageNum <= parsed.range.end; pageNum += 1) {
                 pages.add(pageNum);
             }
         }
@@ -82,20 +147,10 @@ export const PageSpecVO = {
         const pages: number[] = [];
 
         for (const rawToken of spec.split(',')) {
-            const token = rawToken.trim().replace(/\s+/g, '');
-            if (!token) continue;
+            const range = parseLoosePageRange(rawToken, total);
+            if (!range) continue;
 
-            const match = token.match(/^(\d+)(?:-(\d+))?$/) ?? token.match(/^(\d+)-$/);
-            if (!match) continue;
-
-            const a = Number.parseInt(match[1], 10);
-            const b = match[2] ? Number.parseInt(match[2], 10) : a;
-            if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
-
-            const start = clampPage(Math.min(a, b), total);
-            const end = clampPage(Math.max(a, b), total);
-
-            for (let pageNum = start; pageNum <= end; pageNum += 1) {
+            for (let pageNum = range.start; pageNum <= range.end; pageNum += 1) {
                 pages.push(pageNum);
             }
         }
@@ -110,26 +165,7 @@ export const PageSpecVO = {
      */
     formatSelected(pages: number[]): string {
         if (!pages.length) return '';
-        const normalized = uniqueSortedNumbers(pages);
-
-        const chunks: string[] = [];
-        let start = normalized[0];
-        let prev = normalized[0];
-
-        for (let i = 1; i < normalized.length; i += 1) {
-            const current = normalized[i];
-            if (current === prev + 1) {
-                prev = current;
-                continue;
-            }
-
-            chunks.push(start === prev ? String(start) : `${start}-${prev}`);
-            start = current;
-            prev = current;
-        }
-
-        chunks.push(start === prev ? String(start) : `${start}-${prev}`);
-        return chunks.join(', ');
+        return compactPageRanges(pages).map(formatPageRange).join(', ');
     },
 
     /** Formats the full valid range (`1..total`) as a page-spec string. */

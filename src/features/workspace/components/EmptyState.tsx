@@ -56,7 +56,7 @@ export function EmptyState({ onAddFiles }: EmptyStateProps) {
                 </motion.p>
 
                 <motion.span
-                    className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-ui-accent-on-soft transition-colors group-hover:text-ui-accent"
+                    className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-ui-accent-on-soft transition-colors group-hover:text-ui-accent-text"
                     variants={itemVariants}
                 >
                     <IconPlus className="h-4 w-4" />

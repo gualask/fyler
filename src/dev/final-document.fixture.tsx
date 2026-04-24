@@ -72,6 +72,7 @@ export function FinalDocumentFixturePage() {
                         <FinalDocument
                             finalPages={finalPages}
                             files={files}
+                            imageFit="contain"
                             selectedPageId={selectedPageId}
                             onReorder={(fromId, toId) =>
                                 setFinalPages((current) => reorderFinalPages(current, fromId, toId))

@@ -6,6 +6,7 @@ import { ListRowThumbnail } from './ListRowThumbnail';
 
 export const ListRow = memo(function ListRow({
     item,
+    imageFit,
     isFirst,
     isLast,
     scrollRoot,
@@ -44,7 +45,12 @@ export const ListRow = memo(function ListRow({
             onMoveTo={onMoveTo}
             totalItems={totalItems}
         >
-            <ListRowThumbnail item={item} scrollRoot={scrollRoot} onPreview={onPreview} />
+            <ListRowThumbnail
+                item={item}
+                imageFit={imageFit}
+                scrollRoot={scrollRoot}
+                onPreview={onPreview}
+            />
 
             <div className="flex min-w-0 flex-1 items-start">
                 <div className="min-w-0">

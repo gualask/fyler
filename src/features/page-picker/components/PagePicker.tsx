@@ -5,6 +5,7 @@ import { PreviewModal } from '@/features/preview';
 import type {
     FileEdits,
     FinalPage,
+    ImageFit,
     RotationDirection,
     SourceFile,
     SourceTarget,
@@ -17,6 +18,7 @@ import { PdfPanel } from './panels/PdfPanel';
 
 interface Props {
     file: SourceFile | null;
+    imageFit: ImageFit;
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
     onSetPdfPages: (fileId: string, pages: number[]) => void;
@@ -36,6 +38,7 @@ interface Props {
 
 export function PagePicker({
     file,
+    imageFit,
     finalPages,
     onTogglePage,
     onSetPdfPages,
@@ -130,6 +133,8 @@ export function PagePicker({
                     finalPages={[previewTarget]}
                     files={[file]}
                     editsByFile={editsByFile}
+                    imageFit={imageFit}
+                    matchExportedImages
                     indicator={{
                         total: file.kind === 'pdf' ? (file.pageCount ?? 1) : 1,
                         mode: 'page-num',

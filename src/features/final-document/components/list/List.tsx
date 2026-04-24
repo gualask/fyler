@@ -1,10 +1,11 @@
-import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
+import type { FileEdits, FinalPage, ImageFit, SourceFile, SourceTarget } from '@/shared/domain';
 import { FinalDocumentSortableList } from './FinalDocumentSortableList';
 import { ListRow } from './rows/ListRow';
 
 interface Props {
     finalPages: FinalPage[];
     files: SourceFile[];
+    imageFit: ImageFit;
     selectedPageId: string | null;
     selectedPageScrollKey?: number;
     editsByFile: Record<string, FileEdits>;
@@ -19,6 +20,7 @@ interface Props {
 export function List({
     finalPages,
     files,
+    imageFit,
     selectedPageId,
     selectedPageScrollKey,
     editsByFile,
@@ -33,6 +35,7 @@ export function List({
         <FinalDocumentSortableList
             finalPages={finalPages}
             files={files}
+            imageFit={imageFit}
             selectedPageId={selectedPageId}
             selectedPageScrollKey={selectedPageScrollKey}
             editsByFile={editsByFile}

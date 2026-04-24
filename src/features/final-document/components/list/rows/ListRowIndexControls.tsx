@@ -61,8 +61,8 @@ export function ListRowIndexControls({
             : 'text-xs font-bold text-ui-text-muted';
     const labelButtonClassName =
         size === 'lg'
-            ? 'flex h-10 min-w-[2.75rem] items-center justify-center rounded-md px-2 text-sm font-bold text-ui-text-muted transition-colors hover:bg-ui-accent/15 hover:text-ui-accent'
-            : 'flex h-9 min-w-9 items-center justify-center rounded-md px-2 text-xs font-bold text-ui-text-muted transition-colors hover:bg-ui-accent/15 hover:text-ui-accent';
+            ? 'flex h-10 min-w-[2.75rem] items-center justify-center rounded-md px-2 text-sm font-bold text-ui-text-muted transition-colors hover:bg-ui-accent/15 hover:text-ui-accent-text'
+            : 'flex h-9 min-w-9 items-center justify-center rounded-md px-2 text-xs font-bold text-ui-text-muted transition-colors hover:bg-ui-accent/15 hover:text-ui-accent-text';
     const inputClassName =
         size === 'lg'
             ? 'h-10 w-11 rounded-md border border-ui-border bg-ui-bg text-center text-sm font-bold text-ui-text outline-none focus:border-ui-accent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'

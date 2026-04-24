@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type {
     FileEdits,
     FinalPage,
+    ImageFit,
     RotationDirection,
     SourceFile,
     SourceTarget,
@@ -18,6 +19,7 @@ import { Preview } from './Preview';
 interface Props {
     finalPages: FinalPage[];
     files: SourceFile[];
+    imageFit: ImageFit;
     selectedPageId: string | null;
     selectedPageScrollKey?: number;
     onReorder: (fromId: string, toId: string) => void;
@@ -35,6 +37,7 @@ interface Props {
 export function FinalDocument({
     finalPages,
     files,
+    imageFit,
     selectedPageId,
     selectedPageScrollKey,
     onReorder,
@@ -87,6 +90,7 @@ export function FinalDocument({
                     <List
                         finalPages={finalPages}
                         files={files}
+                        imageFit={imageFit}
                         selectedPageId={selectedPageId}
                         selectedPageScrollKey={selectedPageScrollKey}
                         editsByFile={editsByFile}
@@ -101,6 +105,7 @@ export function FinalDocument({
                     <CardList
                         finalPages={finalPages}
                         files={files}
+                        imageFit={imageFit}
                         selectedPageId={selectedPageId}
                         selectedPageScrollKey={selectedPageScrollKey}
                         editsByFile={editsByFile}
@@ -118,6 +123,7 @@ export function FinalDocument({
                 previewTargetId={previewTargetId}
                 finalPages={finalPages}
                 files={files}
+                imageFit={imageFit}
                 editsByFile={editsByFile}
                 onMovePageToIndex={onMovePageToIndex}
                 onRotatePage={onRotatePage}

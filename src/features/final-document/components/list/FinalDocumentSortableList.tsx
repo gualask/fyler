@@ -11,7 +11,7 @@ import { IconFile } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect } from 'react';
 
-import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
+import type { FileEdits, FinalPage, ImageFit, SourceFile, SourceTarget } from '@/shared/domain';
 import { finalPageToTarget } from '@/shared/domain/utils/final-page-id';
 import { useTranslation } from '@/shared/i18n';
 import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
@@ -20,6 +20,7 @@ import { useFinalDocumentItems } from './use-final-document-items.hook';
 
 export interface FinalDocumentRowProps {
     item: ListItem;
+    imageFit: ImageFit;
     isFirst: boolean;
     isLast: boolean;
     scrollRoot: HTMLDivElement | null;
@@ -36,6 +37,7 @@ export interface FinalDocumentRowProps {
 interface Props {
     finalPages: FinalPage[];
     files: SourceFile[];
+    imageFit: ImageFit;
     selectedPageId: string | null;
     selectedPageScrollKey?: number;
     editsByFile: Record<string, FileEdits>;
@@ -53,6 +55,7 @@ interface Props {
 export function FinalDocumentSortableList({
     finalPages,
     files,
+    imageFit,
     selectedPageId,
     selectedPageScrollKey,
     editsByFile,
@@ -145,6 +148,7 @@ export function FinalDocumentSortableList({
                                 <Row
                                     key={item.page.id}
                                     item={item}
+                                    imageFit={imageFit}
                                     isFirst={i === 0}
                                     isLast={i === items.length - 1}
                                     scrollRoot={scrollRoot}

@@ -51,6 +51,7 @@ export function MainWorkspaceLayout({
                     <PagePicker
                         key={workspace.selectedFile?.id}
                         file={workspace.selectedFile}
+                        imageFit={optimize.imageFit}
                         finalPages={workspace.finalPages}
                         onTogglePage={workspace.togglePage}
                         onSetPdfPages={workspace.setPdfPagesForFile}
@@ -74,6 +75,7 @@ export function MainWorkspaceLayout({
                     <FinalDocument
                         finalPages={workspace.finalPages}
                         files={workspace.files}
+                        imageFit={optimize.imageFit}
                         selectedPageId={selectedFinalPageId}
                         selectedPageScrollKey={
                             workspace.focusedSource?.flashTarget === 'final'

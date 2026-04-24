@@ -93,7 +93,9 @@ export function PdfThumbnailItem({
             <p
                 className={[
                     'page-picker-thumb-label mx-auto w-full max-w-[17rem] text-left text-[10px] uppercase tracking-[0.14em]',
-                    isFocused ? 'font-bold text-ui-accent' : 'font-semibold text-ui-text-muted',
+                    isFocused
+                        ? 'font-bold text-ui-accent-text'
+                        : 'font-semibold text-ui-text-muted',
                 ].join(' ')}
             >
                 {t('pagePicker.pageLabel', { pageNum })}

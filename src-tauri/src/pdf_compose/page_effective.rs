@@ -100,8 +100,7 @@ pub fn effective_page_dictionary(
 ) -> Result<Dictionary> {
     let extra_degrees = crate::pdf::quarter_turns_to_degrees(extra_quarter_turns)? as i64;
 
-    let base_page = doc.get_dictionary(page_id)?.clone();
-    let mut out = base_page.clone();
+    let mut out = doc.get_dictionary(page_id)?.clone();
 
     out.remove(b"Parent");
 

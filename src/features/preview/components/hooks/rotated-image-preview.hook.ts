@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { QuarterTurn } from '@/shared/domain';
-import { renderRotatedImage } from '../utils/render-image';
+import { renderRotatedImage } from '@/shared/ui/image-preview';
 
 export type RotatedImagePreviewStatus = 'idle' | 'pending' | 'ready' | 'failed';
 

@@ -4,6 +4,7 @@ import { PreviewModal } from '@/features/preview';
 import type {
     FileEdits,
     FinalPage,
+    ImageFit,
     RotationDirection,
     SourceFile,
     SourceTarget,
@@ -13,6 +14,7 @@ interface Props {
     previewTargetId: string | null;
     finalPages: FinalPage[];
     files: SourceFile[];
+    imageFit: ImageFit;
     editsByFile: Record<string, FileEdits>;
     onMovePageToIndex: (id: string, targetIndex: number) => void;
     onRotatePage: (
@@ -27,6 +29,7 @@ export function Preview({
     previewTargetId,
     finalPages,
     files,
+    imageFit,
     editsByFile,
     onMovePageToIndex,
     onRotatePage,
@@ -53,6 +56,8 @@ export function Preview({
                 <PreviewModal
                     finalPages={[resolvedPreviewTarget]}
                     files={files}
+                    imageFit={imageFit}
+                    matchExportedImages
                     editsByFile={editsByFile}
                     indicator={{ current: previewTargetPosition, total: finalPages.length }}
                     moveControl={{

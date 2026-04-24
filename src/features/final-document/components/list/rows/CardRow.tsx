@@ -5,6 +5,7 @@ import { ListRowThumbnail } from './ListRowThumbnail';
 
 export const CardRow = memo(function CardRow({
     item,
+    imageFit,
     isFirst,
     isLast,
     scrollRoot,
@@ -37,6 +38,7 @@ export const CardRow = memo(function CardRow({
             <ListRowThumbnail
                 size="lg"
                 item={item}
+                imageFit={imageFit}
                 scrollRoot={scrollRoot}
                 onPreview={onPreview}
                 className="min-w-0 flex-1"
