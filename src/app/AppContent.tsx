@@ -42,7 +42,12 @@ export function AppContent() {
         optimize,
     });
 
-    const exportMerged = useExportAction({ workspace, notifications, optimize });
+    const exportMerged = useExportAction({
+        finalPages: workspace.finalPages,
+        editsByFile: workspace.editsByFile,
+        notifications,
+        optimize,
+    });
     const handleAddFiles = useAddFilesAction({ workspace, notifications });
     const { handleEnterQuickAdd, handleExitQuickAdd } = useQuickAddActions({
         quickAdd,

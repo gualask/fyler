@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { FinalDocument } from '@/features/final-document';
+import { PreviewModal } from '@/features/preview';
 import { PdfCacheProvider } from '@/infra/pdf';
-import type { FileEdits, FinalPage } from '@/shared/domain';
+import type { FileEdits, FinalPage, SourceTarget } from '@/shared/domain';
 import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import {
@@ -52,6 +53,19 @@ export function FinalDocumentFixturePage() {
     const [selectedPageId, setSelectedPageId] = useState<string | null>(finalPages[0]?.id ?? null);
     const [editsByFile, setEditsByFile] =
         useState<Record<string, FileEdits>>(createSampleEditsByFile);
+    const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
+    const previewTarget = previewTargetId
+        ? (finalPages.find((page) => page.id === previewTargetId) ?? null)
+        : null;
+    const previewTargetPosition = previewTarget
+        ? finalPages.findIndex((page) => page.id === previewTarget.id) + 1
+        : 0;
+    const rotatePage = async (fileId: string, target: SourceTarget, direction: 'cw' | 'ccw') => {
+        setEditsByFile((current) => ({
+            ...current,
+            [fileId]: FileEditsVO.applyRotation(current[fileId], target, direction),
+        }));
+    };
 
     return (
         <PdfCacheProvider>
@@ -91,21 +105,34 @@ export function FinalDocumentFixturePage() {
                             onSelectPage={(fileId, target) =>
                                 setSelectedPageId(toFinalPageId(fileId, target))
                             }
-                            onRotatePage={async (fileId, target, direction) => {
-                                setEditsByFile((current) => ({
-                                    ...current,
-                                    [fileId]: FileEditsVO.applyRotation(
-                                        current[fileId],
-                                        target,
-                                        direction,
-                                    ),
-                                }));
-                            }}
+                            onPreviewPage={setPreviewTargetId}
                             editsByFile={editsByFile}
                         />
                     </div>
                 </div>
             </div>
+
+            {previewTarget && (
+                <PreviewModal
+                    key={previewTarget.id}
+                    finalPages={[previewTarget]}
+                    files={files}
+                    imageFit="contain"
+                    matchExportedImages
+                    editsByFile={editsByFile}
+                    indicator={{ current: previewTargetPosition, total: finalPages.length }}
+                    moveControl={{
+                        currentPosition: previewTargetPosition,
+                        totalPositions: finalPages.length,
+                        onMoveToPosition: (targetIndex) =>
+                            setFinalPages((current) =>
+                                moveFinalPageToIndex(current, previewTarget.id, targetIndex),
+                            ),
+                    }}
+                    onRotatePage={rotatePage}
+                    onClose={() => setPreviewTargetId(null)}
+                />
+            )}
         </PdfCacheProvider>
     );
 }

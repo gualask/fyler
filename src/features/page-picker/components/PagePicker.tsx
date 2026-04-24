@@ -1,16 +1,12 @@
 import { IconFile } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
-import { PreviewModal } from '@/features/preview';
 import type {
     FileEdits,
     FinalPage,
-    ImageFit,
     RotationDirection,
     SourceFile,
     SourceTarget,
 } from '@/shared/domain';
-import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
 import { useTranslation } from '@/shared/i18n';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { ImagePanel } from './panels/ImagePanel';
@@ -18,7 +14,6 @@ import { PdfPanel } from './panels/PdfPanel';
 
 interface Props {
     file: SourceFile | null;
-    imageFit: ImageFit;
     finalPages: FinalPage[];
     onTogglePage: (fileId: string, pageNum: number) => void;
     onSetPdfPages: (fileId: string, pages: number[]) => void;
@@ -31,6 +26,7 @@ interface Props {
         target: SourceTarget,
         direction: RotationDirection,
     ) => Promise<void>;
+    onPreviewTarget: (file: SourceFile, target: SourceTarget) => void;
     editsByFile: Record<string, FileEdits>;
     focusedTarget: SourceTarget | null;
     focusFlashKey?: number;
@@ -38,7 +34,6 @@ interface Props {
 
 export function PagePicker({
     file,
-    imageFit,
     finalPages,
     onTogglePage,
     onSetPdfPages,
@@ -47,12 +42,12 @@ export function PagePicker({
     onDeselectAll,
     onFocusTarget,
     onRotateTarget,
+    onPreviewTarget,
     editsByFile,
     focusedTarget,
     focusFlashKey,
 }: Props) {
     const { t } = useTranslation();
-    const [previewTarget, setPreviewTarget] = useState<FinalPage | null>(null);
     const panelTransition = {
         duration: 0.18,
         ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
@@ -79,13 +74,7 @@ export function PagePicker({
             isIncluded={finalPages.some((page) => page.fileId === file.id && page.kind === 'image')}
             onInclude={() => onSetImageIncluded(file.id, true)}
             onFocus={() => onFocusTarget(file.id, { kind: 'image' })}
-            onPreview={() =>
-                setPreviewTarget({
-                    id: toFinalPageId(file.id, { kind: 'image' }),
-                    fileId: file.id,
-                    kind: 'image',
-                })
-            }
+            onPreview={() => onPreviewTarget(file, { kind: 'image' })}
         />
     ) : (
         <PdfPanel
@@ -102,47 +91,22 @@ export function PagePicker({
             editsByFile={editsByFile}
             focusedPageNum={focusedTarget?.kind === 'pdf' ? focusedTarget.pageNum : null}
             focusFlashKey={focusFlashKey}
-            onPreview={(pageNum) =>
-                setPreviewTarget({
-                    id: toFinalPageId(file.id, { kind: 'pdf', pageNum }),
-                    fileId: file.id,
-                    kind: 'pdf',
-                    pageNum,
-                })
-            }
+            onPreview={(pageNum) => onPreviewTarget(file, { kind: 'pdf', pageNum })}
         />
     );
 
     return (
-        <>
-            <AnimatePresence initial={false} mode="wait">
-                <motion.div
-                    key={file ? `${file.kind}:${file.id}` : 'empty'}
-                    className="h-full min-h-0"
-                    initial={{ opacity: 0, y: 10, scale: 0.99 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.99 }}
-                    transition={panelTransition}
-                >
-                    {panelContent}
-                </motion.div>
-            </AnimatePresence>
-
-            {previewTarget && file && (
-                <PreviewModal
-                    finalPages={[previewTarget]}
-                    files={[file]}
-                    editsByFile={editsByFile}
-                    imageFit={imageFit}
-                    matchExportedImages
-                    indicator={{
-                        total: file.kind === 'pdf' ? (file.pageCount ?? 1) : 1,
-                        mode: 'page-num',
-                    }}
-                    onRotatePage={onRotateTarget}
-                    onClose={() => setPreviewTarget(null)}
-                />
-            )}
-        </>
+        <AnimatePresence initial={false} mode="wait">
+            <motion.div
+                key={file ? `${file.kind}:${file.id}` : 'empty'}
+                className="h-full min-h-0"
+                initial={{ opacity: 0, y: 10, scale: 0.99 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.99 }}
+                transition={panelTransition}
+            >
+                {panelContent}
+            </motion.div>
+        </AnimatePresence>
     );
 }

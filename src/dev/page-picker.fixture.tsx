@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { PagePicker } from '@/features/page-picker';
+import { PreviewModal } from '@/features/preview';
 import { PdfCacheProvider } from '@/infra/pdf';
-import type { FileEdits, FinalPage, SourceTarget } from '@/shared/domain';
+import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
 import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import {
@@ -62,6 +63,21 @@ function setPdfPages(fileId: string, pages: number[]): FinalPage[] {
     }));
 }
 
+function toPreviewPage(file: SourceFile, target: SourceTarget): FinalPage {
+    return target.kind === 'image'
+        ? {
+              id: toFinalPageId(file.id, target),
+              fileId: file.id,
+              kind: 'image',
+          }
+        : {
+              id: toFinalPageId(file.id, target),
+              fileId: file.id,
+              kind: 'pdf',
+              pageNum: target.pageNum,
+          };
+}
+
 export function PagePickerFixturePage() {
     const files = useMemo(() => createSampleFixtureFiles(), []);
     const mode = getMode(window.location.search);
@@ -74,6 +90,17 @@ export function PagePickerFixturePage() {
     );
     const [editsByFile, setEditsByFile] =
         useState<Record<string, FileEdits>>(createSampleEditsByFile);
+    const [previewTarget, setPreviewTarget] = useState<{
+        file: SourceFile;
+        page: FinalPage;
+    } | null>(null);
+
+    const rotateTarget = async (fileId: string, target: SourceTarget, direction: 'cw' | 'ccw') => {
+        setEditsByFile((current) => ({
+            ...current,
+            [fileId]: FileEditsVO.applyRotation(current[fileId], target, direction),
+        }));
+    };
 
     return (
         <PdfCacheProvider>
@@ -101,7 +128,6 @@ export function PagePickerFixturePage() {
                     <div className="h-[78vh] overflow-hidden rounded-3xl border border-ui-border bg-ui-surface shadow-sm">
                         <PagePicker
                             file={selectedFile}
-                            imageFit="contain"
                             finalPages={finalPages}
                             onTogglePage={(fileId, pageNum) =>
                                 setFinalPages((current) => togglePdfPage(current, fileId, pageNum))
@@ -134,22 +160,36 @@ export function PagePickerFixturePage() {
                             }}
                             onDeselectAll={() => setFinalPages([])}
                             onFocusTarget={(_fileId, target) => setFocusedTarget(target)}
-                            onRotateTarget={async (fileId, target, direction) => {
-                                setEditsByFile((current) => ({
-                                    ...current,
-                                    [fileId]: FileEditsVO.applyRotation(
-                                        current[fileId],
-                                        target,
-                                        direction,
-                                    ),
-                                }));
-                            }}
+                            onRotateTarget={rotateTarget}
+                            onPreviewTarget={(file, target) =>
+                                setPreviewTarget({ file, page: toPreviewPage(file, target) })
+                            }
                             editsByFile={editsByFile}
                             focusedTarget={focusedTarget}
                         />
                     </div>
                 </div>
             </div>
+
+            {previewTarget && (
+                <PreviewModal
+                    key={previewTarget.page.id}
+                    finalPages={[previewTarget.page]}
+                    files={[previewTarget.file]}
+                    editsByFile={editsByFile}
+                    imageFit="contain"
+                    matchExportedImages
+                    indicator={{
+                        total:
+                            previewTarget.file.kind === 'pdf'
+                                ? (previewTarget.file.pageCount ?? 1)
+                                : 1,
+                        mode: 'page-num',
+                    }}
+                    onRotatePage={rotateTarget}
+                    onClose={() => setPreviewTarget(null)}
+                />
+            )}
         </PdfCacheProvider>
     );
 }

@@ -1,6 +1,10 @@
 import { useEffect, useMemo } from 'react';
-import { useExportMatchedImage } from '@/features/export-preview';
-import { buildPreviewRenderRequest, usePdfCache, usePdfRenderSrc } from '@/infra/pdf';
+import {
+    buildPreviewRenderRequest,
+    useExportMatchedImage,
+    usePdfCache,
+    usePdfRenderSrc,
+} from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import type { SlotContext, SlotPage } from '../slot.types';

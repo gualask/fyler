@@ -1,15 +1,16 @@
 import { useCallback } from 'react';
 
-import type { WorkspaceApi } from '@/features/workspace';
 import { mergePDFs, savePDFDialog } from '@/infra/platform';
 import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import { toDiagnosticMessage, useDiagnostics } from '@/shared/diagnostics';
+import type { FileEdits, FinalPage } from '@/shared/domain';
 import { buildMergeRequest } from '@/shared/domain/mappers/merge-request.mapper';
 import { useTranslation } from '@/shared/i18n';
 import type { useOptimize } from './optimize.hook';
 
 interface ExportActionDeps {
-    workspace: WorkspaceApi;
+    finalPages: FinalPage[];
+    editsByFile: Record<string, FileEdits>;
     notifications: AppNotificationsApi;
     optimize: ReturnType<typeof useOptimize>;
 }
@@ -22,12 +23,17 @@ interface ExportActionDeps {
  * - records diagnostics metadata for support
  * - shows user-facing progress/toasts
  */
-export function useExportAction({ workspace, notifications, optimize }: ExportActionDeps) {
+export function useExportAction({
+    finalPages,
+    editsByFile,
+    notifications,
+    optimize,
+}: ExportActionDeps) {
     const { t } = useTranslation();
     const { record } = useDiagnostics();
 
     const exportMerged = useCallback(async () => {
-        if (workspace.finalPages.length === 0) return;
+        if (finalPages.length === 0) return;
         try {
             const outputPath = await savePDFDialog(
                 t('header.defaultExportFilename'),
@@ -35,8 +41,8 @@ export function useExportAction({ workspace, notifications, optimize }: ExportAc
             );
             if (!outputPath) return;
             const req = buildMergeRequest(
-                workspace.finalPages,
-                workspace.editsByFile,
+                finalPages,
+                editsByFile,
                 outputPath,
                 optimize.optimizeOptions,
             );
@@ -45,7 +51,7 @@ export function useExportAction({ workspace, notifications, optimize }: ExportAc
                 severity: 'info',
                 message: 'PDF export started',
                 metadata: {
-                    pageCount: workspace.finalPages.length,
+                    pageCount: finalPages.length,
                     optimizationPreset: optimize.optimizationPreset,
                     imageFit: optimize.imageFit,
                 },
@@ -78,7 +84,7 @@ export function useExportAction({ workspace, notifications, optimize }: ExportAc
                     category: 'export',
                     severity: 'info',
                     message: 'PDF export completed successfully',
-                    metadata: { pageCount: workspace.finalPages.length },
+                    metadata: { pageCount: finalPages.length },
                 });
                 notifications.showExportCompleted();
             }
@@ -93,8 +99,8 @@ export function useExportAction({ workspace, notifications, optimize }: ExportAc
             notifications.clearLoading();
         }
     }, [
-        workspace.editsByFile,
-        workspace.finalPages,
+        editsByFile,
+        finalPages,
         notifications,
         optimize.imageFit,
         optimize.optimizationPreset,

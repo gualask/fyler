@@ -1,20 +1,12 @@
 import { IconColumns1, IconColumns2 } from '@tabler/icons-react';
 import { useState } from 'react';
-import type {
-    FileEdits,
-    FinalPage,
-    ImageFit,
-    RotationDirection,
-    SourceFile,
-    SourceTarget,
-} from '@/shared/domain';
+import type { FileEdits, FinalPage, ImageFit, SourceFile, SourceTarget } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { type FinalDocumentLayout, usePreferences } from '@/shared/preferences';
 import { ToggleGroup, type ToggleOption } from '@/shared/ui';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { CardList } from './list/CardList';
 import { List } from './list/List';
-import { Preview } from './Preview';
 
 interface Props {
     finalPages: FinalPage[];
@@ -26,11 +18,7 @@ interface Props {
     onMovePageToIndex: (id: string, targetIndex: number) => void;
     onRemove: (id: string) => void;
     onSelectPage: (fileId: string, target: SourceTarget) => void;
-    onRotatePage: (
-        fileId: string,
-        target: SourceTarget,
-        direction: RotationDirection,
-    ) => Promise<void>;
+    onPreviewPage: (id: string) => void;
     editsByFile: Record<string, FileEdits>;
 }
 
@@ -44,12 +32,11 @@ export function FinalDocument({
     onMovePageToIndex,
     onRemove,
     onSelectPage,
-    onRotatePage,
+    onPreviewPage,
     editsByFile,
 }: Props) {
     const { t } = useTranslation();
     const { finalDocumentLayout, setFinalDocumentLayout } = usePreferences();
-    const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
     const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
     const layoutOptions: ToggleOption<FinalDocumentLayout>[] = [
         {
@@ -99,7 +86,7 @@ export function FinalDocument({
                         onMovePageToIndex={onMovePageToIndex}
                         onRemove={onRemove}
                         onSelectPage={onSelectPage}
-                        onPreviewPage={setPreviewTargetId}
+                        onPreviewPage={onPreviewPage}
                     />
                 ) : (
                     <CardList
@@ -114,21 +101,10 @@ export function FinalDocument({
                         onMovePageToIndex={onMovePageToIndex}
                         onRemove={onRemove}
                         onSelectPage={onSelectPage}
-                        onPreviewPage={setPreviewTargetId}
+                        onPreviewPage={onPreviewPage}
                     />
                 )}
             </div>
-
-            <Preview
-                previewTargetId={previewTargetId}
-                finalPages={finalPages}
-                files={files}
-                imageFit={imageFit}
-                editsByFile={editsByFile}
-                onMovePageToIndex={onMovePageToIndex}
-                onRotatePage={onRotatePage}
-                onClose={() => setPreviewTargetId(null)}
-            />
         </div>
     );
 }

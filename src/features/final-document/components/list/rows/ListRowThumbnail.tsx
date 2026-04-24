@@ -1,7 +1,6 @@
 import { IconFileTypePdf, IconPhoto } from '@tabler/icons-react';
 import { useMemo } from 'react';
-import { useExportMatchedImage } from '@/features/export-preview';
-import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
+import { buildThumbnailRenderRequest, useExportMatchedImage, useLazyPdfRender } from '@/infra/pdf';
 import { getPreviewUrl } from '@/infra/platform';
 import type { ImageFit } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
