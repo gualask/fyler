@@ -58,7 +58,7 @@ The goal of the structure is “feature-first” on the frontend, with a small a
 
 - `src-tauri/src/models.rs` — Serializable request/response payloads shared with the frontend.
 - `src-tauri/src/source_registry/` — In-memory registry of imported sources (ID → path/name/kind), used by export so the frontend does not resend full metadata.
-- `src-tauri/src/export.rs` — Export orchestration: compose pages, optionally optimize embedded images, then save.
+- `src-tauri/src/export.rs` + `src-tauri/src/export/` — Export orchestration: compose pages, optionally optimize embedded images, then save.
 - `src-tauri/src/pdf_compose/` — PDF composition primitives (`PdfComposer`) for copying PDF pages and appending image pages.
 - `src-tauri/src/pdf_image/` — Image decoding + embedding policy for imported image files (flatten alpha, JPEG vs raw RGB).
 - `src-tauri/src/optimize/` — Embedded PDF image optimization pipeline (analyze usage → plan → rewrite), with non-fatal failures by design.
