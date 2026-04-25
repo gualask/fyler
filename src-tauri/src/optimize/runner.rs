@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use lopdf::{Document as PdfDoc, Object, ObjectId, Stream};
 use rayon::prelude::*;
 
@@ -44,11 +46,44 @@ impl CandidateTask {
     }
 }
 
+#[derive(Default)]
+struct CandidateTaskBatch {
+    tasks: Vec<CandidateTask>,
+    estimated_bytes: usize,
+}
+
+impl CandidateTaskBatch {
+    fn push(&mut self, task: CandidateTask) {
+        self.estimated_bytes = self.estimated_bytes.saturating_add(task.estimated_bytes());
+        self.tasks.push(task);
+    }
+
+    fn flush_if_full(&mut self, doc: &mut PdfDoc, summary: &mut OptimizationSummary) {
+        if should_flush_batch(&self.tasks, self.estimated_bytes) {
+            self.flush(doc, summary);
+        }
+    }
+
+    fn flush(&mut self, doc: &mut PdfDoc, summary: &mut OptimizationSummary) {
+        if self.tasks.is_empty() {
+            return;
+        }
+
+        let batch = std::mem::take(&mut self.tasks);
+        self.estimated_bytes = 0;
+        let results: Vec<anyhow::Result<Option<(ObjectId, Stream)>>> =
+            batch.into_par_iter().map(process_task).collect();
+        for result in results {
+            apply_result(doc, result, summary);
+        }
+    }
+}
+
 fn build_task(
     object_id: ObjectId,
     obj: &Object,
     candidate: &ImageCandidate,
-    usages: &std::collections::HashMap<ObjectId, Vec<ImageUsage>>,
+    usages: &HashMap<ObjectId, Vec<ImageUsage>>,
     opts: &OptimizeOptions,
 ) -> anyhow::Result<Option<CandidateTask>> {
     let usage_slice = usages_for(usages, candidate);
@@ -104,22 +139,69 @@ fn should_flush_batch(tasks: &[CandidateTask], estimated_bytes: usize) -> bool {
     tasks.len() >= MAX_BATCH_TASKS || estimated_bytes >= MAX_BATCH_ESTIMATED_BYTES
 }
 
-fn flush_batch(
+fn image_usages_for_options(
+    doc: &PdfDoc,
+    opts: &OptimizeOptions,
+) -> HashMap<ObjectId, Vec<ImageUsage>> {
+    if opts.target_dpi.is_some() {
+        analyze_image_usages(doc)
+    } else {
+        HashMap::new()
+    }
+}
+
+fn object_decision(doc: &PdfDoc, object_id: ObjectId) -> Option<CandidateDecision> {
+    doc.objects
+        .get(&object_id)
+        .and_then(|obj| classify_object(object_id, obj))
+}
+
+fn collect_candidate_work(
     doc: &mut PdfDoc,
-    tasks: &mut Vec<CandidateTask>,
-    estimated_bytes: &mut usize,
+    object_id: ObjectId,
+    decision: CandidateDecision,
+    usages: &HashMap<ObjectId, Vec<ImageUsage>>,
+    opts: &OptimizeOptions,
+    batch: &mut CandidateTaskBatch,
     summary: &mut OptimizationSummary,
 ) {
-    if tasks.is_empty() {
-        return;
+    match decision {
+        CandidateDecision::Skip(CandidateSkipReason::Unsupported) => {
+            summary.skipped_unsupported += 1;
+        }
+        CandidateDecision::Skip(CandidateSkipReason::Risky) => {
+            summary.skipped_risky += 1;
+        }
+        CandidateDecision::Optimize(candidate) => {
+            queue_candidate_task(doc, object_id, candidate, usages, opts, batch, summary);
+        }
     }
+}
 
-    let batch = std::mem::take(tasks);
-    *estimated_bytes = 0;
-    let results: Vec<anyhow::Result<Option<(ObjectId, Stream)>>> =
-        batch.into_par_iter().map(process_task).collect();
-    for result in results {
-        apply_result(doc, result, summary);
+fn queue_candidate_task(
+    doc: &mut PdfDoc,
+    object_id: ObjectId,
+    candidate: ImageCandidate,
+    usages: &HashMap<ObjectId, Vec<ImageUsage>>,
+    opts: &OptimizeOptions,
+    batch: &mut CandidateTaskBatch,
+    summary: &mut OptimizationSummary,
+) {
+    let task = match doc.objects.get(&object_id) {
+        Some(obj) => build_task(object_id, obj, &candidate, usages, opts),
+        None => {
+            summary.failed_non_fatal += 1;
+            return;
+        }
+    };
+
+    match task {
+        Ok(Some(task)) => {
+            batch.push(task);
+            batch.flush_if_full(doc, summary);
+        }
+        Ok(None) => {}
+        Err(_) => summary.failed_non_fatal += 1,
     }
 }
 
@@ -127,56 +209,29 @@ pub(super) fn optimize_images(
     doc: &mut PdfDoc,
     opts: &OptimizeOptions,
 ) -> anyhow::Result<OptimizationSummary> {
-    let usages = if opts.target_dpi.is_some() {
-        analyze_image_usages(doc)
-    } else {
-        std::collections::HashMap::new()
-    };
-
+    let usages = image_usages_for_options(doc, opts);
     let mut summary = OptimizationSummary::default();
     let object_ids: Vec<_> = doc.objects.keys().copied().collect();
-    let mut tasks: Vec<CandidateTask> = Vec::new();
-    let mut estimated_batch_bytes: usize = 0;
+    let mut batch = CandidateTaskBatch::default();
 
     for object_id in object_ids {
-        let Some(decision) = doc
-            .objects
-            .get(&object_id)
-            .and_then(|obj| classify_object(object_id, obj))
-        else {
+        let Some(decision) = object_decision(doc, object_id) else {
             continue;
         };
 
         summary.scanned += 1;
-        match decision {
-            CandidateDecision::Skip(CandidateSkipReason::Unsupported) => {
-                summary.skipped_unsupported += 1;
-            }
-            CandidateDecision::Skip(CandidateSkipReason::Risky) => {
-                summary.skipped_risky += 1;
-            }
-            CandidateDecision::Optimize(candidate) => {
-                let Some(obj) = doc.objects.get(&object_id) else {
-                    summary.failed_non_fatal += 1;
-                    continue;
-                };
-                match build_task(object_id, obj, &candidate, &usages, opts) {
-                    Ok(Some(task)) => {
-                        estimated_batch_bytes =
-                            estimated_batch_bytes.saturating_add(task.estimated_bytes());
-                        tasks.push(task);
-                        if should_flush_batch(&tasks, estimated_batch_bytes) {
-                            flush_batch(doc, &mut tasks, &mut estimated_batch_bytes, &mut summary);
-                        }
-                    }
-                    Ok(None) => {}
-                    Err(_) => summary.failed_non_fatal += 1,
-                };
-            }
-        }
+        collect_candidate_work(
+            doc,
+            object_id,
+            decision,
+            &usages,
+            opts,
+            &mut batch,
+            &mut summary,
+        );
     }
 
-    flush_batch(doc, &mut tasks, &mut estimated_batch_bytes, &mut summary);
+    batch.flush(doc, &mut summary);
 
     Ok(summary)
 }
