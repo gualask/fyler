@@ -1,15 +1,23 @@
 import { motion } from 'motion/react';
 import type { CSSProperties } from 'react';
-import { useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from '@/shared/i18n';
 import { TutorialCard } from './TutorialCard';
 import { getBackdropClipPath, getTargetRect, getTooltipStyle } from './tutorial.layout';
-import { TUTORIAL_STEPS } from './tutorial.steps';
+import type { TargetRect, TooltipSize } from './tutorial.positioning';
+import {
+    TUTORIAL_ESSENTIAL_STEP_COUNT,
+    TUTORIAL_EXTRA_STEP_COUNT,
+    TUTORIAL_STEPS,
+} from './tutorial.steps';
+
+const DEFAULT_CARD_SIZE: TooltipSize = { width: 320, height: 120 };
 
 interface Props {
     currentStep: number;
     onNext: () => void;
     onSkip: () => void;
+    onComplete: () => void;
 }
 
 type TutorialSpotlightVars = CSSProperties & {
@@ -19,28 +27,97 @@ type TutorialSpotlightVars = CSSProperties & {
     '--tutorial-spotlight-height': string;
 };
 
-export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
+function getStepLabel(currentStep: number, t: ReturnType<typeof useTranslation>['t']): string {
+    if (currentStep < TUTORIAL_ESSENTIAL_STEP_COUNT) {
+        return `${currentStep + 1} / ${TUTORIAL_ESSENTIAL_STEP_COUNT}`;
+    }
+
+    return t('tutorial.extraStepLabel', {
+        current: currentStep - TUTORIAL_ESSENTIAL_STEP_COUNT + 1,
+        total: TUTORIAL_EXTRA_STEP_COUNT,
+    });
+}
+
+function sameTargetRect(a: TargetRect | null, b: TargetRect | null): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+
+    return a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height;
+}
+
+export function TutorialOverlay({ currentStep, onNext, onSkip, onComplete }: Props) {
     const { t } = useTranslation();
+    const [cardEl, setCardEl] = useState<HTMLDivElement | null>(null);
+    const [cardSize, setCardSize] = useState(DEFAULT_CARD_SIZE);
+    const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
     const step = TUTORIAL_STEPS[currentStep];
+    const target = step.target;
     const isLast = currentStep === TUTORIAL_STEPS.length - 1;
+    const isEssentialEnd = currentStep === TUTORIAL_ESSENTIAL_STEP_COUNT - 1;
+    const canShowExtraSteps = isEssentialEnd && TUTORIAL_EXTRA_STEP_COUNT > 0;
     const text = t(step.i18nKey);
-    const stepLabel = `${currentStep + 1} / ${TUTORIAL_STEPS.length}`;
-    const skipLabel = t('tutorial.skip');
-    const nextLabel = isLast ? t('tutorial.finish') : t('tutorial.next');
+    const stepLabel = getStepLabel(currentStep, t);
+    const primaryLabel = isLast || isEssentialEnd ? t('tutorial.finish') : t('tutorial.next');
+    const secondaryLabel = canShowExtraSteps
+        ? t('tutorial.more')
+        : isLast
+          ? undefined
+          : t('tutorial.skip');
+    const onPrimary = isEssentialEnd ? onComplete : onNext;
+    const onSecondary = canShowExtraSteps ? onNext : isLast ? undefined : onSkip;
 
-    // Force re-render on resize to recalculate rect
-    const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
-    useEffect(() => {
-        window.addEventListener('resize', forceUpdate);
-        window.addEventListener('scroll', forceUpdate, true);
+    const measureTarget = useCallback(() => {
+        const nextRect = getTargetRect(target);
+        setTargetRect((current) => (sameTargetRect(current, nextRect) ? current : nextRect));
+    }, [target]);
+
+    useLayoutEffect(() => {
+        measureTarget();
+        const frame = window.requestAnimationFrame(measureTarget);
+        const timeout = window.setTimeout(measureTarget, 50);
+
         return () => {
-            window.removeEventListener('resize', forceUpdate);
-            window.removeEventListener('scroll', forceUpdate, true);
+            window.cancelAnimationFrame(frame);
+            window.clearTimeout(timeout);
         };
-    }, []);
+    }, [measureTarget]);
 
-    // Calculate rect during render (no setState needed)
-    const rect = getTargetRect(step.target);
+    useLayoutEffect(() => {
+        const node = cardEl;
+        if (!node) return;
+        const measuredNode: HTMLDivElement = node;
+
+        function updateCardSize() {
+            setCardSize((current) => {
+                const next = {
+                    width: measuredNode.offsetWidth || DEFAULT_CARD_SIZE.width,
+                    height: measuredNode.offsetHeight || DEFAULT_CARD_SIZE.height,
+                };
+
+                return current.width === next.width && current.height === next.height
+                    ? current
+                    : next;
+            });
+        }
+
+        updateCardSize();
+
+        const observer = new ResizeObserver(updateCardSize);
+        observer.observe(measuredNode);
+
+        return () => observer.disconnect();
+    }, [cardEl]);
+
+    useEffect(() => {
+        window.addEventListener('resize', measureTarget);
+        window.addEventListener('scroll', measureTarget, true);
+        return () => {
+            window.removeEventListener('resize', measureTarget);
+            window.removeEventListener('scroll', measureTarget, true);
+        };
+    }, [measureTarget]);
+
+    const rect = targetRect;
     const fadeProps = {
         initial: { opacity: 0 },
         animate: { opacity: 1 },
@@ -57,18 +134,19 @@ export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
                 <TutorialCard
                     key={currentStep}
                     className="dialog-panel dialog-panel-bordered w-full max-w-xs rounded-xl p-4"
+                    cardRef={setCardEl}
                     text={text}
                     stepLabel={stepLabel}
-                    skipLabel={skipLabel}
-                    nextLabel={nextLabel}
-                    onNext={onNext}
-                    onSkip={onSkip}
+                    primaryLabel={primaryLabel}
+                    secondaryLabel={secondaryLabel}
+                    onPrimary={onPrimary}
+                    onSecondary={onSecondary}
                 />
             </motion.div>
         );
     }
 
-    const tooltipStyle = getTooltipStyle(rect);
+    const tooltipStyle = getTooltipStyle(rect, window.innerWidth, window.innerHeight, cardSize);
     const spotlightVars = {
         '--tutorial-spotlight-top': `${rect.top}px`,
         '--tutorial-spotlight-left': `${rect.left}px`,
@@ -103,13 +181,14 @@ export function TutorialOverlay({ currentStep, onNext, onSkip }: Props) {
             <TutorialCard
                 key={currentStep}
                 className="dialog-panel dialog-panel-bordered absolute max-w-xs rounded-xl p-4"
+                cardRef={setCardEl}
                 style={tooltipStyle}
                 text={text}
                 stepLabel={stepLabel}
-                skipLabel={skipLabel}
-                nextLabel={nextLabel}
-                onNext={onNext}
-                onSkip={onSkip}
+                primaryLabel={primaryLabel}
+                secondaryLabel={secondaryLabel}
+                onPrimary={onPrimary}
+                onSecondary={onSecondary}
             />
         </motion.div>
     );

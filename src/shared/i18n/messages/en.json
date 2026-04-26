@@ -197,8 +197,13 @@
     "tutorial.step1": "Here you'll find your files. You can add more or remove them.",
     "tutorial.step2": "Select the pages you want to include in the final document.",
     "tutorial.step3": "Reorder pages with the arrows or by dragging. Remove the ones you don't need.",
-    "tutorial.step4": "When you're ready, export your PDF!",
+    "tutorial.step4": "Use Preview to check the result, then export the PDF when it is ready.",
+    "tutorial.step5": "Open Optimization to adjust compression and image fit before export.",
+    "tutorial.step6": "Quick Add opens a compact window that stays on top: drag PDFs or images here.",
+    "tutorial.step7": "Open Settings to change language, theme, color, or report a bug.",
     "tutorial.next": "Next",
     "tutorial.finish": "Done",
-    "tutorial.skip": "Skip"
+    "tutorial.skip": "Skip",
+    "tutorial.more": "More",
+    "tutorial.extraStepLabel": "Extra {current} / {total}"
 }

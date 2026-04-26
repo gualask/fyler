@@ -137,7 +137,10 @@ export function MainWorkspaceLayout({
                         />
                     </section>
 
-                    <footer className="workspace-surface workspace-surface-output">
+                    <footer
+                        {...tutorialTargetProps(TUTORIAL_TARGETS.outputPanel)}
+                        className="workspace-surface workspace-surface-output"
+                    >
                         <OutputPanel
                             imageFit={optimize.imageFit}
                             jpegQuality={optimize.jpegQuality}

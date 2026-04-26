@@ -50,3 +50,38 @@ test('keeps tutorial cards inside viewport gutters', () => {
         );
     });
 });
+
+test('keeps tutorial cards inside the viewport at the app minimum size', () => {
+    withViewport(1100, 600, () => {
+        const outputFooterRect: TargetRect = {
+            top: 546,
+            left: 670,
+            width: 418,
+            height: 42,
+        };
+        const outputFooterStyle = getTooltipStyle(outputFooterRect, 1100, 600, {
+            width: 320,
+            height: 146,
+        });
+
+        assert.equal(outputFooterStyle.top, 388);
+        assert.equal(outputFooterStyle.left, 670);
+
+        const belowViewportRect: TargetRect = {
+            top: 684,
+            left: 670,
+            width: 418,
+            height: 42,
+        };
+        const belowViewportStyle = getTooltipStyle(belowViewportRect, 1100, 600, {
+            width: 320,
+            height: 146,
+        });
+
+        assert.equal(
+            belowViewportStyle.top,
+            430,
+            'Tutorial cards should clamp back into view when the target is below the viewport.',
+        );
+    });
+});

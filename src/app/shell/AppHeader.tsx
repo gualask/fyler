@@ -40,6 +40,7 @@ export function AppHeader({
                     <button
                         type="button"
                         onClick={onQuickAdd}
+                        {...tutorialTargetProps(TUTORIAL_TARGETS.quickAdd)}
                         className="btn-ghost btn-toolbar"
                         title={t('header.quickAdd')}
                     >
@@ -59,25 +60,29 @@ export function AppHeader({
                 >
                     <IconHelp className="h-5 w-5" />
                 </button>
-                <button
-                    type="button"
-                    disabled={!canPreview}
-                    onClick={onPreview}
-                    className="btn-ghost btn-toolbar"
-                >
-                    <IconEye className="h-4 w-4" />
-                    {t('header.preview')}
-                </button>
-                <button
-                    type="button"
+                <div
                     {...tutorialTargetProps(TUTORIAL_TARGETS.export)}
-                    disabled={!canExport}
-                    onClick={onExport}
-                    className="btn-primary btn-toolbar"
+                    className="flex items-center gap-2"
                 >
-                    <IconDownload className="h-5 w-5" />
-                    {t('header.exportPdf')}
-                </button>
+                    <button
+                        type="button"
+                        disabled={!canPreview}
+                        onClick={onPreview}
+                        className="btn-ghost btn-toolbar"
+                    >
+                        <IconEye className="h-4 w-4" />
+                        {t('header.preview')}
+                    </button>
+                    <button
+                        type="button"
+                        disabled={!canExport}
+                        onClick={onExport}
+                        className="btn-primary btn-toolbar"
+                    >
+                        <IconDownload className="h-5 w-5" />
+                        {t('header.exportPdf')}
+                    </button>
+                </div>
             </div>
         </header>
     );

@@ -1,27 +1,31 @@
 import { motion } from 'motion/react';
+import type { Ref } from 'react';
 
 interface Props {
     text: string;
     stepLabel: string;
-    skipLabel: string;
-    nextLabel: string;
+    primaryLabel: string;
+    secondaryLabel?: string;
     className: string;
     style?: React.CSSProperties;
-    onNext: () => void;
-    onSkip: () => void;
+    cardRef?: Ref<HTMLDivElement>;
+    onPrimary: () => void;
+    onSecondary?: () => void;
 }
 export function TutorialCard({
     text,
     stepLabel,
-    skipLabel,
-    nextLabel,
+    primaryLabel,
+    secondaryLabel,
     className,
     style,
-    onNext,
-    onSkip,
+    cardRef,
+    onPrimary,
+    onSecondary,
 }: Props) {
     return (
         <motion.div
+            ref={cardRef}
             className={className}
             style={style}
             initial={{ opacity: 0, scale: 0.96 }}
@@ -34,11 +38,13 @@ export function TutorialCard({
                 <span className="text-xs text-ui-text-muted">{stepLabel}</span>
 
                 <div className="flex items-center gap-3">
-                    <button type="button" onClick={onSkip} className="btn-ghost-sm">
-                        {skipLabel}
-                    </button>
-                    <button type="button" onClick={onNext} className="btn-primary">
-                        {nextLabel}
+                    {secondaryLabel && onSecondary ? (
+                        <button type="button" onClick={onSecondary} className="btn-ghost-sm">
+                            {secondaryLabel}
+                        </button>
+                    ) : null}
+                    <button type="button" onClick={onPrimary} className="btn-primary">
+                        {primaryLabel}
                     </button>
                 </div>
             </div>

@@ -28,6 +28,7 @@ type TutorialLike = {
     currentStep: number | null;
     next: () => void;
     skip: () => void;
+    complete: () => void;
 };
 
 type WorkspaceLike = {
@@ -91,6 +92,7 @@ export function AppOverlays({
                         currentStep={tutorial.currentStep}
                         onNext={tutorial.next}
                         onSkip={tutorial.skip}
+                        onComplete={tutorial.complete}
                     />
                 )}
             </AnimatePresence>

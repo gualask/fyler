@@ -197,8 +197,13 @@
     "tutorial.step1": "Qui trovi i tuoi file. Puoi aggiungerne altri o rimuoverli.",
     "tutorial.step2": "Seleziona le pagine che vuoi includere nel documento finale.",
     "tutorial.step3": "Riordina le pagine con le frecce o trascinandole. Rimuovi quelle che non servono.",
-    "tutorial.step4": "Quando sei pronto, esporta il tuo PDF!",
+    "tutorial.step4": "Controlla l'anteprima se vuoi verificare il risultato, poi esporta il PDF quando è pronto.",
+    "tutorial.step5": "Apri Ottimizzazione per regolare compressione e adattamento immagini prima di esportare.",
+    "tutorial.step6": "Aggiunta rapida apre una finestra compatta sempre in primo piano: trascina qui PDF o immagini.",
+    "tutorial.step7": "Da Impostazioni puoi cambiare lingua, tema, colore e segnalare un bug.",
     "tutorial.next": "Avanti",
     "tutorial.finish": "Fatto",
-    "tutorial.skip": "Salta"
+    "tutorial.skip": "Salta",
+    "tutorial.more": "Altro",
+    "tutorial.extraStepLabel": "Extra {current} / {total}"
 }

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { MainAppView } from '@/app/shell/MainAppView';
 import type { OptimizeState } from '@/app/shell/main-app.types';
+import { TutorialOverlay } from '@/features/tutorial';
 import type { WorkspaceApi } from '@/features/workspace';
 import { PdfCacheProvider } from '@/infra/pdf';
 import type {
@@ -21,6 +22,14 @@ import {
 } from '@/shared/domain/value-objects/optimization-presets.vo';
 import { useTheme } from '@/shared/preferences';
 
+function getTutorialStep(search: string): number | null {
+    const raw = new URLSearchParams(search).get('tutorialStep');
+    if (raw === null) return null;
+
+    const parsed = Number(raw);
+    return Number.isInteger(parsed) ? Math.max(0, parsed) : null;
+}
+
 export function WorkspaceFixturePage({
     createInitialFiles,
     initialSelectedId = null,
@@ -33,6 +42,7 @@ export function WorkspaceFixturePage({
     initialEditsByFile?: Record<string, FileEdits> | (() => Record<string, FileEdits>);
 }) {
     const { isDark, toggleTheme, accent, setAccent } = useTheme();
+    const tutorialStep = getTutorialStep(window.location.search);
     const [files, setFiles] = useState(createInitialFiles);
     const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId);
     const [finalPages, setFinalPages] = useState<FinalPage[]>(
@@ -267,6 +277,14 @@ export function WorkspaceFixturePage({
                     setShowFinalPreview={setShowFinalPreview}
                 />
             </PdfCacheProvider>
+            {tutorialStep !== null ? (
+                <TutorialOverlay
+                    currentStep={tutorialStep}
+                    onNext={() => undefined}
+                    onSkip={() => undefined}
+                    onComplete={() => undefined}
+                />
+            ) : null}
         </div>
     );
 }

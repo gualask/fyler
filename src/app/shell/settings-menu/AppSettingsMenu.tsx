@@ -1,5 +1,6 @@
 import { IconAdjustments, IconMoon, IconSun } from '@tabler/icons-react';
 import { useId, useRef, useState } from 'react';
+import { TUTORIAL_TARGETS, tutorialTargetProps } from '@/features/tutorial';
 import { useTranslation } from '@/shared/i18n';
 import { ACCENT_COLORS, type AccentColor, type Locale } from '@/shared/preferences';
 import { ToggleGroup, type ToggleOption, useDismissableMenu } from '@/shared/ui';
@@ -81,6 +82,7 @@ export function AppSettingsMenu({
             <button
                 ref={triggerRef}
                 type="button"
+                {...tutorialTargetProps(TUTORIAL_TARGETS.settings)}
                 className={['btn-icon', open ? 'bg-ui-accent-soft text-ui-accent-on-soft' : '']
                     .filter(Boolean)
                     .join(' ')}

@@ -1,6 +1,6 @@
 import { TUTORIAL_TARGETS, TutorialOverlay, tutorialTargetProps } from '@/features/tutorial';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 7;
 
 function getCurrentStep(search: string): number {
     const raw = new URLSearchParams(search).get('step');
@@ -46,8 +46,8 @@ export function TutorialOverlayFixturePage() {
                         </p>
                         <h1 className="mt-2 text-2xl font-semibold">Tutorial overlay preview</h1>
                         <p className="mt-2 max-w-2xl text-sm leading-6 text-ui-text-secondary">
-                            Use the `step` query param from `0` to `3` to inspect each spotlight
-                            target in browser-safe mode.
+                            Use the `step` query param from `0` to `{TOTAL_STEPS - 1}` to inspect
+                            each spotlight target in browser-safe mode.
                         </p>
                     </div>
 
@@ -68,9 +68,24 @@ export function TutorialOverlayFixturePage() {
                             tutorialTarget={TUTORIAL_TARGETS.finalDocument}
                         />
                         <FixturePanel
-                            title="Export"
-                            description="Fixture target for the export tutorial step."
+                            title="Preview and export"
+                            description="Fixture target for the review/export tutorial step."
                             tutorialTarget={TUTORIAL_TARGETS.export}
+                        />
+                        <FixturePanel
+                            title="Optimization footer"
+                            description="Fixture target for the optional output settings tutorial step."
+                            tutorialTarget={TUTORIAL_TARGETS.outputPanel}
+                        />
+                        <FixturePanel
+                            title="Quick Add"
+                            description="Fixture target for the optional Quick Add tutorial step."
+                            tutorialTarget={TUTORIAL_TARGETS.quickAdd}
+                        />
+                        <FixturePanel
+                            title="Settings"
+                            description="Fixture target for the optional settings tutorial step."
+                            tutorialTarget={TUTORIAL_TARGETS.settings}
                         />
                     </div>
                 </div>
@@ -80,6 +95,7 @@ export function TutorialOverlayFixturePage() {
                 currentStep={currentStep}
                 onNext={() => undefined}
                 onSkip={() => undefined}
+                onComplete={() => undefined}
             />
         </>
     );

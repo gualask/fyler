@@ -79,6 +79,7 @@ export function useTutorial() {
         isActive,
         start,
         next,
+        complete,
         skip: complete,
         requestAutoStart,
         maybeAutoStart,
