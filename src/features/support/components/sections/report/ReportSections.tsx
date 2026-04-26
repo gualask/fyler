@@ -27,7 +27,7 @@ function SupportRecentEventsList({
     }
 
     return (
-        <div className="divide-y divide-ui-border/70 rounded-lg border border-ui-border/60 bg-ui-bg/15 px-3">
+        <ol className="divide-y divide-ui-border/70 border-t border-ui-border/70">
             {recentEvents.map((entry) => {
                 const metadataEntries = getDiagnosticMetadataEntries(entry.metadata);
                 const metadataText = metadataEntries
@@ -35,23 +35,30 @@ function SupportRecentEventsList({
                     .join(' · ');
 
                 return (
-                    <div key={entry.id} className="space-y-1.5 py-3 first:pt-0 last:pb-0">
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                            <span className="font-medium uppercase tracking-[0.06em] text-ui-text-muted">
-                                {entry.severity} · {entry.category}
-                            </span>
-                            <span className="text-ui-text-muted">{entry.timestamp}</span>
+                    <li key={entry.id} className="py-3">
+                        <div className="grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-x-4">
+                            <div className="min-w-0 space-y-1.5">
+                                <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-ui-text-muted">
+                                    {entry.severity} · {entry.category}
+                                </p>
+                                <p className="text-sm leading-5 text-ui-text">{entry.message}</p>
+                            </div>
+                            <time
+                                dateTime={entry.timestamp}
+                                className="text-[11px] leading-5 text-ui-text-muted sm:text-right"
+                            >
+                                {entry.timestamp}
+                            </time>
                         </div>
-                        <p className="text-sm leading-5 text-ui-text">{entry.message}</p>
                         {metadataText ? (
-                            <p className="text-[11px] text-ui-text-muted [overflow-wrap:anywhere] font-mono">
+                            <p className="mt-1.5 text-[11px] leading-5 text-ui-text-muted [overflow-wrap:anywhere] font-mono">
                                 {metadataText}
                             </p>
                         ) : null}
-                    </div>
+                    </li>
                 );
             })}
-        </div>
+        </ol>
     );
 }
 
