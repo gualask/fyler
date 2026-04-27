@@ -4,13 +4,16 @@ import { initialWorkspaceUiState, workspaceUiReducer } from '../state/workspace-
 import { useFileDrop } from './file-drop.hook';
 import { useFinalPages } from './final-pages.hook';
 import { useSourceSession } from './source-session.hook';
-import { useWorkspaceSourceEvents } from './workspace-source-events.hook';
+import {
+    useWorkspaceSourceEvents,
+    type WorkspaceFilesAddedEvent,
+} from './workspace-source-events.hook';
 
 export function useWorkspace({
     onFilesAdded,
     onDropError,
 }: {
-    onFilesAdded?: (ids: string[]) => void;
+    onFilesAdded?: (event: WorkspaceFilesAddedEvent) => void;
     onDropError?: (error: unknown) => void;
 } = {}) {
     const [uiState, dispatchUi] = useReducer(workspaceUiReducer, initialWorkspaceUiState);

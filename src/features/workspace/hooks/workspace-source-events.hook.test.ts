@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
 import type { SourceFile } from '@/shared/domain';
-import { applyResolvedPageCount, handleSourcePageCount } from './workspace-source-events.hook.js';
+import {
+    applyResolvedPageCount,
+    createWorkspaceFilesAddedEvent,
+    handleSourcePageCount,
+} from './workspace-source-events.hook.js';
 
 const PDF_FILE: SourceFile = {
     id: 'pdf-file',
@@ -89,4 +93,40 @@ test('applies a buffered page count when the source is later committed', () => {
     assert.equal(pendingPageCounts.size, 0);
     assert.deepEqual(recorder.updates, [{ id: PDF_FILE.id, count: 2 }]);
     assert.deepEqual(recorder.selections, [{ fileId: PDF_FILE.id, pages: [1, 2] }]);
+});
+
+test('builds a first-workspace-entry event when real files are added to an empty workspace', () => {
+    assert.deepEqual(
+        createWorkspaceFilesAddedEvent({
+            currentFiles: [],
+            addedFiles: [PDF_FILE],
+        }),
+        {
+            ids: [PDF_FILE.id],
+            wasWorkspaceEmpty: true,
+        },
+    );
+});
+
+test('marks later file additions as not coming from the empty state', () => {
+    assert.deepEqual(
+        createWorkspaceFilesAddedEvent({
+            currentFiles: [PDF_FILE],
+            addedFiles: [{ ...PDF_FILE, id: 'second-pdf' }],
+        }),
+        {
+            ids: ['second-pdf'],
+            wasWorkspaceEmpty: false,
+        },
+    );
+});
+
+test('does not create a file-added event when no files were actually added', () => {
+    assert.equal(
+        createWorkspaceFilesAddedEvent({
+            currentFiles: [PDF_FILE],
+            addedFiles: [],
+        }),
+        null,
+    );
 });

@@ -3,6 +3,30 @@ import { usePreferences } from '@/shared/preferences';
 import { initialTutorialState, tutorialReducer } from './tutorial.reducer';
 import { TUTORIAL_STEPS } from './tutorial.steps';
 
+type TutorialAutoStartEffect = 'arm-timeout' | 'cancel-request' | 'clear-timeout' | 'none';
+
+export function resolveTutorialAutoStartEffect({
+    isReady,
+    tutorialSeen,
+    autoStartRequested,
+    currentStep,
+    hasPendingTimeout,
+}: {
+    isReady: boolean;
+    tutorialSeen: boolean;
+    autoStartRequested: boolean;
+    currentStep: number | null;
+    hasPendingTimeout: boolean;
+}): TutorialAutoStartEffect {
+    if (!isReady) return 'clear-timeout';
+    if (tutorialSeen) return 'cancel-request';
+    if (!autoStartRequested) return 'none';
+    if (currentStep !== null) return 'none';
+    if (hasPendingTimeout) return 'none';
+
+    return 'arm-timeout';
+}
+
 export function useTutorial() {
     const { tutorialSeen, markTutorialSeen } = usePreferences();
     const [state, dispatch] = useReducer(tutorialReducer, initialTutorialState);
@@ -11,22 +35,23 @@ export function useTutorial() {
 
     const isActive = currentStep !== null;
 
-    const complete = useCallback(() => {
+    const clearStartTimeout = useCallback(() => {
         if (startTimeoutRef.current !== null) {
             window.clearTimeout(startTimeoutRef.current);
             startTimeoutRef.current = null;
         }
+    }, []);
+
+    const complete = useCallback(() => {
+        clearStartTimeout();
         dispatch({ type: 'complete' });
         markTutorialSeen();
-    }, [markTutorialSeen]);
+    }, [clearStartTimeout, markTutorialSeen]);
 
     const start = useCallback(() => {
-        if (startTimeoutRef.current !== null) {
-            window.clearTimeout(startTimeoutRef.current);
-            startTimeoutRef.current = null;
-        }
+        clearStartTimeout();
         dispatch({ type: 'start' });
-    }, []);
+    }, [clearStartTimeout]);
 
     const next = useCallback(() => {
         dispatch({ type: 'next', totalSteps: TUTORIAL_STEPS.length });
@@ -39,14 +64,26 @@ export function useTutorial() {
 
     const maybeAutoStart = useCallback(
         (isReady: boolean) => {
-            if (!isReady) return;
-            if (tutorialSeen) {
+            const effect = resolveTutorialAutoStartEffect({
+                isReady,
+                tutorialSeen,
+                autoStartRequested,
+                currentStep,
+                hasPendingTimeout: startTimeoutRef.current !== null,
+            });
+
+            if (effect === 'clear-timeout') {
+                clearStartTimeout();
+                return;
+            }
+
+            if (effect === 'cancel-request') {
+                clearStartTimeout();
                 dispatch({ type: 'cancel-auto-start-request' });
                 return;
             }
-            if (!autoStartRequested) return;
-            if (currentStep !== null) return;
-            if (startTimeoutRef.current !== null) return;
+
+            if (effect !== 'arm-timeout') return;
 
             // Delay to let the workspace layout settle before measuring tutorial targets.
             startTimeoutRef.current = window.setTimeout(() => {
@@ -54,18 +91,10 @@ export function useTutorial() {
                 dispatch({ type: 'auto-start-fired' });
             }, 300);
         },
-        [autoStartRequested, currentStep, tutorialSeen],
+        [autoStartRequested, clearStartTimeout, currentStep, tutorialSeen],
     );
 
-    useEffect(
-        () => () => {
-            if (startTimeoutRef.current !== null) {
-                window.clearTimeout(startTimeoutRef.current);
-                startTimeoutRef.current = null;
-            }
-        },
-        [],
-    );
+    useEffect(() => clearStartTimeout, [clearStartTimeout]);
 
     useEffect(() => {
         if (currentStep !== null) return;

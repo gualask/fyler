@@ -9,8 +9,29 @@ interface UseWorkspaceSourceEventsParams {
     removeSourceFile: (id: string) => SourceFile | null;
     removePagesForFile: (fileId: string) => void;
     addAllPagesForFile: (file: SourceFile) => void;
-    onFilesAdded?: (ids: string[]) => void;
+    onFilesAdded?: (event: WorkspaceFilesAddedEvent) => void;
     onDropError?: (error: unknown) => void;
+}
+
+export interface WorkspaceFilesAddedEvent {
+    ids: string[];
+    wasWorkspaceEmpty: boolean;
+}
+
+export function createWorkspaceFilesAddedEvent({
+    currentFiles,
+    addedFiles,
+}: {
+    currentFiles: readonly SourceFile[];
+    addedFiles: readonly Pick<SourceFile, 'id'>[];
+}): WorkspaceFilesAddedEvent | null {
+    const ids = addedFiles.map((file) => file.id);
+    if (ids.length === 0) return null;
+
+    return {
+        ids,
+        wasWorkspaceEmpty: currentFiles.length === 0,
+    };
 }
 
 interface SourcePageCountPayload {
@@ -158,6 +179,10 @@ export function useWorkspaceSourceEvents({
 
     const handleSessionFilesAdded = useCallback(
         (addedFiles: SourceFile[]) => {
+            const filesAddedEvent = createWorkspaceFilesAddedEvent({
+                currentFiles: filesRef.current,
+                addedFiles,
+            });
             filesRef.current = appendTrackedFiles(filesRef.current, addedFiles);
 
             for (const file of addedFiles) {
@@ -169,7 +194,9 @@ export function useWorkspaceSourceEvents({
                 applyPendingPageCount(file.id);
             }
 
-            onFilesAdded?.(addedFiles.map((file) => file.id));
+            if (filesAddedEvent) {
+                onFilesAdded?.(filesAddedEvent);
+            }
         },
         [addAllPagesForFile, applyPendingPageCount, onFilesAdded],
     );

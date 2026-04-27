@@ -10,6 +10,18 @@ type TutorialLike = {
     requestAutoStart: () => void;
 };
 
+export interface TutorialFilesAddedEvent {
+    ids: string[];
+    wasWorkspaceEmpty: boolean;
+}
+
+export function shouldRequestTutorialAutoStart({
+    ids,
+    wasWorkspaceEmpty,
+}: TutorialFilesAddedEvent): boolean {
+    return ids.length > 0 && wasWorkspaceEmpty;
+}
+
 export function useTutorialFilesAddedHandler({
     quickAdd,
     tutorial,
@@ -21,9 +33,11 @@ export function useTutorialFilesAddedHandler({
     const { requestAutoStart } = tutorial;
 
     return useCallback(
-        (ids: string[]) => {
+        ({ ids, wasWorkspaceEmpty }: TutorialFilesAddedEvent) => {
             onQuickAddFilesAdded(ids);
-            requestAutoStart();
+            if (shouldRequestTutorialAutoStart({ ids, wasWorkspaceEmpty })) {
+                requestAutoStart();
+            }
         },
         [onQuickAddFilesAdded, requestAutoStart],
     );
