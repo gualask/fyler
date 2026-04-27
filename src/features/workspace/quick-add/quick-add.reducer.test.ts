@@ -39,6 +39,18 @@ describe('quickAddReducer', () => {
         expect(withFiles.quickAddFileOrder).toEqual(['c', 'd']);
     });
 
+    test('rolls back quick add state when enter fails', () => {
+        const entered = quickAddReducer(initialQuickAddState, { type: 'enter-started' });
+        const withFiles = quickAddReducer(entered, { type: 'files-added', ids: ['c', 'd'] });
+
+        expect(quickAddReducer(withFiles, { type: 'enter-failed' })).toEqual({
+            isQuickAdd: false,
+            isTransitioning: false,
+            quickAddFileOrder: [],
+            isQuickAddSessionActive: false,
+        });
+    });
+
     test('ignores file updates after exit starts', () => {
         const state = quickAddReducer(
             {
@@ -53,5 +65,24 @@ describe('quickAddReducer', () => {
         expect(
             quickAddReducer(state, { type: 'files-added', ids: ['b'] }).quickAddFileOrder,
         ).toEqual(['a']);
+    });
+
+    test('restores quick add session state when exit fails', () => {
+        const exiting = quickAddReducer(
+            {
+                isQuickAdd: true,
+                isTransitioning: false,
+                quickAddFileOrder: ['a'],
+                isQuickAddSessionActive: true,
+            },
+            { type: 'exit-started' },
+        );
+
+        expect(quickAddReducer(exiting, { type: 'exit-failed' })).toEqual({
+            isQuickAdd: true,
+            isTransitioning: false,
+            quickAddFileOrder: ['a'],
+            isQuickAddSessionActive: true,
+        });
     });
 });

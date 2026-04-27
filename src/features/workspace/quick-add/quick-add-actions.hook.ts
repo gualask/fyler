@@ -15,7 +15,8 @@ export function useQuickAddActions({ quickAdd, notifications }: QuickAddActionsD
     const handleEnterQuickAdd = useCallback(() => {
         void quickAdd
             .enterQuickAdd()
-            .then(() => {
+            .then(({ started }) => {
+                if (!started) return;
                 record({
                     category: 'quick-add',
                     severity: 'info',
@@ -35,7 +36,8 @@ export function useQuickAddActions({ quickAdd, notifications }: QuickAddActionsD
     const handleExitQuickAdd = useCallback(() => {
         void quickAdd
             .exitQuickAdd()
-            .then(() => {
+            .then(({ started }) => {
+                if (!started) return;
                 record({
                     category: 'quick-add',
                     severity: 'info',

@@ -266,6 +266,7 @@ export function WorkspaceFixturePage({
                     tutorialStart={() => undefined}
                     canHelp={files.length > 0}
                     onQuickAdd={() => undefined}
+                    isQuickAddTransitioning={false}
                     canExport={finalPages.length > 0}
                     canPreview={finalPages.length > 0}
                     isDragOver={false}

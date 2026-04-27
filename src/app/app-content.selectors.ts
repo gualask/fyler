@@ -67,7 +67,7 @@ export function isTutorialReadyForAutoStart(
 }
 
 export function buildAppContentRootClassName(isTransitioning: boolean): string {
-    return `flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${isTransitioning ? 'blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`;
+    return `flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text transition-[filter,opacity,transform] duration-400 ease-out ${isTransitioning ? 'pointer-events-none blur-md opacity-0 scale-95' : 'blur-none opacity-100 scale-100'}`;
 }
 
 export function buildSupportDiagnosticsParams({

@@ -9,6 +9,7 @@ export function QuickAddFixturePage() {
         <QuickAddView
             files={files}
             quickAddFileOrder={quickAddFileOrder}
+            isTransitioning={false}
             isDragOver={false}
             onRemove={() => undefined}
             onExit={() => undefined}

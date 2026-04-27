@@ -68,6 +68,7 @@ export function AppContent() {
                 <QuickAddView
                     files={workspace.files}
                     quickAddFileOrder={quickAdd.quickAddFileOrder}
+                    isTransitioning={quickAdd.isTransitioning}
                     isDragOver={workspace.isDragOver}
                     onRemove={handleQuickAddFileRemove}
                     onExit={handleExitQuickAdd}
@@ -82,6 +83,7 @@ export function AppContent() {
                     tutorialStart={tutorial.start}
                     canHelp={workspace.files.length > 0}
                     onQuickAdd={handleEnterQuickAdd}
+                    isQuickAddTransitioning={quickAdd.isTransitioning}
                     canExport={workspace.finalPages.length > 0}
                     canPreview={workspace.finalPages.length > 0}
                     isDragOver={workspace.isDragOver}

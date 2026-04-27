@@ -8,6 +8,7 @@ interface Props {
     onPreview: () => void;
     canPreview: boolean;
     onQuickAdd: () => void;
+    isQuickAddDisabled: boolean;
     onHelp: () => void;
     canHelp: boolean;
     onExport: () => void;
@@ -19,6 +20,7 @@ export function AppHeader({
     onPreview,
     canPreview,
     onQuickAdd,
+    isQuickAddDisabled,
     onHelp,
     canHelp,
     onExport,
@@ -39,6 +41,7 @@ export function AppHeader({
 
                     <button
                         type="button"
+                        disabled={isQuickAddDisabled}
                         onClick={onQuickAdd}
                         {...tutorialTargetProps(TUTORIAL_TARGETS.quickAdd)}
                         className="btn-ghost btn-toolbar"

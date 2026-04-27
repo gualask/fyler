@@ -8,8 +8,10 @@ export interface QuickAddState {
 export type QuickAddAction =
     | { type: 'enter-started' }
     | { type: 'enter-completed' }
+    | { type: 'enter-failed' }
     | { type: 'exit-started' }
     | { type: 'exit-completed' }
+    | { type: 'exit-failed' }
     | { type: 'transition-finished' }
     | { type: 'files-added'; ids: string[] }
     | { type: 'file-removed'; id: string };
@@ -44,6 +46,14 @@ export function quickAddReducer(state: QuickAddState, action: QuickAddAction): Q
                 ...state,
                 isQuickAdd: true,
             };
+        case 'enter-failed':
+            return {
+                ...state,
+                isQuickAdd: false,
+                isTransitioning: false,
+                quickAddFileOrder: [],
+                isQuickAddSessionActive: false,
+            };
         case 'exit-started':
             return {
                 ...state,
@@ -55,6 +65,13 @@ export function quickAddReducer(state: QuickAddState, action: QuickAddAction): Q
                 ...state,
                 isQuickAdd: false,
                 quickAddFileOrder: [],
+            };
+        case 'exit-failed':
+            return {
+                ...state,
+                isQuickAdd: true,
+                isTransitioning: false,
+                isQuickAddSessionActive: true,
             };
         case 'transition-finished':
             return {

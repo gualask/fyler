@@ -2,17 +2,25 @@ import { IconFileDownload, IconFileTypePdf, IconPhoto, IconX } from '@tabler/ico
 import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { formatByteSize } from '@/shared/ui/format/byte-size';
-import { DragOverlay } from './DragOverlay';
+import { DragOverlay } from '../components/DragOverlay';
 
 interface Props {
     files: SourceFile[];
     quickAddFileOrder: readonly string[];
+    isTransitioning: boolean;
     isDragOver: boolean;
     onRemove: (id: string) => void;
     onExit: () => void;
 }
 
-export function QuickAddView({ files, quickAddFileOrder, isDragOver, onRemove, onExit }: Props) {
+export function QuickAddView({
+    files,
+    quickAddFileOrder,
+    isTransitioning,
+    isDragOver,
+    onRemove,
+    onExit,
+}: Props) {
     const { locale, t } = useTranslation();
     const filesById = new Map(files.map((file) => [file.id, file]));
     const addedFiles = quickAddFileOrder
@@ -33,6 +41,7 @@ export function QuickAddView({ files, quickAddFileOrder, isDragOver, onRemove, o
                 </div>
                 <button
                     type="button"
+                    disabled={isTransitioning}
                     onClick={onExit}
                     className="btn-icon"
                     aria-label={t('quickAdd.close')}
@@ -101,6 +110,7 @@ export function QuickAddView({ files, quickAddFileOrder, isDragOver, onRemove, o
 
                                         <button
                                             type="button"
+                                            disabled={isTransitioning}
                                             onClick={() => onRemove(file.id)}
                                             className="btn-icon h-7 w-7 rounded-md transition-colors hover:text-ui-danger"
                                             aria-label={t('quickAdd.remove')}
@@ -118,6 +128,7 @@ export function QuickAddView({ files, quickAddFileOrder, isDragOver, onRemove, o
                 <div className="flex shrink-0 pt-0.5">
                     <button
                         type="button"
+                        disabled={isTransitioning}
                         onClick={onExit}
                         className="btn-primary w-full justify-center"
                     >
