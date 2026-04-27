@@ -17,6 +17,8 @@ export type PreferencesState = {
     finalDocumentLayout: FinalDocumentLayout;
 };
 
+export type PreferencesField = keyof PreferencesState;
+
 export function resolvePreferencesState(
     settings: PreferencesSettings | null | undefined,
     languages: readonly string[] | undefined,
@@ -29,5 +31,25 @@ export function resolvePreferencesState(
         finalDocumentLayout: isFinalDocumentLayout(settings?.finalDocumentLayout)
             ? settings.finalDocumentLayout
             : DEFAULT_FINAL_DOCUMENT_LAYOUT,
+    };
+}
+
+export function mergeHydratedPreferences({
+    current,
+    loaded,
+    dirtyFields,
+}: {
+    current: PreferencesState;
+    loaded: PreferencesState;
+    dirtyFields: ReadonlySet<PreferencesField>;
+}): PreferencesState {
+    return {
+        isDark: dirtyFields.has('isDark') ? current.isDark : loaded.isDark,
+        locale: dirtyFields.has('locale') ? current.locale : loaded.locale,
+        accent: dirtyFields.has('accent') ? current.accent : loaded.accent,
+        tutorialSeen: dirtyFields.has('tutorialSeen') ? current.tutorialSeen : loaded.tutorialSeen,
+        finalDocumentLayout: dirtyFields.has('finalDocumentLayout')
+            ? current.finalDocumentLayout
+            : loaded.finalDocumentLayout,
     };
 }
