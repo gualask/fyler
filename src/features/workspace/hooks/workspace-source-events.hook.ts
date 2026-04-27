@@ -13,6 +13,98 @@ interface UseWorkspaceSourceEventsParams {
     onDropError?: (error: unknown) => void;
 }
 
+interface SourcePageCountPayload {
+    id: string;
+    pageCount: number;
+}
+
+interface SourcePageCountErrorPayload {
+    id: string;
+}
+
+interface SourcePageCountEventHandlers {
+    onPageCount: (payload: SourcePageCountPayload) => void;
+    onPageCountError: (payload: SourcePageCountErrorPayload) => void;
+}
+
+function subscribeToSourcePageCountEvents({
+    onPageCount,
+    onPageCountError,
+}: SourcePageCountEventHandlers): () => void {
+    const unlistenPageCount = onTauriEvent<SourcePageCountPayload>('source-page-count', (event) => {
+        onPageCount(event.payload);
+    });
+    const unlistenPageCountError = onTauriEvent<SourcePageCountErrorPayload>(
+        'source-page-count-error',
+        (event) => {
+            onPageCountError(event.payload);
+        },
+    );
+
+    return () => {
+        unlistenPageCount();
+        unlistenPageCountError();
+    };
+}
+
+function pdfPageNumbers(pageCount: number): number[] {
+    return Array.from({ length: pageCount }, (_, i) => i + 1);
+}
+
+interface ApplyResolvedPageCountParams {
+    fileId: string;
+    pageCount: number;
+    updateFilePageCount: (id: string, count: number) => void;
+    setPdfPagesForFile: (fileId: string, pages: number[]) => void;
+}
+
+export function applyResolvedPageCount({
+    fileId,
+    pageCount,
+    updateFilePageCount,
+    setPdfPagesForFile,
+}: ApplyResolvedPageCountParams) {
+    updateFilePageCount(fileId, pageCount);
+    setPdfPagesForFile(fileId, pdfPageNumbers(pageCount));
+}
+
+interface HandleSourcePageCountParams extends ApplyResolvedPageCountParams {
+    files: SourceFile[];
+    pendingPageCounts: Map<string, number>;
+}
+
+export function handleSourcePageCount({
+    fileId,
+    pageCount,
+    files,
+    pendingPageCounts,
+    updateFilePageCount,
+    setPdfPagesForFile,
+}: HandleSourcePageCountParams): 'applied' | 'pending' {
+    if (!files.some((file) => file.id === fileId)) {
+        pendingPageCounts.set(fileId, pageCount);
+        return 'pending';
+    }
+
+    applyResolvedPageCount({
+        fileId,
+        pageCount,
+        updateFilePageCount,
+        setPdfPagesForFile,
+    });
+    return 'applied';
+}
+
+function appendTrackedFiles(currentFiles: SourceFile[], addedFiles: SourceFile[]): SourceFile[] {
+    if (!addedFiles.length) return currentFiles;
+
+    const filesById = new Map(currentFiles.map((file) => [file.id, file]));
+    for (const file of addedFiles) {
+        filesById.set(file.id, file);
+    }
+    return Array.from(filesById.values());
+}
+
 export function useWorkspaceSourceEvents({
     files,
     updateFilePageCount,
@@ -51,68 +143,94 @@ export function useWorkspaceSourceEvents({
         updateFilePageCount,
     ]);
 
+    const applyPendingPageCount = useCallback((fileId: string) => {
+        const pendingCount = pendingPageCountsRef.current.get(fileId);
+        if (pendingCount === undefined) return;
+
+        pendingPageCountsRef.current.delete(fileId);
+        applyResolvedPageCount({
+            fileId,
+            pageCount: pendingCount,
+            updateFilePageCount: updateFilePageCountRef.current,
+            setPdfPagesForFile: setPdfPagesForFileRef.current,
+        });
+    }, []);
+
     const handleSessionFilesAdded = useCallback(
         (addedFiles: SourceFile[]) => {
+            filesRef.current = appendTrackedFiles(filesRef.current, addedFiles);
+
             for (const file of addedFiles) {
                 if (file.kind === 'image') {
                     addAllPagesForFile(file);
                     continue;
                 }
 
-                const pendingCount = pendingPageCountsRef.current.get(file.id);
-                if (pendingCount !== undefined) {
-                    pendingPageCountsRef.current.delete(file.id);
-                    updateFilePageCountRef.current(file.id, pendingCount);
-                }
+                applyPendingPageCount(file.id);
             }
 
             onFilesAdded?.(addedFiles.map((file) => file.id));
         },
-        [addAllPagesForFile, onFilesAdded],
+        [addAllPagesForFile, applyPendingPageCount, onFilesAdded],
     );
 
     const handleSessionFileRemoved = useCallback(
         (file: SourceFile | null) => {
             if (!file) return;
+            pendingPageCountsRef.current.delete(file.id);
+            filesRef.current = filesRef.current.filter((entry) => entry.id !== file.id);
             removePagesForFile(file.id);
         },
         [removePagesForFile],
     );
 
-    useEffect(() => {
-        const unlisten = [
-            onTauriEvent<{ id: string; pageCount: number }>('source-page-count', (e) => {
-                const { id, pageCount } = e.payload;
-                updateFilePageCountRef.current(id, pageCount);
-                setPdfPagesForFileRef.current(
-                    id,
-                    Array.from({ length: pageCount }, (_, i) => i + 1),
-                );
-
-                if (!filesRef.current.some((file) => file.id === id)) {
-                    pendingPageCountsRef.current.set(id, pageCount);
-                }
-            }),
-            onTauriEvent<{ id: string }>('source-page-count-error', (e) => {
-                pendingPageCountsRef.current.delete(e.payload.id);
-                const failedFile = filesRef.current.find((file) => file.id === e.payload.id);
-                removeSourceFileRef.current(e.payload.id);
-                removePagesForFileRef.current(e.payload.id);
-                onDropErrorRef.current?.(
-                    failedFile
-                        ? { code: 'open_pdf_failed', meta: { name: failedFile.name } }
-                        : new Error('page_count_failed'),
-                );
-            }),
-        ];
-
-        return () => {
-            for (const fn of unlisten) fn();
-        };
+    const handleSessionFilesCleared = useCallback(() => {
+        pendingPageCountsRef.current.clear();
+        filesRef.current = [];
     }, []);
+
+    const handlePageCountError = useCallback((fileId: string) => {
+        pendingPageCountsRef.current.delete(fileId);
+        const failedFile = filesRef.current.find((file) => file.id === fileId);
+        removeSourceFileRef.current(fileId);
+        removePagesForFileRef.current(fileId);
+        onDropErrorRef.current?.(
+            failedFile
+                ? { code: 'open_pdf_failed', meta: { name: failedFile.name } }
+                : new Error('page_count_failed'),
+        );
+    }, []);
+
+    const handlePageCount = useCallback(({ id, pageCount }: SourcePageCountPayload) => {
+        handleSourcePageCount({
+            fileId: id,
+            pageCount,
+            files: filesRef.current,
+            pendingPageCounts: pendingPageCountsRef.current,
+            updateFilePageCount: updateFilePageCountRef.current,
+            setPdfPagesForFile: setPdfPagesForFileRef.current,
+        });
+    }, []);
+
+    const handlePageCountErrorEvent = useCallback(
+        ({ id }: SourcePageCountErrorPayload) => {
+            handlePageCountError(id);
+        },
+        [handlePageCountError],
+    );
+
+    useEffect(
+        () =>
+            subscribeToSourcePageCountEvents({
+                onPageCount: handlePageCount,
+                onPageCountError: handlePageCountErrorEvent,
+            }),
+        [handlePageCount, handlePageCountErrorEvent],
+    );
 
     return {
         handleSessionFilesAdded,
         handleSessionFileRemoved,
+        handleSessionFilesCleared,
     };
 }

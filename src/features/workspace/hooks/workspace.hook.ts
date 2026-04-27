@@ -30,16 +30,17 @@ export function useWorkspace({
         updateFilePageCount,
     } = useSourceSession();
 
-    const { handleSessionFilesAdded, handleSessionFileRemoved } = useWorkspaceSourceEvents({
-        files,
-        updateFilePageCount,
-        setPdfPagesForFile,
-        removeSourceFile,
-        removePagesForFile,
-        addAllPagesForFile,
-        onFilesAdded,
-        onDropError,
-    });
+    const { handleSessionFilesAdded, handleSessionFileRemoved, handleSessionFilesCleared } =
+        useWorkspaceSourceEvents({
+            files,
+            updateFilePageCount,
+            setPdfPagesForFile,
+            removeSourceFile,
+            removePagesForFile,
+            addAllPagesForFile,
+            onFilesAdded,
+            onDropError,
+        });
 
     const selectedFile = useMemo(
         () => files.find((file) => file.id === uiState.selectedId) ?? null,
@@ -94,10 +95,11 @@ export function useWorkspace({
 
     const clearAllFiles = useCallback(() => {
         if (!files.length) return;
+        handleSessionFilesCleared();
         dispatchUi({ type: 'cleared' });
         clearAllPages();
         clearSourceFiles();
-    }, [clearAllPages, clearSourceFiles, files.length]);
+    }, [clearAllPages, clearSourceFiles, files.length, handleSessionFilesCleared]);
 
     const rotatePage = useCallback(
         async (fileId: string, target: SourceTarget, direction: RotationDirection) => {
