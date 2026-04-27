@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
-import { useTranslation } from '@/shared/i18n';
+import { type TranslationKey, useTranslation } from '@/shared/i18n';
 
 import { openSupportIssue } from '../support-issue-flow';
 import { buildGitHubIssueBody } from '../support-issue-report';
@@ -10,6 +10,42 @@ type SupportDialogAction = 'copy' | 'save' | 'issue';
 type SupportActionRunnerResult = {
     started: boolean;
 };
+
+type GitHubIssueOpenResult = {
+    diagnosticsCopied: boolean;
+    openResult: 'prefilled' | 'blank_fallback';
+};
+
+export function getGitHubIssueFeedback(result: GitHubIssueOpenResult): {
+    tone: 'success' | 'warning';
+    messageKey: TranslationKey;
+} {
+    if (!result.diagnosticsCopied && result.openResult === 'blank_fallback') {
+        return {
+            tone: 'warning',
+            messageKey: 'support.feedback.issueOpenedFallbackWithoutDiagnostics',
+        };
+    }
+
+    if (result.openResult === 'blank_fallback') {
+        return {
+            tone: 'warning',
+            messageKey: 'support.feedback.issueOpenedFallback',
+        };
+    }
+
+    if (!result.diagnosticsCopied) {
+        return {
+            tone: 'warning',
+            messageKey: 'support.feedback.issueOpenedWithoutDiagnostics',
+        };
+    }
+
+    return {
+        tone: 'success',
+        messageKey: 'support.feedback.issueOpenedWithDiagnostics',
+    };
+}
 
 export function createSupportActionRunner(
     onPendingActionChange: (action: SupportDialogAction | null) => void = () => undefined,
@@ -71,21 +107,9 @@ export function useSupportDialogActions({
     const normalizedIssueDescription = issueDescription.trim();
     const canOpenIssue = Boolean(normalizedIssueTitle && normalizedIssueDescription);
 
-    function showGitHubIssueResult(result: {
-        diagnosticsCopied: boolean;
-        openResult: 'prefilled' | 'blank_fallback';
-    }) {
-        if (result.openResult === 'blank_fallback') {
-            onShowToast('warning', t('support.feedback.issueOpenedFallback'));
-            return;
-        }
-
-        if (!result.diagnosticsCopied) {
-            onShowToast('warning', t('support.feedback.issueOpenedWithoutDiagnostics'));
-            return;
-        }
-
-        onShowToast('success', t('support.feedback.issueOpenedWithDiagnostics'));
+    function showGitHubIssueResult(result: GitHubIssueOpenResult) {
+        const feedback = getGitHubIssueFeedback(result);
+        onShowToast(feedback.tone, t(feedback.messageKey));
     }
 
     async function openGitHubIssueTask() {

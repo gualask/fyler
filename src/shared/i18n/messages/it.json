@@ -28,6 +28,7 @@
     "support.feedback.issueOpenedWithDiagnostics": "Issue aperta su GitHub. Diagnostica copiata negli appunti.",
     "support.feedback.issueOpenedWithoutDiagnostics": "Issue aperta su GitHub, ma non è stato possibile copiare la diagnostica negli appunti. Copiala o salvala manualmente se serve.",
     "support.feedback.issueOpenedFallback": "Issue aperta su GitHub, ma il testo era troppo lungo per precompilare tutto. Aggiungi la diagnostica dagli appunti o da un file salvato se serve.",
+    "support.feedback.issueOpenedFallbackWithoutDiagnostics": "Issue aperta su GitHub vuota perché il testo era troppo lungo, e non è stato possibile copiare la diagnostica negli appunti. Salva la diagnostica e allegala manualmente se serve.",
     "support.feedback.diagnosticsSaved": "Diagnostica salvata.",
     "support.dialog.reportTitle": "Segnala un bug",
     "support.dialog.technicalDetailsTitle": "Dettagli tecnici",

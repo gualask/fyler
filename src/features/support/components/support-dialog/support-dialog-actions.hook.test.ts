@@ -1,5 +1,52 @@
 import { describe, expect, test, vi } from 'vitest';
-import { createSupportActionRunner } from './support-dialog-actions.hook.js';
+import {
+    createSupportActionRunner,
+    getGitHubIssueFeedback,
+} from './support-dialog-actions.hook.js';
+
+describe('getGitHubIssueFeedback', () => {
+    test('returns the precise feedback for each issue open result', () => {
+        expect(
+            getGitHubIssueFeedback({
+                diagnosticsCopied: true,
+                openResult: 'prefilled',
+            }),
+        ).toEqual({
+            tone: 'success',
+            messageKey: 'support.feedback.issueOpenedWithDiagnostics',
+        });
+
+        expect(
+            getGitHubIssueFeedback({
+                diagnosticsCopied: false,
+                openResult: 'prefilled',
+            }),
+        ).toEqual({
+            tone: 'warning',
+            messageKey: 'support.feedback.issueOpenedWithoutDiagnostics',
+        });
+
+        expect(
+            getGitHubIssueFeedback({
+                diagnosticsCopied: true,
+                openResult: 'blank_fallback',
+            }),
+        ).toEqual({
+            tone: 'warning',
+            messageKey: 'support.feedback.issueOpenedFallback',
+        });
+
+        expect(
+            getGitHubIssueFeedback({
+                diagnosticsCopied: false,
+                openResult: 'blank_fallback',
+            }),
+        ).toEqual({
+            tone: 'warning',
+            messageKey: 'support.feedback.issueOpenedFallbackWithoutDiagnostics',
+        });
+    });
+});
 
 describe('createSupportActionRunner', () => {
     test('ignores overlapping support actions until the active action completes', async () => {

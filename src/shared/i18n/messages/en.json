@@ -28,6 +28,7 @@
     "support.feedback.issueOpenedWithDiagnostics": "GitHub issue opened. Diagnostics copied to clipboard.",
     "support.feedback.issueOpenedWithoutDiagnostics": "GitHub issue opened, but diagnostics could not be copied to the clipboard. Copy or save them manually if needed.",
     "support.feedback.issueOpenedFallback": "GitHub issue opened, but the text was too long to prefill. Add diagnostics from the clipboard or a saved file if needed.",
+    "support.feedback.issueOpenedFallbackWithoutDiagnostics": "GitHub issue opened blank because the text was too long, and diagnostics could not be copied to the clipboard. Save diagnostics and attach them manually if needed.",
     "support.feedback.diagnosticsSaved": "Diagnostics saved.",
     "support.dialog.reportTitle": "Report a bug",
     "support.dialog.technicalDetailsTitle": "Technical details",
