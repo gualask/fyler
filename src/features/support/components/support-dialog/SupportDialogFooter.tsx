@@ -1,15 +1,17 @@
 import { useTranslation } from '@/shared/i18n';
 
 const secondaryActionClassName =
-    'inline-flex min-h-9 items-center rounded-md px-2 text-xs font-medium text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface';
+    'inline-flex min-h-9 items-center rounded-md px-2 text-xs font-medium text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-ui-text-muted';
 
 export function SupportDialogFooter({
+    actionPending,
     canOpenIssue,
     onClose,
     onCopyDiagnostics,
     onSaveDiagnostics,
     onOpenGitHubIssue,
 }: {
+    actionPending: boolean;
     canOpenIssue: boolean;
     onClose: () => void;
     onCopyDiagnostics: () => Promise<void>;
@@ -24,6 +26,7 @@ export function SupportDialogFooter({
                 <button
                     type="button"
                     className={secondaryActionClassName}
+                    disabled={actionPending}
                     onClick={() => void onCopyDiagnostics()}
                 >
                     {t('support.copyDiagnostics')}
@@ -31,6 +34,7 @@ export function SupportDialogFooter({
                 <button
                     type="button"
                     className={secondaryActionClassName}
+                    disabled={actionPending}
                     onClick={() => void onSaveDiagnostics()}
                 >
                     {t('support.saveDiagnostics')}
@@ -43,7 +47,7 @@ export function SupportDialogFooter({
                 <button
                     type="button"
                     className="btn-primary"
-                    disabled={!canOpenIssue}
+                    disabled={!canOpenIssue || actionPending}
                     onClick={() => void onOpenGitHubIssue()}
                 >
                     {t('support.openGitHubIssue')}

@@ -123,6 +123,7 @@ export function SupportDialog({
                         </div>
 
                         <SupportDialogFooter
+                            actionPending={supportActions.actionPending}
                             canOpenIssue={supportActions.canOpenIssue}
                             onClose={onClose}
                             onCopyDiagnostics={supportActions.copyDiagnostics}
