@@ -1,0 +1,96 @@
+import { IconFileTypePdf, IconPhoto, IconTrash } from '@tabler/icons-react';
+import type { SourceFile } from '@/shared/domain';
+import { useTranslation } from '@/shared/i18n';
+import { Tooltip } from '@/shared/ui/feedback/Tooltip';
+import { formatByteSize } from '@/shared/ui/format/byte-size';
+
+interface Props {
+    file: SourceFile;
+    selected: boolean;
+    onSelect: () => void;
+    onRemove: () => void;
+}
+
+export function FileRow({ file, selected, onSelect, onRemove }: Props) {
+    const { locale, t } = useTranslation();
+
+    const fileSize = formatByteSize(file.byteSize, locale);
+
+    return (
+        <div
+            onClick={onSelect}
+            className={[
+                'group file-row flex items-start gap-2.5',
+                selected ? 'file-row-selected' : 'file-row-idle',
+            ].join(' ')}
+        >
+            {file.kind === 'image' ? (
+                <IconPhoto className="mt-0.5 h-4 w-4 shrink-0 text-ui-kind-image" />
+            ) : (
+                <IconFileTypePdf className="mt-0.5 h-4 w-4 shrink-0 text-ui-kind-pdf" />
+            )}
+
+            <div className="min-w-0 flex-1">
+                <Tooltip
+                    className="block min-w-0"
+                    panelClassName="w-max max-w-full px-2 py-1 text-xs font-medium text-ui-text"
+                    renderTrigger={({
+                        ariaDescribedBy,
+                        ariaExpanded,
+                        onFocus,
+                        onBlur,
+                        onClick,
+                    }) => (
+                        <button
+                            type="button"
+                            className="file-row-title"
+                            aria-describedby={ariaDescribedBy}
+                            aria-expanded={ariaExpanded}
+                            onFocus={onFocus}
+                            onBlur={onBlur}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onSelect();
+                                onClick();
+                            }}
+                        >
+                            {file.name}
+                        </button>
+                    )}
+                >
+                    <span className="block [overflow-wrap:anywhere]">{file.name}</span>
+                </Tooltip>
+                <p className="file-row-meta">
+                    <span>{fileSize}</span>
+                    {file.kind === 'pdf' ? (
+                        <>
+                            <span className="mx-2">•</span>
+                            {file.pageCount === null ? (
+                                <span className="inline-block h-2 w-10 animate-pulse rounded bg-ui-border" />
+                            ) : (
+                                <span>{t('fileList.pageCount', { count: file.pageCount })}</span>
+                            )}
+                        </>
+                    ) : null}
+                </p>
+            </div>
+
+            <button
+                type="button"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove();
+                }}
+                className={[
+                    'btn-icon h-7 w-7 self-center hover:text-ui-danger transition-[opacity,transform,color]',
+                    selected
+                        ? 'opacity-100 scale-100'
+                        : 'pointer-events-none opacity-0 scale-95 group-hover:pointer-events-auto group-hover:opacity-100 group-hover:scale-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:scale-100',
+                ].join(' ')}
+                title={t('fileList.remove')}
+            >
+                <IconTrash className="h-3.5 w-3.5" />
+            </button>
+        </div>
+    );
+}

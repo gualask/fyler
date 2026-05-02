@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Fyler",
+  "version": "1.0.0",
+  "identifier": "io.github.gualask.fyler",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Fyler",
+        "width": 1100,
+        "height": 700,
+        "acceptFirstMouse": true,
+        "generalAutofillEnabled": false
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDIwNTI0Q0VCQzExNTJBNDAKUldSQUtoWEI2MHhTSUU4WFErSkNaSWxxUDRsYUYvOWw0TVhBZjQ5VkluRzRmTTdabDJ6RW5GUlIK",
+      "endpoints": [
+        "https://github.com/gualask/fyler/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

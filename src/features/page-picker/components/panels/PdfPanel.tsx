@@ -1,0 +1,142 @@
+import { useEffect, useState } from 'react';
+import type {
+    FileEdits,
+    FinalPage,
+    RotationDirection,
+    SourceFile,
+    SourceTarget,
+} from '@/shared/domain';
+import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
+import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
+import { PdfToolbar } from '../controls/PdfToolbar';
+import { usePdfControls } from '../hooks/pdf-controls.hook';
+import { PdfThumbnailItem } from './PdfThumbnailItem';
+
+interface Props {
+    file: SourceFile;
+    finalPages: FinalPage[];
+    onTogglePage: (fileId: string, pageNum: number) => void;
+    onSetPdfPages: (fileId: string, pages: number[]) => void;
+    onSelectAll: (file: SourceFile) => void;
+    onDeselectAll: (fileId: string) => void;
+    onFocusTarget: (fileId: string, target: SourceTarget) => void;
+    onRotatePage: (fileId: string, pageNum: number, direction: RotationDirection) => Promise<void>;
+    editsByFile: Record<string, FileEdits>;
+    focusedPageNum: number | null;
+    focusFlashKey?: number;
+    onPreview: (pageNum: number) => void;
+}
+
+export function PdfPanel({
+    file,
+    finalPages,
+    onTogglePage,
+    onSetPdfPages,
+    onSelectAll,
+    onDeselectAll,
+    onFocusTarget,
+    onRotatePage,
+    editsByFile,
+    focusedPageNum,
+    focusFlashKey,
+    onPreview,
+}: Props) {
+    const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null);
+    const {
+        pageInput,
+        mode,
+        selectedPageNums,
+        enableManual,
+        handleThumbClick,
+        commitPageInput,
+        appliedPageNum,
+        appliedPageSignal,
+        handleSelectAll,
+        handleClearSelection,
+        handlePageInputChange,
+        handleInputFocus,
+        handleInputBlur,
+    } = usePdfControls({
+        file,
+        finalPages,
+        onSetPdfPages,
+        onSelectAll,
+        onDeselectAll,
+        onFocusTarget,
+    });
+
+    useEffect(() => {
+        if (focusedPageNum === null || !gridEl) return;
+        return scrollIntoViewByDataAttr({
+            root: gridEl,
+            attr: 'data-page',
+            value: String(focusedPageNum),
+            signal: focusFlashKey,
+        });
+    }, [focusedPageNum, focusFlashKey, gridEl]);
+
+    useEffect(() => {
+        if (appliedPageNum === null || !gridEl) return;
+        return scrollIntoViewByDataAttr({
+            root: gridEl,
+            attr: 'data-page',
+            value: String(appliedPageNum),
+            signal: appliedPageSignal,
+        });
+    }, [appliedPageNum, appliedPageSignal, gridEl]);
+
+    const handlePageInputCommit = () => {
+        commitPageInput();
+    };
+
+    const pageCount = file.pageCount;
+    if (pageCount === null) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex h-full flex-col overflow-hidden">
+            <PdfToolbar
+                fileId={file.id}
+                pageCount={pageCount}
+                pageInput={pageInput}
+                onPageInputChange={handlePageInputChange}
+                onPageInputCommit={handlePageInputCommit}
+                onPageInputFocus={handleInputFocus}
+                onPageInputBlur={handleInputBlur}
+                onSelectAll={handleSelectAll}
+                onClearSelection={handleClearSelection}
+                onEnableManual={enableManual}
+                mode={mode}
+            />
+
+            <div
+                ref={setGridEl}
+                className="pdf-panel-scroller section-body min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3"
+            >
+                <div className="page-picker-grid mx-auto w-full max-w-6xl">
+                    {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNum) => (
+                        <PdfThumbnailItem
+                            key={`${pageNum}:${focusedPageNum === pageNum ? (focusFlashKey ?? 0) : 0}`}
+                            file={file}
+                            pageNum={pageNum}
+                            edits={editsByFile[file.id] ?? FileEditsVO.empty()}
+                            scrollRoot={gridEl}
+                            isSelected={selectedPageNums.has(pageNum)}
+                            isFocused={focusedPageNum === pageNum}
+                            focusFlashKey={focusedPageNum === pageNum ? focusFlashKey : undefined}
+                            onClick={(event) => handleThumbClick(pageNum, event)}
+                            onToggleSelected={() => onTogglePage(file.id, pageNum)}
+                            onPreview={() => onPreview(pageNum)}
+                            onRotate={(direction) => void onRotatePage(file.id, pageNum, direction)}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}

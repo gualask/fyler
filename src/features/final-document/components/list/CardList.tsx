@@ -1,0 +1,53 @@
+import type { FileEdits, FinalPage, ImageFit, SourceFile, SourceTarget } from '@/shared/domain';
+import { FinalDocumentSortableList } from './FinalDocumentSortableList';
+import { CardRow } from './rows/CardRow';
+
+interface Props {
+    finalPages: FinalPage[];
+    files: SourceFile[];
+    imageFit: ImageFit;
+    selectedPageId: string | null;
+    selectedPageScrollKey?: number;
+    editsByFile: Record<string, FileEdits>;
+    scrollRoot: HTMLDivElement | null;
+    onReorder: (fromId: string, toId: string) => void;
+    onRemove: (id: string) => void;
+    onSelectPage: (fileId: string, target: SourceTarget) => void;
+    onPreviewPage: (id: string) => void;
+    onMovePageToIndex?: (id: string, targetIndex: number) => void;
+}
+
+export function CardList({
+    finalPages,
+    files,
+    imageFit,
+    selectedPageId,
+    selectedPageScrollKey,
+    editsByFile,
+    scrollRoot,
+    onReorder,
+    onRemove,
+    onSelectPage,
+    onPreviewPage,
+    onMovePageToIndex,
+}: Props) {
+    return (
+        <FinalDocumentSortableList
+            finalPages={finalPages}
+            files={files}
+            imageFit={imageFit}
+            selectedPageId={selectedPageId}
+            selectedPageScrollKey={selectedPageScrollKey}
+            editsByFile={editsByFile}
+            scrollRoot={scrollRoot}
+            onReorder={onReorder}
+            onRemove={onRemove}
+            onSelectPage={onSelectPage}
+            onPreviewPage={onPreviewPage}
+            gapClassName="gap-5"
+            stackClassName="max-w-6xl"
+            Row={CardRow}
+            onMovePageToIndex={onMovePageToIndex}
+        />
+    );
+}
