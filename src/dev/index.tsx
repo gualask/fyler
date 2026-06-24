@@ -1,8 +1,14 @@
+import type { ComponentType } from 'react';
 import { AppShell } from '@/app/AppShell';
 import { AppProviders } from '@/app/providers';
+import {
+    NORMAL_WINDOW_MIN_SIZE,
+    QUICK_ADD_WINDOW_SIZE,
+} from '@/features/workspace/quick-add/quick-add-window-transition';
 import { setPlatformAdapter } from '@/infra/platform';
 
 import { browserPlatformAdapter } from './browser-platform-adapter';
+import { DevModeShell } from './DevModeShell';
 import {
     DEV_FIXTURE_INDEX_KEY,
     DEV_RUNTIME_APP_KEY,
@@ -22,21 +28,110 @@ import { WorkspaceEmptyFixturePage } from './workspace-empty.fixture';
 import { WorkspacePreviewFixturePage } from './workspace-preview.fixture';
 import { WorkspaceShellFixturePage } from './workspace-shell.fixture';
 
-const FIXTURE_KEYS = [
-    DEV_RUNTIME_APP_KEY,
-    'workspace-shell',
-    'workspace-preview',
-    'workspace-empty',
-    'preview-modal',
-    'quick-add',
-    'support-dialog',
-    'tutorial-overlay',
-    'feedback-overlays',
-    'final-document',
-    'page-picker',
-    'update-dialog',
-    'error-boundary',
-] as const;
+function BrowserRuntimeAppPage() {
+    return <AppShell />;
+}
+
+interface WindowSize {
+    width: number;
+    height: number;
+}
+
+interface DevFixtureEntry {
+    key: string;
+    title: string;
+    description: string;
+    Component: ComponentType;
+    // Window the fixture represents; defaults to the normal window minimum.
+    minSize?: WindowSize;
+}
+
+const DEV_FIXTURES: DevFixtureEntry[] = [
+    {
+        key: DEV_RUNTIME_APP_KEY,
+        title: 'Runtime app',
+        description:
+            'Real app shell mounted on the browser-safe dev adapter, without the Tauri runtime.',
+        Component: BrowserRuntimeAppPage,
+    },
+    {
+        key: 'workspace-shell',
+        title: 'Workspace shell',
+        description: 'Technical browser-safe workspace baseline with sample sources.',
+        Component: WorkspaceShellFixturePage,
+    },
+    {
+        key: 'workspace-preview',
+        title: 'Workspace preview',
+        description:
+            'Realistic working session with mixed PDF/image content. Add &selected=image for the image picker.',
+        Component: WorkspacePreviewFixturePage,
+    },
+    {
+        key: 'workspace-empty',
+        title: 'Workspace empty',
+        description: 'Empty-state workspace fixture.',
+        Component: WorkspaceEmptyFixturePage,
+    },
+    {
+        key: 'preview-modal',
+        title: 'Preview modal',
+        description: 'Browser-safe preview modal. Add &pages=1 for the single-page variant.',
+        Component: PreviewModalFixturePage,
+    },
+    {
+        key: 'quick-add',
+        title: 'Quick add',
+        description: 'Browser-safe quick-add fixture, clamped to the compact Quick Add window.',
+        Component: QuickAddFixturePage,
+        minSize: QUICK_ADD_WINDOW_SIZE,
+    },
+    {
+        key: 'support-dialog',
+        title: 'Support dialog',
+        description: 'Support/diagnostics dialog fixture.',
+        Component: SupportDialogFixturePage,
+    },
+    {
+        key: 'tutorial-overlay',
+        title: 'Tutorial overlay',
+        description: 'Tutorial overlay fixture. Add &step=0..3 to inspect targets.',
+        Component: TutorialOverlayFixturePage,
+    },
+    {
+        key: 'feedback-overlays',
+        title: 'Feedback overlays',
+        description:
+            'Progress and toast overlays. Add &view=progress | progress-indeterminate | toast-success | toast-warning.',
+        Component: FeedbackOverlaysFixturePage,
+    },
+    {
+        key: 'final-document',
+        title: 'Final document',
+        description: 'Populated final-document list fixture.',
+        Component: FinalDocumentFixturePage,
+    },
+    {
+        key: 'page-picker',
+        title: 'Page picker',
+        description: 'PDF page-picker fixture. Add &mode=image for the image panel.',
+        Component: PagePickerFixturePage,
+    },
+    {
+        key: 'update-dialog',
+        title: 'Update dialog',
+        description:
+            'Update dialog fixture. Add &view=installing or &view=error for alternate states.',
+        Component: UpdateDialogFixturePage,
+    },
+    {
+        key: 'error-boundary',
+        title: 'Error boundary',
+        description:
+            'App error-boundary fallback fixture. Add &message=... to override the crash text.',
+        Component: ErrorBoundaryFixturePage,
+    },
+];
 
 function DevIndexPage() {
     return (
@@ -59,13 +154,23 @@ function DevIndexPage() {
 
                 <div className="rounded-2xl border border-ui-border bg-ui-surface p-5 shadow-sm">
                     <ul className="space-y-3">
-                        {FIXTURE_KEYS.map((key) => (
-                            <li key={key}>
+                        {DEV_FIXTURES.map((fixture) => (
+                            <li key={fixture.key}>
                                 <a
-                                    href={getDevFixtureHref(key)}
-                                    className="inline-flex rounded-lg bg-ui-accent-soft px-3 py-2 text-sm font-medium text-ui-accent-on-soft transition-colors hover:bg-ui-accent-soft-hover"
+                                    href={getDevFixtureHref(fixture.key)}
+                                    className="flex flex-col gap-1 rounded-lg border border-ui-border bg-ui-surface-subtle px-3 py-2.5 transition-colors hover:bg-ui-surface-hover"
                                 >
-                                    {key}
+                                    <div className="flex items-baseline justify-between gap-4">
+                                        <span className="text-sm font-medium text-ui-text">
+                                            {fixture.title}
+                                        </span>
+                                        <code className="shrink-0 text-xs text-ui-text-muted">
+                                            {fixture.key}
+                                        </code>
+                                    </div>
+                                    <span className="text-xs leading-5 text-ui-text-secondary">
+                                        {fixture.description}
+                                    </span>
                                 </a>
                             </li>
                         ))}
@@ -79,14 +184,6 @@ function DevIndexPage() {
                 </div>
             </div>
         </div>
-    );
-}
-
-function BrowserRuntimeAppPage() {
-    return (
-        <AppProviders>
-            <AppShell />
-        </AppProviders>
     );
 }
 
@@ -117,73 +214,30 @@ function UnknownFixturePage({ fixtureKey }: { fixtureKey: string }) {
     );
 }
 
-function DevModeContent() {
-    const fixtureKey = getDevFixtureKey(window.location.search);
+export function DevModePage() {
     setPlatformAdapter(browserPlatformAdapter);
 
-    if (!fixtureKey || fixtureKey === DEV_FIXTURE_INDEX_KEY) {
-        return <DevIndexPage />;
-    }
+    const fixtureKey = getDevFixtureKey(window.location.search);
+    const fixture =
+        fixtureKey && fixtureKey !== DEV_FIXTURE_INDEX_KEY
+            ? DEV_FIXTURES.find((entry) => entry.key === fixtureKey)
+            : undefined;
+    const minSize = fixture?.minSize ?? NORMAL_WINDOW_MIN_SIZE;
 
-    if (fixtureKey === DEV_RUNTIME_APP_KEY) {
-        return <BrowserRuntimeAppPage />;
-    }
+    const view =
+        !fixtureKey || fixtureKey === DEV_FIXTURE_INDEX_KEY ? (
+            <DevIndexPage />
+        ) : fixture ? (
+            <fixture.Component />
+        ) : (
+            <UnknownFixturePage fixtureKey={fixtureKey} />
+        );
 
-    if (fixtureKey === 'workspace-shell') {
-        return <WorkspaceShellFixturePage />;
-    }
-
-    if (fixtureKey === 'workspace-preview') {
-        return <WorkspacePreviewFixturePage />;
-    }
-
-    if (fixtureKey === 'workspace-empty') {
-        return <WorkspaceEmptyFixturePage />;
-    }
-
-    if (fixtureKey === 'preview-modal') {
-        return <PreviewModalFixturePage />;
-    }
-
-    if (fixtureKey === 'quick-add') {
-        return <QuickAddFixturePage />;
-    }
-
-    if (fixtureKey === 'support-dialog') {
-        return <SupportDialogFixturePage />;
-    }
-
-    if (fixtureKey === 'tutorial-overlay') {
-        return <TutorialOverlayFixturePage />;
-    }
-
-    if (fixtureKey === 'feedback-overlays') {
-        return <FeedbackOverlaysFixturePage />;
-    }
-
-    if (fixtureKey === 'final-document') {
-        return <FinalDocumentFixturePage />;
-    }
-
-    if (fixtureKey === 'page-picker') {
-        return <PagePickerFixturePage />;
-    }
-
-    if (fixtureKey === 'update-dialog') {
-        return <UpdateDialogFixturePage />;
-    }
-
-    if (fixtureKey === 'error-boundary') {
-        return <ErrorBoundaryFixturePage />;
-    }
-
-    return <UnknownFixturePage fixtureKey={fixtureKey} />;
-}
-
-export function DevModePage() {
     return (
         <AppProviders>
-            <DevModeContent />
+            <DevModeShell minWidth={minSize.width} minHeight={minSize.height}>
+                {view}
+            </DevModeShell>
         </AppProviders>
     );
 }

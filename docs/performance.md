@@ -110,43 +110,25 @@ output-size blowups for common photo inputs.
 
 ### Conservative save path
 
-Fyler saves PDFs with a conservative, compatibility-first writer.
-
-This is not the most aggressive size optimization strategy, but it is the right
-performance tradeoff for production:
-
-- the save path is predictable
-- compatibility issues do not force retries or fallbacks
-- compression effort is focused on image payloads, where the gain is real
-
-The backend intentionally does not spend extra complexity budget on PDF
-container tricks that are fragile across viewers.
+The save path uses the compatibility-first writer described in
+[PDF export](pdf-export.md). The performance consequence is that compression
+effort is focused on image payloads (where the gain is real) instead of fragile
+container tricks, so saving stays predictable and never retries or falls back.
 
 ### Export composition avoids intermediate documents
 
-The export composer builds the final PDF incrementally instead of preparing many
-intermediate one-page documents and merging them.
+The incremental composer and per-source object memoization are described in
+[PDF export](pdf-export.md). The performance payoff is lower peak memory: the
+final PDF is built in one pass instead of materializing and merging many
+intermediate one-page documents.
 
-This reduces peak memory and avoids structural work that can easily become
-fragile (for example, inherited page properties disappearing when a page is
-extracted incorrectly).
+### Auto-JPEG for large raw images
 
-The composer also memoizes objects copied from the same source PDF so repeated
-references are not duplicated unnecessarily in the output.
-
-### Practical thresholds (backend)
-
-Some numeric choices that guide performance behavior:
-
-- effective DPI resizing: 25 DPI hysteresis above the target
-- minimum resized long side: 256 px
-- keep-original threshold: rewritten stream must be at least 12% smaller
-- auto-JPEG trigger for large raw images: at least 128 KiB, and at least 256 px
-  on the long side
-
-When auto-JPEG is used, the default quality is chosen based on how much an image
-is downscaled (more downscale → slightly lower quality), and is kept higher for
-already-JPEG sources.
+Beyond the resize gating thresholds in [Plan gating](#plan-gating), a large raw
+image is auto-encoded to JPEG when it is at least 128 KiB and at least 256 px on
+its long side. The default quality scales with how much the image is downscaled
+(more downscale → slightly lower quality) and stays higher for already-JPEG
+sources.
 
 ## Frontend
 

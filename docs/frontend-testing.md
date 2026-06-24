@@ -31,6 +31,14 @@ Use `pnpm tauri:dev` when you need native windowing, OS integrations, or plugin-
 | `?dev=workspace-preview` | You want realistic workspace proportions and selectable sample content. |
 | `pnpm tauri:dev` | You need native Tauri behavior, OS dialogs, updater flows, or platform integration checks. |
 
+The dev surface treats the browser viewport as the Fyler window: a fixture
+fills the viewport, so a browser or Playwright `resize` maps 1:1 to the rendered
+size and screenshots stay faithful. It clamps to the minimum size of the window
+that fixture represents — the normal window for most fixtures, the compact Quick
+Add window for `?dev=quick-add` — and shows a warning banner below it, since
+those layouts are not representative of production. See
+`src/dev/DevModeShell.tsx`.
+
 ## Fixture conventions
 
 - keep fixtures under `src/dev/`
@@ -57,13 +65,6 @@ Use `pnpm tauri:dev` when you need native windowing, OS integrations, or plugin-
 | `?dev=page-picker` | Opens the PDF page-picker fixture. Use `&mode=image` for the image panel. |
 | `?dev=update-dialog` | Opens the update dialog fixture. Use `&view=installing` or `error` for alternate states. |
 | `?dev=error-boundary` | Opens the app error boundary fallback fixture. Use `&message=...` to override the crash text. |
-
-## Playwright and manual audit workflow
-
-- use `?dev=<fixture>` when you need deterministic DOM, layout, and visual inspection
-- use `?dev=runtime-app` for browser-based audit of the real shell without Tauri
-- use `?dev=workspace-preview` when proportions and mixed PDF/image states matter more than isolated components
-- use `pnpm tauri:dev` for native Tauri and OS-integrated checks that browser-safe fixtures cannot cover
 
 ## Repo hygiene
 
