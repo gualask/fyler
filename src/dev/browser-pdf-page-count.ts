@@ -19,6 +19,6 @@ export async function getBrowserPdfPageCount(file: File): Promise<number> {
     try {
         return pdfDocument.numPages;
     } finally {
-        await pdfDocument.destroy();
+        await loadingTask.destroy();
     }
 }
