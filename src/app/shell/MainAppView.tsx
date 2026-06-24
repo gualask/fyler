@@ -67,7 +67,7 @@ export function MainAppView({
             />
 
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-                {isDragOver && <DragOverlay />}
+                {isDragOver ? <DragOverlay /> : null}
 
                 <MainWorkspaceLayout
                     workspace={workspace}

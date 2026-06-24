@@ -127,9 +127,9 @@ export function FinalDocumentRowShell({
             />
 
             <div onClick={onSelect} className={cardClassName}>
-                {item.isSelected && flashKey && (
+                {item.isSelected && flashKey ? (
                     <FocusFlashOverlay flashKey={flashKey} className={flashOverlayClassName} />
-                )}
+                ) : null}
 
                 <FinalDocumentDragHandleContext.Provider
                     value={{ attributes, listeners, setActivatorNodeRef }}

@@ -148,12 +148,12 @@ export function ImagePanel({
                                     onRotateRight={() => void onRotate('cw')}
                                 />
                             </div>
-                            {isFocused && focusFlashKey && (
+                            {isFocused && focusFlashKey ? (
                                 <FocusFlashOverlay
                                     flashKey={focusFlashKey}
                                     className="inset-2 rounded-xl"
                                 />
-                            )}
+                            ) : null}
                         </div>
                     </div>
 

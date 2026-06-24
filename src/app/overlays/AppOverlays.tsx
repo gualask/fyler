@@ -57,22 +57,22 @@ export function AppOverlays({
     return (
         <>
             <AnimatePresence>
-                {notifications.statusMessage && notifications.statusTone && (
+                {notifications.statusMessage && notifications.statusTone ? (
                     <Toast
                         key={notifications.statusMessage}
                         message={notifications.statusMessage}
                         tone={notifications.statusTone}
                     />
-                )}
+                ) : null}
             </AnimatePresence>
 
             <AnimatePresence>
-                {notifications.loadingMessage && (
+                {notifications.loadingMessage ? (
                     <ProgressModal
                         message={notifications.loadingMessage}
                         progress={notifications.loadingProgress}
                     />
-                )}
+                ) : null}
             </AnimatePresence>
 
             <SupportDialog
@@ -98,7 +98,7 @@ export function AppOverlays({
             </AnimatePresence>
 
             <AnimatePresence>
-                {showFinalPreview && (
+                {showFinalPreview ? (
                     <PreviewModal
                         finalPages={workspace.finalPages}
                         files={workspace.files}
@@ -107,7 +107,7 @@ export function AppOverlays({
                         matchExportedImages
                         onClose={() => setShowFinalPreview(false)}
                     />
-                )}
+                ) : null}
             </AnimatePresence>
         </>
     );

@@ -69,7 +69,7 @@ export function PageQuickActions({
         <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
             <div className="absolute inset-0 bg-[var(--ui-overlay-scrim)]" />
 
-            {onPreview && (
+            {onPreview ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                     <ActionButton
                         sizeClass={previewSize}
@@ -81,11 +81,11 @@ export function PageQuickActions({
                         onClick={onPreview}
                     />
                 </div>
-            )}
+            ) : null}
 
-            {(onRotateLeft || onRotateRight) && (
+            {onRotateLeft || onRotateRight ? (
                 <div className="absolute inset-x-0 bottom-2.5 flex items-center justify-center gap-1">
-                    {onRotateLeft && (
+                    {onRotateLeft ? (
                         <ActionButton
                             sizeClass={rotateSize}
                             iconSizeClass={iconSize}
@@ -95,8 +95,8 @@ export function PageQuickActions({
                             toneClassName={rotateButtonTone}
                             onClick={onRotateLeft}
                         />
-                    )}
-                    {onRotateRight && (
+                    ) : null}
+                    {onRotateRight ? (
                         <ActionButton
                             sizeClass={rotateSize}
                             iconSizeClass={iconSize}
@@ -106,9 +106,9 @@ export function PageQuickActions({
                             toneClassName={rotateButtonTone}
                             onClick={onRotateRight}
                         />
-                    )}
+                    ) : null}
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }

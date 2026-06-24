@@ -1,3 +1,4 @@
+import transformImports from '@rolldown/plugin-transform-imports';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
@@ -23,7 +24,16 @@ function vendorChunkName(moduleId: string): string | null {
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-    plugins: [tailwindcss(), react()],
+    plugins: [
+        transformImports({
+            '@tabler/icons-react': {
+                transform: '@tabler/icons-react/dist/esm/icons/{{member}}.mjs',
+                preventFullImport: true,
+            },
+        }),
+        tailwindcss(),
+        react(),
+    ],
     resolve: {
         tsconfigPaths: true,
     },

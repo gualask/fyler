@@ -72,7 +72,7 @@ export function SupportDialog({
 
     return (
         <AnimatePresence>
-            {open && (
+            {open ? (
                 <motion.div
                     className="dialog-backdrop dialog-backdrop-padded"
                     initial={{ opacity: 0 }}
@@ -132,7 +132,7 @@ export function SupportDialog({
                         />
                     </motion.div>
                 </motion.div>
-            )}
+            ) : null}
         </AnimatePresence>
     );
 }

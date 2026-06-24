@@ -33,15 +33,19 @@
             "types": "all"
         },
         "rules": {
-            "recommended": true,
+            "preset": "recommended",
             "a11y": {
                 "noStaticElementInteractions": "off",
                 "useKeyWithClickEvents": "off",
                 "noSvgWithoutTitle": "off"
             },
+            "performance": {
+                "noJsxPropsBind": "off"
+            },
             "suspicious": {
                 "noConsole": "error",
-                "noDebugger": "error"
+                "noDebugger": "error",
+                "noUnnecessaryConditions": "off"
             },
             "style": {
                 "useImportType": "error",

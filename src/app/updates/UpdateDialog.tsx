@@ -48,13 +48,13 @@ export function UpdateDialogView({
                     {t('update.message', { version: updateVersion ?? '' })}
                 </p>
 
-                {error && (
+                {error ? (
                     <p className="mt-3 rounded-lg bg-ui-danger-soft px-3 py-2 text-xs text-ui-danger">
                         {t('status.errorPrefix', { message: error })}
                     </p>
-                )}
+                ) : null}
 
-                {installing && (
+                {installing ? (
                     <div className="mt-4">
                         <div className="h-2 w-full overflow-hidden rounded-full bg-ui-border">
                             <div
@@ -68,7 +68,7 @@ export function UpdateDialogView({
                                 : t('update.installing')}
                         </p>
                     </div>
-                )}
+                ) : null}
 
                 {!installing && (
                     <div className="mt-5 flex justify-end gap-2">

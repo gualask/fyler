@@ -32,7 +32,7 @@ export function QuickAddView({
 
     return (
         <div className="relative flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text">
-            {isDragOver && <DragOverlay />}
+            {isDragOver ? <DragOverlay /> : null}
 
             <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-ui-border bg-ui-surface px-4">
                 <div className="flex items-center gap-2.5">

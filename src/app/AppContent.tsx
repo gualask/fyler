@@ -84,11 +84,11 @@ export function AppContent() {
 
     return (
         <div className={rootClassName}>
-            {UpdateDialog && (
+            {UpdateDialog ? (
                 <Suspense fallback={null}>
                     <UpdateDialog />
                 </Suspense>
-            )}
+            ) : null}
             {quickAdd.isQuickAdd ? (
                 <QuickAddView
                     files={workspace.files}

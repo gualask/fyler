@@ -61,9 +61,9 @@ export function PdfThumbnailItem({
                     </div>
                 )}
 
-                {isFocused && focusFlashKey && (
+                {isFocused && focusFlashKey ? (
                     <FocusFlashOverlay flashKey={focusFlashKey} className="inset-0" />
-                )}
+                ) : null}
 
                 <PageQuickActions
                     onPreview={onPreview}

@@ -156,7 +156,7 @@ export function MainWorkspaceLayout({
             </div>
 
             <AnimatePresence>
-                {pickerPreviewTarget && pickerPreviewPage && (
+                {pickerPreviewTarget && pickerPreviewPage ? (
                     <PreviewModal
                         key={pickerPreviewPage.id}
                         finalPages={[pickerPreviewPage]}
@@ -174,7 +174,7 @@ export function MainWorkspaceLayout({
                         onRotatePage={workspace.rotatePage}
                         onClose={() => setPickerPreviewTarget(null)}
                     />
-                )}
+                ) : null}
             </AnimatePresence>
 
             <AnimatePresence>

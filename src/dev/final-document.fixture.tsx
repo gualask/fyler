@@ -112,7 +112,7 @@ export function FinalDocumentFixturePage() {
                 </div>
             </div>
 
-            {previewTarget && (
+            {previewTarget ? (
                 <PreviewModal
                     key={previewTarget.id}
                     finalPages={[previewTarget]}
@@ -132,7 +132,7 @@ export function FinalDocumentFixturePage() {
                     onRotatePage={rotatePage}
                     onClose={() => setPreviewTargetId(null)}
                 />
-            )}
+            ) : null}
         </PdfCacheProvider>
     );
 }
