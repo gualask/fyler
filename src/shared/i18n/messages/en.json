@@ -178,6 +178,7 @@
     "errors.page_out_of_range": "Page {pageNum} is out of range (1–{total}).",
     "errors.source_not_found": "A source file could not be found.",
     "errors.open_pdf_failed": "Couldn't open PDF.",
+    "errors.password_required_pdf": "PDF is password protected.",
     "errors.no_documents_to_merge": "No documents to merge.",
     "errors.invalid_rotation": "Unsupported rotation.",
     "errors.page_missing_mediabox": "PDF page is missing dimensions.",

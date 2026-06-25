@@ -41,11 +41,18 @@ interface SourcePageCountPayload {
 
 interface SourcePageCountErrorPayload {
     id: string;
+    reason?: string;
 }
 
 interface SourcePageCountEventHandlers {
     onPageCount: (payload: SourcePageCountPayload) => void;
     onPageCountError: (payload: SourcePageCountErrorPayload) => void;
+}
+
+function pageCountErrorCode(
+    reason: string | undefined,
+): 'open_pdf_failed' | 'password_required_pdf' {
+    return reason === 'password_required_pdf' ? 'password_required_pdf' : 'open_pdf_failed';
 }
 
 function subscribeToSourcePageCountEvents({
@@ -216,14 +223,14 @@ export function useWorkspaceSourceEvents({
         filesRef.current = [];
     }, []);
 
-    const handlePageCountError = useCallback((fileId: string) => {
+    const handlePageCountError = useCallback((fileId: string, reason?: string) => {
         pendingPageCountsRef.current.delete(fileId);
         const failedFile = filesRef.current.find((file) => file.id === fileId);
         removeSourceFileRef.current(fileId);
         removePagesForFileRef.current(fileId);
         onDropErrorRef.current?.(
             failedFile
-                ? { code: 'open_pdf_failed', meta: { name: failedFile.name } }
+                ? { code: pageCountErrorCode(reason), meta: { name: failedFile.name } }
                 : new Error('page_count_failed'),
         );
     }, []);
@@ -240,8 +247,8 @@ export function useWorkspaceSourceEvents({
     }, []);
 
     const handlePageCountErrorEvent = useCallback(
-        ({ id }: SourcePageCountErrorPayload) => {
-            handlePageCountError(id);
+        ({ id, reason }: SourcePageCountErrorPayload) => {
+            handlePageCountError(id, reason);
         },
         [handlePageCountError],
     );

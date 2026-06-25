@@ -178,6 +178,7 @@
     "errors.page_out_of_range": "La pagina {pageNum} non esiste (1–{total}).",
     "errors.source_not_found": "Impossibile trovare uno dei file sorgente.",
     "errors.open_pdf_failed": "Impossibile aprire il PDF.",
+    "errors.password_required_pdf": "Il PDF è protetto da password.",
     "errors.no_documents_to_merge": "Nessun documento da unire.",
     "errors.invalid_rotation": "Rotazione non supportata.",
     "errors.page_missing_mediabox": "Una pagina PDF non ha dimensioni valide.",

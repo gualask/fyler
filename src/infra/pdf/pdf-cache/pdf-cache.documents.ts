@@ -28,12 +28,15 @@ export function getOrCreatePdfDocument(
     const promise = (async () => {
         let loadingTask: PDFDocumentLoadingTask | undefined;
         try {
-            const { pdfjsLib } = await import('../render');
+            const { PDFJS_DOCUMENT_OPTIONS, pdfjsLib } = await import('../render');
             if (promisesByFileId.get(file.id) !== promiseRef.current) {
                 throw new Error('PDF load cancelled');
             }
 
-            loadingTask = pdfjsLib.getDocument({ url: getPreviewUrl(file.originalPath) });
+            loadingTask = pdfjsLib.getDocument({
+                url: getPreviewUrl(file.originalPath),
+                ...PDFJS_DOCUMENT_OPTIONS,
+            });
             tasksByFileId.set(file.id, loadingTask);
             return await loadingTask.promise;
         } catch (error) {

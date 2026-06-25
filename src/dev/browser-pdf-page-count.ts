@@ -1,3 +1,5 @@
+import { configurePdfJsWorker, PDFJS_DOCUMENT_OPTIONS } from '@/infra/pdf/pdfjs-assets';
+
 async function loadPdfJs() {
     if (typeof DOMMatrix === 'function') {
         return import('pdfjs-dist');
@@ -8,11 +10,15 @@ async function loadPdfJs() {
 
 export async function getBrowserPdfPageCount(file: File): Promise<number> {
     const pdfjsLib = await loadPdfJs();
+    const canUseWorker = typeof Worker === 'function';
+    if (canUseWorker) {
+        configurePdfJsWorker(pdfjsLib);
+    }
+
     const buffer = await file.arrayBuffer();
-    // pdf.js supports `disableWorker`, but the published typings do not expose it.
     const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(buffer),
-        disableWorker: true,
+        ...(canUseWorker ? PDFJS_DOCUMENT_OPTIONS : { disableWorker: true }),
     } as Parameters<typeof pdfjsLib.getDocument>[0]);
     const pdfDocument = await loadingTask.promise;
 

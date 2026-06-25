@@ -1,9 +1,9 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { configurePdfJsWorker, PDFJS_DOCUMENT_OPTIONS } from './pdfjs-assets';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+configurePdfJsWorker(pdfjsLib);
 
-export { pdfjsLib };
+export { PDFJS_DOCUMENT_OPTIONS, pdfjsLib };
 
 export type PdfRenderResult = { blob: Blob; aspectRatio: number };
 

@@ -66,7 +66,7 @@ fn finalize_import(
 /// Spawns a detached background task for each PDF file whose page count is not yet known.
 ///
 /// When counting completes the task emits `source-page-count` (`{ id, pageCount }`) or
-/// `source-page-count-error` (`{ id }`) so the frontend can update its state.
+/// `source-page-count-error` (`{ id, reason }`) so the frontend can update its state.
 fn spawn_page_count_tasks(app: &tauri::AppHandle, files: &[crate::models::SourceFile]) {
     for file in files {
         if file.page_count.is_some() {
@@ -84,11 +84,39 @@ fn spawn_page_count_tasks(app: &tauri::AppHandle, files: &[crate::models::Source
                         serde_json::json!({ "id": id, "pageCount": count }),
                     );
                 }
-                _ => {
-                    let _ = app.emit("source-page-count-error", serde_json::json!({ "id": id }));
+                Ok(Err(error)) => {
+                    let reason = page_count_error_reason(&error);
+                    let _ = app.emit(
+                        "source-page-count-error",
+                        serde_json::json!({ "id": id, "reason": reason }),
+                    );
+                }
+                Err(_) => {
+                    let _ = app.emit(
+                        "source-page-count-error",
+                        serde_json::json!({ "id": id, "reason": "open_pdf_failed" }),
+                    );
                 }
             }
         });
+    }
+}
+
+fn page_count_error_reason(error: &anyhow::Error) -> &'static str {
+    let Some(pdf_error) = error.downcast_ref::<lopdf::Error>() else {
+        return "open_pdf_failed";
+    };
+
+    match pdf_error {
+        lopdf::Error::InvalidPassword
+        | lopdf::Error::UnsupportedSecurityHandler(_)
+        | lopdf::Error::Decryption(_) => "password_required_pdf",
+        lopdf::Error::Unimplemented(message)
+            if message.contains("encrypted") && message.contains("password") =>
+        {
+            "password_required_pdf"
+        }
+        _ => "open_pdf_failed",
     }
 }
 
