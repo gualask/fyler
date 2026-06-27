@@ -35,6 +35,9 @@ export const openExternalUrl = (url: string) => currentPlatformAdapter.openExter
 export const openFilesFromPaths = (paths: string[]) =>
     currentPlatformAdapter.openFilesFromPaths(paths);
 
+export const unlockPdfSource = (path: string, password: string) =>
+    currentPlatformAdapter.unlockPdfSource(path, password);
+
 export const releaseSources = (fileIds: string[]) => currentPlatformAdapter.releaseSources(fileIds);
 
 export const getImageExportPreviewLayout = (

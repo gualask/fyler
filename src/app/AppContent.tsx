@@ -4,6 +4,7 @@ import { useAppNotifications } from '@/app/notifications';
 import { useExportAction, useOptimize } from '@/features/export';
 import { useTutorial, useTutorialFilesAddedHandler } from '@/features/tutorial';
 import {
+    ProtectedPdfPasswordDialog,
     QuickAddView,
     useAddFilesAction,
     useQuickAdd,
@@ -132,6 +133,7 @@ export function AppContent() {
                 workspace={workspace}
                 imageFit={optimize.imageFit}
             />
+            <ProtectedPdfPasswordDialog state={workspace.passwordDialog} />
         </div>
     );
 }

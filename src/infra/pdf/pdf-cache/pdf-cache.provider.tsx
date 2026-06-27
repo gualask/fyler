@@ -41,15 +41,21 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
     const listenersRef = useRef<Map<string, Set<() => void>>>(new Map());
     const docTasksRef = useRef<Map<string, PDFDocumentLoadingTask>>(new Map());
     const docPromisesRef = useRef<Map<string, Promise<PDFDocumentProxy>>>(new Map());
+    const docPasswordsRef = useRef<Map<string, string>>(new Map());
 
     const getPdfDocument = useCallback(
         (file: SourceFile) =>
             getOrCreatePdfDocument(file, {
                 tasksByFileId: docTasksRef.current,
                 promisesByFileId: docPromisesRef.current,
+                passwordsByFileId: docPasswordsRef.current,
             }),
         [],
     );
+
+    const setPdfPassword = useCallback((fileId: string, password: string) => {
+        docPasswordsRef.current.set(fileId, password);
+    }, []);
 
     const subscribe = useCallback(
         (fileId: string, request: PdfRenderRequest, listener: () => void) =>
@@ -99,7 +105,9 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
         destroyPdfDocument(fileId, {
             tasksByFileId: docTasksRef.current,
             promisesByFileId: docPromisesRef.current,
+            passwordsByFileId: docPasswordsRef.current,
         });
+        docPasswordsRef.current.delete(fileId);
     }, []);
 
     useEffect(
@@ -108,7 +116,9 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
             destroyAllPdfDocuments({
                 tasksByFileId: docTasksRef.current,
                 promisesByFileId: docPromisesRef.current,
+                passwordsByFileId: docPasswordsRef.current,
             });
+            docPasswordsRef.current.clear();
             pageTasksRef.current.clear();
             listenersRef.current.clear();
         },
@@ -122,6 +132,7 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
                 getRender: get,
                 subscribeRender: subscribe,
                 getPageAspectRatio: getAspectRatio,
+                setPdfPassword,
                 releaseFile,
             }}
         >

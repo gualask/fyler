@@ -54,6 +54,7 @@ async function openFilesDialogInBrowser(): Promise<OpenFilesResult> {
         input.onchange = async () => {
             const result: OpenFilesResult = {
                 files: [],
+                passwordRequired: [],
                 skippedErrors: [],
             };
 
@@ -89,7 +90,8 @@ export const browserPlatformAdapter: PlatformAdapter = {
     openExternalUrl: async (url) => {
         window.open(url, '_blank', 'noopener,noreferrer');
     },
-    openFilesFromPaths: async () => ({ files: [], skippedErrors: [] }),
+    openFilesFromPaths: async () => ({ files: [], passwordRequired: [], skippedErrors: [] }),
+    unlockPdfSource: () => unsupportedInBrowser('unlockPdfSource'),
     releaseSources: async () => undefined,
     getImageExportPreviewLayout: async (): Promise<ImageExportPreviewLayout> =>
         unsupportedInBrowser('getImageExportPreviewLayout'),

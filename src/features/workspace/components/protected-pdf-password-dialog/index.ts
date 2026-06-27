@@ -1,0 +1,1 @@
+export { ProtectedPdfPasswordDialog } from './ProtectedPdfPasswordDialog';

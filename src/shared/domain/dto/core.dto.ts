@@ -18,7 +18,7 @@ export type RotationDirection = 'cw' | 'ccw';
  * A user-imported file tracked by the session.
  *
  * `pageCount` is 1-based and represents the original source; edits are tracked separately.
- * For PDFs, `pageCount` is `null` while the background page-count task is running.
+ * For PDFs, `pageCount` is usually known at import time; `null` means the count is unavailable.
  */
 export type SourceFile = {
     id: string;
@@ -26,7 +26,7 @@ export type SourceFile = {
     name: string;
     /** Original file size in bytes. */
     byteSize: number;
-    /** Null for PDFs while page count is being resolved in the background. */
+    /** Null when a PDF page count is not available yet. */
     pageCount: number | null;
     kind: DocKind;
 };
@@ -108,7 +108,14 @@ export type SkippedFile = {
     detail?: string;
 };
 
+export type PasswordProtectedFile = {
+    originalPath: string;
+    name: string;
+    byteSize: number;
+};
+
 export type OpenFilesResult = {
     files: SourceFile[];
+    passwordRequired: PasswordProtectedFile[];
     skippedErrors: SkippedFile[];
 };

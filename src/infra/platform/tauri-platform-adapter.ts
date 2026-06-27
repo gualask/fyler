@@ -12,6 +12,7 @@ export const tauriPlatformAdapter: PlatformAdapter = {
     getAppMetadata: () => invoke('get_app_metadata'),
     openExternalUrl: (url) => invoke('open_external_url', { url }),
     openFilesFromPaths: (paths) => invoke('open_files_from_paths', { paths }),
+    unlockPdfSource: (path, password) => invoke('unlock_pdf_source', { path, password }),
     releaseSources: (fileIds) => invoke('release_sources', { fileIds }),
     getImageExportPreviewLayout: (path, imageFit, quarterTurns) =>
         invoke('get_image_export_preview_layout', { path, imageFit, quarterTurns }),

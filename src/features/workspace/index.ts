@@ -3,6 +3,7 @@ import type { useWorkspace } from './hooks/workspace.hook';
 export { DragOverlay } from './components/DragOverlay';
 export { EmptyState } from './components/EmptyState';
 export { FileList } from './components/file-list/FileList';
+export { ProtectedPdfPasswordDialog } from './components/protected-pdf-password-dialog';
 
 export { useAddFilesAction } from './hooks/add-files-action.hook';
 export { useWorkspace } from './hooks/workspace.hook';

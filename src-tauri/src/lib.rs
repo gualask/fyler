@@ -44,6 +44,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::open_files_dialog,
             commands::open_files_from_paths,
+            commands::unlock_pdf_source,
             commands::release_sources,
             commands::save_pdf_dialog,
             commands::save_text_file,

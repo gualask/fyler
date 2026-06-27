@@ -15,6 +15,8 @@ pub struct RegisteredSource {
     pub name: String,
     /// `"pdf"` or `"image"`.
     pub kind: DocKind,
+    /// Password for encrypted PDFs, kept only in process memory.
+    pub password: Option<String>,
 }
 
 #[derive(Clone)]
@@ -71,6 +73,11 @@ impl SourceRegistry {
                 .insert(registered.original_path.clone(), file_id.clone());
             state.sources_by_id.insert(file_id, registered);
         }
+    }
+
+    /// Inserts one source and records its original path for import dedupe.
+    pub fn insert_one(&self, file_id: String, registered: RegisteredSource) {
+        self.insert_many([(file_id, registered)]);
     }
 
     /// Looks up a registered source by its file ID.

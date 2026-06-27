@@ -17,7 +17,7 @@ export function useAddFilesAction({ workspace, notifications }: AddFilesActionDe
         record({ category: 'files', severity: 'info', message: 'Open files dialog started' });
         notifications.showOpeningFiles();
         void workspace
-            .addFiles()
+            .addFiles({ onImportReady: notifications.clearLoading })
             .then(({ files: addedFiles, skippedErrors }) => {
                 const result = classifyAddFilesResult({
                     addedCount: addedFiles.length,

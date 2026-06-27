@@ -99,7 +99,7 @@ fn append_pdf_export_item(
     validate_source_kind(source, file_id, DocKind::Pdf)?;
     validate_pdf_page_num(file_id, page_num)?;
 
-    let entry = load_cached_pdf_source(pdf_cache, file_id, &source.original_path, &source.name)?;
+    let entry = load_cached_pdf_source(pdf_cache, file_id, source)?;
     composer.push_pdf_page(
         &entry.doc,
         &mut entry.memo,

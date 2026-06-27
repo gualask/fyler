@@ -39,6 +39,7 @@ export type PdfCacheContextType = {
         pageNum: number,
         quarterTurns: QuarterTurn,
     ) => number | undefined;
+    setPdfPassword: (fileId: string, password: string) => void;
     releaseFile: (fileId: string) => void;
 };
 

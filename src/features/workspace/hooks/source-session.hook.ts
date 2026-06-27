@@ -1,7 +1,7 @@
 import { useCallback, useReducer } from 'react';
 import { buildThumbnailRenderRequest, usePdfCache } from '@/infra/pdf';
 import { openFilesDialog, releaseSources } from '@/infra/platform';
-import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
+import type { OpenFilesResult, RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { initialSourceSessionState, sourceSessionReducer } from '../state/source-session.reducer';
@@ -19,11 +19,9 @@ export function useSourceSession() {
         return newFiles;
     }, []);
 
-    const openAndAddSourceFiles = useCallback(async () => {
-        const result = await openFilesDialog(t('dialogs.filters.documentsAndImages'));
-        const added = result.files.length ? addSourceFiles(result.files) : [];
-        return { files: added, skippedErrors: result.skippedErrors };
-    }, [addSourceFiles, t]);
+    const openSourceFiles = useCallback(async (): Promise<OpenFilesResult> => {
+        return openFilesDialog(t('dialogs.filters.documentsAndImages'));
+    }, [t]);
 
     const removeSourceFile = useCallback(
         (id: string) => {
@@ -79,7 +77,7 @@ export function useSourceSession() {
         files,
         editsByFile,
         addSourceFiles,
-        openAndAddSourceFiles,
+        openSourceFiles,
         removeSourceFile,
         clearSourceFiles,
         rotateSourcePage,

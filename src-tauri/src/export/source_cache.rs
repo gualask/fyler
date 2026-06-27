@@ -58,14 +58,17 @@ pub(super) fn resolve_cached_source<'cache, 'request>(
 pub(super) fn load_cached_pdf_source<'a>(
     cache: &'a mut PdfSourceCache,
     file_id: &str,
-    path: &str,
-    name: &str,
+    source: &RegisteredSource,
 ) -> anyhow::Result<&'a mut CachedPdfSource> {
     if !cache.contains_key(file_id) {
-        let doc = PdfDoc::load(path).map_err(|_| {
+        let doc = match source.password.as_deref() {
+            Some(password) => PdfDoc::load_with_password(&source.original_path, password),
+            None => PdfDoc::load(&source.original_path),
+        }
+        .map_err(|_| {
             anyhow::Error::new(UserFacingError::with_meta(
                 "open_pdf_failed",
-                serde_json::json!({ "name": name }),
+                serde_json::json!({ "name": source.name }),
             ))
         })?;
         cache.insert(

@@ -15,6 +15,7 @@ export type {
     OptimizationSettings,
     OptimizeOptions,
     PageSpecError,
+    PasswordProtectedFile,
     QuarterTurn,
     RotationDirection,
     SkippedFile,

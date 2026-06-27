@@ -22,6 +22,17 @@ pub struct SourceFile {
     pub kind: DocKind,
 }
 
+/// A PDF that could not be imported until the user provides a password.
+#[derive(serde::Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PasswordProtectedFile {
+    #[serde(rename = "originalPath")]
+    pub original_path: String,
+    pub name: String,
+    #[serde(rename = "byteSize")]
+    pub byte_size: u64,
+}
+
 /// A single item in the export sequence.
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -118,6 +129,8 @@ pub struct SkippedFile {
 #[derive(serde::Serialize)]
 pub struct OpenFilesResult {
     pub files: Vec<SourceFile>,
+    #[serde(rename = "passwordRequired")]
+    pub password_required: Vec<PasswordProtectedFile>,
     #[serde(rename = "skippedErrors")]
     pub skipped_errors: Vec<SkippedFile>,
 }

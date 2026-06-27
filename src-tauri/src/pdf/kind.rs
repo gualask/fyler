@@ -34,5 +34,33 @@ pub fn detect_kind_from_ext(path: &str) -> Option<DocKind> {
 
 /// Counts the number of pages in a PDF at `path`.
 pub fn count_pages(path: &str) -> Result<u32> {
-    Ok(PdfDoc::load(path)?.get_pages().len() as u32)
+    count_pages_with_password(path, None)
+}
+
+/// Counts the number of pages in a PDF, using `password` for encrypted sources when provided.
+pub fn count_pages_with_password(path: &str, password: Option<&str>) -> Result<u32> {
+    let metadata = match password {
+        Some(password) => PdfDoc::load_metadata_with_password(path, password)?,
+        None => PdfDoc::load_metadata(path)?,
+    };
+    Ok(metadata.page_count)
+}
+
+/// Returns true when a PDF open/count error indicates that a password is needed.
+pub fn is_password_required_error(error: &anyhow::Error) -> bool {
+    let Some(pdf_error) = error.downcast_ref::<lopdf::Error>() else {
+        return false;
+    };
+
+    match pdf_error {
+        lopdf::Error::InvalidPassword
+        | lopdf::Error::UnsupportedSecurityHandler(_)
+        | lopdf::Error::Decryption(_) => true,
+        lopdf::Error::Unimplemented(message)
+            if message.contains("encrypted") && message.contains("password") =>
+        {
+            true
+        }
+        _ => false,
+    }
 }

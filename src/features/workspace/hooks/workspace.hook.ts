@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useReducer } from 'react';
-import type { RotationDirection, SourceTarget } from '@/shared/domain';
+import type { OpenFilesResult, RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
 import { initialWorkspaceUiState, workspaceUiReducer } from '../state/workspace-ui.reducer';
 import { useFileDrop } from './file-drop.hook';
 import { useFinalPages } from './final-pages.hook';
+import { useProtectedPdfImportResolver } from './protected-pdf-import.hook';
 import { useSourceSession } from './source-session.hook';
 import {
     useWorkspaceSourceEvents,
@@ -25,7 +26,7 @@ export function useWorkspace({
         files,
         editsByFile,
         addSourceFiles,
-        openAndAddSourceFiles,
+        openSourceFiles,
         removeSourceFile,
         clearSourceFiles,
         rotateSourcePage,
@@ -49,6 +50,7 @@ export function useWorkspace({
         () => files.find((file) => file.id === uiState.selectedId) ?? null,
         [files, uiState.selectedId],
     );
+    const { resolveImportResult, passwordDialog } = useProtectedPdfImportResolver();
 
     const focusSource = useCallback(
         (fileId: string, target: SourceTarget, flashTarget: 'picker' | 'final') => {
@@ -66,8 +68,8 @@ export function useWorkspace({
         dispatchUi({ type: 'files-added', files: addedFiles });
     }, []);
 
-    const acceptFiles = useCallback(
-        async (newFiles: typeof files) => {
+    const commitImportedFiles = useCallback(
+        (newFiles: SourceFile[]) => {
             const addedFiles = addSourceFiles(newFiles);
             handleSessionFilesAdded(addedFiles);
             applySelectionAfterAdd(addedFiles);
@@ -76,12 +78,23 @@ export function useWorkspace({
         [addSourceFiles, applySelectionAfterAdd, handleSessionFilesAdded],
     );
 
-    const addFiles = useCallback(async () => {
-        const { files: addedFiles, skippedErrors } = await openAndAddSourceFiles();
-        handleSessionFilesAdded(addedFiles);
-        applySelectionAfterAdd(addedFiles);
-        return { files: addedFiles, skippedErrors };
-    }, [applySelectionAfterAdd, handleSessionFilesAdded, openAndAddSourceFiles]);
+    const acceptFiles = useCallback(
+        async (result: OpenFilesResult) => {
+            const resolvedFiles = await resolveImportResult(result);
+            return commitImportedFiles(resolvedFiles);
+        },
+        [commitImportedFiles, resolveImportResult],
+    );
+
+    const addFiles = useCallback(
+        async ({ onImportReady }: { onImportReady?: () => void } = {}) => {
+            const result = await openSourceFiles();
+            onImportReady?.();
+            const addedFiles = await acceptFiles(result);
+            return { files: addedFiles, skippedErrors: result.skippedErrors };
+        },
+        [acceptFiles, openSourceFiles],
+    );
 
     const selectFile = useCallback((id: string) => {
         dispatchUi({ type: 'file-selected', fileId: id });
@@ -173,6 +186,7 @@ export function useWorkspace({
         focusFinalPageInDocument,
         reorderFiles,
         isDragOver,
+        passwordDialog,
         ...finalPagesApi,
     };
 }

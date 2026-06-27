@@ -143,10 +143,8 @@ export function useWorkspaceSourceEvents({
     onFilesAdded,
     onDropError,
 }: UseWorkspaceSourceEventsParams) {
-    // source-page-count may fire before React commits the addToList state update (race on fast
-    // PDFs / dialog path). This map holds those early page counts so handleSessionFilesAdded can
-    // re-queue updateFilePageCount after the reducer adds the files, ensuring React applies them
-    // in order.
+    // Keep supporting native page-count events for compatibility with any queued legacy work.
+    // Current imports usually arrive with pageCount already set.
     const pendingPageCountsRef = useRef<Map<string, number>>(new Map());
     const filesRef = useRef(files);
     const updateFilePageCountRef = useRef(updateFilePageCount);
@@ -195,6 +193,11 @@ export function useWorkspaceSourceEvents({
             for (const file of addedFiles) {
                 if (file.kind === 'image') {
                     addAllPagesForFile(file);
+                    continue;
+                }
+
+                if (file.pageCount !== null) {
+                    setPdfPagesForFileRef.current(file.id, pdfPageNumbers(file.pageCount));
                     continue;
                 }
 

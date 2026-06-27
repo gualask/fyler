@@ -10,6 +10,7 @@ import type { SourceFile } from '@/shared/domain';
 export type PdfDocumentCaches = {
     tasksByFileId: Map<string, PDFDocumentLoadingTask>;
     promisesByFileId: Map<string, Promise<PDFDocumentProxy>>;
+    passwordsByFileId: Map<string, string>;
 };
 
 /**
@@ -19,7 +20,7 @@ export type PdfDocumentCaches = {
  */
 export function getOrCreatePdfDocument(
     file: SourceFile,
-    { tasksByFileId, promisesByFileId }: PdfDocumentCaches,
+    { tasksByFileId, promisesByFileId, passwordsByFileId }: PdfDocumentCaches,
 ): Promise<PDFDocumentProxy> {
     const existing = promisesByFileId.get(file.id);
     if (existing) return existing;
@@ -33,9 +34,11 @@ export function getOrCreatePdfDocument(
                 throw new Error('PDF load cancelled');
             }
 
+            const password = passwordsByFileId.get(file.id);
             loadingTask = pdfjsLib.getDocument({
                 url: getPreviewUrl(file.originalPath),
                 ...PDFJS_DOCUMENT_OPTIONS,
+                ...(password !== undefined ? { password } : {}),
             });
             tasksByFileId.set(file.id, loadingTask);
             return await loadingTask.promise;

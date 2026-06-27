@@ -9,7 +9,7 @@ let platform: typeof import('./index.ts');
 
 function createStubPlatformAdapter(overrides: Partial<PlatformAdapter> = {}): PlatformAdapter {
     return {
-        openFilesDialog: async () => ({ files: [], skippedErrors: [] }),
+        openFilesDialog: async () => ({ files: [], passwordRequired: [], skippedErrors: [] }),
         savePDFDialog: async () => '',
         saveTextFile: async () => '',
         mergePDFs: async () => {
@@ -23,7 +23,10 @@ function createStubPlatformAdapter(overrides: Partial<PlatformAdapter> = {}): Pl
             arch: 'test',
         }),
         openExternalUrl: async () => undefined,
-        openFilesFromPaths: async () => ({ files: [], skippedErrors: [] }),
+        openFilesFromPaths: async () => ({ files: [], passwordRequired: [], skippedErrors: [] }),
+        unlockPdfSource: async () => {
+            throw new Error('not implemented');
+        },
         releaseSources: async () => undefined,
         getImageExportPreviewLayout: async () => {
             throw new Error('not implemented');
@@ -91,6 +94,7 @@ describe('platform facade', () => {
         const adapter = createStubPlatformAdapter({
             openFilesDialog: async () => ({
                 files: [],
+                passwordRequired: [],
                 skippedErrors: [{ name: 'stub.pdf', reason: 'unsupported_format' }],
             }),
             getPreviewUrl: (path) => `preview:${path}`,
@@ -102,11 +106,37 @@ describe('platform facade', () => {
         assert.equal(invokeCalls.length, 0);
         assert.deepEqual(result, {
             files: [],
+            passwordRequired: [],
             skippedErrors: [{ name: 'stub.pdf', reason: 'unsupported_format' }],
         });
         assert.equal(
             platform.getPreviewUrl('/fixtures/sample-document.pdf'),
             'preview:/fixtures/sample-document.pdf',
         );
+    });
+
+    test('delegates protected PDF unlock to the current platform adapter', async () => {
+        const adapter = createStubPlatformAdapter({
+            unlockPdfSource: async (path, password) => ({
+                id: 'source-1',
+                originalPath: path,
+                name: password === 'secret' ? 'protected.pdf' : 'unexpected.pdf',
+                byteSize: 128,
+                pageCount: 2,
+                kind: 'pdf',
+            }),
+        });
+
+        platform.setPlatformAdapter(adapter);
+        const result = await platform.unlockPdfSource('/tmp/protected.pdf', 'secret');
+
+        assert.deepEqual(result, {
+            id: 'source-1',
+            originalPath: '/tmp/protected.pdf',
+            name: 'protected.pdf',
+            byteSize: 128,
+            pageCount: 2,
+            kind: 'pdf',
+        });
     });
 });

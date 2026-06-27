@@ -5,13 +5,15 @@ use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
-use crate::error::AppError;
+use crate::error::{AppError, UserFacingError};
 use crate::export::export_pdf;
-use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile};
+use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile, SourceFile};
 use crate::pdf::{
-    count_pages, image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS,
+    count_pages_with_password, image_export_preview_layout, is_password_required_error,
+    ImageExportPreviewLayout, IMAGE_EXTENSIONS,
 };
-use crate::source_registry::{files_from_paths, SourceRegistry};
+use crate::source_registry::{files_from_paths, RegisteredSource, SourceRegistry};
+use crate::vo::DocKind;
 
 #[derive(Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -59,65 +61,63 @@ fn finalize_import(
     emit_import_warning(app, &skipped);
     OpenFilesResult {
         files: result.files,
+        password_required: result.password_required,
         skipped_errors: skipped,
     }
 }
 
-/// Spawns a detached background task for each PDF file whose page count is not yet known.
-///
-/// When counting completes the task emits `source-page-count` (`{ id, pageCount }`) or
-/// `source-page-count-error` (`{ id, reason }`) so the frontend can update its state.
-fn spawn_page_count_tasks(app: &tauri::AppHandle, files: &[crate::models::SourceFile]) {
-    for file in files {
-        if file.page_count.is_some() {
-            continue;
-        }
-        let app = app.clone();
-        let path = file.original_path.clone();
-        let id = file.id.clone();
-        tauri::async_runtime::spawn(async move {
-            let result = tauri::async_runtime::spawn_blocking(move || count_pages(&path)).await;
-            match result {
-                Ok(Ok(count)) => {
-                    let _ = app.emit(
-                        "source-page-count",
-                        serde_json::json!({ "id": id, "pageCount": count }),
-                    );
-                }
-                Ok(Err(error)) => {
-                    let reason = page_count_error_reason(&error);
-                    let _ = app.emit(
-                        "source-page-count-error",
-                        serde_json::json!({ "id": id, "reason": reason }),
-                    );
-                }
-                Err(_) => {
-                    let _ = app.emit(
-                        "source-page-count-error",
-                        serde_json::json!({ "id": id, "reason": "open_pdf_failed" }),
-                    );
-                }
-            }
-        });
+fn empty_open_files_result() -> OpenFilesResult {
+    OpenFilesResult {
+        files: vec![],
+        password_required: vec![],
+        skipped_errors: vec![],
     }
 }
 
-fn page_count_error_reason(error: &anyhow::Error) -> &'static str {
-    let Some(pdf_error) = error.downcast_ref::<lopdf::Error>() else {
-        return "open_pdf_failed";
+fn unlock_error(error: anyhow::Error, name: &str) -> anyhow::Error {
+    if is_password_required_error(&error) {
+        anyhow::Error::new(UserFacingError::with_meta(
+            "invalid_pdf_password",
+            serde_json::json!({ "name": name }),
+        ))
+    } else {
+        anyhow::Error::new(UserFacingError::with_meta(
+            "open_pdf_failed",
+            serde_json::json!({ "name": name }),
+        ))
+    }
+}
+
+fn unlocked_pdf_source(
+    path: String,
+    password: String,
+) -> anyhow::Result<(SourceFile, RegisteredSource)> {
+    let name = std::path::Path::new(&path)
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
+    let byte_size = fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
+    let page_count = count_pages_with_password(&path, Some(&password))
+        .map_err(|error| unlock_error(error, &name))?;
+    let id = uuid::Uuid::new_v4().to_string();
+
+    let source = SourceFile {
+        id: id.clone(),
+        original_path: path.clone(),
+        name: name.clone(),
+        byte_size,
+        page_count: Some(page_count),
+        kind: DocKind::Pdf,
+    };
+    let registered = RegisteredSource {
+        original_path: path,
+        name,
+        kind: DocKind::Pdf,
+        password: Some(password),
     };
 
-    match pdf_error {
-        lopdf::Error::InvalidPassword
-        | lopdf::Error::UnsupportedSecurityHandler(_)
-        | lopdf::Error::Decryption(_) => "password_required_pdf",
-        lopdf::Error::Unimplemented(message)
-            if message.contains("encrypted") && message.contains("password") =>
-        {
-            "password_required_pdf"
-        }
-        _ => "open_pdf_failed",
-    }
+    Ok((source, registered))
 }
 
 #[tauri::command]
@@ -139,17 +139,11 @@ pub async fn open_files_dialog(
         .blocking_pick_files()
     else {
         // User cancelled or dialog returned no selection
-        return Ok(OpenFilesResult {
-            files: vec![],
-            skipped_errors: vec![],
-        });
+        return Ok(empty_open_files_result());
     };
 
     if files.is_empty() {
-        return Ok(OpenFilesResult {
-            files: vec![],
-            skipped_errors: vec![],
-        });
+        return Ok(empty_open_files_result());
     }
 
     let mut path_skipped = Vec::new();
@@ -174,7 +168,6 @@ pub async fn open_files_dialog(
         .await
         .map_err(anyhow::Error::from)??;
     let import_result = finalize_import(&app, result, path_skipped);
-    spawn_page_count_tasks(&app, &import_result.files);
     Ok(import_result)
 }
 
@@ -190,8 +183,22 @@ pub async fn open_files_from_paths(
         .await
         .map_err(anyhow::Error::from)??;
     let import_result = finalize_import(&app, result, vec![]);
-    spawn_page_count_tasks(&app, &import_result.files);
     Ok(import_result)
+}
+
+#[tauri::command]
+/// Unlocks and registers one password-protected PDF.
+pub async fn unlock_pdf_source(
+    path: String,
+    password: String,
+    registry: State<'_, SourceRegistry>,
+) -> Result<SourceFile, AppError> {
+    let result = tauri::async_runtime::spawn_blocking(move || unlocked_pdf_source(path, password))
+        .await
+        .map_err(anyhow::Error::from)??;
+    let (source, registered) = result;
+    registry.insert_one(source.id.clone(), registered);
+    Ok(source)
 }
 
 #[tauri::command]

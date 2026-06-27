@@ -6,6 +6,7 @@ const APP_ERROR_CODE_TO_I18N_KEY: Record<string, TranslationKey> = {
     source_not_found: 'errors.source_not_found',
     open_pdf_failed: 'errors.open_pdf_failed',
     password_required_pdf: 'errors.password_required_pdf',
+    invalid_pdf_password: 'errors.invalid_pdf_password',
     no_documents_to_merge: 'errors.no_documents_to_merge',
     invalid_rotation: 'errors.invalid_rotation',
     page_missing_mediabox: 'errors.page_missing_mediabox',

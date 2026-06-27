@@ -156,6 +156,21 @@ export function WorkspaceFixturePage({
                     setSelectedId(id);
                 },
                 addFiles: async () => ({ files: [], skippedErrors: [] }),
+                passwordDialog: {
+                    open: false,
+                    file: null,
+                    currentIndex: 0,
+                    totalCount: 0,
+                    password: '',
+                    error: null,
+                    isChecking: false,
+                    tryForRemaining: false,
+                    onPasswordChange: () => undefined,
+                    onTryForRemainingChange: () => undefined,
+                    onSubmit: () => undefined,
+                    onSkipCurrent: () => undefined,
+                    onSkipAll: () => undefined,
+                },
                 removeFile: (id: string) => {
                     setFiles((current) => current.filter((file) => file.id !== id));
                     setFinalPages((current) => current.filter((page) => page.fileId !== id));

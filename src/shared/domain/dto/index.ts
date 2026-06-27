@@ -11,6 +11,7 @@ export type {
     MergeWarning,
     OpenFilesResult,
     OptimizeOptions,
+    PasswordProtectedFile,
     QuarterTurn,
     RotationDirection,
     SkippedFile,

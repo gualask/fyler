@@ -2,14 +2,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { openFilesFromPaths } from '@/infra/platform';
 import { onTauriEvent } from '@/infra/platform/events';
-import type { SourceFile } from '@/shared/domain';
+import type { OpenFilesResult, SourceFile } from '@/shared/domain';
 
 interface DragDropPayload {
     paths: string[];
 }
 
 export function useFileDrop(
-    addFiles: (files: SourceFile[]) => Promise<SourceFile[]> | SourceFile[],
+    addFiles: (result: OpenFilesResult) => Promise<SourceFile[]> | SourceFile[],
     onError: (error: unknown) => void,
 ): { isDragOver: boolean } {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -36,8 +36,13 @@ export function useFileDrop(
                 if (!paths?.length) return;
                 void openFilesFromPaths(paths)
                     .then((result) => {
-                        if (!active || !result.files.length) return;
-                        void Promise.resolve(addFilesRef.current(result.files));
+                        if (
+                            !active ||
+                            (result.files.length === 0 && result.passwordRequired.length === 0)
+                        ) {
+                            return;
+                        }
+                        void Promise.resolve(addFilesRef.current(result));
                     })
                     .catch((error) => {
                         if (active) onErrorRef.current(error);
