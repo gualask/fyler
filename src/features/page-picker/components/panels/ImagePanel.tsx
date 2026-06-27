@@ -1,35 +1,29 @@
+import { IconRotate2, IconRotateClockwise2, IconZoomIn } from '@tabler/icons-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { getPreviewUrl } from '@/infra/platform';
 import type { FileEdits, RotationDirection, SourceFile } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
-import { PageQuickActions } from '@/shared/ui/actions/PageQuickActions';
 import { FocusFlashOverlay } from '@/shared/ui/feedback/FocusFlashOverlay';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { useElementSize } from '../hooks/element-size.hook';
+import {
+    addImageStageChrome,
+    fitFixedImageFrame,
+    fitImageThumb,
+    IMAGE_FRAME_MAX_HEIGHT,
+    IMAGE_FRAME_MAX_WIDTH,
+    IMAGE_STAGE_CHROME,
+} from './image-panel-layout';
 
 const IMAGE_THUMB_FALLBACK_WIDTH = 420;
 const IMAGE_THUMB_FALLBACK_HEIGHT = 320;
-const IMAGE_THUMB_MAX_HEIGHT = 420;
-const IMAGE_STAGE_CHROME = 16;
+const IMAGE_ACTION_TOOLBAR_HEIGHT = 48;
+const IMAGE_ACTION_TOOLBAR_GAP = 8;
 
-function fitImageThumb(
-    width: number,
-    height: number,
-    maxWidth: number,
-    maxHeight: number,
-): { width: number; height: number } {
-    if (width <= 0 || height <= 0) {
-        return { width: maxWidth, height: maxHeight };
-    }
-
-    const scale = Math.min(maxWidth / width, maxHeight / height);
-    return {
-        width: Math.max(1, Math.round(width * scale)),
-        height: Math.max(1, Math.round(height * scale)),
-    };
-}
+const imageActionButtonClassName =
+    'flex h-9 w-9 items-center justify-center rounded-lg text-[var(--ui-overlay-text)] transition-[background-color,transform,color,opacity,box-shadow] hover:bg-[var(--ui-overlay-control-hover)] focus-visible:bg-[var(--ui-overlay-control-hover)] focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--ui-accent-muted)] active:scale-[0.97]';
 
 interface Props {
     file: SourceFile;
@@ -41,6 +35,55 @@ interface Props {
     onInclude: () => void;
     onFocus: () => void;
     onPreview: () => void;
+}
+
+function ImageActionToolbar({
+    width,
+    onPreview,
+    onRotate,
+}: {
+    width: number;
+    onPreview: () => void;
+    onRotate: (direction: RotationDirection) => Promise<void>;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div
+            className="flex h-12 max-w-full shrink-0 items-center justify-center"
+            style={{ width }}
+        >
+            <div className="flex h-11 items-center gap-0.5 rounded-xl border border-[color:var(--ui-overlay-border)] bg-[color:var(--ui-overlay-control-strong)] px-1 text-[var(--ui-overlay-text)] shadow-[0_12px_32px_var(--ui-overlay-shadow)]">
+                <button
+                    type="button"
+                    onClick={() => void onRotate('ccw')}
+                    className={imageActionButtonClassName}
+                    title={t('quickActions.rotateLeft')}
+                    aria-label={t('quickActions.rotateLeft')}
+                >
+                    <IconRotate2 className="h-4 w-4" />
+                </button>
+                <button
+                    type="button"
+                    onClick={onPreview}
+                    className={imageActionButtonClassName}
+                    title={t('quickActions.preview')}
+                    aria-label={t('quickActions.preview')}
+                >
+                    <IconZoomIn className="h-4 w-4" />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => void onRotate('cw')}
+                    className={imageActionButtonClassName}
+                    title={t('quickActions.rotateRight')}
+                    aria-label={t('quickActions.rotateRight')}
+                >
+                    <IconRotateClockwise2 className="h-4 w-4" />
+                </button>
+            </div>
+        </div>
+    );
 }
 
 export function ImagePanel({
@@ -65,22 +108,33 @@ export function ImagePanel({
     const quarterTurns = FileEditsVO.getImageQuarterTurn(editsByFile[file.id]);
     const rotation = FileEditsVO.getImageRotationDegrees(editsByFile[file.id]);
     const isQuarterTurnOdd = quarterTurns % 2 === 1;
-    const maxThumbWidth =
+    const maxFrameWidth =
         imageStageSize.width > 0
-            ? Math.min(Math.max(imageStageSize.width - IMAGE_STAGE_CHROME, 1), 560)
-            : IMAGE_THUMB_FALLBACK_WIDTH;
-    const maxThumbHeight =
+            ? Math.min(
+                  Math.max(imageStageSize.width - IMAGE_STAGE_CHROME, 1),
+                  IMAGE_FRAME_MAX_WIDTH,
+              )
+            : IMAGE_FRAME_MAX_WIDTH;
+    const maxFrameHeight =
         imageStageSize.height > 0
             ? Math.min(
-                  Math.max(imageStageSize.height - IMAGE_STAGE_CHROME, 1),
-                  IMAGE_THUMB_MAX_HEIGHT,
+                  Math.max(
+                      imageStageSize.height -
+                          IMAGE_STAGE_CHROME -
+                          IMAGE_ACTION_TOOLBAR_HEIGHT -
+                          IMAGE_ACTION_TOOLBAR_GAP,
+                      1,
+                  ),
+                  IMAGE_FRAME_MAX_HEIGHT,
               )
-            : IMAGE_THUMB_MAX_HEIGHT;
+            : IMAGE_FRAME_MAX_HEIGHT;
     const naturalWidth = imageNaturalSize?.width ?? IMAGE_THUMB_FALLBACK_WIDTH;
     const naturalHeight = imageNaturalSize?.height ?? IMAGE_THUMB_FALLBACK_HEIGHT;
     const rotatedWidth = isQuarterTurnOdd ? naturalHeight : naturalWidth;
     const rotatedHeight = isQuarterTurnOdd ? naturalWidth : naturalHeight;
-    const thumbSize = fitImageThumb(rotatedWidth, rotatedHeight, maxThumbWidth, maxThumbHeight);
+    const frameSize = fitFixedImageFrame(maxFrameWidth, maxFrameHeight);
+    const thumbSize = fitImageThumb(rotatedWidth, rotatedHeight, frameSize.width, frameSize.height);
+    const outerFrameSize = addImageStageChrome(frameSize);
     const stageSize = isQuarterTurnOdd
         ? { width: thumbSize.height, height: thumbSize.width }
         : thumbSize;
@@ -102,16 +156,13 @@ export function ImagePanel({
                 <div className="page-picker-image-stack mx-auto flex h-full w-full max-w-4xl min-h-0 flex-col items-center">
                     <div
                         ref={imageStageEl}
-                        className="flex min-h-0 w-full flex-1 items-center justify-center"
+                        className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2"
                     >
                         <div
-                            className={[
-                                'group relative cursor-pointer rounded-2xl border-2 p-2 transition-colors',
-                                isFocused ? 'border-[3px] border-ui-accent' : 'border-transparent',
-                            ].join(' ')}
+                            className="group relative cursor-pointer rounded-2xl border-2 border-transparent p-2 transition-colors"
                             style={{
-                                width: thumbSize.width + 16,
-                                height: thumbSize.height + 16,
+                                width: outerFrameSize.width,
+                                height: outerFrameSize.height,
                                 maxWidth: '100%',
                                 maxHeight: '100%',
                             }}
@@ -142,11 +193,6 @@ export function ImagePanel({
                                         }}
                                     />
                                 </motion.div>
-                                <PageQuickActions
-                                    onPreview={onPreview}
-                                    onRotateLeft={() => void onRotate('ccw')}
-                                    onRotateRight={() => void onRotate('cw')}
-                                />
                             </div>
                             {isFocused && focusFlashKey ? (
                                 <FocusFlashOverlay
@@ -155,11 +201,13 @@ export function ImagePanel({
                                 />
                             ) : null}
                         </div>
-                    </div>
 
-                    <span className="max-w-md shrink-0 text-center text-xs text-ui-text-muted">
-                        {t('pagePicker.includedAutomatically')}
-                    </span>
+                        <ImageActionToolbar
+                            width={outerFrameSize.width}
+                            onPreview={onPreview}
+                            onRotate={onRotate}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

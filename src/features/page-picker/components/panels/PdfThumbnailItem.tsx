@@ -92,7 +92,7 @@ export function PdfThumbnailItem({
 
             <p
                 className={[
-                    'page-picker-thumb-label mx-auto w-full max-w-[17rem] text-left text-[10px] uppercase tracking-[0.14em]',
+                    'page-picker-thumb-label mx-auto w-full max-w-[17rem] text-center text-[10px] uppercase tracking-[0.14em]',
                     isFocused
                         ? 'font-bold text-ui-accent-text'
                         : 'font-semibold text-ui-text-muted',
