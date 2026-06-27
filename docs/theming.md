@@ -156,9 +156,9 @@ These are still part of the theme system. They just are not intended as first-ch
 
 ## Accent Palette Switching
 
-Fyler supports accent switching by applying a single accent class at the app root, such as:
+Fyler supports accent switching by using indigo as the default token set and applying a single
+accent class at the app root for non-default palettes:
 
-- `accent-indigo`
 - `accent-teal`
 - `accent-blue`
 

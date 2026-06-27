@@ -59,7 +59,7 @@ those layouts are not representative of production. See
 | `?dev=preview-modal` | Opens the browser-safe preview modal fixture. Use `&pages=1` for the single-page variant. |
 | `?dev=quick-add` | Opens the browser-safe quick-add fixture. |
 | `?dev=support-dialog` | Opens the support dialog fixture. |
-| `?dev=tutorial-overlay` | Opens the tutorial overlay fixture. Use `&step=0..3` to inspect targets. |
+| `?dev=tutorial-overlay` | Opens the tutorial overlay fixture. Use `&step=0..6` to inspect targets. |
 | `?dev=feedback-overlays` | Opens feedback overlay fixtures. Use `&view=progress`, `progress-indeterminate`, `toast-success`, or `toast-warning`. |
 | `?dev=final-document` | Opens the populated final-document fixture. |
 | `?dev=page-picker` | Opens the PDF page-picker fixture. Use `&mode=image` for the image panel. |
@@ -101,7 +101,7 @@ This section is the coverage map for frontend review. It does not track pass or 
 | Preview | Toolbar preview | Preview modal -> toolbar, `?dev=preview-modal` |
 | Support | Support dialog | `Settings` -> `Report a bug`, `?dev=runtime-app`, `?dev=support-dialog` |
 | Support | Report issue section | Support dialog -> report issue, `?dev=runtime-app`, `?dev=support-dialog` |
-| Tutorial | Tutorial overlay | First file add, `Help`, `?dev=runtime-app`, `?dev=tutorial-overlay&step=0..3` |
+| Tutorial | Tutorial overlay | First file add, `Help`, `?dev=runtime-app`, `?dev=tutorial-overlay&step=0..6` |
 | Export | Output panel | Footer workspace, `?dev=runtime-app`, `?dev=workspace-shell` |
 | Export | Optimization section | Output panel -> preset, `?dev=runtime-app`, `?dev=workspace-shell` |
 | Export | Advanced optimization panel | Output panel -> `Custom` preset, `?dev=runtime-app`, `?dev=workspace-shell` |

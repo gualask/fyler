@@ -72,14 +72,9 @@ The plan step decides whether an image should be:
 This keeps expensive decode/resize/rewrite work off images that do not have a
 meaningful optimization path.
 
-Concrete gating rules:
-
-- resizing is skipped unless effective DPI exceeds the target by at least 25 DPI
-  (hysteresis avoids churn)
-- resizing is skipped if the resulting image would be smaller than 256 px on its
-  long side
-- rewritten streams are discarded unless they are at least 12% smaller than the
-  original (otherwise the original bytes are kept)
+Concrete thresholds live in `src-tauri/src/optimize/plan.rs`; this document only
+owns the policy: skip resize/rewrite work unless the planner can make the output
+meaningfully smaller without reducing already layout-appropriate images.
 
 #### Fast resize path
 
@@ -89,7 +84,7 @@ Current characteristics:
 
 - Lanczos3 convolution for quality-preserving downscale
 - RGB, grayscale, and CMYK support
-- parallel resize support for maximum throughput on the hot path
+- per-image optimization tasks are processed concurrently
 
 The optimizer parallelizes work at the per-image level. Candidate decode/resize/rewrite
 tasks are processed concurrently, while the resize implementation itself remains optimized

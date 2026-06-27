@@ -51,8 +51,10 @@ attempt to preserve interactive structures (forms/outlines) from input PDFs.
 
 Imported image files become pages directly inside the final document:
 
-- the image is decoded once, optionally rotated, then encoded according to the
-  selected export preset
+- JPEG images can use a fast path that embeds the source bitstream directly when
+  no resize or explicit JPEG quality is requested
+- other imported images are decoded, optionally rotated, then encoded according
+  to the selected export preset
 - the page geometry is derived from the chosen fit mode (`fit`, `contain`,
   `cover`)
 - the resulting image XObject and content stream are inserted into the final PDF

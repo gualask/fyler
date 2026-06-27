@@ -95,7 +95,7 @@ const DEV_FIXTURES: DevFixtureEntry[] = [
     {
         key: 'tutorial-overlay',
         title: 'Tutorial overlay',
-        description: 'Tutorial overlay fixture. Add &step=0..3 to inspect targets.',
+        description: 'Tutorial overlay fixture. Add &step=0..6 to inspect targets.',
         Component: TutorialOverlayFixturePage,
     },
     {

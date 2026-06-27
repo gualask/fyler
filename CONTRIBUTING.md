@@ -16,7 +16,8 @@ Fyler values **cognitive simplicity**: you should be able to understand where th
 
 ## File and Directory Naming
 
-- Directories use **kebab-case**.
+- Frontend directories use **kebab-case**.
+- Rust module directories under `src-tauri/src/` use Rust's **snake_case** module convention.
 - Visual React components use **PascalCase** filenames.
 - App entrypoints may use conventional lowercase names (e.g., `main.tsx`).
 - Hooks use **kebab-case** filenames with a `.hook` suffix and export `useXxx`.
