@@ -26,6 +26,12 @@ struct EmbeddedImageXObject {
     data: Vec<u8>,
 }
 
+struct JpegPassthroughInfo {
+    width_px: u32,
+    height_px: u32,
+    color_space: &'static [u8],
+}
+
 fn build_image_content_stream(
     layout: super::layout::ImageExportPreviewLayout,
     quarter_turns: u8,
@@ -178,37 +184,16 @@ fn try_append_jpeg_as_page_without_decode(
     quarter_turns: u8,
     optimize: Option<&OptimizeOptions>,
 ) -> Result<Option<ObjectId>> {
-    let lower = path.to_ascii_lowercase();
-    if !(lower.ends_with(".jpg") || lower.ends_with(".jpeg")) {
+    if !can_embed_original_jpeg(path, optimize) {
         return Ok(None);
     }
 
-    if optimize.and_then(|value| value.jpeg_quality).is_some() {
-        return Ok(None);
-    }
-
-    let file = match std::fs::File::open(path) {
-        Ok(file) => file,
-        Err(_) => return Ok(None),
-    };
-    let mut decoder = jpeg_decoder::Decoder::new(BufReader::new(file));
-    if decoder.read_info().is_err() {
-        return Ok(None);
-    }
-    let Some(info) = decoder.info() else {
+    let Some(info) = read_jpeg_passthrough_info(path) else {
         return Ok(None);
     };
 
-    let color_space: &'static [u8] = match info.pixel_format {
-        PixelFormat::RGB24 => b"DeviceRGB",
-        PixelFormat::L8 => b"DeviceGray",
-        _ => return Ok(None),
-    };
-
-    let width_px = u32::from(info.width);
-    let height_px = u32::from(info.height);
     let (rotated_width_px, rotated_height_px) =
-        rotated_dimensions(width_px, height_px, quarter_turns)?;
+        rotated_dimensions(info.width_px, info.height_px, quarter_turns)?;
     let layout = compute_image_export_layout(rotated_width_px, rotated_height_px, image_fit);
     let resize_to = resize_to_target_dpi(rotated_width_px, rotated_height_px, optimize, &layout);
     if resize_to.is_some() {
@@ -225,14 +210,41 @@ fn try_append_jpeg_as_page_without_decode(
         layout,
         quarter_turns,
         EmbeddedImageXObject {
-            width_px,
-            height_px,
-            color_space,
+            width_px: info.width_px,
+            height_px: info.height_px,
+            color_space: info.color_space,
             filter: Some(b"DCTDecode"),
             data: bytes,
         },
     )?;
     Ok(Some(page_id))
+}
+
+fn can_embed_original_jpeg(path: &str, optimize: Option<&OptimizeOptions>) -> bool {
+    let lower = path.to_ascii_lowercase();
+    let is_jpeg = lower.ends_with(".jpg") || lower.ends_with(".jpeg");
+    is_jpeg && optimize.and_then(|value| value.jpeg_quality).is_none()
+}
+
+fn read_jpeg_passthrough_info(path: &str) -> Option<JpegPassthroughInfo> {
+    let file = std::fs::File::open(path).ok()?;
+    let mut decoder = jpeg_decoder::Decoder::new(BufReader::new(file));
+    decoder.read_info().ok()?;
+    let info = decoder.info()?;
+
+    Some(JpegPassthroughInfo {
+        width_px: u32::from(info.width),
+        height_px: u32::from(info.height),
+        color_space: jpeg_color_space(info.pixel_format)?,
+    })
+}
+
+fn jpeg_color_space(pixel_format: PixelFormat) -> Option<&'static [u8]> {
+    match pixel_format {
+        PixelFormat::RGB24 => Some(b"DeviceRGB"),
+        PixelFormat::L8 => Some(b"DeviceGray"),
+        _ => None,
+    }
 }
 
 fn resize_to_target_dpi(

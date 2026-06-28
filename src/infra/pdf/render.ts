@@ -7,6 +7,72 @@ export { PDFJS_DOCUMENT_OPTIONS, pdfjsLib };
 
 export type PdfRenderResult = { blob: Blob; aspectRatio: number };
 
+const DEFAULT_JPEG_QUALITY = 0.92;
+
+function safePositiveNumber(value: number, fallback: number) {
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function safeDensity(value: number) {
+    return Number.isFinite(value) ? Math.max(1, value) : 1;
+}
+
+function safeJpegQuality(value: number) {
+    return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : DEFAULT_JPEG_QUALITY;
+}
+
+function assertValidViewport(viewport: { width: number; height: number }) {
+    if (
+        !Number.isFinite(viewport.width) ||
+        !Number.isFinite(viewport.height) ||
+        viewport.width <= 0 ||
+        viewport.height <= 0
+    ) {
+        throw new Error('Invalid PDF page viewport');
+    }
+}
+
+function viewportAspectRatio(viewport: { width: number; height: number }) {
+    const rawAspectRatio = viewport.width / viewport.height;
+    return Number.isFinite(rawAspectRatio) && rawAspectRatio > 0 ? rawAspectRatio : 1;
+}
+
+function createViewportCanvas(viewport: { width: number; height: number }) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.floor(safePositiveNumber(viewport.width, 1)));
+    canvas.height = Math.max(1, Math.floor(safePositiveNumber(viewport.height, 1)));
+    return canvas;
+}
+
+function getCanvasContext(canvas: HTMLCanvasElement) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        throw new Error('2D context unavailable');
+    }
+    return ctx;
+}
+
+function fillCanvasBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function encodeCanvasToJpeg(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (value) => {
+                if (value) {
+                    resolve(value);
+                } else {
+                    reject(new Error('Failed to encode PDF page to blob'));
+                }
+            },
+            'image/jpeg',
+            quality,
+        );
+    });
+}
+
 /**
  * Renders a single PDF page into a JPEG blob.
  *
@@ -26,52 +92,21 @@ export async function renderPdfPage(
     density = 1,
 ): Promise<PdfRenderResult> {
     const page = await pdfDoc.getPage(pageNum);
-    const safeWidth = Number.isFinite(width) && width > 0 ? width : 1;
-    const safeDensity = Number.isFinite(density) ? Math.max(1, density) : 1;
-    const safeQuality = Number.isFinite(quality) ? Math.min(1, Math.max(0, quality)) : 0.92;
-
+    const targetWidth = safePositiveNumber(width, 1);
+    const renderDensity = safeDensity(density);
+    const jpegQuality = safeJpegQuality(quality);
     const baseViewport = page.getViewport({ scale: 1, rotation });
-    if (
-        !Number.isFinite(baseViewport.width) ||
-        !Number.isFinite(baseViewport.height) ||
-        baseViewport.width <= 0 ||
-        baseViewport.height <= 0
-    ) {
-        throw new Error('Invalid PDF page viewport');
-    }
+    assertValidViewport(baseViewport);
 
-    const rawAspectRatio = baseViewport.width / baseViewport.height;
-    const aspectRatio = Number.isFinite(rawAspectRatio) && rawAspectRatio > 0 ? rawAspectRatio : 1;
-
-    const scale = safeWidth / baseViewport.width;
-    const renderScale = scale * safeDensity;
+    const aspectRatio = viewportAspectRatio(baseViewport);
+    const renderScale = (targetWidth / baseViewport.width) * renderDensity;
     const viewport = page.getViewport({ scale: renderScale, rotation });
-    const canvas = document.createElement('canvas');
-    const viewportWidth =
-        Number.isFinite(viewport.width) && viewport.width > 0 ? viewport.width : 1;
-    const viewportHeight =
-        Number.isFinite(viewport.height) && viewport.height > 0 ? viewport.height : 1;
-    canvas.width = Math.max(1, Math.floor(viewportWidth));
-    canvas.height = Math.max(1, Math.floor(viewportHeight));
-    // biome-ignore lint/style/noNonNullAssertion: canvas 2d context is always available
-    const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const canvas = createViewportCanvas(viewport);
+    const ctx = getCanvasContext(canvas);
+
+    fillCanvasBackground(ctx, canvas);
     await page.render({ canvasContext: ctx, viewport, canvas }).promise;
 
-    const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(
-            (value) => {
-                if (value) {
-                    resolve(value);
-                } else {
-                    reject(new Error('Failed to encode PDF page to blob'));
-                }
-            },
-            'image/jpeg',
-            safeQuality,
-        );
-    });
-
+    const blob = await encodeCanvasToJpeg(canvas, jpegQuality);
     return { blob, aspectRatio };
 }

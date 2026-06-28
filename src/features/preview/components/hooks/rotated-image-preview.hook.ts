@@ -5,10 +5,77 @@ import { renderRotatedImage } from '@/shared/ui/image-preview';
 
 export type RotatedImagePreviewStatus = 'idle' | 'pending' | 'ready' | 'failed';
 
+type RotatedImagePreview = {
+    key: string;
+    src: string | null;
+    status: RotatedImagePreviewStatus;
+};
+
+type RotatedImagePreviewResult = {
+    src: string | null;
+    status: RotatedImagePreviewStatus;
+};
+
 function maybeRevokeObjectUrl(url: string | null | undefined) {
     if (url?.startsWith('blob:')) {
         URL.revokeObjectURL(url);
     }
+}
+
+function rotatedPreviewKey(
+    imageSrc: string | undefined,
+    imageQuarterTurns: QuarterTurn,
+    useA4Container: boolean,
+): string | null {
+    return imageSrc && !useA4Container && imageQuarterTurns !== 0
+        ? `${imageSrc}:${imageQuarterTurns}`
+        : null;
+}
+
+function pendingPreviewForKey(
+    current: RotatedImagePreview | null,
+    key: string,
+): RotatedImagePreview {
+    return current?.key === key ? current : { key, src: null, status: 'pending' };
+}
+
+function readyPreviewForKey(
+    current: RotatedImagePreview | null,
+    key: string,
+    src: string,
+): RotatedImagePreview {
+    if (current?.key === key) {
+        maybeRevokeObjectUrl(current.src);
+    }
+
+    return { key, src, status: 'ready' };
+}
+
+function failedPreviewForKey(
+    current: RotatedImagePreview | null,
+    key: string,
+): RotatedImagePreview | null {
+    return current?.key === key ? { key, src: null, status: 'failed' } : current;
+}
+
+function clearedPreviewForKey(
+    current: RotatedImagePreview | null,
+    key: string,
+): RotatedImagePreview | null {
+    if (current?.key !== key) return current;
+
+    maybeRevokeObjectUrl(current.src);
+    return null;
+}
+
+function previewResult(
+    key: string | null,
+    preview: RotatedImagePreview | null,
+): RotatedImagePreviewResult {
+    if (!key) return { src: null, status: 'idle' };
+    if (preview?.key !== key) return { src: null, status: 'pending' };
+
+    return { src: preview.src, status: preview.status };
 }
 
 export function useRotatedImagePreview(
@@ -16,16 +83,10 @@ export function useRotatedImagePreview(
     imageQuarterTurns: QuarterTurn,
     useA4Container: boolean,
 ) {
-    const [rotatedImagePreview, setRotatedImagePreview] = useState<{
-        key: string;
-        src: string | null;
-        status: RotatedImagePreviewStatus;
-    } | null>(null);
-
-    const rotatedImagePreviewKey =
-        imageSrc && !useA4Container && imageQuarterTurns !== 0
-            ? `${imageSrc}:${imageQuarterTurns}`
-            : null;
+    const [rotatedImagePreview, setRotatedImagePreview] = useState<RotatedImagePreview | null>(
+        null,
+    );
+    const rotatedImagePreviewKey = rotatedPreviewKey(imageSrc, imageQuarterTurns, useA4Container);
 
     useEffect(() => {
         if (!rotatedImagePreviewKey || !imageSrc) {
@@ -34,11 +95,7 @@ export function useRotatedImagePreview(
         }
 
         let active = true;
-        setRotatedImagePreview((current) =>
-            current?.key === rotatedImagePreviewKey
-                ? current
-                : { key: rotatedImagePreviewKey, src: null, status: 'pending' },
-        );
+        setRotatedImagePreview((current) => pendingPreviewForKey(current, rotatedImagePreviewKey));
         void renderRotatedImage(imageSrc, imageQuarterTurns)
             .then((src) => {
                 if (!active) {
@@ -46,40 +103,25 @@ export function useRotatedImagePreview(
                     return;
                 }
 
-                setRotatedImagePreview((current) => {
-                    if (current?.key === rotatedImagePreviewKey) {
-                        maybeRevokeObjectUrl(current.src);
-                    }
-                    return { key: rotatedImagePreviewKey, src, status: 'ready' };
-                });
+                setRotatedImagePreview((current) =>
+                    readyPreviewForKey(current, rotatedImagePreviewKey, src),
+                );
             })
             .catch(() => {
                 if (active) {
                     setRotatedImagePreview((current) =>
-                        current?.key === rotatedImagePreviewKey
-                            ? { key: rotatedImagePreviewKey, src: null, status: 'failed' }
-                            : current,
+                        failedPreviewForKey(current, rotatedImagePreviewKey),
                     );
                 }
             });
 
         return () => {
             active = false;
-            setRotatedImagePreview((current) => {
-                if (current?.key === rotatedImagePreviewKey) {
-                    maybeRevokeObjectUrl(current.src);
-                    return null;
-                }
-                return current;
-            });
+            setRotatedImagePreview((current) =>
+                clearedPreviewForKey(current, rotatedImagePreviewKey),
+            );
         };
     }, [imageQuarterTurns, imageSrc, rotatedImagePreviewKey]);
 
-    if (!rotatedImagePreviewKey) return { src: null, status: 'idle' as const };
-
-    if (rotatedImagePreview?.key !== rotatedImagePreviewKey) {
-        return { src: null, status: 'pending' as const };
-    }
-
-    return { src: rotatedImagePreview.src, status: rotatedImagePreview.status };
+    return previewResult(rotatedImagePreviewKey, rotatedImagePreview);
 }

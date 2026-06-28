@@ -156,52 +156,74 @@ fn object_decision(doc: &PdfDoc, object_id: ObjectId) -> Option<CandidateDecisio
         .and_then(|obj| classify_object(object_id, obj))
 }
 
-fn collect_candidate_work(
-    doc: &mut PdfDoc,
-    object_id: ObjectId,
-    decision: CandidateDecision,
-    usages: &HashMap<ObjectId, Vec<ImageUsage>>,
-    opts: &OptimizeOptions,
-    batch: &mut CandidateTaskBatch,
-    summary: &mut OptimizationSummary,
-) {
-    match decision {
-        CandidateDecision::Skip(CandidateSkipReason::Unsupported) => {
-            summary.skipped_unsupported += 1;
-        }
-        CandidateDecision::Skip(CandidateSkipReason::Risky) => {
-            summary.skipped_risky += 1;
-        }
-        CandidateDecision::Optimize(candidate) => {
-            queue_candidate_task(doc, object_id, candidate, usages, opts, batch, summary);
-        }
-    }
+struct OptimizationRun<'a> {
+    doc: &'a mut PdfDoc,
+    usages: &'a HashMap<ObjectId, Vec<ImageUsage>>,
+    opts: &'a OptimizeOptions,
+    batch: CandidateTaskBatch,
+    summary: OptimizationSummary,
 }
 
-fn queue_candidate_task(
-    doc: &mut PdfDoc,
-    object_id: ObjectId,
-    candidate: ImageCandidate,
-    usages: &HashMap<ObjectId, Vec<ImageUsage>>,
-    opts: &OptimizeOptions,
-    batch: &mut CandidateTaskBatch,
-    summary: &mut OptimizationSummary,
-) {
-    let task = match doc.objects.get(&object_id) {
-        Some(obj) => build_task(object_id, obj, &candidate, usages, opts),
-        None => {
-            summary.failed_non_fatal += 1;
-            return;
+impl<'a> OptimizationRun<'a> {
+    fn new(
+        doc: &'a mut PdfDoc,
+        usages: &'a HashMap<ObjectId, Vec<ImageUsage>>,
+        opts: &'a OptimizeOptions,
+    ) -> Self {
+        Self {
+            doc,
+            usages,
+            opts,
+            batch: CandidateTaskBatch::default(),
+            summary: OptimizationSummary::default(),
         }
-    };
+    }
 
-    match task {
-        Ok(Some(task)) => {
-            batch.push(task);
-            batch.flush_if_full(doc, summary);
+    fn collect_candidate_work(&mut self, object_id: ObjectId, decision: CandidateDecision) {
+        match decision {
+            CandidateDecision::Skip(CandidateSkipReason::Unsupported) => {
+                self.summary.skipped_unsupported += 1;
+            }
+            CandidateDecision::Skip(CandidateSkipReason::Risky) => {
+                self.summary.skipped_risky += 1;
+            }
+            CandidateDecision::Optimize(candidate) => {
+                self.queue_candidate_task(object_id, candidate);
+            }
         }
-        Ok(None) => {}
-        Err(_) => summary.failed_non_fatal += 1,
+    }
+
+    fn queue_candidate_task(&mut self, object_id: ObjectId, candidate: ImageCandidate) {
+        let task = match self.doc.objects.get(&object_id) {
+            Some(obj) => build_task(object_id, obj, &candidate, self.usages, self.opts),
+            None => {
+                self.summary.failed_non_fatal += 1;
+                return;
+            }
+        };
+
+        match task {
+            Ok(Some(task)) => {
+                self.batch.push(task);
+                self.batch.flush_if_full(self.doc, &mut self.summary);
+            }
+            Ok(None) => {}
+            Err(_) => self.summary.failed_non_fatal += 1,
+        }
+    }
+
+    fn scan_object(&mut self, object_id: ObjectId) {
+        let Some(decision) = object_decision(self.doc, object_id) else {
+            return;
+        };
+
+        self.summary.scanned += 1;
+        self.collect_candidate_work(object_id, decision);
+    }
+
+    fn finish(mut self) -> OptimizationSummary {
+        self.batch.flush(self.doc, &mut self.summary);
+        self.summary
     }
 }
 
@@ -210,28 +232,12 @@ pub(super) fn optimize_images(
     opts: &OptimizeOptions,
 ) -> anyhow::Result<OptimizationSummary> {
     let usages = image_usages_for_options(doc, opts);
-    let mut summary = OptimizationSummary::default();
     let object_ids: Vec<_> = doc.objects.keys().copied().collect();
-    let mut batch = CandidateTaskBatch::default();
+    let mut run = OptimizationRun::new(doc, &usages, opts);
 
     for object_id in object_ids {
-        let Some(decision) = object_decision(doc, object_id) else {
-            continue;
-        };
-
-        summary.scanned += 1;
-        collect_candidate_work(
-            doc,
-            object_id,
-            decision,
-            &usages,
-            opts,
-            &mut batch,
-            &mut summary,
-        );
+        run.scan_object(object_id);
     }
 
-    batch.flush(doc, &mut summary);
-
-    Ok(summary)
+    Ok(run.finish())
 }

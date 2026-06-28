@@ -61,6 +61,26 @@ fn has_risky_mask(obj: &Object) -> bool {
     stream.dict.get(b"Mask").is_ok() || stream.dict.get(b"SMask").is_ok()
 }
 
+fn supported_color_space_name(name: &[u8]) -> Result<SupportedColorSpace, CandidateSkipReason> {
+    match name {
+        b"DeviceRGB" => Ok(SupportedColorSpace::Rgb),
+        b"DeviceGray" => Ok(SupportedColorSpace::Gray),
+        b"DeviceCMYK" => Ok(SupportedColorSpace::Cmyk),
+        _ => Err(CandidateSkipReason::Unsupported),
+    }
+}
+
+fn color_space_name(color_space: &Object) -> Result<&[u8], CandidateSkipReason> {
+    match color_space {
+        Object::Name(name) => Ok(name.as_slice()),
+        Object::Array(items) => items
+            .first()
+            .and_then(|item| item.as_name().ok())
+            .ok_or(CandidateSkipReason::Risky),
+        _ => Err(CandidateSkipReason::Risky),
+    }
+}
+
 fn image_color_space(obj: &Object) -> Result<SupportedColorSpace, CandidateSkipReason> {
     let stream = obj
         .as_stream()
@@ -69,25 +89,7 @@ fn image_color_space(obj: &Object) -> Result<SupportedColorSpace, CandidateSkipR
         .dict
         .get(b"ColorSpace")
         .map_err(|_| CandidateSkipReason::Risky)?;
-    match color_space {
-        Object::Name(name) => match name.as_slice() {
-            b"DeviceRGB" => Ok(SupportedColorSpace::Rgb),
-            b"DeviceGray" => Ok(SupportedColorSpace::Gray),
-            b"DeviceCMYK" => Ok(SupportedColorSpace::Cmyk),
-            _ => Err(CandidateSkipReason::Unsupported),
-        },
-        Object::Array(items) => items
-            .first()
-            .and_then(|item| item.as_name().ok())
-            .map(|name| match name {
-                b"DeviceRGB" => Ok(SupportedColorSpace::Rgb),
-                b"DeviceGray" => Ok(SupportedColorSpace::Gray),
-                b"DeviceCMYK" => Ok(SupportedColorSpace::Cmyk),
-                _ => Err(CandidateSkipReason::Unsupported),
-            })
-            .unwrap_or(Err(CandidateSkipReason::Risky)),
-        _ => Err(CandidateSkipReason::Risky),
-    }
+    color_space_name(color_space).and_then(supported_color_space_name)
 }
 
 fn source_encoding(obj: &Object) -> Result<SourceEncoding, CandidateSkipReason> {

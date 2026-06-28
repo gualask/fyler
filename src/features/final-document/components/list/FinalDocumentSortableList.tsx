@@ -52,6 +52,161 @@ interface Props {
     onMovePageToIndex?: (id: string, targetIndex: number) => void;
 }
 
+type MoveFinalPageOptions = {
+    selectedPageId: string | null;
+    scrollRoot: HTMLDivElement | null;
+    onReorder: (fromId: string, toId: string) => void;
+    onSelectPage: (fileId: string, target: SourceTarget) => void;
+};
+
+type FinalDocumentRowsProps = {
+    items: ListItem[];
+    imageFit: ImageFit;
+    selectedPageId: string | null;
+    selectedPageScrollKey?: number;
+    scrollRoot: HTMLDivElement | null;
+    Row: (props: FinalDocumentRowProps) => ReactNode;
+    onMove: (item: ListItem, toId: string | null) => void;
+    onRemove: (id: string) => void;
+    onSelectPage: (fileId: string, target: SourceTarget) => void;
+    onPreviewPage: (id: string) => void;
+    onMovePageToIndex?: (id: string, targetIndex: number) => void;
+};
+
+const FINAL_PAGE_ATTR = 'data-final-page-id';
+
+function listClassName(base: string, extra?: string): string {
+    return [base, extra].filter(Boolean).join(' ');
+}
+
+function EmptyFinalDocument({ label }: { label: string }) {
+    return (
+        <div className="flex h-full items-center justify-center">
+            <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl border border-ui-border bg-ui-surface px-6 py-8 text-center text-ui-text-muted shadow-sm">
+                <IconFile className="h-8 w-8 opacity-30" />
+                <p className="text-sm font-medium text-ui-text">{label}</p>
+            </div>
+        </div>
+    );
+}
+
+function scrollFinalPageIntoView(
+    scrollRoot: HTMLDivElement | null,
+    pageId: string,
+    signal?: number,
+) {
+    return scrollIntoViewByDataAttr({
+        root: scrollRoot,
+        attr: FINAL_PAGE_ATTR,
+        value: pageId,
+        signal,
+    });
+}
+
+function useSelectedPageScroll(
+    scrollRoot: HTMLDivElement | null,
+    selectedPageId: string | null,
+    selectedPageScrollKey: number | undefined,
+) {
+    useEffect(() => {
+        if (!selectedPageId || !scrollRoot) return;
+        return scrollFinalPageIntoView(scrollRoot, selectedPageId, selectedPageScrollKey);
+    }, [scrollRoot, selectedPageId, selectedPageScrollKey]);
+}
+
+function useMoveFinalPage({
+    selectedPageId,
+    scrollRoot,
+    onReorder,
+    onSelectPage,
+}: MoveFinalPageOptions) {
+    return useCallback(
+        (item: ListItem, toId: string | null) => {
+            if (!toId) return;
+
+            const wasSelected = item.page.id === selectedPageId;
+            if (!wasSelected) {
+                onSelectPage(item.page.fileId, finalPageToTarget(item.page));
+            }
+
+            onReorder(item.page.id, toId);
+
+            // Avoid double scroll: selection changes scroll via useSelectedPageScroll.
+            if (wasSelected) {
+                scrollFinalPageIntoView(scrollRoot, item.page.id, Date.now());
+            }
+        },
+        [onReorder, onSelectPage, scrollRoot, selectedPageId],
+    );
+}
+
+function useDragEndReorder(onReorder: (fromId: string, toId: string) => void) {
+    return useCallback(
+        (event: DragEndEvent) => {
+            const { active, over } = event;
+            if (over && active.id !== over.id) {
+                onReorder(String(active.id), String(over.id));
+            }
+        },
+        [onReorder],
+    );
+}
+
+function rowFlashKey(
+    item: ListItem,
+    selectedPageId: string | null,
+    selectedPageScrollKey: number | undefined,
+): number | undefined {
+    return item.page.id === selectedPageId ? selectedPageScrollKey : undefined;
+}
+
+function moveToIndexHandler(
+    item: ListItem,
+    onMovePageToIndex: ((id: string, targetIndex: number) => void) | undefined,
+) {
+    return onMovePageToIndex
+        ? (targetIndex: number) => onMovePageToIndex(item.page.id, targetIndex)
+        : undefined;
+}
+
+function FinalDocumentRows({
+    items,
+    imageFit,
+    selectedPageId,
+    selectedPageScrollKey,
+    scrollRoot,
+    Row,
+    onMove,
+    onRemove,
+    onSelectPage,
+    onPreviewPage,
+    onMovePageToIndex,
+}: FinalDocumentRowsProps) {
+    return items.map((item, index) => {
+        const previousId = items[index - 1]?.page.id ?? null;
+        const nextId = items[index + 1]?.page.id ?? null;
+
+        return (
+            <Row
+                key={item.page.id}
+                item={item}
+                imageFit={imageFit}
+                isFirst={index === 0}
+                isLast={index === items.length - 1}
+                scrollRoot={scrollRoot}
+                onMoveUp={() => onMove(item, previousId)}
+                onMoveDown={() => onMove(item, nextId)}
+                onRemove={onRemove}
+                onSelect={() => onSelectPage(item.page.fileId, finalPageToTarget(item.page))}
+                onPreview={() => onPreviewPage(item.page.id)}
+                flashKey={rowFlashKey(item, selectedPageId, selectedPageScrollKey)}
+                onMoveTo={moveToIndexHandler(item, onMovePageToIndex)}
+                totalItems={onMovePageToIndex ? items.length : undefined}
+            />
+        );
+    });
+}
+
 export function FinalDocumentSortableList({
     finalPages,
     files,
@@ -78,102 +233,32 @@ export function FinalDocumentSortableList({
     });
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-    const move = useCallback(
-        (item: ListItem, toId: string | null) => {
-            if (!toId) return;
-
-            const wasSelected = item.page.id === selectedPageId;
-            if (!wasSelected) {
-                onSelectPage(item.page.fileId, finalPageToTarget(item.page));
-            }
-
-            onReorder(item.page.id, toId);
-
-            // Avoid double scroll:
-            // - If selection changes, the useEffect below will scroll the new selection into view.
-            // - If selection doesn't change, we must scroll explicitly after reorder.
-            if (wasSelected) {
-                scrollIntoViewByDataAttr({
-                    root: scrollRoot,
-                    attr: 'data-final-page-id',
-                    value: item.page.id,
-                    signal: Date.now(),
-                });
-            }
-        },
-        [onReorder, onSelectPage, scrollRoot, selectedPageId],
-    );
-
-    useEffect(() => {
-        if (!selectedPageId || !scrollRoot) return;
-        return scrollIntoViewByDataAttr({
-            root: scrollRoot,
-            attr: 'data-final-page-id',
-            value: selectedPageId,
-            signal: selectedPageScrollKey,
-        });
-    }, [scrollRoot, selectedPageId, selectedPageScrollKey]);
-
-    const handleDragEnd = useCallback(
-        (event: DragEndEvent) => {
-            const { active, over } = event;
-            if (over && active.id !== over.id) {
-                onReorder(String(active.id), String(over.id));
-            }
-        },
-        [onReorder],
-    );
+    const move = useMoveFinalPage({ selectedPageId, scrollRoot, onReorder, onSelectPage });
+    const handleDragEnd = useDragEndReorder(onReorder);
+    useSelectedPageScroll(scrollRoot, selectedPageId, selectedPageScrollKey);
 
     if (items.length === 0) {
-        return (
-            <div className="flex h-full items-center justify-center">
-                <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl border border-ui-border bg-ui-surface px-6 py-8 text-center text-ui-text-muted shadow-sm">
-                    <IconFile className="h-8 w-8 opacity-30" />
-                    <p className="text-sm font-medium text-ui-text">{t('finalDocument.empty')}</p>
-                </div>
-            </div>
-        );
+        return <EmptyFinalDocument label={t('finalDocument.empty')} />;
     }
 
     return (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
-                <div className={['mx-auto w-full', stackClassName].filter(Boolean).join(' ')}>
-                    <div className={['flex flex-col', gapClassName].filter(Boolean).join(' ')}>
-                        {items.map((item, i) => {
-                            const previousId = items[i - 1]?.page.id ?? null;
-                            const nextId = items[i + 1]?.page.id ?? null;
-
-                            return (
-                                <Row
-                                    key={item.page.id}
-                                    item={item}
-                                    imageFit={imageFit}
-                                    isFirst={i === 0}
-                                    isLast={i === items.length - 1}
-                                    scrollRoot={scrollRoot}
-                                    onMoveUp={() => move(item, previousId)}
-                                    onMoveDown={() => move(item, nextId)}
-                                    onRemove={onRemove}
-                                    onSelect={() =>
-                                        onSelectPage(item.page.fileId, finalPageToTarget(item.page))
-                                    }
-                                    onPreview={() => onPreviewPage(item.page.id)}
-                                    flashKey={
-                                        item.page.id === selectedPageId
-                                            ? selectedPageScrollKey
-                                            : undefined
-                                    }
-                                    onMoveTo={
-                                        onMovePageToIndex
-                                            ? (targetIndex) =>
-                                                  onMovePageToIndex(item.page.id, targetIndex)
-                                            : undefined
-                                    }
-                                    totalItems={onMovePageToIndex ? items.length : undefined}
-                                />
-                            );
-                        })}
+                <div className={listClassName('mx-auto w-full', stackClassName)}>
+                    <div className={listClassName('flex flex-col', gapClassName)}>
+                        <FinalDocumentRows
+                            items={items}
+                            imageFit={imageFit}
+                            selectedPageId={selectedPageId}
+                            selectedPageScrollKey={selectedPageScrollKey}
+                            scrollRoot={scrollRoot}
+                            Row={Row}
+                            onMove={move}
+                            onRemove={onRemove}
+                            onSelectPage={onSelectPage}
+                            onPreviewPage={onPreviewPage}
+                            onMovePageToIndex={onMovePageToIndex}
+                        />
                     </div>
                 </div>
             </SortableContext>
