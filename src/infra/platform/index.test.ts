@@ -62,12 +62,7 @@ describe('platform facade', () => {
                 passwordRequired: [],
                 skippedErrors: [{ name: 'stub.pdf', reason: 'unsupported_format' }],
             }),
-            getImagePreview: async (fileId) => ({
-                mimeType: 'image/jpeg',
-                bytes: [1, 2, 3],
-                width: fileId === 'image-1' ? 1600 : 1,
-                height: 900,
-            }),
+            getImagePreview: async (fileId) => (fileId === 'image-1' ? [1, 2, 3] : [4]),
             getSourceUrl: (path) => `source:${path}`,
         });
 
@@ -81,12 +76,7 @@ describe('platform facade', () => {
             passwordRequired: [],
             skippedErrors: [{ name: 'stub.pdf', reason: 'unsupported_format' }],
         });
-        assert.deepEqual(preview, {
-            mimeType: 'image/jpeg',
-            bytes: [1, 2, 3],
-            width: 1600,
-            height: 900,
-        });
+        assert.deepEqual(preview, [1, 2, 3]);
         assert.equal(
             platform.getSourceUrl('/fixtures/sample-document.pdf'),
             'source:/fixtures/sample-document.pdf',

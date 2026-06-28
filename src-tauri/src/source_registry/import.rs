@@ -8,7 +8,7 @@ use crate::models::{PasswordProtectedFile, SkippedFile, SourceFile};
 use crate::pdf::{count_pages, detect_kind_from_ext, is_password_required_error};
 use crate::vo::DocKind;
 
-use super::preview::{make_image_preview, ImagePreview};
+use super::preview::{make_image_preview, ImagePreviewBytes};
 use super::registry::SourceRegistry;
 use super::source_registration::{
     registered_source_entry, source_byte_size, source_file_name, RegisteredSourceEntry,
@@ -33,7 +33,7 @@ enum ImportCandidate {
 
 struct ReadyImport {
     entry: RegisteredSourceEntry,
-    preview: Option<ImagePreview>,
+    preview: Option<ImagePreviewBytes>,
 }
 
 enum CandidatePageCount {
@@ -99,7 +99,7 @@ fn image_preview_for_candidate(
     path: &str,
     name: &str,
     kind: DocKind,
-) -> Result<Option<ImagePreview>, SkippedFile> {
+) -> Result<Option<ImagePreviewBytes>, SkippedFile> {
     if kind != DocKind::Image {
         return Ok(None);
     }
@@ -115,7 +115,7 @@ fn ready_import(
     byte_size: u64,
     page_count: u32,
     kind: DocKind,
-    preview: Option<ImagePreview>,
+    preview: Option<ImagePreviewBytes>,
 ) -> ReadyImport {
     ReadyImport {
         entry: registered_source_entry(path, name, byte_size, page_count, kind, None),

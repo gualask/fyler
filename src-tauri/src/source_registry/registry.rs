@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use crate::vo::DocKind;
 
-use super::preview::ImagePreview;
+use super::preview::ImagePreviewBytes;
 
 static REGISTRY_LOCK_POISON_LOGGED: AtomicBool = AtomicBool::new(false);
 
@@ -32,7 +32,7 @@ pub struct SourceRegistry {
 #[derive(Default)]
 struct RegistryState {
     sources_by_id: HashMap<String, RegisteredSource>,
-    image_previews_by_id: HashMap<String, ImagePreview>,
+    image_previews_by_id: HashMap<String, ImagePreviewBytes>,
     id_by_original_path: HashMap<String, String>,
 }
 
@@ -86,7 +86,7 @@ impl SourceRegistry {
     /// Stores image previews keyed by source ID.
     pub fn insert_image_previews(
         &self,
-        previews: impl IntoIterator<Item = (String, ImagePreview)>,
+        previews: impl IntoIterator<Item = (String, ImagePreviewBytes)>,
     ) {
         let mut state = self.write_state();
         for (file_id, preview) in previews {
@@ -99,8 +99,8 @@ impl SourceRegistry {
         self.read_state().sources_by_id.get(file_id).cloned()
     }
 
-    /// Looks up a compressed image preview by source ID.
-    pub fn get_image_preview(&self, file_id: &str) -> Option<ImagePreview> {
+    /// Looks up compressed image preview bytes by source ID.
+    pub fn get_image_preview(&self, file_id: &str) -> Option<ImagePreviewBytes> {
         self.read_state().image_previews_by_id.get(file_id).cloned()
     }
 

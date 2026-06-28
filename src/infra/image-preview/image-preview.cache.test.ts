@@ -56,12 +56,7 @@ describe('image preview cache', () => {
             createStubPlatformAdapter({
                 getImagePreview: async () => {
                     requests += 1;
-                    return {
-                        mimeType: 'image/jpeg',
-                        bytes: [1, 2, 3],
-                        width: 1600,
-                        height: 900,
-                    };
+                    return [1, 2, 3];
                 },
             }),
         );
@@ -100,12 +95,7 @@ describe('image preview cache', () => {
         };
         setPlatformAdapter(
             createStubPlatformAdapter({
-                getImagePreview: async () => ({
-                    mimeType: 'image/jpeg',
-                    bytes: [4, 5, 6],
-                    width: 1600,
-                    height: 900,
-                }),
+                getImagePreview: async () => new Uint8Array([4, 5, 6]),
             }),
         );
 
@@ -132,6 +122,25 @@ describe('image preview cache', () => {
             sourceUrl: 'source:/tmp/image.jpg',
         };
         setPlatformAdapter(createStubPlatformAdapter({ getImagePreview: async () => null }));
+
+        const subscription = retainImagePreview(image, () => undefined);
+        await flushPromises();
+
+        assert.deepEqual(createdUrls, []);
+        assert.deepEqual(subscription.getSnapshot(), {
+            src: 'source:/tmp/image.jpg',
+            status: 'fallback',
+        });
+        subscription.release();
+    });
+
+    test('falls back to source URL when generated preview bytes are empty', async () => {
+        const image = {
+            key: 'image-4:/tmp/image.jpg',
+            fileId: 'image-4',
+            sourceUrl: 'source:/tmp/image.jpg',
+        };
+        setPlatformAdapter(createStubPlatformAdapter({ getImagePreview: async () => [] }));
 
         const subscription = retainImagePreview(image, () => undefined);
         await flushPromises();

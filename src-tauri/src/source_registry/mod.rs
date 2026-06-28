@@ -9,7 +9,6 @@ mod registry;
 mod source_registration;
 
 pub use import::{files_from_paths, FilesFromPathsResult};
-pub use preview::ImagePreview;
 pub use registry::{RegisteredSource, SourceRegistry};
 pub(crate) use source_registration::unlocked_pdf_source;
 

@@ -8,12 +8,7 @@ import type {
     QuarterTurn,
 } from '@/shared/domain';
 
-export type ImagePreview = {
-    mimeType: string;
-    bytes: number[];
-    width: number;
-    height: number;
-};
+export type ImagePreviewBytes = ArrayBuffer | Uint8Array | number[];
 
 export interface PlatformAdapter {
     openFilesDialog(filterLabel: string): Promise<OpenFilesResult>;
@@ -30,7 +25,7 @@ export interface PlatformAdapter {
         imageFit: ImageFit,
         quarterTurns: QuarterTurn,
     ): Promise<ImageExportPreviewLayout>;
-    getImagePreview(fileId: string): Promise<ImagePreview | null>;
+    getImagePreview(fileId: string): Promise<ImagePreviewBytes | null>;
     getSourceUrl(path: string): string;
     windowGetLogicalSize(): Promise<{ width: number; height: number }>;
     windowSetSize(w: number, h: number): Promise<void>;

@@ -10,8 +10,7 @@ use crate::export::export_pdf;
 use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile, SourceFile};
 use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{
-    files_from_paths, unlocked_pdf_source as build_unlocked_pdf_source, ImagePreview,
-    SourceRegistry,
+    files_from_paths, unlocked_pdf_source as build_unlocked_pdf_source, SourceRegistry,
 };
 
 #[derive(Clone, serde::Serialize)]
@@ -168,8 +167,8 @@ pub fn release_sources(file_ids: Vec<String>, registry: State<'_, SourceRegistry
 pub fn get_image_preview(
     file_id: String,
     registry: State<'_, SourceRegistry>,
-) -> Option<ImagePreview> {
-    registry.get_image_preview(&file_id)
+) -> tauri::ipc::Response {
+    tauri::ipc::Response::new(registry.get_image_preview(&file_id).unwrap_or_default())
 }
 
 #[tauri::command]

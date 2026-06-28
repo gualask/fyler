@@ -1,5 +1,5 @@
 import { getImagePreview } from '@/infra/platform';
-import type { ImagePreview } from '@/infra/platform/platform-adapter';
+import type { ImagePreviewBytes } from '@/infra/platform/platform-adapter';
 
 export type ImagePreviewStatus = 'idle' | 'pending' | 'ready' | 'fallback' | 'failed';
 
@@ -65,9 +65,19 @@ function maybeRevokeObjectUrl(url: string | null | undefined) {
     }
 }
 
-function objectUrlFromBytes(bytes: number[], mimeType: string): string {
-    const data = new Uint8Array(bytes);
-    return URL.createObjectURL(new Blob([data], { type: mimeType }));
+function bytesToArrayBuffer(bytes: ImagePreviewBytes): ArrayBuffer {
+    if (bytes instanceof ArrayBuffer) return bytes;
+
+    const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    const buffer = new ArrayBuffer(data.byteLength);
+    new Uint8Array(buffer).set(data);
+    return buffer;
+}
+
+function objectUrlFromBytes(bytes: ImagePreviewBytes): string | null {
+    const data = bytesToArrayBuffer(bytes);
+    if (data.byteLength === 0) return null;
+    return URL.createObjectURL(new Blob([data], { type: 'image/jpeg' }));
 }
 
 function snapshot(entry: CacheEntry): ImagePreviewSnapshot {
@@ -92,9 +102,10 @@ function isCurrentEntry(entry: CacheEntry): boolean {
     return cache.get(entry.key) === entry;
 }
 
-function applyPreviewResult(entry: CacheEntry, preview: ImagePreview | null) {
-    if (preview && preview.bytes.length > 0) {
-        entry.url = objectUrlFromBytes(preview.bytes, preview.mimeType);
+function applyPreviewResult(entry: CacheEntry, preview: ImagePreviewBytes | null) {
+    const url = preview ? objectUrlFromBytes(preview) : null;
+    if (url) {
+        entry.url = url;
         entry.status = 'ready';
     } else {
         entry.url = null;

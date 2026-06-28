@@ -1,6 +1,6 @@
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
-import type { PlatformAdapter } from './platform-adapter.ts';
+import type { ImagePreviewBytes, PlatformAdapter } from './platform-adapter.ts';
 
 export const tauriPlatformAdapter: PlatformAdapter = {
     openFilesDialog: (filterLabel) => invoke('open_files_dialog', { filterLabel }),
@@ -16,7 +16,7 @@ export const tauriPlatformAdapter: PlatformAdapter = {
     releaseSources: (fileIds) => invoke('release_sources', { fileIds }),
     getImageExportPreviewLayout: (path, imageFit, quarterTurns) =>
         invoke('get_image_export_preview_layout', { path, imageFit, quarterTurns }),
-    getImagePreview: (fileId) => invoke('get_image_preview', { fileId }),
+    getImagePreview: (fileId) => invoke<ImagePreviewBytes>('get_image_preview', { fileId }),
     getSourceUrl: (path) => convertFileSrc(path),
     windowGetLogicalSize: async () => {
         const win = getCurrentWindow();
