@@ -1,5 +1,9 @@
-import { DragOverlay, EmptyState, type WorkspaceApi } from '@/features/workspace';
-import type { SourceTarget } from '@/shared/domain';
+import {
+    DragOverlay,
+    EmptyState,
+    type WorkspaceApi,
+    WorkspaceStoreProvider,
+} from '@/features/workspace';
 import type { AccentColor } from '@/shared/preferences';
 import { AppHeader } from './AppHeader';
 import { MainWorkspaceLayout } from './MainWorkspaceLayout';
@@ -20,8 +24,6 @@ export function MainAppView({
     isDragOver,
     workspace,
     handleAddFiles,
-    focusedSourceTarget,
-    focusedSourceFlashKey,
     optimize,
     exportMerged,
     setShowFinalPreview,
@@ -40,8 +42,6 @@ export function MainAppView({
     isDragOver: boolean;
     workspace: WorkspaceApi;
     handleAddFiles: () => void;
-    focusedSourceTarget: SourceTarget | null;
-    focusedSourceFlashKey?: number;
     optimize: OptimizeState;
     exportMerged: () => Promise<void>;
     setShowFinalPreview: (value: boolean) => void;
@@ -69,13 +69,13 @@ export function MainAppView({
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
                 {isDragOver ? <DragOverlay /> : null}
 
-                <MainWorkspaceLayout
-                    workspace={workspace}
-                    handleAddFiles={handleAddFiles}
-                    focusedSourceTarget={focusedSourceTarget}
-                    focusedSourceFlashKey={focusedSourceFlashKey}
-                    optimize={optimize}
-                />
+                <WorkspaceStoreProvider store={workspace.store}>
+                    <MainWorkspaceLayout
+                        workspace={workspace}
+                        handleAddFiles={handleAddFiles}
+                        optimize={optimize}
+                    />
+                </WorkspaceStoreProvider>
 
                 {workspace.files.length === 0 && (
                     <div className="absolute inset-0 z-10 flex flex-col bg-ui-bg p-3 md:p-4">

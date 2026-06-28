@@ -5,16 +5,20 @@ import { FinalDocument } from '@/features/final-document';
 import { PagePicker } from '@/features/page-picker';
 import { PreviewModal } from '@/features/preview';
 import { TUTORIAL_TARGETS, tutorialTargetProps } from '@/features/tutorial';
-import { FileList, type WorkspaceApi } from '@/features/workspace';
+import {
+    FileList,
+    fromFinalPageId,
+    useWorkspaceStoreSelector,
+    type WorkspaceApi,
+} from '@/features/workspace';
 import type { FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
 import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
+import { deriveFocusedSourceState } from '../app-content.selectors';
 import type { OptimizeState } from './main-app.types';
 
 interface Props {
     workspace: WorkspaceApi;
     handleAddFiles: () => void;
-    focusedSourceTarget: SourceTarget | null;
-    focusedSourceFlashKey?: number;
     optimize: OptimizeState;
 }
 
@@ -40,8 +44,6 @@ type FinalDocumentPreviewProps = {
 type SourceColumnProps = {
     workspace: WorkspaceApi;
     handleAddFiles: () => void;
-    focusedSourceTarget: SourceTarget | null;
-    focusedSourceFlashKey?: number;
     onPreviewTarget: (file: SourceFile, target: SourceTarget) => void;
 };
 
@@ -51,6 +53,26 @@ type OutputColumnProps = {
     selectedFinalPageId: string | null;
     onPreviewPage: (id: string) => void;
 };
+
+function useWorkspaceFinalPages(): FinalPage[] {
+    const pageOrder = useWorkspaceStoreSelector((state) => state.composition.pageOrder);
+    return useMemo<FinalPage[]>(
+        () => pageOrder.map((id) => ({ id, ...fromFinalPageId(id) })),
+        [pageOrder],
+    );
+}
+
+function useWorkspaceSelectedFile() {
+    const files = useWorkspaceStoreSelector((state) => state.source.files);
+    const selectedId = useWorkspaceStoreSelector((state) => state.ui.selectedId);
+
+    return useMemo(() => files.find((file) => file.id === selectedId) ?? null, [files, selectedId]);
+}
+
+function useFocusedPickerState(selectedFile: SourceFile | null) {
+    const focusedSource = useWorkspaceStoreSelector((state) => state.ui.focusedSource);
+    return deriveFocusedSourceState({ focusedSource, selectedFile });
+}
 
 function toPreviewFinalPage(file: SourceFile, target: SourceTarget): FinalPage {
     return target.kind === 'image'
@@ -73,6 +95,7 @@ function getPickerPreviewTotal(file: SourceFile): number {
 
 function PickerPreview({ target, workspace, imageFit, onClose }: PickerPreviewProps) {
     const page = target ? toPreviewFinalPage(target.file, target.target) : null;
+    const editsByFile = useWorkspaceStoreSelector((state) => state.source.editsByFile);
 
     return (
         <AnimatePresence>
@@ -81,7 +104,7 @@ function PickerPreview({ target, workspace, imageFit, onClose }: PickerPreviewPr
                     key={page.id}
                     finalPages={[page]}
                     files={[target.file]}
-                    editsByFile={workspace.editsByFile}
+                    editsByFile={editsByFile}
                     imageFit={imageFit}
                     matchExportedImages
                     indicator={{
@@ -102,14 +125,14 @@ function FinalDocumentPreview({
     imageFit,
     onClose,
 }: FinalDocumentPreviewProps) {
+    const files = useWorkspaceStoreSelector((state) => state.source.files);
+    const editsByFile = useWorkspaceStoreSelector((state) => state.source.editsByFile);
+    const finalPages = useWorkspaceFinalPages();
     const target = useMemo(
-        () =>
-            targetId ? (workspace.finalPages.find((page) => page.id === targetId) ?? null) : null,
-        [targetId, workspace.finalPages],
+        () => (targetId ? (finalPages.find((page) => page.id === targetId) ?? null) : null),
+        [finalPages, targetId],
     );
-    const position = target
-        ? workspace.finalPages.findIndex((page) => page.id === target.id) + 1
-        : 0;
+    const position = target ? finalPages.findIndex((page) => page.id === target.id) + 1 : 0;
 
     return (
         <AnimatePresence>
@@ -117,17 +140,17 @@ function FinalDocumentPreview({
                 <PreviewModal
                     key={target.id}
                     finalPages={[target]}
-                    files={workspace.files}
+                    files={files}
                     imageFit={imageFit}
                     matchExportedImages
-                    editsByFile={workspace.editsByFile}
+                    editsByFile={editsByFile}
                     indicator={{
                         current: position,
-                        total: workspace.finalPages.length,
+                        total: finalPages.length,
                     }}
                     moveControl={{
                         currentPosition: position,
-                        totalPositions: workspace.finalPages.length,
+                        totalPositions: finalPages.length,
                         onMoveToPosition: (targetIndex) =>
                             workspace.moveFinalPageToIndex(target.id, targetIndex),
                     }}
@@ -139,13 +162,17 @@ function FinalDocumentPreview({
     );
 }
 
-function SourceColumn({
-    workspace,
-    handleAddFiles,
-    focusedSourceTarget,
-    focusedSourceFlashKey,
-    onPreviewTarget,
-}: SourceColumnProps) {
+function SourceColumn({ workspace, handleAddFiles, onPreviewTarget }: SourceColumnProps) {
+    const files = useWorkspaceStoreSelector((state) => state.source.files);
+    const selectedId = useWorkspaceStoreSelector((state) => state.ui.selectedId);
+    const selectedFileScrollKey = useWorkspaceStoreSelector(
+        (state) => state.ui.selectedFileScrollKey,
+    );
+    const editsByFile = useWorkspaceStoreSelector((state) => state.source.editsByFile);
+    const selectedFile = useWorkspaceSelectedFile();
+    const finalPages = useWorkspaceFinalPages();
+    const { focusedSourceTarget, focusedSourceFlashKey } = useFocusedPickerState(selectedFile);
+
     return (
         <div className="workspace-layout-column workspace-layout-column-source">
             <aside
@@ -153,9 +180,9 @@ function SourceColumn({
                 className="workspace-surface workspace-surface-source"
             >
                 <FileList
-                    files={workspace.files}
-                    selectedId={workspace.selectedId}
-                    selectedScrollKey={workspace.selectedFileScrollKey}
+                    files={files}
+                    selectedId={selectedId}
+                    selectedScrollKey={selectedFileScrollKey}
                     onSelect={workspace.selectFile}
                     onRemove={workspace.removeFile}
                     onAddFiles={handleAddFiles}
@@ -168,9 +195,9 @@ function SourceColumn({
                 className="workspace-surface workspace-surface-source"
             >
                 <PagePicker
-                    key={workspace.selectedFile?.id}
-                    file={workspace.selectedFile}
-                    finalPages={workspace.finalPages}
+                    key={selectedFile?.id}
+                    file={selectedFile}
+                    finalPages={finalPages}
                     onTogglePage={workspace.togglePage}
                     onSetPdfPages={workspace.setPdfPagesForFile}
                     onSetImageIncluded={workspace.setImageIncluded}
@@ -179,7 +206,7 @@ function SourceColumn({
                     onFocusTarget={workspace.focusFinalPageInDocument}
                     onRotateTarget={workspace.rotatePage}
                     onPreviewTarget={onPreviewTarget}
-                    editsByFile={workspace.editsByFile}
+                    editsByFile={editsByFile}
                     focusedTarget={focusedSourceTarget}
                     focusFlashKey={focusedSourceFlashKey}
                 />
@@ -194,6 +221,11 @@ function OutputColumn({
     selectedFinalPageId,
     onPreviewPage,
 }: OutputColumnProps) {
+    const files = useWorkspaceStoreSelector((state) => state.source.files);
+    const editsByFile = useWorkspaceStoreSelector((state) => state.source.editsByFile);
+    const focusedSource = useWorkspaceStoreSelector((state) => state.ui.focusedSource);
+    const finalPages = useWorkspaceFinalPages();
+
     return (
         <div className="workspace-layout-column workspace-layout-column-output">
             <section
@@ -201,21 +233,19 @@ function OutputColumn({
                 className="workspace-surface workspace-surface-output"
             >
                 <FinalDocument
-                    finalPages={workspace.finalPages}
-                    files={workspace.files}
+                    finalPages={finalPages}
+                    files={files}
                     imageFit={optimize.imageFit}
                     selectedPageId={selectedFinalPageId}
                     selectedPageScrollKey={
-                        workspace.focusedSource?.flashTarget === 'final'
-                            ? workspace.focusedSource.flashKey
-                            : undefined
+                        focusedSource?.flashTarget === 'final' ? focusedSource.flashKey : undefined
                     }
                     onReorder={workspace.reorderFinalPages}
                     onMovePageToIndex={workspace.moveFinalPageToIndex}
                     onRemove={workspace.removeFinalPage}
                     onSelectPage={workspace.focusFinalPageSource}
                     onPreviewPage={onPreviewPage}
-                    editsByFile={workspace.editsByFile}
+                    editsByFile={editsByFile}
                 />
             </section>
 
@@ -238,21 +268,16 @@ function OutputColumn({
     );
 }
 
-export function MainWorkspaceLayout({
-    workspace,
-    handleAddFiles,
-    focusedSourceTarget,
-    focusedSourceFlashKey,
-    optimize,
-}: Props) {
+export function MainWorkspaceLayout({ workspace, handleAddFiles, optimize }: Props) {
     const [pickerPreviewTarget, setPickerPreviewTarget] = useState<PickerPreviewTarget | null>(
         null,
     );
     const [finalDocumentPreviewTargetId, setFinalDocumentPreviewTargetId] = useState<string | null>(
         null,
     );
-    const selectedFinalPageId = workspace.focusedSource
-        ? toFinalPageId(workspace.focusedSource.fileId, workspace.focusedSource.target)
+    const focusedSource = useWorkspaceStoreSelector((state) => state.ui.focusedSource);
+    const selectedFinalPageId = focusedSource
+        ? toFinalPageId(focusedSource.fileId, focusedSource.target)
         : null;
 
     return (
@@ -261,8 +286,6 @@ export function MainWorkspaceLayout({
                 <SourceColumn
                     workspace={workspace}
                     handleAddFiles={handleAddFiles}
-                    focusedSourceTarget={focusedSourceTarget}
-                    focusedSourceFlashKey={focusedSourceFlashKey}
                     onPreviewTarget={(file, target) => setPickerPreviewTarget({ file, target })}
                 />
                 <OutputColumn

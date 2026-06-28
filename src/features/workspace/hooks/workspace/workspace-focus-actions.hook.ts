@@ -1,25 +1,26 @@
-import { type Dispatch, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { SourceTarget } from '@/shared/domain';
-import type { WorkspaceUiAction } from '../../state/workspace-ui.reducer';
+import type { FocusFlashTarget } from '../../state/workspace.store';
 
-type FocusFlashTarget = 'picker' | 'final';
-
-function useFocusSource(dispatchUi: Dispatch<WorkspaceUiAction>) {
+function useFocusSource(
+    focusSource: (fileId: string, target: SourceTarget, flashTarget: FocusFlashTarget) => void,
+) {
     return useCallback(
         (fileId: string, target: SourceTarget, flashTarget: FocusFlashTarget) => {
-            dispatchUi({
-                type: 'source-focused',
-                fileId,
-                target,
-                flashTarget,
-            });
+            focusSource(fileId, target, flashTarget);
         },
-        [dispatchUi],
+        [focusSource],
     );
 }
 
-export function useWorkspaceFocusActions(dispatchUi: Dispatch<WorkspaceUiAction>) {
-    const focusSource = useFocusSource(dispatchUi);
+export function useWorkspaceFocusActions(
+    focusSourceAction: (
+        fileId: string,
+        target: SourceTarget,
+        flashTarget: FocusFlashTarget,
+    ) => void,
+) {
+    const focusSource = useFocusSource(focusSourceAction);
 
     const focusFinalPageSource = useCallback(
         (fileId: string, target: SourceTarget) => {

@@ -1,9 +1,35 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { WorkspaceApi } from '@/features/workspace';
+import {
+    type CompositionState,
+    createWorkspaceStore,
+} from '@/features/workspace/state/workspace.store';
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
 import { useWorkspaceFixtureFileActions } from './workspace-fixture-file-actions.hook';
 import { useWorkspaceFixturePageActions } from './workspace-fixture-page-actions.hook';
+
+function compositionFromFinalPages(finalPages: FinalPage[]): CompositionState {
+    const selectedPdfPagesByFile: CompositionState['selectedPdfPagesByFile'] = {};
+    const includedImagesByFile: CompositionState['includedImagesByFile'] = {};
+
+    for (const page of finalPages) {
+        if (page.kind === 'image') {
+            includedImagesByFile[page.fileId] = true;
+            continue;
+        }
+        selectedPdfPagesByFile[page.fileId] = [
+            ...(selectedPdfPagesByFile[page.fileId] ?? []),
+            page.pageNum,
+        ];
+    }
+
+    return {
+        selectedPdfPagesByFile,
+        includedImagesByFile,
+        pageOrder: finalPages.map((page) => page.id),
+    };
+}
 
 export function useWorkspaceFixtureWorkspaceApi({
     files,
@@ -26,6 +52,7 @@ export function useWorkspaceFixtureWorkspaceApi({
     editsByFile: Record<string, FileEdits>;
     setEditsByFile: Dispatch<SetStateAction<Record<string, FileEdits>>>;
 }): WorkspaceApi {
+    const store = useMemo(() => createWorkspaceStore(), []);
     const fileActions = useWorkspaceFixtureFileActions({
         files,
         setFiles,
@@ -35,9 +62,23 @@ export function useWorkspaceFixtureWorkspaceApi({
     });
     const pageActions = useWorkspaceFixturePageActions({ setFinalPages });
 
+    useEffect(() => {
+        store.setState({
+            source: { files, editsByFile },
+            composition: compositionFromFinalPages(finalPages),
+            ui: {
+                selectedId,
+                selectedFileScrollKey: undefined,
+                focusedSource: null,
+                uiSignalKey: 0,
+            },
+        });
+    }, [editsByFile, files, finalPages, selectedId, store]);
+
     return useMemo(
         () =>
             ({
+                store,
                 files,
                 editsByFile,
                 selectedId,
@@ -50,6 +91,6 @@ export function useWorkspaceFixtureWorkspaceApi({
                 ...fileActions,
                 ...pageActions,
             }) satisfies Partial<WorkspaceApi> as WorkspaceApi,
-        [editsByFile, fileActions, files, finalPages, pageActions, selectedFile, selectedId],
+        [editsByFile, fileActions, files, finalPages, pageActions, selectedFile, selectedId, store],
     );
 }

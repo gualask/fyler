@@ -43,7 +43,8 @@
         "motion": "^12.42.0",
         "pdfjs-dist": "^6.0.227",
         "react": "^19.2.7",
-        "react-dom": "^19.2.7"
+        "react-dom": "^19.2.7",
+        "zustand": "^5.0.14"
     },
     "devDependencies": {
         "@biomejs/biome": "2.5.1",

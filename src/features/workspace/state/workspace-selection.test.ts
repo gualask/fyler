@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
-import { resolveSelectionAfterAdd } from './added-file-selection.js';
+import { resolveSelectionAfterAdd } from './workspace-selection.js';
 
 test('keeps the current selection when nothing is added', () => {
     assert.deepEqual(resolveSelectionAfterAdd('current', []), {

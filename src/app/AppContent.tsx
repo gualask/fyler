@@ -87,7 +87,7 @@ export function AppContent() {
     const { isDark, toggleTheme, accent, setAccent } = useTheme();
     const optimize = useOptimize();
 
-    const { focusedSourceTarget, focusedSourceFlashKey, rootClassName } = useAppContentViewState({
+    const { rootClassName } = useAppContentViewState({
         quickAdd,
         tutorial,
         workspace,
@@ -145,8 +145,6 @@ export function AppContent() {
                     isDragOver={workspace.isDragOver}
                     workspace={workspace}
                     handleAddFiles={handleAddFiles}
-                    focusedSourceTarget={focusedSourceTarget}
-                    focusedSourceFlashKey={focusedSourceFlashKey}
                     optimize={optimize}
                     exportMerged={exportMerged}
                     setShowFinalPreview={setShowFinalPreview}

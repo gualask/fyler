@@ -72,7 +72,6 @@ export function WorkspaceFixturePage({
                     isDragOver={false}
                     workspace={workspace}
                     handleAddFiles={() => undefined}
-                    focusedSourceTarget={null}
                     optimize={optimize}
                     exportMerged={async () => undefined}
                     setShowFinalPreview={setShowFinalPreview}

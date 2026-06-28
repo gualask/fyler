@@ -1,23 +1,31 @@
-import { type Dispatch, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { RotationDirection, SourceFile, SourceTarget } from '@/shared/domain';
-import type { WorkspaceUiAction } from '../../state/workspace-ui.reducer';
 
 export function useWorkspaceFileActions({
-    files,
-    dispatchUi,
+    applyFileRemovedUi,
+    applyFilesRemovedUi,
+    clearUi,
+    selectFile: selectFileState,
     handleSessionFileRemoved,
     handleSessionFilesCleared,
     removeSourceFile,
+    removeSourceFiles,
     clearSourceFiles,
     clearAllPages,
     rotateSourcePage,
 }: {
-    files: SourceFile[];
-    dispatchUi: Dispatch<WorkspaceUiAction>;
+    applyFileRemovedUi: (fileId: string, remainingIds: string[]) => void;
+    applyFilesRemovedUi: (fileIds: string[], remainingIds: string[]) => void;
+    clearUi: () => void;
+    selectFile: (fileId: string) => void;
     handleSessionFileRemoved: (file: SourceFile | null) => void;
     handleSessionFilesCleared: () => void;
-    removeSourceFile: (id: string) => SourceFile | null;
-    clearSourceFiles: () => void;
+    removeSourceFile: (id: string) => { removed: SourceFile | null; remainingIds: string[] };
+    removeSourceFiles: (ids: readonly string[]) => {
+        removedFiles: SourceFile[];
+        remainingIds: string[];
+    };
+    clearSourceFiles: () => SourceFile[];
     clearAllPages: () => void;
     rotateSourcePage: (
         fileId: string,
@@ -27,49 +35,44 @@ export function useWorkspaceFileActions({
 }) {
     const selectFile = useCallback(
         (id: string) => {
-            dispatchUi({ type: 'file-selected', fileId: id });
+            selectFileState(id);
         },
-        [dispatchUi],
+        [selectFileState],
     );
 
     const removeFile = useCallback(
         (id: string) => {
-            const remainingIds = files.filter((file) => file.id !== id).map((file) => file.id);
-            dispatchUi({ type: 'file-removed', fileId: id, remainingIds });
-            handleSessionFileRemoved(removeSourceFile(id));
+            const { removed, remainingIds } = removeSourceFile(id);
+            if (!removed) return;
+            applyFileRemovedUi(id, remainingIds);
+            handleSessionFileRemoved(removed);
         },
-        [dispatchUi, files, handleSessionFileRemoved, removeSourceFile],
+        [applyFileRemovedUi, handleSessionFileRemoved, removeSourceFile],
     );
 
     const removeFiles = useCallback(
         (ids: readonly string[]) => {
-            const idsToRemove = new Set(ids);
-            if (idsToRemove.size === 0) return;
+            const { removedFiles, remainingIds } = removeSourceFiles(ids);
+            if (!removedFiles.length) return;
 
-            const existingIds = files
-                .filter((file) => idsToRemove.has(file.id))
-                .map((file) => file.id);
-            if (existingIds.length === 0) return;
-
-            const remainingIds = files
-                .filter((file) => !idsToRemove.has(file.id))
-                .map((file) => file.id);
-
-            dispatchUi({ type: 'files-removed', fileIds: existingIds, remainingIds });
-            for (const id of existingIds) {
-                handleSessionFileRemoved(removeSourceFile(id));
+            applyFilesRemovedUi(
+                removedFiles.map((file) => file.id),
+                remainingIds,
+            );
+            for (const file of removedFiles) {
+                handleSessionFileRemoved(file);
             }
         },
-        [dispatchUi, files, handleSessionFileRemoved, removeSourceFile],
+        [applyFilesRemovedUi, handleSessionFileRemoved, removeSourceFiles],
     );
 
     const clearAllFiles = useCallback(() => {
-        if (!files.length) return;
+        const removedFiles = clearSourceFiles();
+        if (!removedFiles.length) return;
         handleSessionFilesCleared();
-        dispatchUi({ type: 'cleared' });
+        clearUi();
         clearAllPages();
-        clearSourceFiles();
-    }, [clearAllPages, clearSourceFiles, dispatchUi, files.length, handleSessionFilesCleared]);
+    }, [clearAllPages, clearSourceFiles, clearUi, handleSessionFilesCleared]);
 
     const rotatePage = useCallback(
         async (fileId: string, target: SourceTarget, direction: RotationDirection) => {

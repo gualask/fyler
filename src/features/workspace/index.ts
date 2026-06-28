@@ -10,5 +10,8 @@ export { useWorkspace } from './hooks/workspace';
 export { useQuickAdd } from './quick-add/quick-add.hook';
 export { useQuickAddActions } from './quick-add/quick-add-actions.hook';
 export { QuickAddView } from './quick-add/quick-add-view';
+export { fromFinalPageId } from './state/workspace.store';
+export { useWorkspaceStoreSelector } from './state/workspace-store.hooks';
+export { WorkspaceStoreProvider } from './state/workspace-store.provider';
 
 export type WorkspaceApi = ReturnType<typeof useWorkspace>;

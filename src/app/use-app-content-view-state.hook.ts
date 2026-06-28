@@ -1,10 +1,6 @@
 import { useEffect } from 'react';
-import type { FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
-import {
-    buildAppContentRootClassName,
-    deriveFocusedSourceState,
-    isTutorialReadyForAutoStart,
-} from './app-content.selectors';
+import type { FinalPage, SourceFile } from '@/shared/domain';
+import { buildAppContentRootClassName, isTutorialReadyForAutoStart } from './app-content.selectors';
 
 type QuickAddLike = {
     isQuickAdd: boolean;
@@ -15,18 +11,10 @@ type TutorialLike = {
     maybeAutoStart: (isReady: boolean) => void;
 };
 
-type FocusedSourceLike = {
-    target: SourceTarget;
-    flashTarget: 'picker' | 'final';
-    flashKey: number;
-    fileId: string;
-} | null;
-
 type WorkspaceLike = {
     files: SourceFile[];
     finalPages: FinalPage[];
     selectedFile: Pick<SourceFile, 'id'> | null;
-    focusedSource: FocusedSourceLike;
 };
 
 export function useAppContentViewState({
@@ -38,10 +26,6 @@ export function useAppContentViewState({
     tutorial: TutorialLike;
     workspace: WorkspaceLike;
 }) {
-    const { focusedSourceTarget, focusedSourceFlashKey } = deriveFocusedSourceState({
-        focusedSource: workspace.focusedSource,
-        selectedFile: workspace.selectedFile,
-    });
     const isTutorialReady = isTutorialReadyForAutoStart(quickAdd, workspace);
 
     useEffect(() => {
@@ -49,8 +33,6 @@ export function useAppContentViewState({
     }, [isTutorialReady, tutorial.maybeAutoStart]);
 
     return {
-        focusedSourceTarget,
-        focusedSourceFlashKey,
         rootClassName: buildAppContentRootClassName(quickAdd.isTransitioning),
     };
 }

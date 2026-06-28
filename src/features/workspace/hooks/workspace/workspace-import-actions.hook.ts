@@ -1,15 +1,14 @@
-import { type Dispatch, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { OpenFilesResult, SourceFile } from '@/shared/domain';
-import type { WorkspaceUiAction } from '../../state/workspace-ui.reducer';
 
 export function useWorkspaceImportActions({
-    dispatchUi,
+    applyFilesAddedUi,
     addSourceFiles,
     openSourceFiles,
     resolveImportResult,
     handleSessionFilesAdded,
 }: {
-    dispatchUi: Dispatch<WorkspaceUiAction>;
+    applyFilesAddedUi: (files: Pick<SourceFile, 'id' | 'kind'>[]) => void;
     addSourceFiles: (newFiles: SourceFile[]) => SourceFile[];
     openSourceFiles: () => Promise<OpenFilesResult>;
     resolveImportResult: (result: OpenFilesResult) => Promise<SourceFile[]>;
@@ -17,9 +16,9 @@ export function useWorkspaceImportActions({
 }) {
     const applySelectionAfterAdd = useCallback(
         (addedFiles: SourceFile[]) => {
-            dispatchUi({ type: 'files-added', files: addedFiles });
+            applyFilesAddedUi(addedFiles);
         },
-        [dispatchUi],
+        [applyFilesAddedUi],
     );
 
     const commitImportedFiles = useCallback(
