@@ -1,7 +1,7 @@
 import { IconFileTypePdf, IconPhoto, IconTrash } from '@tabler/icons-react';
 import type { SourceFile } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
-import { Tooltip } from '@/shared/ui/feedback/Tooltip';
+import { Tooltip } from '@/shared/ui/feedback/tooltip';
 import { formatByteSize } from '@/shared/ui/format/byte-size';
 
 interface Props {

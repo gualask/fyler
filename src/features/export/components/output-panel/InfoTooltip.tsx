@@ -1,9 +1,9 @@
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from '@/shared/i18n';
-import { Tooltip, type TooltipAlign } from '@/shared/ui/feedback/Tooltip';
+import { Tooltip, type TooltipAlign } from '@/shared/ui/feedback/tooltip';
 
-export type { TooltipAlign } from '@/shared/ui/feedback/Tooltip';
+export type { TooltipAlign } from '@/shared/ui/feedback/tooltip';
 
 export type TooltipItem = {
     title: string;

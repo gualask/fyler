@@ -15,6 +15,62 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
     );
 }
 
+function currentFocusedElement() {
+    return document.activeElement instanceof HTMLElement ? document.activeElement : null;
+}
+
+function focusInitialElement(container: HTMLElement) {
+    const focusables = getFocusableElements(container);
+    (focusables[0] ?? container).focus();
+}
+
+function backwardTabTarget(
+    focusables: HTMLElement[],
+    activeElement: HTMLElement | null,
+    container: HTMLElement,
+) {
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    return activeElement === first || !activeElement || !container.contains(activeElement)
+        ? last
+        : null;
+}
+
+function forwardTabTarget(focusables: HTMLElement[], activeElement: HTMLElement | null) {
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    return activeElement === last ? first : null;
+}
+
+function tabFocusTarget(event: KeyboardEvent, container: HTMLElement) {
+    const focusables = getFocusableElements(container);
+    if (focusables.length === 0) return container;
+
+    const activeElement = currentFocusedElement();
+    return event.shiftKey
+        ? backwardTabTarget(focusables, activeElement, container)
+        : forwardTabTarget(focusables, activeElement);
+}
+
+function handleModalKeyDown(
+    event: KeyboardEvent,
+    container: HTMLElement,
+    onEscape: (() => void) | undefined,
+) {
+    if (event.key === 'Escape') {
+        onEscape?.();
+        return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    const focusTarget = tabFocusTarget(event, container);
+    if (!focusTarget) return;
+
+    event.preventDefault();
+    focusTarget.focus();
+}
+
 interface Options {
     active?: boolean;
     containerRef: RefObject<HTMLElement | null>;
@@ -29,51 +85,13 @@ export function useModalFocus({ active = true, containerRef, onEscape }: Options
         if (!(containerEl instanceof HTMLElement)) return;
         const container = containerEl;
 
-        const previousFocus =
-            document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const previousFocus = currentFocusedElement();
         const frame = window.requestAnimationFrame(() => {
-            const focusables = getFocusableElements(container);
-            (focusables[0] ?? container).focus();
+            focusInitialElement(container);
         });
 
         function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === 'Escape') {
-                onEscape?.();
-                return;
-            }
-
-            if (event.key !== 'Tab') {
-                return;
-            }
-
-            const focusables = getFocusableElements(container);
-            if (focusables.length === 0) {
-                event.preventDefault();
-                container.focus();
-                return;
-            }
-
-            const first = focusables[0];
-            const last = focusables[focusables.length - 1];
-            const activeElement =
-                document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-            if (event.shiftKey) {
-                if (
-                    activeElement === first ||
-                    !activeElement ||
-                    !container.contains(activeElement)
-                ) {
-                    event.preventDefault();
-                    last.focus();
-                }
-                return;
-            }
-
-            if (activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
+            handleModalKeyDown(event, container, onEscape);
         }
 
         container.addEventListener('keydown', handleKeyDown);
