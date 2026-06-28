@@ -23,6 +23,58 @@ const UpdateDialog =
         ? null
         : lazy(() => import('./updates').then((module) => ({ default: module.UpdateDialog })));
 
+type QuickAddState = ReturnType<typeof useQuickAdd>;
+type WorkspaceState = ReturnType<typeof useWorkspace>;
+
+function UpdateDialogSlot() {
+    if (!UpdateDialog) return null;
+
+    return (
+        <Suspense fallback={null}>
+            <UpdateDialog />
+        </Suspense>
+    );
+}
+
+function useQuickAddFileHandlers({
+    quickAdd,
+    workspace,
+    handleExitQuickAdd,
+}: {
+    quickAdd: QuickAddState;
+    workspace: WorkspaceState;
+    handleExitQuickAdd: () => void;
+}) {
+    const { onFileRemoved, quickAddFileOrder } = quickAdd;
+    const { removeFile, removeFiles } = workspace;
+
+    const handleQuickAddFileRemove = useCallback(
+        (id: string) => {
+            onFileRemoved(id);
+            removeFile(id);
+        },
+        [onFileRemoved, removeFile],
+    );
+
+    const handleQuickAddDiscardAndExit = useCallback(() => {
+        const quickAddIds = quickAddFileOrder;
+
+        if (quickAddIds.length > 0) {
+            for (const id of quickAddIds) {
+                onFileRemoved(id);
+            }
+            removeFiles(quickAddIds);
+        }
+
+        handleExitQuickAdd();
+    }, [handleExitQuickAdd, onFileRemoved, quickAddFileOrder, removeFiles]);
+
+    return {
+        handleQuickAddFileRemove,
+        handleQuickAddDiscardAndExit,
+    };
+}
+
 export function AppContent() {
     const quickAdd = useQuickAdd();
     const notifications = useAppNotifications();
@@ -58,38 +110,15 @@ export function AppContent() {
         quickAdd,
         notifications,
     });
-    const handleQuickAddFileRemove = useCallback(
-        (id: string) => {
-            quickAdd.onFileRemoved(id);
-            workspace.removeFile(id);
-        },
-        [quickAdd.onFileRemoved, workspace.removeFile],
-    );
-    const handleQuickAddDiscardAndExit = useCallback(() => {
-        const quickAddIds = quickAdd.quickAddFileOrder;
-
-        if (quickAddIds.length > 0) {
-            for (const id of quickAddIds) {
-                quickAdd.onFileRemoved(id);
-            }
-            workspace.removeFiles(quickAddIds);
-        }
-
-        handleExitQuickAdd();
-    }, [
+    const { handleQuickAddFileRemove, handleQuickAddDiscardAndExit } = useQuickAddFileHandlers({
+        quickAdd,
+        workspace,
         handleExitQuickAdd,
-        quickAdd.onFileRemoved,
-        quickAdd.quickAddFileOrder,
-        workspace.removeFiles,
-    ]);
+    });
 
     return (
         <div className={rootClassName}>
-            {UpdateDialog ? (
-                <Suspense fallback={null}>
-                    <UpdateDialog />
-                </Suspense>
-            ) : null}
+            <UpdateDialogSlot />
             {quickAdd.isQuickAdd ? (
                 <QuickAddView
                     files={workspace.files}

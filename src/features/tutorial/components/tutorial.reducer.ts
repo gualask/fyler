@@ -19,45 +19,64 @@ export const initialTutorialState: TutorialState = {
     markSeenOnClose: false,
 };
 
+function startTutorial(): TutorialState {
+    return {
+        currentStep: 0,
+        autoStartRequested: false,
+        markSeenOnClose: false,
+    };
+}
+
+function closeTutorialAfterLastStep(): TutorialState {
+    return {
+        currentStep: null,
+        autoStartRequested: false,
+        markSeenOnClose: true,
+    };
+}
+
+function advanceTutorialStep(state: TutorialState, totalSteps: number): TutorialState {
+    if (state.currentStep === null) return state;
+    if (state.currentStep >= totalSteps - 1) return closeTutorialAfterLastStep();
+
+    return {
+        ...state,
+        currentStep: state.currentStep + 1,
+    };
+}
+
+function cancelAutoStartRequest(state: TutorialState): TutorialState {
+    return state.autoStartRequested ? { ...state, autoStartRequested: false } : state;
+}
+
+function fireAutoStart(state: TutorialState): TutorialState {
+    if (!state.autoStartRequested || state.currentStep !== null) return state;
+    return startTutorial();
+}
+
+function markSeenHandled(state: TutorialState): TutorialState {
+    return state.markSeenOnClose ? { ...state, markSeenOnClose: false } : state;
+}
+
 export function tutorialReducer(state: TutorialState, action: TutorialAction): TutorialState {
     switch (action.type) {
         case 'start':
-            return {
-                currentStep: 0,
-                autoStartRequested: false,
-                markSeenOnClose: false,
-            };
+            return startTutorial();
         case 'complete':
             return initialTutorialState;
         case 'next':
-            if (state.currentStep === null) return state;
-            if (state.currentStep >= action.totalSteps - 1) {
-                return {
-                    currentStep: null,
-                    autoStartRequested: false,
-                    markSeenOnClose: true,
-                };
-            }
-            return {
-                ...state,
-                currentStep: state.currentStep + 1,
-            };
+            return advanceTutorialStep(state, action.totalSteps);
         case 'request-auto-start':
             return {
                 ...state,
                 autoStartRequested: true,
             };
         case 'cancel-auto-start-request':
-            return state.autoStartRequested ? { ...state, autoStartRequested: false } : state;
+            return cancelAutoStartRequest(state);
         case 'auto-start-fired':
-            if (!state.autoStartRequested || state.currentStep !== null) return state;
-            return {
-                currentStep: 0,
-                autoStartRequested: false,
-                markSeenOnClose: false,
-            };
+            return fireAutoStart(state);
         case 'mark-seen-handled':
-            return state.markSeenOnClose ? { ...state, markSeenOnClose: false } : state;
+            return markSeenHandled(state);
         default:
             return state;
     }

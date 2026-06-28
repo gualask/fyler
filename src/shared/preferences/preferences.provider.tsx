@@ -23,10 +23,121 @@ import {
 } from './preferences.settings';
 import type { PreferencesStorage } from './preferences.storage';
 
+type UpdatePreferences = (
+    field: PreferencesField,
+    updater: (current: PreferencesState) => PreferencesState,
+) => void;
+
+type PreferencesActions = Pick<
+    PreferencesContextValue,
+    'setLocale' | 'toggleTheme' | 'setAccent' | 'markTutorialSeen' | 'setFinalDocumentLayout'
+>;
+
 function takeDirtyFields(fields: Set<PreferencesField>): Set<PreferencesField> {
     const dirtyFields = new Set(fields);
     fields.clear();
     return dirtyFields;
+}
+
+function useDocumentPreferences(preferences: PreferencesState) {
+    useLayoutEffect(() => {
+        document.documentElement.classList.toggle('dark', preferences.isDark);
+        document.documentElement.lang = preferences.locale;
+
+        for (const color of ACCENT_COLORS) {
+            document.documentElement.classList.remove(`accent-${color}`);
+        }
+        if (preferences.accent !== 'indigo') {
+            document.documentElement.classList.add(`accent-${preferences.accent}`);
+        }
+    }, [preferences.isDark, preferences.locale, preferences.accent]);
+}
+
+function usePersistPreferences(
+    storage: PreferencesStorage | undefined,
+    canPersistPreferences: boolean,
+    preferences: PreferencesState,
+) {
+    useEffect(() => {
+        if (!storage || !canPersistPreferences) return;
+        void storage.save(preferences);
+    }, [canPersistPreferences, preferences, storage]);
+}
+
+function usePreferenceActions(updatePreferences: UpdatePreferences): PreferencesActions {
+    const setLocale = useCallback(
+        (locale: Locale) => {
+            updatePreferences('locale', (current) =>
+                current.locale === locale ? current : { ...current, locale },
+            );
+        },
+        [updatePreferences],
+    );
+
+    const toggleTheme = useCallback(() => {
+        updatePreferences('isDark', (current) => ({ ...current, isDark: !current.isDark }));
+    }, [updatePreferences]);
+
+    const setAccent = useCallback(
+        (accent: AccentColor) => {
+            updatePreferences('accent', (current) =>
+                current.accent === accent ? current : { ...current, accent },
+            );
+        },
+        [updatePreferences],
+    );
+
+    const markTutorialSeen = useCallback(() => {
+        updatePreferences('tutorialSeen', (current) =>
+            current.tutorialSeen ? current : { ...current, tutorialSeen: true },
+        );
+    }, [updatePreferences]);
+
+    const setFinalDocumentLayout = useCallback(
+        (finalDocumentLayout: FinalDocumentLayout) => {
+            updatePreferences('finalDocumentLayout', (current) =>
+                current.finalDocumentLayout === finalDocumentLayout
+                    ? current
+                    : { ...current, finalDocumentLayout },
+            );
+        },
+        [updatePreferences],
+    );
+
+    return useMemo(
+        () => ({
+            setLocale,
+            toggleTheme,
+            setAccent,
+            markTutorialSeen,
+            setFinalDocumentLayout,
+        }),
+        [markTutorialSeen, setAccent, setFinalDocumentLayout, setLocale, toggleTheme],
+    );
+}
+
+function usePreferencesContextValue(
+    preferences: PreferencesState,
+    actions: PreferencesActions,
+): PreferencesContextValue {
+    return useMemo(
+        () => ({
+            isDark: preferences.isDark,
+            locale: preferences.locale,
+            accent: preferences.accent,
+            tutorialSeen: preferences.tutorialSeen,
+            finalDocumentLayout: preferences.finalDocumentLayout,
+            ...actions,
+        }),
+        [
+            actions,
+            preferences.isDark,
+            preferences.locale,
+            preferences.accent,
+            preferences.tutorialSeen,
+            preferences.finalDocumentLayout,
+        ],
+    );
 }
 
 /** Persists user preferences and exposes them via context. */
@@ -96,25 +207,11 @@ export function PreferencesProvider({
         };
     }, [applyLoadFailure, applyLoadedPreferences, storage]);
 
-    useLayoutEffect(() => {
-        document.documentElement.classList.toggle('dark', preferences.isDark);
-        document.documentElement.lang = preferences.locale;
+    useDocumentPreferences(preferences);
+    usePersistPreferences(storage, canPersistPreferences, preferences);
 
-        for (const color of ACCENT_COLORS) {
-            document.documentElement.classList.remove(`accent-${color}`);
-        }
-        if (preferences.accent !== 'indigo') {
-            document.documentElement.classList.add(`accent-${preferences.accent}`);
-        }
-    }, [preferences.isDark, preferences.locale, preferences.accent]);
-
-    useEffect(() => {
-        if (!storage || !canPersistPreferences) return;
-        void storage.save(preferences);
-    }, [canPersistPreferences, preferences, storage]);
-
-    const updatePreferences = useCallback(
-        (field: PreferencesField, updater: (current: PreferencesState) => PreferencesState) => {
+    const updatePreferences = useCallback<UpdatePreferences>(
+        (field, updater) => {
             if (initialLoadSettledRef.current) {
                 setCanPersistPreferences(canPersist);
             }
@@ -129,71 +226,8 @@ export function PreferencesProvider({
         [canPersist],
     );
 
-    const setLocale = useCallback(
-        (locale: Locale) => {
-            updatePreferences('locale', (current) =>
-                current.locale === locale ? current : { ...current, locale },
-            );
-        },
-        [updatePreferences],
-    );
-
-    const toggleTheme = useCallback(() => {
-        updatePreferences('isDark', (current) => ({ ...current, isDark: !current.isDark }));
-    }, [updatePreferences]);
-
-    const setAccent = useCallback(
-        (accent: AccentColor) => {
-            updatePreferences('accent', (current) =>
-                current.accent === accent ? current : { ...current, accent },
-            );
-        },
-        [updatePreferences],
-    );
-
-    const markTutorialSeen = useCallback(() => {
-        updatePreferences('tutorialSeen', (current) =>
-            current.tutorialSeen ? current : { ...current, tutorialSeen: true },
-        );
-    }, [updatePreferences]);
-
-    const setFinalDocumentLayout = useCallback(
-        (finalDocumentLayout: FinalDocumentLayout) => {
-            updatePreferences('finalDocumentLayout', (current) =>
-                current.finalDocumentLayout === finalDocumentLayout
-                    ? current
-                    : { ...current, finalDocumentLayout },
-            );
-        },
-        [updatePreferences],
-    );
-
-    const value = useMemo<PreferencesContextValue>(
-        () => ({
-            isDark: preferences.isDark,
-            locale: preferences.locale,
-            accent: preferences.accent,
-            tutorialSeen: preferences.tutorialSeen,
-            finalDocumentLayout: preferences.finalDocumentLayout,
-            setLocale,
-            toggleTheme,
-            setAccent,
-            markTutorialSeen,
-            setFinalDocumentLayout,
-        }),
-        [
-            preferences.isDark,
-            preferences.locale,
-            preferences.accent,
-            preferences.tutorialSeen,
-            preferences.finalDocumentLayout,
-            setLocale,
-            toggleTheme,
-            setAccent,
-            markTutorialSeen,
-            setFinalDocumentLayout,
-        ],
-    );
+    const actions = usePreferenceActions(updatePreferences);
+    const value = usePreferencesContextValue(preferences, actions);
 
     return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }

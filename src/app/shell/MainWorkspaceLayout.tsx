@@ -23,6 +23,35 @@ type PickerPreviewTarget = {
     target: SourceTarget;
 };
 
+type PickerPreviewProps = {
+    target: PickerPreviewTarget | null;
+    workspace: WorkspaceApi;
+    imageFit: OptimizeState['imageFit'];
+    onClose: () => void;
+};
+
+type FinalDocumentPreviewProps = {
+    targetId: string | null;
+    workspace: WorkspaceApi;
+    imageFit: OptimizeState['imageFit'];
+    onClose: () => void;
+};
+
+type SourceColumnProps = {
+    workspace: WorkspaceApi;
+    handleAddFiles: () => void;
+    focusedSourceTarget: SourceTarget | null;
+    focusedSourceFlashKey?: number;
+    onPreviewTarget: (file: SourceFile, target: SourceTarget) => void;
+};
+
+type OutputColumnProps = {
+    workspace: WorkspaceApi;
+    optimize: OptimizeState;
+    selectedFinalPageId: string | null;
+    onPreviewPage: (id: string) => void;
+};
+
 function toPreviewFinalPage(file: SourceFile, target: SourceTarget): FinalPage {
     return target.kind === 'image'
         ? {
@@ -36,6 +65,177 @@ function toPreviewFinalPage(file: SourceFile, target: SourceTarget): FinalPage {
               kind: 'pdf',
               pageNum: target.pageNum,
           };
+}
+
+function getPickerPreviewTotal(file: SourceFile): number {
+    return file.kind === 'pdf' ? (file.pageCount ?? 1) : 1;
+}
+
+function PickerPreview({ target, workspace, imageFit, onClose }: PickerPreviewProps) {
+    const page = target ? toPreviewFinalPage(target.file, target.target) : null;
+
+    return (
+        <AnimatePresence>
+            {target && page ? (
+                <PreviewModal
+                    key={page.id}
+                    finalPages={[page]}
+                    files={[target.file]}
+                    editsByFile={workspace.editsByFile}
+                    imageFit={imageFit}
+                    matchExportedImages
+                    indicator={{
+                        total: getPickerPreviewTotal(target.file),
+                        mode: 'page-num',
+                    }}
+                    onRotatePage={workspace.rotatePage}
+                    onClose={onClose}
+                />
+            ) : null}
+        </AnimatePresence>
+    );
+}
+
+function FinalDocumentPreview({
+    targetId,
+    workspace,
+    imageFit,
+    onClose,
+}: FinalDocumentPreviewProps) {
+    const target = useMemo(
+        () =>
+            targetId ? (workspace.finalPages.find((page) => page.id === targetId) ?? null) : null,
+        [targetId, workspace.finalPages],
+    );
+    const position = target
+        ? workspace.finalPages.findIndex((page) => page.id === target.id) + 1
+        : 0;
+
+    return (
+        <AnimatePresence>
+            {target ? (
+                <PreviewModal
+                    key={target.id}
+                    finalPages={[target]}
+                    files={workspace.files}
+                    imageFit={imageFit}
+                    matchExportedImages
+                    editsByFile={workspace.editsByFile}
+                    indicator={{
+                        current: position,
+                        total: workspace.finalPages.length,
+                    }}
+                    moveControl={{
+                        currentPosition: position,
+                        totalPositions: workspace.finalPages.length,
+                        onMoveToPosition: (targetIndex) =>
+                            workspace.moveFinalPageToIndex(target.id, targetIndex),
+                    }}
+                    onRotatePage={workspace.rotatePage}
+                    onClose={onClose}
+                />
+            ) : null}
+        </AnimatePresence>
+    );
+}
+
+function SourceColumn({
+    workspace,
+    handleAddFiles,
+    focusedSourceTarget,
+    focusedSourceFlashKey,
+    onPreviewTarget,
+}: SourceColumnProps) {
+    return (
+        <div className="workspace-layout-column workspace-layout-column-source">
+            <aside
+                {...tutorialTargetProps(TUTORIAL_TARGETS.fileList)}
+                className="workspace-surface workspace-surface-source"
+            >
+                <FileList
+                    files={workspace.files}
+                    selectedId={workspace.selectedId}
+                    selectedScrollKey={workspace.selectedFileScrollKey}
+                    onSelect={workspace.selectFile}
+                    onRemove={workspace.removeFile}
+                    onAddFiles={handleAddFiles}
+                    onClearFiles={workspace.clearAllFiles}
+                />
+            </aside>
+
+            <section
+                {...tutorialTargetProps(TUTORIAL_TARGETS.pagePicker)}
+                className="workspace-surface workspace-surface-source"
+            >
+                <PagePicker
+                    key={workspace.selectedFile?.id}
+                    file={workspace.selectedFile}
+                    finalPages={workspace.finalPages}
+                    onTogglePage={workspace.togglePage}
+                    onSetPdfPages={workspace.setPdfPagesForFile}
+                    onSetImageIncluded={workspace.setImageIncluded}
+                    onSelectAll={workspace.selectAll}
+                    onDeselectAll={workspace.deselectAll}
+                    onFocusTarget={workspace.focusFinalPageInDocument}
+                    onRotateTarget={workspace.rotatePage}
+                    onPreviewTarget={onPreviewTarget}
+                    editsByFile={workspace.editsByFile}
+                    focusedTarget={focusedSourceTarget}
+                    focusFlashKey={focusedSourceFlashKey}
+                />
+            </section>
+        </div>
+    );
+}
+
+function OutputColumn({
+    workspace,
+    optimize,
+    selectedFinalPageId,
+    onPreviewPage,
+}: OutputColumnProps) {
+    return (
+        <div className="workspace-layout-column workspace-layout-column-output">
+            <section
+                {...tutorialTargetProps(TUTORIAL_TARGETS.finalDocument)}
+                className="workspace-surface workspace-surface-output"
+            >
+                <FinalDocument
+                    finalPages={workspace.finalPages}
+                    files={workspace.files}
+                    imageFit={optimize.imageFit}
+                    selectedPageId={selectedFinalPageId}
+                    selectedPageScrollKey={
+                        workspace.focusedSource?.flashTarget === 'final'
+                            ? workspace.focusedSource.flashKey
+                            : undefined
+                    }
+                    onReorder={workspace.reorderFinalPages}
+                    onMovePageToIndex={workspace.moveFinalPageToIndex}
+                    onRemove={workspace.removeFinalPage}
+                    onSelectPage={workspace.focusFinalPageSource}
+                    onPreviewPage={onPreviewPage}
+                    editsByFile={workspace.editsByFile}
+                />
+            </section>
+
+            <footer
+                {...tutorialTargetProps(TUTORIAL_TARGETS.outputPanel)}
+                className="workspace-surface workspace-surface-output"
+            >
+                <OutputPanel
+                    imageFit={optimize.imageFit}
+                    jpegQuality={optimize.jpegQuality}
+                    targetDpi={optimize.targetDpi}
+                    optimizationPreset={optimize.optimizationPreset}
+                    onImageFitChange={optimize.setImageFit}
+                    onJpegQualityChange={optimize.setJpegQuality}
+                    onTargetDpiChange={optimize.setTargetDpi}
+                    onOptimizationPresetChange={optimize.setOptimizationPreset}
+                />
+            </footer>
+        </div>
+    );
 }
 
 export function MainWorkspaceLayout({
@@ -54,156 +254,37 @@ export function MainWorkspaceLayout({
     const selectedFinalPageId = workspace.focusedSource
         ? toFinalPageId(workspace.focusedSource.fileId, workspace.focusedSource.target)
         : null;
-    const pickerPreviewPage = pickerPreviewTarget
-        ? toPreviewFinalPage(pickerPreviewTarget.file, pickerPreviewTarget.target)
-        : null;
-    const finalDocumentPreviewTarget = useMemo(
-        () =>
-            finalDocumentPreviewTargetId
-                ? (workspace.finalPages.find((page) => page.id === finalDocumentPreviewTargetId) ??
-                  null)
-                : null,
-        [finalDocumentPreviewTargetId, workspace.finalPages],
-    );
-    const finalDocumentPreviewPosition = finalDocumentPreviewTarget
-        ? workspace.finalPages.findIndex((page) => page.id === finalDocumentPreviewTarget.id) + 1
-        : 0;
 
     return (
         <>
             <div className="workspace-layout-grid">
-                <div className="workspace-layout-column workspace-layout-column-source">
-                    <aside
-                        {...tutorialTargetProps(TUTORIAL_TARGETS.fileList)}
-                        className="workspace-surface workspace-surface-source"
-                    >
-                        <FileList
-                            files={workspace.files}
-                            selectedId={workspace.selectedId}
-                            selectedScrollKey={workspace.selectedFileScrollKey}
-                            onSelect={workspace.selectFile}
-                            onRemove={workspace.removeFile}
-                            onAddFiles={handleAddFiles}
-                            onClearFiles={workspace.clearAllFiles}
-                        />
-                    </aside>
-
-                    <section
-                        {...tutorialTargetProps(TUTORIAL_TARGETS.pagePicker)}
-                        className="workspace-surface workspace-surface-source"
-                    >
-                        <PagePicker
-                            key={workspace.selectedFile?.id}
-                            file={workspace.selectedFile}
-                            finalPages={workspace.finalPages}
-                            onTogglePage={workspace.togglePage}
-                            onSetPdfPages={workspace.setPdfPagesForFile}
-                            onSetImageIncluded={workspace.setImageIncluded}
-                            onSelectAll={workspace.selectAll}
-                            onDeselectAll={workspace.deselectAll}
-                            onFocusTarget={workspace.focusFinalPageInDocument}
-                            onRotateTarget={workspace.rotatePage}
-                            onPreviewTarget={(file, target) =>
-                                setPickerPreviewTarget({ file, target })
-                            }
-                            editsByFile={workspace.editsByFile}
-                            focusedTarget={focusedSourceTarget}
-                            focusFlashKey={focusedSourceFlashKey}
-                        />
-                    </section>
-                </div>
-
-                <div className="workspace-layout-column workspace-layout-column-output">
-                    <section
-                        {...tutorialTargetProps(TUTORIAL_TARGETS.finalDocument)}
-                        className="workspace-surface workspace-surface-output"
-                    >
-                        <FinalDocument
-                            finalPages={workspace.finalPages}
-                            files={workspace.files}
-                            imageFit={optimize.imageFit}
-                            selectedPageId={selectedFinalPageId}
-                            selectedPageScrollKey={
-                                workspace.focusedSource?.flashTarget === 'final'
-                                    ? workspace.focusedSource.flashKey
-                                    : undefined
-                            }
-                            onReorder={workspace.reorderFinalPages}
-                            onMovePageToIndex={workspace.moveFinalPageToIndex}
-                            onRemove={workspace.removeFinalPage}
-                            onSelectPage={workspace.focusFinalPageSource}
-                            onPreviewPage={setFinalDocumentPreviewTargetId}
-                            editsByFile={workspace.editsByFile}
-                        />
-                    </section>
-
-                    <footer
-                        {...tutorialTargetProps(TUTORIAL_TARGETS.outputPanel)}
-                        className="workspace-surface workspace-surface-output"
-                    >
-                        <OutputPanel
-                            imageFit={optimize.imageFit}
-                            jpegQuality={optimize.jpegQuality}
-                            targetDpi={optimize.targetDpi}
-                            optimizationPreset={optimize.optimizationPreset}
-                            onImageFitChange={optimize.setImageFit}
-                            onJpegQualityChange={optimize.setJpegQuality}
-                            onTargetDpiChange={optimize.setTargetDpi}
-                            onOptimizationPresetChange={optimize.setOptimizationPreset}
-                        />
-                    </footer>
-                </div>
+                <SourceColumn
+                    workspace={workspace}
+                    handleAddFiles={handleAddFiles}
+                    focusedSourceTarget={focusedSourceTarget}
+                    focusedSourceFlashKey={focusedSourceFlashKey}
+                    onPreviewTarget={(file, target) => setPickerPreviewTarget({ file, target })}
+                />
+                <OutputColumn
+                    workspace={workspace}
+                    optimize={optimize}
+                    selectedFinalPageId={selectedFinalPageId}
+                    onPreviewPage={setFinalDocumentPreviewTargetId}
+                />
             </div>
 
-            <AnimatePresence>
-                {pickerPreviewTarget && pickerPreviewPage ? (
-                    <PreviewModal
-                        key={pickerPreviewPage.id}
-                        finalPages={[pickerPreviewPage]}
-                        files={[pickerPreviewTarget.file]}
-                        editsByFile={workspace.editsByFile}
-                        imageFit={optimize.imageFit}
-                        matchExportedImages
-                        indicator={{
-                            total:
-                                pickerPreviewTarget.file.kind === 'pdf'
-                                    ? (pickerPreviewTarget.file.pageCount ?? 1)
-                                    : 1,
-                            mode: 'page-num',
-                        }}
-                        onRotatePage={workspace.rotatePage}
-                        onClose={() => setPickerPreviewTarget(null)}
-                    />
-                ) : null}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {finalDocumentPreviewTarget && (
-                    <PreviewModal
-                        key={finalDocumentPreviewTarget.id}
-                        finalPages={[finalDocumentPreviewTarget]}
-                        files={workspace.files}
-                        imageFit={optimize.imageFit}
-                        matchExportedImages
-                        editsByFile={workspace.editsByFile}
-                        indicator={{
-                            current: finalDocumentPreviewPosition,
-                            total: workspace.finalPages.length,
-                        }}
-                        moveControl={{
-                            currentPosition: finalDocumentPreviewPosition,
-                            totalPositions: workspace.finalPages.length,
-                            onMoveToPosition: (targetIndex) =>
-                                workspace.moveFinalPageToIndex(
-                                    finalDocumentPreviewTarget.id,
-                                    targetIndex,
-                                ),
-                        }}
-                        onRotatePage={workspace.rotatePage}
-                        onClose={() => setFinalDocumentPreviewTargetId(null)}
-                    />
-                )}
-            </AnimatePresence>
+            <PickerPreview
+                target={pickerPreviewTarget}
+                workspace={workspace}
+                imageFit={optimize.imageFit}
+                onClose={() => setPickerPreviewTarget(null)}
+            />
+            <FinalDocumentPreview
+                targetId={finalDocumentPreviewTargetId}
+                workspace={workspace}
+                imageFit={optimize.imageFit}
+                onClose={() => setFinalDocumentPreviewTargetId(null)}
+            />
         </>
     );
 }

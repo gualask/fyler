@@ -33,51 +33,56 @@ export const initialAppNotificationsState: AppNotificationsState = {
     loading: null,
 };
 
+function statusForAction(action: AppNotificationsAction): StatusState | null | undefined {
+    switch (action.type) {
+        case 'clear-status':
+            return null;
+        case 'show-error':
+            return { kind: 'error', message: action.message };
+        case 'show-import-warning':
+            return { kind: 'import-warning', payload: action.payload };
+        case 'show-export-completed':
+            return { kind: 'export-completed' };
+        case 'show-export-completed-with-optimization-warning':
+            return {
+                kind: 'export-completed-with-optimization-warning',
+                count: action.count,
+            };
+        case 'show-toast':
+            return { kind: 'toast', tone: action.tone, message: action.message };
+        default:
+            return undefined;
+    }
+}
+
+function loadingForAction(action: AppNotificationsAction): LoadingState | null | undefined {
+    switch (action.type) {
+        case 'show-merge-progress':
+            return {
+                kind: 'merge-progress',
+                step: action.step,
+                progress: action.progress,
+            };
+        case 'show-opening-files':
+            return { kind: 'opening-files' };
+        case 'show-merge-preparing':
+            return { kind: 'merge-progress', step: 'preparing-documents', progress: 0 };
+        case 'clear-loading':
+            return null;
+        default:
+            return undefined;
+    }
+}
+
 export function appNotificationsReducer(
     state: AppNotificationsState,
     action: AppNotificationsAction,
 ): AppNotificationsState {
-    switch (action.type) {
-        case 'clear-status':
-            return { ...state, status: null };
-        case 'show-error':
-            return { ...state, status: { kind: 'error', message: action.message } };
-        case 'show-import-warning':
-            return { ...state, status: { kind: 'import-warning', payload: action.payload } };
-        case 'show-merge-progress':
-            return {
-                ...state,
-                loading: {
-                    kind: 'merge-progress',
-                    step: action.step,
-                    progress: action.progress,
-                },
-            };
-        case 'show-opening-files':
-            return { ...state, loading: { kind: 'opening-files' } };
-        case 'show-merge-preparing':
-            return {
-                ...state,
-                loading: { kind: 'merge-progress', step: 'preparing-documents', progress: 0 },
-            };
-        case 'clear-loading':
-            return { ...state, loading: null };
-        case 'show-export-completed':
-            return { ...state, status: { kind: 'export-completed' } };
-        case 'show-export-completed-with-optimization-warning':
-            return {
-                ...state,
-                status: {
-                    kind: 'export-completed-with-optimization-warning',
-                    count: action.count,
-                },
-            };
-        case 'show-toast':
-            return {
-                ...state,
-                status: { kind: 'toast', tone: action.tone, message: action.message },
-            };
-        default:
-            return state;
-    }
+    const status = statusForAction(action);
+    if (status !== undefined) return { ...state, status };
+
+    const loading = loadingForAction(action);
+    if (loading !== undefined) return { ...state, loading };
+
+    return state;
 }

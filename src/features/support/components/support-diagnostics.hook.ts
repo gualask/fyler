@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getAppMetadata, openExternalUrl, saveTextFile } from '@/infra/platform';
 import {
     type AppMetadata,
+    type DiagnosticEntry,
     type DiagnosticsSnapshot,
     formatDiagnosticsReport,
     toDiagnosticMessage,
@@ -18,6 +19,8 @@ const FALLBACK_APP_METADATA: AppMetadata = {
     arch: 'unknown',
 };
 
+type RecordDiagnostic = (entry: Omit<DiagnosticEntry, 'id' | 'timestamp'>) => void;
+
 interface Params {
     isDark: boolean;
     isQuickAdd: boolean;
@@ -27,6 +30,133 @@ interface Params {
     imageFit: string;
     targetDpi?: number;
     jpegQuality?: number;
+}
+
+type SnapshotOptions = Params & {
+    appMetadata: AppMetadata;
+    entries: DiagnosticEntry[];
+    locale: string;
+};
+
+type SaveDiagnosticsOptions = {
+    defaultFilename: string;
+    filterLabel: string;
+};
+
+type GitHubIssueDraft = {
+    title: string;
+    body: string;
+};
+
+function useAppMetadata(record: RecordDiagnostic): AppMetadata {
+    const [appMetadata, setAppMetadata] = useState<AppMetadata>(FALLBACK_APP_METADATA);
+
+    useEffect(() => {
+        record({ category: 'app', severity: 'info', message: 'App session started' });
+        void getAppMetadata()
+            .then((metadata) => setAppMetadata(metadata))
+            .catch(() => {
+                // Keep fallback metadata in dev or non-Tauri env.
+            });
+    }, [record]);
+
+    return appMetadata;
+}
+
+function buildDiagnosticsSnapshot({
+    appMetadata,
+    entries,
+    locale,
+    isDark,
+    isQuickAdd,
+    fileCount,
+    finalPageCount,
+    optimizationPreset,
+    imageFit,
+    targetDpi,
+    jpegQuality,
+}: SnapshotOptions): DiagnosticsSnapshot {
+    return {
+        generatedAt: new Date().toISOString(),
+        app: appMetadata,
+        preferences: {
+            locale,
+            theme: isDark ? 'dark' : 'light',
+        },
+        session: {
+            quickAdd: isQuickAdd,
+            fileCount,
+            finalPageCount,
+            optimizationPreset,
+            imageFit,
+            targetDpi: targetDpi ?? null,
+            jpegQuality: jpegQuality ?? null,
+        },
+        recentEvents: entries,
+    };
+}
+
+function recordSupportError(record: RecordDiagnostic, label: string, error: unknown) {
+    record({
+        category: 'support',
+        severity: 'error',
+        message: `${label} failed: ${toDiagnosticMessage(error)}`,
+    });
+}
+
+async function copyDiagnosticsReport(diagnosticsReport: string, record: RecordDiagnostic) {
+    try {
+        await navigator.clipboard.writeText(diagnosticsReport);
+        record({
+            category: 'support',
+            severity: 'info',
+            message: 'Diagnostics copied to clipboard',
+        });
+    } catch (error) {
+        recordSupportError(record, 'Copy diagnostics', error);
+        throw error;
+    }
+}
+
+async function saveDiagnosticsReportFile(
+    { defaultFilename, filterLabel }: SaveDiagnosticsOptions,
+    diagnosticsReport: string,
+    record: RecordDiagnostic,
+) {
+    try {
+        const path = await saveTextFile(defaultFilename, filterLabel, diagnosticsReport);
+        if (path) {
+            record({
+                category: 'support',
+                severity: 'info',
+                message: 'Saved diagnostics file',
+                metadata: { path },
+            });
+        }
+        return path;
+    } catch (error) {
+        recordSupportError(record, 'Save diagnostics file', error);
+        throw error;
+    }
+}
+
+async function openGitHubIssueTarget({ title, body }: GitHubIssueDraft, record: RecordDiagnostic) {
+    const target = buildGitHubIssueOpenTarget({ title, body });
+    try {
+        await openExternalUrl(target.url);
+        record({
+            category: 'support',
+            severity: 'info',
+            message:
+                target.kind === 'prefilled'
+                    ? 'Opened GitHub new issue (prefilled)'
+                    : 'Opened GitHub new issue (blank fallback)',
+        });
+        return target.kind;
+    } catch (error) {
+        recordSupportError(record, 'Open GitHub new issue', error);
+        throw error;
+    }
 }
 
 /**
@@ -48,36 +178,23 @@ export function useSupportDiagnostics({
     const { locale } = useTranslation();
     const { entries, record } = useDiagnostics();
     const [isSupportDialogOpen, setIsSupportDialogOpen] = useState(false);
-    const [appMetadata, setAppMetadata] = useState<AppMetadata>(FALLBACK_APP_METADATA);
-
-    useEffect(() => {
-        record({ category: 'app', severity: 'info', message: 'App session started' });
-        void getAppMetadata()
-            .then((metadata) => setAppMetadata(metadata))
-            .catch(() => {
-                // Keep fallback metadata in dev or non-Tauri env.
-            });
-    }, [record]);
+    const appMetadata = useAppMetadata(record);
 
     const diagnosticsSnapshot = useMemo<DiagnosticsSnapshot>(
-        () => ({
-            generatedAt: new Date().toISOString(),
-            app: appMetadata,
-            preferences: {
+        () =>
+            buildDiagnosticsSnapshot({
+                appMetadata,
+                entries,
                 locale,
-                theme: isDark ? 'dark' : 'light',
-            },
-            session: {
-                quickAdd: isQuickAdd,
+                isDark,
+                isQuickAdd,
                 fileCount,
                 finalPageCount,
                 optimizationPreset,
                 imageFit,
-                targetDpi: targetDpi ?? null,
-                jpegQuality: jpegQuality ?? null,
-            },
-            recentEvents: entries,
-        }),
+                targetDpi,
+                jpegQuality,
+            }),
         [
             appMetadata,
             entries,
@@ -102,78 +219,19 @@ export function useSupportDiagnostics({
     );
 
     const copyDiagnostics = useCallback(async () => {
-        const diagnosticsReport = buildDiagnosticsReport();
-        try {
-            await navigator.clipboard.writeText(diagnosticsReport);
-            record({
-                category: 'support',
-                severity: 'info',
-                message: 'Diagnostics copied to clipboard',
-            });
-        } catch (error) {
-            record({
-                category: 'support',
-                severity: 'error',
-                message: `Copy diagnostics failed: ${toDiagnosticMessage(error)}`,
-            });
-            throw error;
-        }
+        await copyDiagnosticsReport(buildDiagnosticsReport(), record);
     }, [buildDiagnosticsReport, record]);
 
     const saveDiagnosticsFile = useCallback(
-        async ({
-            defaultFilename,
-            filterLabel,
-        }: {
-            defaultFilename: string;
-            filterLabel: string;
-        }) => {
-            const diagnosticsReport = buildDiagnosticsReport();
-            try {
-                const path = await saveTextFile(defaultFilename, filterLabel, diagnosticsReport);
-                if (path) {
-                    record({
-                        category: 'support',
-                        severity: 'info',
-                        message: 'Saved diagnostics file',
-                        metadata: { path },
-                    });
-                }
-                return path;
-            } catch (error) {
-                record({
-                    category: 'support',
-                    severity: 'error',
-                    message: `Save diagnostics file failed: ${toDiagnosticMessage(error)}`,
-                });
-                throw error;
-            }
+        async (options: SaveDiagnosticsOptions) => {
+            return saveDiagnosticsReportFile(options, buildDiagnosticsReport(), record);
         },
         [buildDiagnosticsReport, record],
     );
 
     const openGitHubIssue = useCallback(
-        async ({ title, body }: { title: string; body: string }) => {
-            const target = buildGitHubIssueOpenTarget({ title, body });
-            try {
-                await openExternalUrl(target.url);
-                record({
-                    category: 'support',
-                    severity: 'info',
-                    message:
-                        target.kind === 'prefilled'
-                            ? 'Opened GitHub new issue (prefilled)'
-                            : 'Opened GitHub new issue (blank fallback)',
-                });
-                return target.kind;
-            } catch (error) {
-                record({
-                    category: 'support',
-                    severity: 'error',
-                    message: `Open GitHub new issue failed: ${toDiagnosticMessage(error)}`,
-                });
-                throw error;
-            }
+        async (draft: GitHubIssueDraft) => {
+            return openGitHubIssueTarget(draft, record);
         },
         [record],
     );
