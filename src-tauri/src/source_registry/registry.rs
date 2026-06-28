@@ -4,6 +4,8 @@ use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use crate::vo::DocKind;
 
+use super::preview::ImagePreview;
+
 static REGISTRY_LOCK_POISON_LOGGED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone)]
@@ -30,6 +32,7 @@ pub struct SourceRegistry {
 #[derive(Default)]
 struct RegistryState {
     sources_by_id: HashMap<String, RegisteredSource>,
+    image_previews_by_id: HashMap<String, ImagePreview>,
     id_by_original_path: HashMap<String, String>,
 }
 
@@ -80,9 +83,25 @@ impl SourceRegistry {
         self.insert_many([(file_id, registered)]);
     }
 
+    /// Stores image previews keyed by source ID.
+    pub fn insert_image_previews(
+        &self,
+        previews: impl IntoIterator<Item = (String, ImagePreview)>,
+    ) {
+        let mut state = self.write_state();
+        for (file_id, preview) in previews {
+            state.image_previews_by_id.insert(file_id, preview);
+        }
+    }
+
     /// Looks up a registered source by its file ID.
     pub fn get(&self, file_id: &str) -> Option<RegisteredSource> {
         self.read_state().sources_by_id.get(file_id).cloned()
+    }
+
+    /// Looks up a compressed image preview by source ID.
+    pub fn get_image_preview(&self, file_id: &str) -> Option<ImagePreview> {
+        self.read_state().image_previews_by_id.get(file_id).cloned()
     }
 
     /// Returns true when the given original path is already registered (dedupe guard on import).
@@ -97,6 +116,7 @@ impl SourceRegistry {
             if let Some(registered) = state.sources_by_id.remove(file_id) {
                 state.id_by_original_path.remove(&registered.original_path);
             }
+            state.image_previews_by_id.remove(file_id);
         }
     }
 }

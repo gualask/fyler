@@ -9,8 +9,8 @@ import type {
 } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
-import { ImagePanel } from './panels/ImagePanel';
-import { PdfPanel } from './panels/PdfPanel';
+import { ImagePanel } from './panels/image-panel';
+import { PdfPanel } from './panels/pdf-panel';
 
 interface Props {
     file: SourceFile | null;

@@ -16,7 +16,8 @@ export const tauriPlatformAdapter: PlatformAdapter = {
     releaseSources: (fileIds) => invoke('release_sources', { fileIds }),
     getImageExportPreviewLayout: (path, imageFit, quarterTurns) =>
         invoke('get_image_export_preview_layout', { path, imageFit, quarterTurns }),
-    getPreviewUrl: (path) => convertFileSrc(path),
+    getImagePreview: (fileId) => invoke('get_image_preview', { fileId }),
+    getSourceUrl: (path) => convertFileSrc(path),
     windowGetLogicalSize: async () => {
         const win = getCurrentWindow();
         const physical = await win.innerSize();

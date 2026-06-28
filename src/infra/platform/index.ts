@@ -46,7 +46,9 @@ export const getImageExportPreviewLayout = (
     quarterTurns: Parameters<PlatformAdapter['getImageExportPreviewLayout']>[2],
 ) => currentPlatformAdapter.getImageExportPreviewLayout(path, imageFit, quarterTurns);
 
-export const getPreviewUrl = (path: string) => currentPlatformAdapter.getPreviewUrl(path);
+export const getImagePreview = (fileId: string) => currentPlatformAdapter.getImagePreview(fileId);
+
+export const getSourceUrl = (path: string) => currentPlatformAdapter.getSourceUrl(path);
 
 export const windowGetLogicalSize = () => currentPlatformAdapter.windowGetLogicalSize();
 

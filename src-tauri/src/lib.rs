@@ -60,6 +60,7 @@ pub fn run() {
             commands::open_files_from_paths,
             commands::unlock_pdf_source,
             commands::release_sources,
+            commands::get_image_preview,
             commands::save_pdf_dialog,
             commands::save_text_file,
             commands::merge_pdfs,

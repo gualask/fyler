@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::fs;
 use std::sync::OnceLock;
 
 use rayon::prelude::*;
@@ -9,7 +8,11 @@ use crate::models::{PasswordProtectedFile, SkippedFile, SourceFile};
 use crate::pdf::{count_pages, detect_kind_from_ext, is_password_required_error};
 use crate::vo::DocKind;
 
-use super::registry::{RegisteredSource, SourceRegistry};
+use super::preview::{make_image_preview, ImagePreview};
+use super::registry::SourceRegistry;
+use super::source_registration::{
+    registered_source_entry, source_byte_size, source_file_name, RegisteredSourceEntry,
+};
 
 /// Result of an import operation executed from filesystem paths.
 pub struct FilesFromPathsResult {
@@ -24,75 +27,123 @@ pub struct FilesFromPathsResult {
 static IMPORT_POOL: OnceLock<rayon::ThreadPool> = OnceLock::new();
 
 enum ImportCandidate {
-    Ready(SourceFile, RegisteredSource),
+    Ready(ReadyImport),
     PasswordRequired(PasswordProtectedFile),
 }
 
-fn registered_file_from_path(path: String) -> Result<ImportCandidate, SkippedFile> {
-    let name = std::path::Path::new(&path)
-        .file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string();
-
-    let Some(kind) = detect_kind_from_ext(&path) else {
-        return Err(SkippedFile {
-            name,
-            reason: "unsupported_format".into(),
-            detail: None,
-        });
-    };
-
-    let byte_size = fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
-    let page_count: Option<u32> = if kind == DocKind::Pdf {
-        match count_pages(&path) {
-            Ok(count) => Some(count),
-            Err(error) if is_password_required_error(&error) => {
-                return Ok(ImportCandidate::PasswordRequired(PasswordProtectedFile {
-                    original_path: path,
-                    name,
-                    byte_size,
-                }));
-            }
-            Err(error) => {
-                return Err(SkippedFile {
-                    name,
-                    reason: "read_error".into(),
-                    detail: Some(error.to_string()),
-                });
-            }
-        }
-    } else {
-        Some(1)
-    };
-    let id = uuid::Uuid::new_v4().to_string();
-
-    let source = SourceFile {
-        id: id.clone(),
-        original_path: path.clone(),
-        name: name.clone(),
-        byte_size,
-        page_count,
-        kind,
-    };
-    let registered = RegisteredSource {
-        original_path: path,
-        name,
-        kind,
-        password: None,
-    };
-
-    Ok(ImportCandidate::Ready(source, registered))
+struct ReadyImport {
+    entry: RegisteredSourceEntry,
+    preview: Option<ImagePreview>,
 }
 
-/// Imports sources from paths, registering them in `registry` and returning frontend models.
-///
-/// Paths are deduplicated; already-registered paths are skipped.
-pub fn files_from_paths(
+enum CandidatePageCount {
+    Available(u32),
+    PasswordRequired(PasswordProtectedFile),
+}
+
+struct ImportResults {
+    entries: Vec<ReadyImport>,
+    password_required: Vec<PasswordProtectedFile>,
+    skipped: Vec<SkippedFile>,
+}
+
+fn skipped_file(name: String, reason: &'static str, detail: Option<String>) -> SkippedFile {
+    SkippedFile {
+        name,
+        reason: reason.into(),
+        detail,
+    }
+}
+
+fn read_error(name: &str, error: impl ToString) -> SkippedFile {
+    skipped_file(name.to_string(), "read_error", Some(error.to_string()))
+}
+
+fn candidate_kind(path: &str, name: &str) -> Result<DocKind, SkippedFile> {
+    detect_kind_from_ext(path)
+        .ok_or_else(|| skipped_file(name.to_string(), "unsupported_format", None))
+}
+
+fn pdf_page_count_or_password(
+    path: &str,
+    name: &str,
+    byte_size: u64,
+) -> Result<CandidatePageCount, SkippedFile> {
+    match count_pages(path) {
+        Ok(count) => Ok(CandidatePageCount::Available(count)),
+        Err(error) if is_password_required_error(&error) => Ok(
+            CandidatePageCount::PasswordRequired(PasswordProtectedFile {
+                original_path: path.to_string(),
+                name: name.to_string(),
+                byte_size,
+            }),
+        ),
+        Err(error) => Err(read_error(name, error)),
+    }
+}
+
+fn candidate_page_count(
+    path: &str,
+    name: &str,
+    byte_size: u64,
+    kind: DocKind,
+) -> Result<CandidatePageCount, SkippedFile> {
+    if kind == DocKind::Image {
+        return Ok(CandidatePageCount::Available(1));
+    }
+
+    pdf_page_count_or_password(path, name, byte_size)
+}
+
+fn image_preview_for_candidate(
+    path: &str,
+    name: &str,
+    kind: DocKind,
+) -> Result<Option<ImagePreview>, SkippedFile> {
+    if kind != DocKind::Image {
+        return Ok(None);
+    }
+
+    make_image_preview(path)
+        .map(Some)
+        .map_err(|error| read_error(name, error))
+}
+
+fn ready_import(
+    path: String,
+    name: String,
+    byte_size: u64,
+    page_count: u32,
+    kind: DocKind,
+    preview: Option<ImagePreview>,
+) -> ReadyImport {
+    ReadyImport {
+        entry: registered_source_entry(path, name, byte_size, page_count, kind, None),
+        preview,
+    }
+}
+
+fn registered_file_from_path(path: String) -> Result<ImportCandidate, SkippedFile> {
+    let name = source_file_name(&path);
+    let kind = candidate_kind(&path, &name)?;
+    let byte_size = source_byte_size(&path);
+    let page_count = match candidate_page_count(&path, &name, byte_size, kind)? {
+        CandidatePageCount::Available(page_count) => page_count,
+        CandidatePageCount::PasswordRequired(file) => {
+            return Ok(ImportCandidate::PasswordRequired(file));
+        }
+    };
+    let preview = image_preview_for_candidate(&path, &name, kind)?;
+
+    Ok(ImportCandidate::Ready(ready_import(
+        path, name, byte_size, page_count, kind, preview,
+    )))
+}
+
+fn accepted_import_paths(
     paths: impl IntoIterator<Item = String>,
     registry: &SourceRegistry,
-) -> anyhow::Result<FilesFromPathsResult> {
-    // Deduplicate input paths and skip sources already present in the current session.
+) -> Vec<String> {
     let mut accepted_paths = Vec::new();
     let mut seen_paths = HashSet::new();
 
@@ -106,39 +157,81 @@ pub fn files_from_paths(
         accepted_paths.push(path);
     }
 
-    let pool = IMPORT_POOL.get_or_init(|| {
+    accepted_paths
+}
+
+fn import_pool() -> &'static rayon::ThreadPool {
+    IMPORT_POOL.get_or_init(|| {
         // Keep a small dedicated pool to avoid oversubscribing the system during import.
         ThreadPoolBuilder::new()
             .num_threads(4)
             .thread_name(|index| format!("fyler-import-{index}"))
             .build()
             .expect("failed to build import threadpool")
-    });
-    let results = pool.install(|| {
-        accepted_paths
-            .into_par_iter()
-            .map(registered_file_from_path)
-            .collect::<Vec<_>>()
-    });
+    })
+}
 
+fn collect_import_results(results: Vec<Result<ImportCandidate, SkippedFile>>) -> ImportResults {
     let mut entries = Vec::new();
     let mut password_required = Vec::new();
     let mut skipped = Vec::new();
+
     for result in results {
         match result {
-            Ok(ImportCandidate::Ready(source, registered)) => entries.push((source, registered)),
+            Ok(ImportCandidate::Ready(entry)) => entries.push(entry),
             Ok(ImportCandidate::PasswordRequired(file)) => password_required.push(file),
             Err(skip) => skipped.push(skip),
         }
     }
 
-    registry.insert_many(
-        entries
-            .iter()
-            .map(|(source, registered)| (source.id.clone(), registered.clone())),
-    );
+    ImportResults {
+        entries,
+        password_required,
+        skipped,
+    }
+}
+
+fn register_ready_imports(registry: &SourceRegistry, entries: &[ReadyImport]) {
+    registry.insert_many(entries.iter().map(|entry| {
+        (
+            entry.entry.source_id().to_string(),
+            entry.entry.registered().clone(),
+        )
+    }));
+    registry.insert_image_previews(entries.iter().filter_map(|entry| {
+        entry
+            .preview
+            .as_ref()
+            .map(|preview| (entry.entry.source_id().to_string(), preview.clone()))
+    }));
+}
+
+/// Imports sources from paths, registering them in `registry` and returning frontend models.
+///
+/// Paths are deduplicated; already-registered paths are skipped.
+pub fn files_from_paths(
+    paths: impl IntoIterator<Item = String>,
+    registry: &SourceRegistry,
+) -> anyhow::Result<FilesFromPathsResult> {
+    let accepted_paths = accepted_import_paths(paths, registry);
+    let results = import_pool().install(|| {
+        accepted_paths
+            .into_par_iter()
+            .map(registered_file_from_path)
+            .collect::<Vec<_>>()
+    });
+    let ImportResults {
+        entries,
+        password_required,
+        skipped,
+    } = collect_import_results(results);
+
+    register_ready_imports(registry, &entries);
     Ok(FilesFromPathsResult {
-        files: entries.into_iter().map(|(source, _)| source).collect(),
+        files: entries
+            .into_iter()
+            .map(|entry| entry.entry.into_source())
+            .collect(),
         password_required,
         skipped,
     })

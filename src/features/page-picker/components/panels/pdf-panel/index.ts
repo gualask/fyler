@@ -1,0 +1,1 @@
+export { PdfPanel } from './PdfPanel';

@@ -8,6 +8,13 @@ import type {
     QuarterTurn,
 } from '@/shared/domain';
 
+export type ImagePreview = {
+    mimeType: string;
+    bytes: number[];
+    width: number;
+    height: number;
+};
+
 export interface PlatformAdapter {
     openFilesDialog(filterLabel: string): Promise<OpenFilesResult>;
     savePDFDialog(defaultFilename: string, filterLabel: string): Promise<string>;
@@ -23,7 +30,8 @@ export interface PlatformAdapter {
         imageFit: ImageFit,
         quarterTurns: QuarterTurn,
     ): Promise<ImageExportPreviewLayout>;
-    getPreviewUrl(path: string): string;
+    getImagePreview(fileId: string): Promise<ImagePreview | null>;
+    getSourceUrl(path: string): string;
     windowGetLogicalSize(): Promise<{ width: number; height: number }>;
     windowSetSize(w: number, h: number): Promise<void>;
     windowSetAlwaysOnTop(flag: boolean): Promise<void>;

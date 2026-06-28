@@ -96,14 +96,15 @@ describe('browserPlatformAdapter', () => {
         }
     });
 
-    test('keeps browser-safe preview URLs and releaseSources as no-ops', async () => {
+    test('keeps browser-safe source URLs and releaseSources as no-ops', async () => {
         await assert.doesNotReject(browserPlatformAdapter.releaseSources(['source-1']));
+        assert.equal(await browserPlatformAdapter.getImagePreview('source-1'), null);
         assert.equal(
-            browserPlatformAdapter.getPreviewUrl('/fixtures/sample-document.pdf'),
+            browserPlatformAdapter.getSourceUrl('/fixtures/sample-document.pdf'),
             '/fixtures/sample-document.pdf',
         );
         assert.equal(
-            browserPlatformAdapter.getPreviewUrl('blob:sample-document.pdf'),
+            browserPlatformAdapter.getSourceUrl('blob:sample-document.pdf'),
             'blob:sample-document.pdf',
         );
     });

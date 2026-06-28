@@ -95,7 +95,8 @@ export const browserPlatformAdapter: PlatformAdapter = {
     releaseSources: async () => undefined,
     getImageExportPreviewLayout: async (): Promise<ImageExportPreviewLayout> =>
         unsupportedInBrowser('getImageExportPreviewLayout'),
-    getPreviewUrl: (path) => path,
+    getImagePreview: async () => null,
+    getSourceUrl: (path) => path,
     windowGetLogicalSize: async () => ({
         width: window.innerWidth,
         height: window.innerHeight,

@@ -4,6 +4,8 @@ import type { FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
 
 import { usePageSpecInput } from './page-spec-input.hook';
 
+type PdfSelectionMode = 'all' | 'none' | 'custom';
+
 interface Props {
     file: SourceFile;
     finalPages: FinalPage[];
@@ -11,6 +13,38 @@ interface Props {
     onSelectAll: (file: SourceFile) => void;
     onDeselectAll: (fileId: string) => void;
     onFocusTarget: (fileId: string, target: SourceTarget) => void;
+}
+
+function selectedPdfPages(fileId: string, finalPages: FinalPage[]) {
+    const pageNums = new Set<number>();
+    for (const page of finalPages) {
+        if (page.fileId === fileId && page.kind === 'pdf') {
+            pageNums.add(page.pageNum);
+        }
+    }
+
+    return {
+        selectedPages: Array.from(pageNums).sort((a, b) => a - b),
+        selectedPageNums: pageNums,
+    };
+}
+
+function selectionMode(selectedCount: number, pageCount: number | null): PdfSelectionMode {
+    if (selectedCount === 0) return 'none';
+    if (pageCount !== null && pageCount > 0 && selectedCount === pageCount) return 'all';
+
+    return 'custom';
+}
+
+function pageRange(fromPage: number, toPage: number): number[] {
+    const lo = Math.min(fromPage, toPage);
+    const hi = Math.max(fromPage, toPage);
+
+    return Array.from({ length: hi - lo + 1 }, (_, index) => lo + index);
+}
+
+function pdfPagesWithSelection(selectedPageNums: Set<number>, pageNums: number[]): number[] {
+    return [...Array.from(selectedPageNums), ...pageNums];
 }
 
 export function usePdfControls({
@@ -23,26 +57,12 @@ export function usePdfControls({
 }: Props) {
     const [lastClickedPage, setLastClickedPage] = useState<number | null>(null);
 
-    const { selectedPages, selectedPageNums } = useMemo(() => {
-        const pageNums = new Set<number>();
-        for (const page of finalPages) {
-            if (page.fileId === file.id && page.kind === 'pdf') {
-                pageNums.add(page.pageNum);
-            }
-        }
-
-        return {
-            selectedPages: Array.from(pageNums).sort((a, b) => a - b),
-            selectedPageNums: pageNums,
-        };
-    }, [file.id, finalPages]);
+    const { selectedPages, selectedPageNums } = useMemo(
+        () => selectedPdfPages(file.id, finalPages),
+        [file.id, finalPages],
+    );
     const selectedCount = selectedPageNums.size;
-    const mode: 'all' | 'none' | 'custom' = (() => {
-        if (selectedCount === 0) return 'none';
-        if (file.pageCount !== null && file.pageCount > 0 && selectedCount === file.pageCount)
-            return 'all';
-        return 'custom';
-    })();
+    const mode = selectionMode(selectedCount, file.pageCount);
 
     const {
         pageInput,
@@ -61,26 +81,22 @@ export function usePdfControls({
     });
 
     const handleThumbClick = (pageNum: number, event: React.MouseEvent) => {
-        const isSelected = selectedPageNums.has(pageNum);
-
         if (event.shiftKey && lastClickedPage !== null) {
-            const [lo, hi] =
-                lastClickedPage <= pageNum
-                    ? [lastClickedPage, pageNum]
-                    : [pageNum, lastClickedPage];
-            const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
-            onSetPdfPages(file.id, [...Array.from(selectedPageNums), ...rangeNums]);
+            onSetPdfPages(
+                file.id,
+                pdfPagesWithSelection(selectedPageNums, pageRange(lastClickedPage, pageNum)),
+            );
             setLastClickedPage(pageNum);
             return;
         }
 
-        if (isSelected) {
+        if (selectedPageNums.has(pageNum)) {
             onFocusTarget(file.id, { kind: 'pdf', pageNum });
             setLastClickedPage(pageNum);
             return;
         }
 
-        onSetPdfPages(file.id, [...Array.from(selectedPageNums), pageNum]);
+        onSetPdfPages(file.id, pdfPagesWithSelection(selectedPageNums, [pageNum]));
         setLastClickedPage(pageNum);
     };
 

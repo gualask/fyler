@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { useImagePreview } from '@/infra/image-preview';
 import {
     buildPreviewRenderRequest,
     type PdfRenderRequest,
@@ -6,7 +7,6 @@ import {
     usePdfCache,
     usePdfRenderSrc,
 } from '@/infra/pdf';
-import { getPreviewUrl } from '@/infra/platform';
 import type { FileEdits, FinalPage, ImageFit, QuarterTurn, SourceFile } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import type { SlotContext, SlotPage } from '../slot.types';
@@ -38,6 +38,7 @@ function imagePreviewState(
     file: SourceFile | undefined,
     edits: FileEdits,
     imageFit: ImageFit,
+    imageSrc: string | null,
 ): ImagePreviewState {
     const isImage = file?.kind === 'image';
     const quarterTurns = FileEditsVO.getImageQuarterTurn(edits);
@@ -45,7 +46,7 @@ function imagePreviewState(
 
     return {
         isImage,
-        src: isImage ? getPreviewUrl(file.originalPath) : undefined,
+        src: isImage ? (imageSrc ?? undefined) : undefined,
         originalPath: isImage ? file.originalPath : undefined,
         quarterTurns,
         rotation,
@@ -122,7 +123,8 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
 
     const { slotRef, shouldRender } = useSlotVisibility(scrollRoot, index, onVisible);
 
-    const imagePreview = imagePreviewState(file, edits, imageFit);
+    const imageDisplay = useImagePreview(file?.kind === 'image' ? file : undefined);
+    const imagePreview = imagePreviewState(file, edits, imageFit, imageDisplay.src);
     const matchExportedImagesActive = Boolean(matchExportedImages && shouldRender);
     const previewRequest = useMemo(
         () => previewRenderRequest(file?.kind, fp, edits),

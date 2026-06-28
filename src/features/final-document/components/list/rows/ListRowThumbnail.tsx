@@ -1,8 +1,8 @@
 import { IconFileTypePdf, IconPhoto } from '@tabler/icons-react';
 import type { CSSProperties } from 'react';
 import { useMemo } from 'react';
+import { useImagePreview } from '@/infra/image-preview';
 import { buildThumbnailRenderRequest, useExportMatchedImage, useLazyPdfRender } from '@/infra/pdf';
-import { getPreviewUrl } from '@/infra/platform';
 import type { ImageFit, QuarterTurn } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
@@ -34,6 +34,10 @@ function isImageItem(item: ListItem): boolean {
 
 function imageOriginalPath(item: ListItem): string | undefined {
     return item.file?.kind === 'image' ? item.file.originalPath : undefined;
+}
+
+function imageFile(item: ListItem) {
+    return item.file?.kind === 'image' ? item.file : undefined;
 }
 
 function imageQuarterTurns(item: ListItem): QuarterTurn {
@@ -178,7 +182,7 @@ export function ListRowThumbnail({
         scrollRoot,
     );
     const originalPath = imageOriginalPath(item);
-    const imageUrl = originalPath ? getPreviewUrl(originalPath) : null;
+    const { src: imageUrl } = useImagePreview(imageFile(item));
     const quarterTurns = imageQuarterTurns(item);
     const rotation = imageRotationDegrees(item);
     const { exportMatchedImageSrc } = useExportMatchedImage(

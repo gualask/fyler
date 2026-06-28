@@ -2,45 +2,10 @@
 
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, test, vi } from 'vitest';
-import type { PlatformAdapter } from './platform-adapter.ts';
+import { createStubPlatformAdapter } from './platform-adapter.test-utils.ts';
 
 let invokeCalls: Array<{ command: string; payload: unknown }> = [];
 let platform: typeof import('./index.ts');
-
-function createStubPlatformAdapter(overrides: Partial<PlatformAdapter> = {}): PlatformAdapter {
-    return {
-        openFilesDialog: async () => ({ files: [], passwordRequired: [], skippedErrors: [] }),
-        savePDFDialog: async () => '',
-        saveTextFile: async () => '',
-        mergePDFs: async () => {
-            throw new Error('not implemented');
-        },
-        getAppMetadata: async () => ({
-            appName: 'Fyler',
-            version: 'test',
-            identifier: 'test',
-            platform: 'test',
-            arch: 'test',
-        }),
-        openExternalUrl: async () => undefined,
-        openFilesFromPaths: async () => ({ files: [], passwordRequired: [], skippedErrors: [] }),
-        unlockPdfSource: async () => {
-            throw new Error('not implemented');
-        },
-        releaseSources: async () => undefined,
-        getImageExportPreviewLayout: async () => {
-            throw new Error('not implemented');
-        },
-        getPreviewUrl: (path) => path,
-        windowGetLogicalSize: async () => ({ width: 0, height: 0 }),
-        windowSetSize: async () => undefined,
-        windowSetAlwaysOnTop: async () => undefined,
-        windowSetMinSize: async () => undefined,
-        windowSetMaxSize: async () => undefined,
-        windowSetMaximizable: async () => undefined,
-        ...overrides,
-    };
-}
 
 beforeEach(async () => {
     invokeCalls = [];
@@ -97,11 +62,18 @@ describe('platform facade', () => {
                 passwordRequired: [],
                 skippedErrors: [{ name: 'stub.pdf', reason: 'unsupported_format' }],
             }),
-            getPreviewUrl: (path) => `preview:${path}`,
+            getImagePreview: async (fileId) => ({
+                mimeType: 'image/jpeg',
+                bytes: [1, 2, 3],
+                width: fileId === 'image-1' ? 1600 : 1,
+                height: 900,
+            }),
+            getSourceUrl: (path) => `source:${path}`,
         });
 
         platform.setPlatformAdapter(adapter);
         const result = await platform.openFilesDialog('Documents and images');
+        const preview = await platform.getImagePreview('image-1');
 
         assert.equal(invokeCalls.length, 0);
         assert.deepEqual(result, {
@@ -109,9 +81,15 @@ describe('platform facade', () => {
             passwordRequired: [],
             skippedErrors: [{ name: 'stub.pdf', reason: 'unsupported_format' }],
         });
+        assert.deepEqual(preview, {
+            mimeType: 'image/jpeg',
+            bytes: [1, 2, 3],
+            width: 1600,
+            height: 900,
+        });
         assert.equal(
-            platform.getPreviewUrl('/fixtures/sample-document.pdf'),
-            'preview:/fixtures/sample-document.pdf',
+            platform.getSourceUrl('/fixtures/sample-document.pdf'),
+            'source:/fixtures/sample-document.pdf',
         );
     });
 

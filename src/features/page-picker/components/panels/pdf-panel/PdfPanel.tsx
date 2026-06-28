@@ -8,9 +8,9 @@ import type {
 } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
-import { PdfToolbar } from '../controls/PdfToolbar';
-import { usePdfControls } from '../hooks/pdf-controls.hook';
 import { PdfThumbnailItem } from './PdfThumbnailItem';
+import { PdfToolbar } from './PdfToolbar';
+import { usePdfControls } from './pdf-controls.hook';
 
 interface Props {
     file: SourceFile;

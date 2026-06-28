@@ -5,15 +5,14 @@ use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
-use crate::error::{AppError, UserFacingError};
+use crate::error::AppError;
 use crate::export::export_pdf;
 use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile, SourceFile};
-use crate::pdf::{
-    count_pages_with_password, image_export_preview_layout, is_password_required_error,
-    ImageExportPreviewLayout, IMAGE_EXTENSIONS,
+use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
+use crate::source_registry::{
+    files_from_paths, unlocked_pdf_source as build_unlocked_pdf_source, ImagePreview,
+    SourceRegistry,
 };
-use crate::source_registry::{files_from_paths, RegisteredSource, SourceRegistry};
-use crate::vo::DocKind;
 
 #[derive(Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -72,52 +71,6 @@ fn empty_open_files_result() -> OpenFilesResult {
         password_required: vec![],
         skipped_errors: vec![],
     }
-}
-
-fn unlock_error(error: anyhow::Error, name: &str) -> anyhow::Error {
-    if is_password_required_error(&error) {
-        anyhow::Error::new(UserFacingError::with_meta(
-            "invalid_pdf_password",
-            serde_json::json!({ "name": name }),
-        ))
-    } else {
-        anyhow::Error::new(UserFacingError::with_meta(
-            "open_pdf_failed",
-            serde_json::json!({ "name": name }),
-        ))
-    }
-}
-
-fn unlocked_pdf_source(
-    path: String,
-    password: String,
-) -> anyhow::Result<(SourceFile, RegisteredSource)> {
-    let name = std::path::Path::new(&path)
-        .file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string();
-    let byte_size = fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
-    let page_count = count_pages_with_password(&path, Some(&password))
-        .map_err(|error| unlock_error(error, &name))?;
-    let id = uuid::Uuid::new_v4().to_string();
-
-    let source = SourceFile {
-        id: id.clone(),
-        original_path: path.clone(),
-        name: name.clone(),
-        byte_size,
-        page_count: Some(page_count),
-        kind: DocKind::Pdf,
-    };
-    let registered = RegisteredSource {
-        original_path: path,
-        name,
-        kind: DocKind::Pdf,
-        password: Some(password),
-    };
-
-    Ok((source, registered))
 }
 
 #[tauri::command]
@@ -193,10 +146,11 @@ pub async fn unlock_pdf_source(
     password: String,
     registry: State<'_, SourceRegistry>,
 ) -> Result<SourceFile, AppError> {
-    let result = tauri::async_runtime::spawn_blocking(move || unlocked_pdf_source(path, password))
-        .await
-        .map_err(anyhow::Error::from)??;
-    let (source, registered) = result;
+    let entry =
+        tauri::async_runtime::spawn_blocking(move || build_unlocked_pdf_source(path, password))
+            .await
+            .map_err(anyhow::Error::from)??;
+    let (source, registered) = entry.into_parts();
     registry.insert_one(source.id.clone(), registered);
     Ok(source)
 }
@@ -207,6 +161,15 @@ pub async fn unlock_pdf_source(
 /// The frontend calls this when a source is removed from the session.
 pub fn release_sources(file_ids: Vec<String>, registry: State<'_, SourceRegistry>) {
     registry.remove_many(&file_ids);
+}
+
+#[tauri::command]
+/// Returns the compressed display preview generated during image import.
+pub fn get_image_preview(
+    file_id: String,
+    registry: State<'_, SourceRegistry>,
+) -> Option<ImagePreview> {
+    registry.get_image_preview(&file_id)
 }
 
 #[tauri::command]

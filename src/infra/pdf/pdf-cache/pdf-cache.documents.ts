@@ -1,5 +1,5 @@
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
-import { getPreviewUrl } from '@/infra/platform';
+import { getSourceUrl } from '@/infra/platform';
 import type { SourceFile } from '@/shared/domain';
 
 /**
@@ -36,7 +36,7 @@ export function getOrCreatePdfDocument(
 
             const password = passwordsByFileId.get(file.id);
             loadingTask = pdfjsLib.getDocument({
-                url: getPreviewUrl(file.originalPath),
+                url: getSourceUrl(file.originalPath),
                 ...PDFJS_DOCUMENT_OPTIONS,
                 ...(password !== undefined ? { password } : {}),
             });
