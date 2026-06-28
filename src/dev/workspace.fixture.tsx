@@ -1,71 +1,14 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { MainAppView } from '@/app/shell/MainAppView';
-import type { OptimizeState } from '@/app/shell/main-app.types';
 import { PreviewModal } from '@/features/preview';
 import { TutorialOverlay } from '@/features/tutorial';
-import type { WorkspaceApi } from '@/features/workspace';
 import { PdfCacheProvider } from '@/infra/pdf';
-import type {
-    FileEdits,
-    FinalPage,
-    ImageFit,
-    ImageOptimizationPreset,
-    RotationDirection,
-    SourceFile,
-    SourceTarget,
-} from '@/shared/domain';
-import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
-import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
-import {
-    DEFAULT_OPTIMIZATION_PRESET,
-    getOptimizationSettings,
-} from '@/shared/domain/value-objects/optimization-presets.vo';
+import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
 import { useTheme } from '@/shared/preferences';
-
-function getTutorialStep(search: string): number | null {
-    const raw = new URLSearchParams(search).get('tutorialStep');
-    if (raw === null) return null;
-
-    const parsed = Number(raw);
-    return Number.isInteger(parsed) ? Math.max(0, parsed) : null;
-}
-
-function reorderFinalPagesById(finalPages: FinalPage[], fromId: string, toId: string): FinalPage[] {
-    const fromIndex = finalPages.findIndex((page) => page.id === fromId);
-    const toIndex = finalPages.findIndex((page) => page.id === toId);
-
-    if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
-        return finalPages;
-    }
-
-    const next = [...finalPages];
-    const [moved] = next.splice(fromIndex, 1);
-    next.splice(toIndex, 0, moved);
-    return next;
-}
-
-function moveFinalPageToIndexById(
-    finalPages: FinalPage[],
-    id: string,
-    targetIndex: number,
-): FinalPage[] {
-    const fromIndex = finalPages.findIndex((page) => page.id === id);
-
-    if (fromIndex === -1) {
-        return finalPages;
-    }
-
-    const boundedIndex = Math.max(0, Math.min(targetIndex, finalPages.length - 1));
-    if (boundedIndex === fromIndex) {
-        return finalPages;
-    }
-
-    const next = [...finalPages];
-    const [moved] = next.splice(fromIndex, 1);
-    next.splice(boundedIndex, 0, moved);
-    return next;
-}
+import { useWorkspaceFixtureOptimization } from './workspace-fixture/workspace-fixture-optimization.hook';
+import { getTutorialStep } from './workspace-fixture/workspace-fixture-route';
+import { useWorkspaceFixtureWorkspaceApi } from './workspace-fixture/workspace-fixture-workspace-api.hook';
 
 export function WorkspaceFixturePage({
     createInitialFiles,
@@ -93,234 +36,23 @@ export function WorkspaceFixturePage({
                 ? initialEditsByFile()
                 : initialEditsByFile) ?? {},
     );
-    const [imageFit, setImageFit] = useState<ImageFit>('contain');
-    const defaultOptimization = getOptimizationSettings(DEFAULT_OPTIMIZATION_PRESET);
-    const [jpegQuality, setJpegQuality] = useState<number | undefined>(
-        defaultOptimization.jpegQuality,
-    );
-    const [targetDpi, setTargetDpi] = useState<number | undefined>(defaultOptimization.targetDpi);
-    const [optimizationPreset, setOptimizationPresetState] = useState<ImageOptimizationPreset>(
-        DEFAULT_OPTIMIZATION_PRESET,
-    );
     const [showFinalPreview, setShowFinalPreview] = useState(false);
     const selectedFile = useMemo(
         () => files.find((file) => file.id === selectedId) ?? null,
         [files, selectedId],
     );
-
-    const setOptimizationPreset = useCallback((preset: ImageOptimizationPreset) => {
-        if (preset === 'custom') {
-            setOptimizationPresetState('custom');
-            return;
-        }
-
-        const settings = getOptimizationSettings(preset);
-        setOptimizationPresetState(preset);
-        setJpegQuality(settings.jpegQuality);
-        setTargetDpi(settings.targetDpi);
-    }, []);
-
-    const optimize = useMemo<OptimizeState>(
-        () => ({
-            imageFit,
-            jpegQuality,
-            targetDpi,
-            optimizationPreset,
-            setImageFit,
-            setJpegQuality: (value) => {
-                setJpegQuality(value);
-                setOptimizationPresetState('custom');
-            },
-            setTargetDpi: (value) => {
-                setTargetDpi(value);
-                setOptimizationPresetState('custom');
-            },
-            setOptimizationPreset,
-        }),
-        [imageFit, jpegQuality, optimizationPreset, setOptimizationPreset, targetDpi],
-    );
-
-    const workspace = useMemo(
-        () =>
-            ({
-                files,
-                editsByFile,
-                selectedId,
-                selectedFileScrollKey: undefined,
-                selectedFile,
-                focusedSource: null,
-                finalPages,
-                selectedPdfPagesByFile: {},
-                includedImagesByFile: {},
-                selectFile: (id: string) => {
-                    setSelectedId(id);
-                },
-                addFiles: async () => ({ files: [], skippedErrors: [] }),
-                passwordDialog: {
-                    open: false,
-                    file: null,
-                    currentIndex: 0,
-                    totalCount: 0,
-                    password: '',
-                    error: null,
-                    isChecking: false,
-                    tryForRemaining: false,
-                    onPasswordChange: () => undefined,
-                    onTryForRemainingChange: () => undefined,
-                    onSubmit: () => undefined,
-                    onSkipCurrent: () => undefined,
-                    onSkipAll: () => undefined,
-                },
-                removeFile: (id: string) => {
-                    setFiles((current) => current.filter((file) => file.id !== id));
-                    setFinalPages((current) => current.filter((page) => page.fileId !== id));
-                    setSelectedId((current) => {
-                        if (current !== id) return current;
-                        const remaining = files.filter((file) => file.id !== id);
-                        return remaining[0]?.id ?? null;
-                    });
-                },
-                removeFiles: (ids: readonly string[]) => {
-                    const idsToRemove = new Set(ids);
-                    setFiles((current) => current.filter((file) => !idsToRemove.has(file.id)));
-                    setFinalPages((current) =>
-                        current.filter((page) => !idsToRemove.has(page.fileId)),
-                    );
-                    setSelectedId((current) => {
-                        if (!current || !idsToRemove.has(current)) return current;
-                        const remaining = files.filter((file) => !idsToRemove.has(file.id));
-                        return remaining[0]?.id ?? null;
-                    });
-                },
-                clearAllFiles: () => {
-                    setFiles([]);
-                    setSelectedId(null);
-                    setFinalPages([]);
-                },
-                rotatePage: async (
-                    fileId: string,
-                    target: SourceTarget,
-                    direction: RotationDirection,
-                ) => {
-                    setEditsByFile((current) => ({
-                        ...current,
-                        [fileId]: FileEditsVO.applyRotation(current[fileId], target, direction),
-                    }));
-                },
-                focusFinalPageSource: (fileId: string, _target: SourceTarget) =>
-                    setSelectedId(fileId),
-                focusFinalPageInDocument: (fileId: string, _target: SourceTarget) =>
-                    setSelectedId(fileId),
-                reorderFiles: (_fromId: string, _toId: string) => undefined,
-                isDragOver: false,
-                togglePage: (fileId: string, pageNum: number) => {
-                    const pageId = toFinalPageId(fileId, { kind: 'pdf', pageNum });
-                    setFinalPages((current) =>
-                        current.some((page) => page.id === pageId)
-                            ? current.filter((page) => page.id !== pageId)
-                            : [...current, { id: pageId, fileId, kind: 'pdf', pageNum }],
-                    );
-                },
-                setPdfPagesForFile: (fileId: string, pages: number[]) => {
-                    setFinalPages((current) => [
-                        ...current.filter((page) => page.fileId !== fileId),
-                        ...pages.map((pageNum) => ({
-                            id: toFinalPageId(fileId, { kind: 'pdf', pageNum }),
-                            fileId,
-                            kind: 'pdf' as const,
-                            pageNum,
-                        })),
-                    ]);
-                },
-                setImageIncluded: (fileId: string, included: boolean) => {
-                    setFinalPages((current) => [
-                        ...current.filter((page) => page.fileId !== fileId),
-                        ...(included
-                            ? [
-                                  {
-                                      id: toFinalPageId(fileId, { kind: 'image' }),
-                                      fileId,
-                                      kind: 'image' as const,
-                                  },
-                              ]
-                            : []),
-                    ]);
-                },
-                addAllPagesForFile: (file: SourceFile) => {
-                    if (file.kind === 'image') {
-                        setFinalPages((current) => [
-                            ...current.filter((page) => page.fileId !== file.id),
-                            {
-                                id: toFinalPageId(file.id, { kind: 'image' }),
-                                fileId: file.id,
-                                kind: 'image',
-                            },
-                        ]);
-                        return;
-                    }
-                    const total = file.pageCount ?? 0;
-                    setFinalPages((current) => [
-                        ...current.filter((page) => page.fileId !== file.id),
-                        ...Array.from({ length: total }, (_, index) => ({
-                            id: toFinalPageId(file.id, {
-                                kind: 'pdf',
-                                pageNum: index + 1,
-                            }),
-                            fileId: file.id,
-                            kind: 'pdf' as const,
-                            pageNum: index + 1,
-                        })),
-                    ]);
-                },
-                removePagesForFile: (fileId: string) => {
-                    setFinalPages((current) => current.filter((page) => page.fileId !== fileId));
-                },
-                clearAllPages: () => {
-                    setFinalPages([]);
-                },
-                selectAll: (file: SourceFile) => {
-                    if (file.kind === 'image') {
-                        setFinalPages((current) => [
-                            ...current.filter((page) => page.fileId !== file.id),
-                            {
-                                id: toFinalPageId(file.id, { kind: 'image' }),
-                                fileId: file.id,
-                                kind: 'image',
-                            },
-                        ]);
-                        return;
-                    }
-                    const total = file.pageCount ?? 0;
-                    setFinalPages((current) => [
-                        ...current.filter((page) => page.fileId !== file.id),
-                        ...Array.from({ length: total }, (_, index) => ({
-                            id: toFinalPageId(file.id, {
-                                kind: 'pdf',
-                                pageNum: index + 1,
-                            }),
-                            fileId: file.id,
-                            kind: 'pdf' as const,
-                            pageNum: index + 1,
-                        })),
-                    ]);
-                },
-                deselectAll: (fileId: string) => {
-                    setFinalPages((current) => current.filter((page) => page.fileId !== fileId));
-                },
-                removeFinalPage: (id: string) => {
-                    setFinalPages((current) => current.filter((page) => page.id !== id));
-                },
-                reorderFinalPages: (fromId: string, toId: string) => {
-                    setFinalPages((current) => reorderFinalPagesById(current, fromId, toId));
-                },
-                moveFinalPageToIndex: (id: string, targetIndex: number) => {
-                    setFinalPages((current) => moveFinalPageToIndexById(current, id, targetIndex));
-                },
-                toPdfFinalPageId: (fileId: string, pageNum: number) => `${fileId}:${pageNum}`,
-                toImageFinalPageId: (fileId: string) => `${fileId}:image`,
-            }) satisfies Partial<WorkspaceApi>,
-        [editsByFile, files, finalPages, selectedFile, selectedId],
-    ) as WorkspaceApi;
+    const optimize = useWorkspaceFixtureOptimization();
+    const workspace = useWorkspaceFixtureWorkspaceApi({
+        files,
+        setFiles,
+        selectedId,
+        setSelectedId,
+        selectedFile,
+        finalPages,
+        setFinalPages,
+        editsByFile,
+        setEditsByFile,
+    });
 
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text">
@@ -350,7 +82,7 @@ export function WorkspaceFixturePage({
                         finalPages={finalPages}
                         files={files}
                         editsByFile={editsByFile}
-                        imageFit={imageFit}
+                        imageFit={optimize.imageFit}
                         matchExportedImages
                         onClose={() => setShowFinalPreview(false)}
                     />

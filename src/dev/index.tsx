@@ -6,6 +6,7 @@ import {
     QUICK_ADD_WINDOW_SIZE,
 } from '@/features/workspace/quick-add/quick-add-window-transition';
 import { setPlatformAdapter } from '@/infra/platform';
+import type { PlatformAdapter } from '@/infra/platform/platform-adapter';
 
 import { browserPlatformAdapter } from './browser-platform-adapter';
 import { DevModeShell } from './DevModeShell';
@@ -42,6 +43,7 @@ interface DevFixtureEntry {
     title: string;
     description: string;
     Component: ComponentType;
+    adapter?: PlatformAdapter;
     // Window the fixture represents; defaults to the normal window minimum.
     minSize?: WindowSize;
 }
@@ -215,13 +217,12 @@ function UnknownFixturePage({ fixtureKey }: { fixtureKey: string }) {
 }
 
 export function DevModePage() {
-    setPlatformAdapter(browserPlatformAdapter);
-
     const fixtureKey = getDevFixtureKey(window.location.search);
     const fixture =
         fixtureKey && fixtureKey !== DEV_FIXTURE_INDEX_KEY
             ? DEV_FIXTURES.find((entry) => entry.key === fixtureKey)
             : undefined;
+    setPlatformAdapter(fixture?.adapter ?? browserPlatformAdapter);
     const minSize = fixture?.minSize ?? NORMAL_WINDOW_MIN_SIZE;
 
     const view =
