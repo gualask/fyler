@@ -139,15 +139,18 @@ sources.
 
 ## Frontend
 
-### PDF rendering happens off the main thread
+### PDF document work uses a worker
 
-PDF.js is configured to use a worker so rendering does not block the UI thread.
+PDF.js is configured with a bundled worker asset before documents are loaded.
+That worker handles PDF loading/parsing work, but the final rasterization path
+still creates an HTML canvas, asks PDF.js to paint into it, and encodes the
+canvas as JPEG on the UI thread.
 
-This keeps page rendering work out of the UI thread, which matters for:
+This split matters for:
 
-- scrolling long previews
-- drag and drop interactions
-- selection-heavy flows
+- avoiding fake-worker fallback during PDF document processing
+- keeping parsing/operator-list work away from the UI thread
+- bounding the remaining UI-thread canvas cost with lazy rendering and caching
 
 When a page is rasterized, it is rendered to a canvas and encoded as JPEG. The
 canvas is filled with white before rendering so transparent content produces a
@@ -204,6 +207,17 @@ work with clear ownership:
 
 The goal is not blanket memoization. The goal is to keep recalculation local to
 the data that actually changed.
+
+### Workspace state subscriptions
+
+The workspace uses a scoped Zustand store for session state. Container-level UI
+subscribes to the store with selectors, so source, composition, and focus
+updates can be read from the slices that own them instead of being threaded
+through the app shell as one large derived snapshot.
+
+This is mainly a state-ownership and bug-prevention choice. The heavier
+performance mechanisms remain the dedicated preview caches, lazy rendering, and
+backend-generated image previews described above.
 
 ## What is intentionally not optimized
 

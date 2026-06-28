@@ -36,6 +36,26 @@ The goal of the structure is “feature-first” on the frontend, with a small a
 - Direct Tauri imports (`@tauri-apps/*`) must live under `src/infra/` only.
 - Prefer shared interfaces for cross-layer APIs (for example notifications) instead of importing app hooks/types from `src/features/`.
 
+### Workspace state ownership
+
+The workspace session state is owned by a scoped Zustand vanilla store created
+by `useWorkspace` and exposed to the app shell through `WorkspaceStoreProvider`.
+
+That store owns synchronous workspace state:
+
+- imported source files and per-file edits
+- selected PDF pages, included image pages, and final page order
+- selected source, scroll/focus signals, and source-to-final focus state
+
+The store does not own side effects. Import dialogs, protected-PDF resolution,
+Tauri source release, PDF preview requests, and preview caches stay in hooks or
+`src/infra/` modules near the runtime boundary that performs the work.
+
+Container-level workspace UI reads store slices through
+`useWorkspaceStoreSelector`; presentational components still receive explicit
+props. This keeps the store as the session source of truth without coupling leaf
+components to global state.
+
 ## Backend
 
 ### Entrypoints and wiring
