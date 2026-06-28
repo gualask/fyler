@@ -1,6 +1,6 @@
 import { IconFileTypePdf } from '@tabler/icons-react';
 
-import type { ProtectedPdfPasswordDialogState } from '../../hooks/protected-pdf-import.hook';
+import type { ProtectedPdfPasswordDialogState } from '../../hooks/protected-pdf-import';
 
 type ProtectedPdfFile = NonNullable<ProtectedPdfPasswordDialogState['file']>;
 

@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import { toDiagnosticMessage, useDiagnostics } from '@/shared/diagnostics';
 import { classifyAddFilesResult } from './add-files-action-result';
-import type { useWorkspace } from './workspace.hook';
+import type { useWorkspace } from './workspace';
 
 interface AddFilesActionDeps {
     workspace: ReturnType<typeof useWorkspace>;

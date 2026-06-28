@@ -12,6 +12,11 @@ export type PendingPasswordImport = {
     resolve: (files: SourceFile[]) => void;
 };
 
+export type ActivePasswordImport = {
+    pending: PendingPasswordImport;
+    current: PasswordProtectedFile;
+};
+
 export type RecordDiagnostic = (entry: Omit<DiagnosticEntry, 'id' | 'timestamp'>) => void;
 
 export type UnlockProtectedPdf = (
@@ -37,6 +42,36 @@ export function passwordDialogError(
 export function appendUnlockedFile(pending: PendingPasswordImport, source: SourceFile) {
     pending.unlockedFiles.push(source);
     pending.completedCount += 1;
+}
+
+export function resolvedImportFiles(pending: PendingPasswordImport): SourceFile[] {
+    return [...pending.baseFiles, ...pending.unlockedFiles];
+}
+
+export function currentPasswordImport(
+    pending: PendingPasswordImport | null,
+): ActivePasswordImport | null {
+    const current = pending?.queue[0];
+    return pending && current ? { pending, current } : null;
+}
+
+export function passwordSubmissionFromDialog(
+    activeImport: ActivePasswordImport,
+    password: string,
+    tryForRemaining: boolean,
+): PasswordSubmission | null {
+    if (!password) return null;
+
+    return {
+        ...activeImport,
+        password,
+        tryForRemaining,
+    };
+}
+
+export function skipCurrentPasswordFile(pending: PendingPasswordImport) {
+    pending.completedCount += 1;
+    pending.queue = pending.queue.slice(1);
 }
 
 function recordSavedPasswordFailure(

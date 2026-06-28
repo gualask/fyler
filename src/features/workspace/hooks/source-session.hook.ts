@@ -6,6 +6,44 @@ import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';
 import { initialSourceSessionState, sourceSessionReducer } from '../state/source-session.reducer';
 
+type RequestRenders = ReturnType<typeof usePdfCache>['requestRenders'];
+type ReleaseFile = ReturnType<typeof usePdfCache>['releaseFile'];
+
+function releasePdfSource(file: SourceFile | null, releaseFile: ReleaseFile) {
+    if (file?.kind === 'pdf') {
+        releaseFile(file.id);
+    }
+}
+
+function releasePdfSources(files: SourceFile[], releaseFile: ReleaseFile) {
+    for (const file of files) {
+        releasePdfSource(file, releaseFile);
+    }
+}
+
+function findCompatibleRotationFile(files: SourceFile[], fileId: string, target: SourceTarget) {
+    const file = files.find((entry) => entry.id === fileId);
+    if (!file) return null;
+    if (file.kind === 'pdf' && target.kind !== 'pdf') return null;
+    if (file.kind === 'image' && target.kind !== 'image') return null;
+    return file;
+}
+
+function requestPdfThumbnailRender({
+    file,
+    target,
+    requestRenders,
+    edits,
+}: {
+    file: SourceFile;
+    target: SourceTarget;
+    requestRenders: RequestRenders;
+    edits: ReturnType<typeof FileEditsVO.applyRotation>;
+}) {
+    if (file.kind !== 'pdf' || target.kind !== 'pdf') return;
+    requestRenders(file, [buildThumbnailRenderRequest(target.pageNum, edits)]);
+}
+
 export function useSourceSession() {
     const { t } = useTranslation();
     const [state, dispatch] = useReducer(sourceSessionReducer, initialSourceSessionState);
@@ -26,9 +64,7 @@ export function useSourceSession() {
     const removeSourceFile = useCallback(
         (id: string) => {
             const removed = files.find((file) => file.id === id) ?? null;
-            if (removed?.kind === 'pdf') {
-                releaseFile(id);
-            }
+            releasePdfSource(removed, releaseFile);
             void releaseSources([id]);
             dispatch({ type: 'remove-file', fileId: id });
             return removed;
@@ -39,11 +75,7 @@ export function useSourceSession() {
     const clearSourceFiles = useCallback(() => {
         if (!files.length) return;
 
-        for (const file of files) {
-            if (file.kind === 'pdf') {
-                releaseFile(file.id);
-            }
-        }
+        releasePdfSources(files, releaseFile);
         void releaseSources(files.map((file) => file.id));
         dispatch({ type: 'clear' });
     }, [files, releaseFile]);
@@ -58,17 +90,12 @@ export function useSourceSession() {
 
     const rotateSourcePage = useCallback(
         async (fileId: string, target: SourceTarget, direction: RotationDirection) => {
-            const file = files.find((entry) => entry.id === fileId);
+            const file = findCompatibleRotationFile(files, fileId, target);
             if (!file) return;
-
-            if (file.kind === 'pdf' && target.kind !== 'pdf') return;
-            if (file.kind === 'image' && target.kind !== 'image') return;
 
             const nextEdits = FileEditsVO.applyRotation(editsByFile[file.id], target, direction);
             dispatch({ type: 'set-file-edits', fileId: file.id, edits: nextEdits });
-            if (file.kind === 'pdf' && target.kind === 'pdf') {
-                requestRenders(file, [buildThumbnailRenderRequest(target.pageNum, nextEdits)]);
-            }
+            requestPdfThumbnailRender({ file, target, requestRenders, edits: nextEdits });
         },
         [editsByFile, files, requestRenders],
     );

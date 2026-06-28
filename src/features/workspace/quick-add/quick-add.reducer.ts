@@ -32,65 +32,108 @@ export function removeQuickAddId(previousIds: string[], removedId: string): stri
     return previousIds.filter((id) => id !== removedId);
 }
 
+type QuickAddReducerMap = {
+    [Action in QuickAddAction as Action['type']]: (
+        state: QuickAddState,
+        action: Action,
+    ) => QuickAddState;
+};
+
+type QuickAddReducerHandler = (state: QuickAddState, action: QuickAddAction) => QuickAddState;
+
+function enterStarted(state: QuickAddState): QuickAddState {
+    return {
+        ...state,
+        isTransitioning: true,
+        quickAddFileOrder: [],
+        isQuickAddSessionActive: true,
+    };
+}
+
+function enterCompleted(state: QuickAddState): QuickAddState {
+    return {
+        ...state,
+        isQuickAdd: true,
+    };
+}
+
+function enterFailed(state: QuickAddState): QuickAddState {
+    return {
+        ...state,
+        isQuickAdd: false,
+        isTransitioning: false,
+        quickAddFileOrder: [],
+        isQuickAddSessionActive: false,
+    };
+}
+
+function exitStarted(state: QuickAddState): QuickAddState {
+    return {
+        ...state,
+        isTransitioning: true,
+        isQuickAddSessionActive: false,
+    };
+}
+
+function exitCompleted(state: QuickAddState): QuickAddState {
+    return {
+        ...state,
+        isQuickAdd: false,
+        quickAddFileOrder: [],
+    };
+}
+
+function exitFailed(state: QuickAddState): QuickAddState {
+    return {
+        ...state,
+        isQuickAdd: true,
+        isTransitioning: false,
+        isQuickAddSessionActive: true,
+    };
+}
+
+function transitionFinished(state: QuickAddState): QuickAddState {
+    return {
+        ...state,
+        isTransitioning: false,
+    };
+}
+
+function filesAdded(
+    state: QuickAddState,
+    action: Extract<QuickAddAction, { type: 'files-added' }>,
+): QuickAddState {
+    if (!state.isQuickAddSessionActive) return state;
+    return {
+        ...state,
+        quickAddFileOrder: prependRecentQuickAddIds(state.quickAddFileOrder, action.ids),
+    };
+}
+
+function fileRemoved(
+    state: QuickAddState,
+    action: Extract<QuickAddAction, { type: 'file-removed' }>,
+): QuickAddState {
+    if (!state.isQuickAddSessionActive) return state;
+    return {
+        ...state,
+        quickAddFileOrder: removeQuickAddId(state.quickAddFileOrder, action.id),
+    };
+}
+
+const quickAddReducers = {
+    'enter-started': enterStarted,
+    'enter-completed': enterCompleted,
+    'enter-failed': enterFailed,
+    'exit-started': exitStarted,
+    'exit-completed': exitCompleted,
+    'exit-failed': exitFailed,
+    'transition-finished': transitionFinished,
+    'files-added': filesAdded,
+    'file-removed': fileRemoved,
+} satisfies QuickAddReducerMap;
+
 export function quickAddReducer(state: QuickAddState, action: QuickAddAction): QuickAddState {
-    switch (action.type) {
-        case 'enter-started':
-            return {
-                ...state,
-                isTransitioning: true,
-                quickAddFileOrder: [],
-                isQuickAddSessionActive: true,
-            };
-        case 'enter-completed':
-            return {
-                ...state,
-                isQuickAdd: true,
-            };
-        case 'enter-failed':
-            return {
-                ...state,
-                isQuickAdd: false,
-                isTransitioning: false,
-                quickAddFileOrder: [],
-                isQuickAddSessionActive: false,
-            };
-        case 'exit-started':
-            return {
-                ...state,
-                isTransitioning: true,
-                isQuickAddSessionActive: false,
-            };
-        case 'exit-completed':
-            return {
-                ...state,
-                isQuickAdd: false,
-                quickAddFileOrder: [],
-            };
-        case 'exit-failed':
-            return {
-                ...state,
-                isQuickAdd: true,
-                isTransitioning: false,
-                isQuickAddSessionActive: true,
-            };
-        case 'transition-finished':
-            return {
-                ...state,
-                isTransitioning: false,
-            };
-        case 'files-added':
-            if (!state.isQuickAddSessionActive) return state;
-            return {
-                ...state,
-                quickAddFileOrder: prependRecentQuickAddIds(state.quickAddFileOrder, action.ids),
-            };
-        case 'file-removed':
-            if (!state.isQuickAddSessionActive) return state;
-            return {
-                ...state,
-                quickAddFileOrder: removeQuickAddId(state.quickAddFileOrder, action.id),
-            };
-        default:
-            return state;
-    }
+    const reduce = quickAddReducers[action.type] as QuickAddReducerHandler;
+    return reduce(state, action);
 }

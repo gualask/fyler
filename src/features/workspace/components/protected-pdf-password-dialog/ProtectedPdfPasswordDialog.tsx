@@ -2,7 +2,7 @@ import { useId, useRef } from 'react';
 
 import { useTranslation } from '@/shared/i18n';
 import { useModalFocus } from '@/shared/ui';
-import type { ProtectedPdfPasswordDialogState } from '../../hooks/protected-pdf-import.hook';
+import type { ProtectedPdfPasswordDialogState } from '../../hooks/protected-pdf-import';
 import { DialogActions } from './DialogActions';
 import { DialogHeader } from './DialogHeader';
 import { PasswordField } from './PasswordField';

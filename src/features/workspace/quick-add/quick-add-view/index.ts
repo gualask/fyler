@@ -1,0 +1,1 @@
+export { QuickAddView } from './QuickAddView';
