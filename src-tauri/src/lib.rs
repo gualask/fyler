@@ -7,6 +7,9 @@
 
 use tauri::Emitter;
 
+#[cfg(any(target_os = "macos", windows, target_os = "linux"))]
+use tauri::Manager;
+
 mod commands;
 mod error;
 mod export;
@@ -22,7 +25,18 @@ mod vo;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 /// Boots the Tauri app and registers all commands/plugins.
 pub fn run() {
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    }));
+
+    let builder = builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build());
