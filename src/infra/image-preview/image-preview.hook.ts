@@ -1,41 +1,46 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { getSourceUrl } from '@/infra/platform';
 import type { SourceFile } from '@/shared/domain';
 import {
     type ImagePreviewSnapshot,
     type ImagePreviewStatus,
-    retainImagePreview,
+    imagePreviewQueryOptions,
 } from './image-preview.cache';
 
 type ImagePreviewFile = Pick<SourceFile, 'id' | 'kind' | 'originalPath'>;
 
 const IDLE_SNAPSHOT: ImagePreviewSnapshot = { src: null, status: 'idle' };
+const IDLE_QUERY_INPUT = { fileId: 'idle', originalPath: '' };
 
 export function useImagePreview(file: ImagePreviewFile | undefined) {
-    const key = file?.kind === 'image' ? `${file.id}:${file.originalPath}` : null;
+    const input =
+        file?.kind === 'image' ? { fileId: file.id, originalPath: file.originalPath } : null;
     const sourceUrl = useMemo(
         () => (file?.kind === 'image' ? getSourceUrl(file.originalPath) : null),
         [file?.kind, file?.originalPath],
     );
-    const [snapshot, setSnapshot] = useState<ImagePreviewSnapshot>(IDLE_SNAPSHOT);
 
-    useEffect(() => {
-        if (!key || file?.kind !== 'image' || !sourceUrl) {
-            setSnapshot(IDLE_SNAPSHOT);
-            return;
-        }
+    const preview = useQuery({
+        ...imagePreviewQueryOptions(input ?? IDLE_QUERY_INPUT),
+        enabled: Boolean(input),
+    });
 
-        const subscription = retainImagePreview({ key, fileId: file.id, sourceUrl }, () =>
-            setSnapshot(subscription.getSnapshot()),
-        );
-        setSnapshot(subscription.getSnapshot());
+    if (!input || !sourceUrl) return IDLE_SNAPSHOT;
 
-        return () => {
-            subscription.release();
-        };
-    }, [file?.id, file?.kind, key, sourceUrl]);
+    if (preview.data?.objectUrl) {
+        return { src: preview.data.objectUrl, status: 'ready' };
+    }
 
-    return snapshot;
+    if (preview.isError) {
+        return { src: sourceUrl, status: 'failed' };
+    }
+
+    if (preview.data?.status === 'fallback') {
+        return { src: sourceUrl, status: 'fallback' };
+    }
+
+    return { src: null, status: 'pending' };
 }
 
 export type { ImagePreviewStatus };

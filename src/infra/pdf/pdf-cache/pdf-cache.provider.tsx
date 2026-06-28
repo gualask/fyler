@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { QuarterTurn, SourceFile } from '@/shared/domain';
@@ -7,41 +8,15 @@ import {
     destroyPdfDocument,
     getOrCreatePdfDocument,
 } from './pdf-cache.documents';
-import { notify, subscribeRender } from './pdf-cache.listeners';
-import { getPageAspectRatio, getRender, requestRenders } from './pdf-cache.renders';
-
-function deleteEntriesByPrefix<V>(map: Map<string, V>, prefix: string) {
-    for (const key of Array.from(map.keys())) {
-        if (key.startsWith(prefix)) {
-            map.delete(key);
-        }
-    }
-}
-
-function revokeObjectUrls(cache: Map<string, string> | undefined) {
-    if (!cache) return;
-    for (const url of cache.values()) {
-        if (url.startsWith('blob:')) {
-            URL.revokeObjectURL(url);
-        }
-    }
-}
+import { getPageAspectRatio, releasePdfRenderQueries, requestRenders } from './pdf-cache.renders';
 
 function usePdfCacheRefs() {
-    const cacheRef = useRef<Map<string, Map<string, string>>>(new Map());
-    const aspectRatiosRef = useRef<Map<string, Map<string, number>>>(new Map());
-    const pageTasksRef = useRef<Map<string, Promise<void>>>(new Map());
-    const listenersRef = useRef<Map<string, Set<() => void>>>(new Map());
     const docTasksRef = useRef<Map<string, PDFDocumentLoadingTask>>(new Map());
     const docPromisesRef = useRef<Map<string, Promise<PDFDocumentProxy>>>(new Map());
     const docPasswordsRef = useRef<Map<string, string>>(new Map());
 
     return useMemo(
         () => ({
-            cacheRef,
-            aspectRatiosRef,
-            pageTasksRef,
-            listenersRef,
             docTasksRef,
             docPromisesRef,
             docPasswordsRef,
@@ -60,26 +35,9 @@ function pdfDocumentCaches(refs: PdfCacheRefs) {
     };
 }
 
-function releaseRenderCache(fileId: string, refs: PdfCacheRefs) {
-    revokeObjectUrls(refs.cacheRef.current.get(fileId));
-    refs.cacheRef.current.delete(fileId);
-    refs.aspectRatiosRef.current.delete(fileId);
-
-    deleteEntriesByPrefix(refs.listenersRef.current, `${fileId}:`);
-    deleteEntriesByPrefix(refs.pageTasksRef.current, `${fileId}:`);
-}
-
 function releasePdfDocument(fileId: string, refs: PdfCacheRefs) {
     destroyPdfDocument(fileId, pdfDocumentCaches(refs));
     refs.docPasswordsRef.current.delete(fileId);
-}
-
-function disposeRenderCaches(refs: PdfCacheRefs) {
-    for (const fileCache of refs.cacheRef.current.values()) {
-        revokeObjectUrls(fileCache);
-    }
-    refs.pageTasksRef.current.clear();
-    refs.listenersRef.current.clear();
 }
 
 function disposePdfDocuments(refs: PdfCacheRefs) {
@@ -103,70 +61,51 @@ function usePdfDocumentAccess(refs: PdfCacheRefs) {
     return { getPdfDocument, setPdfPassword };
 }
 
-function usePdfRenderAccess(
-    refs: PdfCacheRefs,
-    getPdfDocument: (file: SourceFile) => Promise<PDFDocumentProxy>,
-) {
-    const subscribe = useCallback(
-        (fileId: string, request: PdfRenderRequest, listener: () => void) =>
-            subscribeRender(refs.listenersRef.current, fileId, request, listener),
-        [refs],
-    );
-
-    const notifyTask = useCallback(
-        (taskKey: string) => {
-            notify(refs.listenersRef.current, taskKey);
-        },
-        [refs],
-    );
+function usePdfRenderAccess(getPdfDocument: (file: SourceFile) => Promise<PDFDocumentProxy>) {
+    const queryClient = useQueryClient();
 
     const request = useCallback(
         (file: SourceFile, requests: PdfRenderRequest[]) => {
             requestRenders({
                 file,
                 requests,
-                cacheByFileId: refs.cacheRef.current,
-                aspectRatiosByFileId: refs.aspectRatiosRef.current,
-                pageTasksByTaskKey: refs.pageTasksRef.current,
+                queryClient,
                 getPdfDocument,
-                notifyTask,
             });
         },
-        [getPdfDocument, notifyTask, refs],
-    );
-
-    const get = useCallback(
-        (fileId: string, request: PdfRenderRequest): string | undefined =>
-            getRender(refs.cacheRef.current, fileId, request),
-        [refs],
+        [getPdfDocument, queryClient],
     );
 
     const getAspectRatio = useCallback(
         (fileId: string, pageNum: number, quarterTurns: QuarterTurn): number | undefined =>
-            getPageAspectRatio(refs.aspectRatiosRef.current, fileId, pageNum, quarterTurns),
-        [refs],
+            getPageAspectRatio(queryClient, fileId, pageNum, quarterTurns),
+        [queryClient],
     );
 
-    return { get, getAspectRatio, request, subscribe };
+    return { getAspectRatio, request };
 }
 
 function useReleasePdfCacheFile(refs: PdfCacheRefs) {
+    const queryClient = useQueryClient();
+
     return useCallback(
         (fileId: string) => {
-            releaseRenderCache(fileId, refs);
+            releasePdfRenderQueries(queryClient, fileId);
             releasePdfDocument(fileId, refs);
         },
-        [refs],
+        [queryClient, refs],
     );
 }
 
 function usePdfCacheCleanup(refs: PdfCacheRefs) {
+    const queryClient = useQueryClient();
+
     useEffect(
         () => () => {
-            disposeRenderCaches(refs);
+            releasePdfRenderQueries(queryClient);
             disposePdfDocuments(refs);
         },
-        [refs],
+        [queryClient, refs],
     );
 }
 
@@ -180,7 +119,7 @@ function usePdfCacheCleanup(refs: PdfCacheRefs) {
 export function PdfCacheProvider({ children }: { children: ReactNode }) {
     const refs = usePdfCacheRefs();
     const { getPdfDocument, setPdfPassword } = usePdfDocumentAccess(refs);
-    const { get, getAspectRatio, request, subscribe } = usePdfRenderAccess(refs, getPdfDocument);
+    const { getAspectRatio, request } = usePdfRenderAccess(getPdfDocument);
     const releaseFile = useReleasePdfCacheFile(refs);
 
     usePdfCacheCleanup(refs);
@@ -189,9 +128,8 @@ export function PdfCacheProvider({ children }: { children: ReactNode }) {
         <PdfCacheContext.Provider
             value={{
                 requestRenders: request,
-                getRender: get,
-                subscribeRender: subscribe,
                 getPageAspectRatio: getAspectRatio,
+                getPdfDocument,
                 setPdfPassword,
                 releaseFile,
             }}

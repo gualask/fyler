@@ -1,25 +1,43 @@
 /// <reference types="node" />
 
 import assert from 'node:assert/strict';
+import { QueryCache, QueryClient, QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, test, vi } from 'vitest';
 import { resetPlatformAdapter, setPlatformAdapter } from '@/infra/platform';
 import { createStubPlatformAdapter } from '@/infra/platform/platform-adapter.test-utils';
-import { resetImagePreviewCacheForTest, retainImagePreview } from './image-preview.cache';
-
-const RELEASE_DELAY_MS = 100;
+import {
+    IMAGE_PREVIEW_GC_TIME_MS,
+    imagePreviewQueryOptions,
+    registerImagePreviewQueryCacheCleanup,
+} from './image-preview.cache';
 
 let createObjectUrl: typeof URL.createObjectURL;
 let revokeObjectUrl: typeof URL.revokeObjectURL;
 let createdUrls: string[];
 let revokedUrls: string[];
+let queryClient: QueryClient;
 
 async function flushPromises() {
     await Promise.resolve();
     await Promise.resolve();
 }
 
+function createImagePreviewQueryClient() {
+    const queryCache = new QueryCache();
+    registerImagePreviewQueryCacheCleanup(queryCache);
+    return new QueryClient({
+        queryCache,
+        defaultOptions: {
+            queries: {
+                retry: false,
+            },
+        },
+    });
+}
+
 beforeEach(() => {
     vi.useFakeTimers();
+    queryClient = createImagePreviewQueryClient();
     createdUrls = [];
     revokedUrls = [];
     createObjectUrl = URL.createObjectURL;
@@ -37,20 +55,17 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    resetImagePreviewCacheForTest();
+    queryClient.clear();
     resetPlatformAdapter();
     URL.createObjectURL = createObjectUrl;
     URL.revokeObjectURL = revokeObjectUrl;
     vi.useRealTimers();
 });
 
-describe('image preview cache', () => {
+describe('image preview query cache', () => {
     test('shares one object URL across multiple consumers of the same image', async () => {
-        const image = {
-            key: 'image-1:/tmp/image.jpg',
-            fileId: 'image-1',
-            sourceUrl: 'source:/tmp/image.jpg',
-        };
+        const image = { fileId: 'image-1', originalPath: '/tmp/image.jpg' };
+        const options = imagePreviewQueryOptions(image);
         let requests = 0;
         setPlatformAdapter(
             createStubPlatformAdapter({
@@ -61,95 +76,96 @@ describe('image preview cache', () => {
             }),
         );
 
-        let first = retainImagePreview(image, () => undefined);
-        const second = retainImagePreview(image, () => undefined);
-
-        assert.deepEqual(first.getSnapshot(), { src: null, status: 'pending' });
-        await flushPromises();
+        const [first, second] = await Promise.all([
+            queryClient.fetchQuery(options),
+            queryClient.fetchQuery(options),
+        ]);
 
         assert.equal(requests, 1);
         assert.deepEqual(createdUrls, ['blob:preview-1']);
-        assert.deepEqual(first.getSnapshot(), { src: 'blob:preview-1', status: 'ready' });
-        assert.deepEqual(second.getSnapshot(), { src: 'blob:preview-1', status: 'ready' });
+        assert.deepEqual(first, { objectUrl: 'blob:preview-1', status: 'ready' });
+        assert.deepEqual(second, { objectUrl: 'blob:preview-1', status: 'ready' });
 
-        first.release();
-        await vi.advanceTimersByTimeAsync(RELEASE_DELAY_MS);
-        assert.deepEqual(revokedUrls, []);
-
-        second.release();
-        await vi.advanceTimersByTimeAsync(RELEASE_DELAY_MS);
+        await vi.advanceTimersByTimeAsync(IMAGE_PREVIEW_GC_TIME_MS);
         assert.deepEqual(revokedUrls, ['blob:preview-1']);
 
-        first = retainImagePreview(image, () => undefined);
-        await flushPromises();
+        const third = await queryClient.fetchQuery(options);
         assert.equal(requests, 2);
-        assert.deepEqual(first.getSnapshot(), { src: 'blob:preview-2', status: 'ready' });
-        first.release();
+        assert.deepEqual(third, { objectUrl: 'blob:preview-2', status: 'ready' });
     });
 
     test('keeps a released preview alive when it is reacquired before cleanup', async () => {
-        const image = {
-            key: 'image-2:/tmp/image.jpg',
-            fileId: 'image-2',
-            sourceUrl: 'source:/tmp/image.jpg',
-        };
+        const image = { fileId: 'image-2', originalPath: '/tmp/image.jpg' };
+        const options = imagePreviewQueryOptions(image);
+        let requests = 0;
         setPlatformAdapter(
             createStubPlatformAdapter({
-                getImagePreview: async () => new Uint8Array([4, 5, 6]),
+                getImagePreview: async () => {
+                    requests += 1;
+                    return new Uint8Array([4, 5, 6]);
+                },
             }),
         );
 
-        const first = retainImagePreview(image, () => undefined);
-        await flushPromises();
-        first.release();
+        const firstObserver = new QueryObserver(queryClient, options);
+        const unsubscribeFirst = firstObserver.subscribe(() => undefined);
+        const first = await queryClient.fetchQuery(options);
 
-        await vi.advanceTimersByTimeAsync(RELEASE_DELAY_MS / 2);
-        const second = retainImagePreview(image, () => undefined);
-        await vi.advanceTimersByTimeAsync(RELEASE_DELAY_MS);
+        unsubscribeFirst();
+        await vi.advanceTimersByTimeAsync(IMAGE_PREVIEW_GC_TIME_MS / 2);
 
+        const secondObserver = new QueryObserver(queryClient, options);
+        const unsubscribeSecond = secondObserver.subscribe(() => undefined);
+        const second = await queryClient.fetchQuery(options);
+        await vi.advanceTimersByTimeAsync(IMAGE_PREVIEW_GC_TIME_MS);
+
+        assert.equal(requests, 1);
         assert.deepEqual(revokedUrls, []);
-        assert.deepEqual(second.getSnapshot(), { src: 'blob:preview-1', status: 'ready' });
+        assert.deepEqual(first, { objectUrl: 'blob:preview-1', status: 'ready' });
+        assert.deepEqual(second, { objectUrl: 'blob:preview-1', status: 'ready' });
 
-        second.release();
-        await vi.advanceTimersByTimeAsync(RELEASE_DELAY_MS);
+        unsubscribeSecond();
+        await vi.advanceTimersByTimeAsync(IMAGE_PREVIEW_GC_TIME_MS);
         assert.deepEqual(revokedUrls, ['blob:preview-1']);
     });
 
-    test('falls back to source URL when no generated preview is available', async () => {
-        const image = {
-            key: 'image-3:/tmp/image.jpg',
-            fileId: 'image-3',
-            sourceUrl: 'source:/tmp/image.jpg',
-        };
+    test('falls back when no generated preview is available', async () => {
+        const image = { fileId: 'image-3', originalPath: '/tmp/image.jpg' };
         setPlatformAdapter(createStubPlatformAdapter({ getImagePreview: async () => null }));
 
-        const subscription = retainImagePreview(image, () => undefined);
-        await flushPromises();
+        const result = await queryClient.fetchQuery(imagePreviewQueryOptions(image));
 
         assert.deepEqual(createdUrls, []);
-        assert.deepEqual(subscription.getSnapshot(), {
-            src: 'source:/tmp/image.jpg',
-            status: 'fallback',
-        });
-        subscription.release();
+        assert.deepEqual(result, { objectUrl: null, status: 'fallback' });
     });
 
-    test('falls back to source URL when generated preview bytes are empty', async () => {
-        const image = {
-            key: 'image-4:/tmp/image.jpg',
-            fileId: 'image-4',
-            sourceUrl: 'source:/tmp/image.jpg',
-        };
+    test('falls back when generated preview bytes are empty', async () => {
+        const image = { fileId: 'image-4', originalPath: '/tmp/image.jpg' };
         setPlatformAdapter(createStubPlatformAdapter({ getImagePreview: async () => [] }));
 
-        const subscription = retainImagePreview(image, () => undefined);
-        await flushPromises();
+        const result = await queryClient.fetchQuery(imagePreviewQueryOptions(image));
 
         assert.deepEqual(createdUrls, []);
-        assert.deepEqual(subscription.getSnapshot(), {
-            src: 'source:/tmp/image.jpg',
-            status: 'fallback',
+        assert.deepEqual(result, { objectUrl: null, status: 'fallback' });
+    });
+
+    test('revokes the previous object URL when preview data is replaced', async () => {
+        const image = { fileId: 'image-5', originalPath: '/tmp/image.jpg' };
+        const options = imagePreviewQueryOptions(image);
+        setPlatformAdapter(
+            createStubPlatformAdapter({ getImagePreview: async () => new ArrayBuffer(3) }),
+        );
+
+        await queryClient.fetchQuery(options);
+        queryClient.setQueryData(options.queryKey, {
+            objectUrl: 'blob:preview-replacement',
+            status: 'ready',
         });
-        subscription.release();
+        await flushPromises();
+
+        assert.deepEqual(revokedUrls, ['blob:preview-1']);
+
+        queryClient.clear();
+        assert.deepEqual(revokedUrls, ['blob:preview-1', 'blob:preview-replacement']);
     });
 });

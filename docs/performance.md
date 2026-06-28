@@ -156,19 +156,19 @@ When a page is rasterized, it is rendered to a canvas and encoded as JPEG. The
 canvas is filled with white before rendering so transparent content produces a
 predictable result.
 
-### Render cache with task deduplication
+### PDF render cache
 
-Fyler maintains:
-
-- an in-memory render cache keyed by file and render profile
-- a map of in-flight page tasks
-- a map of in-flight PDF document loading tasks
+PDF page renders are TanStack queries keyed by source file and render profile
+(page, rotation, variant, width, quality, and density). This gives the render
+path request deduplication and cache subscriptions without a parallel listener
+registry.
 
 Important consequences:
 
 - the same PDF page variant is not rendered twice concurrently
-- PDF documents are reused across requests instead of reopened repeatedly
-- releasing a file clears cached renders and destroys the associated PDF.js task
+- rendered `blob:` URLs are revoked when replaced or released
+- PDF documents are reused across render requests instead of reopened repeatedly
+- releasing a file clears render queries and destroys the associated PDF.js task
 
 This is one of the main reasons the preview flow stays responsive even when the
 same source document is referenced in multiple UI areas.
@@ -176,9 +176,15 @@ same source document is referenced in multiple UI areas.
 ### Imported image preview cache
 
 Imported image UI surfaces request the backend-generated JPEG preview and turn
-the returned bytes into a `blob:` URL. The cache shares that URL across
-consumers, revokes it after release, and falls back to the original source URL
-only when no generated preview bytes are available.
+the returned bytes into a `blob:` URL. TanStack Query owns the frontend cache:
+stable image-preview keys deduplicate concurrent requests, the preview query is
+kept fresh indefinitely, and unused entries are garbage-collected on a short
+window to smooth React remounts without keeping large previews around.
+
+The query cache has explicit cleanup for generated object URLs. URLs are revoked
+when preview data is replaced or when the query entry is removed. The UI falls
+back to the original source URL only when no generated preview bytes are
+available or preview loading fails.
 
 ### Lazy preview rendering
 
@@ -216,8 +222,8 @@ updates can be read from the slices that own them instead of being threaded
 through the app shell as one large derived snapshot.
 
 This is mainly a state-ownership and bug-prevention choice. The heavier
-performance mechanisms remain the dedicated preview caches, lazy rendering, and
-backend-generated image previews described above.
+performance mechanisms remain the TanStack preview/render caches, lazy
+rendering, and backend-generated image previews described above.
 
 ## What is intentionally not optimized
 

@@ -1,3 +1,9 @@
+import {
+    type QueryCache,
+    type QueryCacheNotifyEvent,
+    type QueryKey,
+    queryOptions,
+} from '@tanstack/react-query';
 import { getImagePreview } from '@/infra/platform';
 import type { ImagePreviewBytes } from '@/infra/platform/platform-adapter';
 
@@ -8,56 +14,30 @@ export type ImagePreviewSnapshot = {
     status: ImagePreviewStatus;
 };
 
-export type ImagePreviewKey = {
-    key: string;
+export type ImagePreviewQueryInput = {
     fileId: string;
-    sourceUrl: string;
+    originalPath: string;
 };
 
-export type ImagePreviewCacheStats = {
-    retains: number;
-    loads: number;
-    hits: number;
-    entries: number;
-    refs: number;
+export type ImagePreviewQueryData = {
+    objectUrl: string | null;
+    status: Extract<ImagePreviewStatus, 'ready' | 'fallback'>;
 };
 
-type CacheEntry = ImagePreviewKey & {
-    status: ImagePreviewStatus;
-    url: string | null;
-    refs: number;
-    listeners: Set<() => void>;
-    promise: Promise<void> | null;
-    releaseTimer: ReturnType<typeof setTimeout> | null;
-};
+export type ImagePreviewQueryKey = readonly ['image-preview', string, string];
 
-const RELEASE_DELAY_MS = 100;
-const cache = new Map<string, CacheEntry>();
-const statsListeners = new Set<() => void>();
-let retainCount = 0;
-let loadCount = 0;
-let hitCount = 0;
+export const IMAGE_PREVIEW_GC_TIME_MS = 100;
+const IMAGE_PREVIEW_QUERY_ROOT = 'image-preview';
 
-function emitStats() {
-    for (const listener of statsListeners) {
-        listener();
-    }
-}
-
-export function getImagePreviewCacheStats(): ImagePreviewCacheStats {
-    return {
-        retains: retainCount,
-        loads: loadCount,
-        hits: hitCount,
-        entries: cache.size,
-        refs: Array.from(cache.values()).reduce((total, entry) => total + entry.refs, 0),
-    };
-}
-
-export function subscribeImagePreviewCacheStats(listener: () => void): () => void {
-    statsListeners.add(listener);
-    return () => statsListeners.delete(listener);
-}
+const IMAGE_PREVIEW_QUERY_DEFAULTS = {
+    gcTime: IMAGE_PREVIEW_GC_TIME_MS,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    retry: false,
+    staleTime: Infinity,
+    structuralSharing: false,
+} as const;
 
 function maybeRevokeObjectUrl(url: string | null | undefined) {
     if (url?.startsWith('blob:')) {
@@ -80,132 +60,64 @@ function objectUrlFromBytes(bytes: ImagePreviewBytes): string | null {
     return URL.createObjectURL(new Blob([data], { type: 'image/jpeg' }));
 }
 
-function snapshot(entry: CacheEntry): ImagePreviewSnapshot {
-    if (entry.url) {
-        return { src: entry.url, status: entry.status };
-    }
-
-    if (entry.status === 'fallback' || entry.status === 'failed') {
-        return { src: entry.sourceUrl, status: entry.status };
-    }
-
-    return { src: null, status: entry.status };
+function getImagePreviewObjectUrl(data: unknown): string | null {
+    if (!data || typeof data !== 'object' || !('objectUrl' in data)) return null;
+    const objectUrl = data.objectUrl;
+    return typeof objectUrl === 'string' ? objectUrl : null;
 }
 
-function notify(entry: CacheEntry) {
-    for (const listener of entry.listeners) {
-        listener();
+export function imagePreviewQueryKey(input: ImagePreviewQueryInput): ImagePreviewQueryKey {
+    return [IMAGE_PREVIEW_QUERY_ROOT, input.fileId, input.originalPath];
+}
+
+function isImagePreviewQueryKey(queryKey: QueryKey): queryKey is ImagePreviewQueryKey {
+    return (
+        queryKey.length === 3 &&
+        queryKey[0] === IMAGE_PREVIEW_QUERY_ROOT &&
+        typeof queryKey[1] === 'string' &&
+        typeof queryKey[2] === 'string'
+    );
+}
+
+export async function loadImagePreviewData(fileId: string): Promise<ImagePreviewQueryData> {
+    const preview = await getImagePreview(fileId);
+    const objectUrl = preview ? objectUrlFromBytes(preview) : null;
+    return objectUrl ? { objectUrl, status: 'ready' } : { objectUrl: null, status: 'fallback' };
+}
+
+export function imagePreviewQueryOptions(input: ImagePreviewQueryInput) {
+    return queryOptions({
+        ...IMAGE_PREVIEW_QUERY_DEFAULTS,
+        queryKey: imagePreviewQueryKey(input),
+        queryFn: () => loadImagePreviewData(input.fileId),
+    });
+}
+
+function updateTrackedUrl(trackedUrls: Map<string, string>, event: QueryCacheNotifyEvent) {
+    if (!isImagePreviewQueryKey(event.query.queryKey)) return;
+
+    const queryHash = event.query.queryHash;
+    const currentUrl = getImagePreviewObjectUrl(event.query.state.data);
+    const trackedUrl = trackedUrls.get(queryHash);
+
+    if (event.type === 'removed') {
+        maybeRevokeObjectUrl(trackedUrl ?? currentUrl);
+        trackedUrls.delete(queryHash);
+        return;
     }
-}
 
-function isCurrentEntry(entry: CacheEntry): boolean {
-    return cache.get(entry.key) === entry;
-}
+    if (trackedUrl && trackedUrl !== currentUrl) {
+        maybeRevokeObjectUrl(trackedUrl);
+    }
 
-function applyPreviewResult(entry: CacheEntry, preview: ImagePreviewBytes | null) {
-    const url = preview ? objectUrlFromBytes(preview) : null;
-    if (url) {
-        entry.url = url;
-        entry.status = 'ready';
+    if (currentUrl) {
+        trackedUrls.set(queryHash, currentUrl);
     } else {
-        entry.url = null;
-        entry.status = 'fallback';
+        trackedUrls.delete(queryHash);
     }
-    entry.promise = null;
-    notify(entry);
 }
 
-function applyPreviewFailure(entry: CacheEntry) {
-    entry.url = null;
-    entry.status = 'failed';
-    entry.promise = null;
-    notify(entry);
-}
-
-function startLoad(entry: CacheEntry) {
-    if (entry.promise || entry.status === 'ready') return;
-
-    loadCount += 1;
-    emitStats();
-    entry.status = 'pending';
-    entry.promise = getImagePreview(entry.fileId)
-        .then((preview) => {
-            if (isCurrentEntry(entry)) applyPreviewResult(entry, preview);
-        })
-        .catch(() => {
-            if (isCurrentEntry(entry)) applyPreviewFailure(entry);
-        });
-}
-
-function getOrCreateEntry(input: ImagePreviewKey): CacheEntry {
-    const existing = cache.get(input.key);
-    if (existing) {
-        hitCount += 1;
-        existing.sourceUrl = input.sourceUrl;
-        if (existing.releaseTimer) {
-            clearTimeout(existing.releaseTimer);
-            existing.releaseTimer = null;
-        }
-        emitStats();
-        return existing;
-    }
-
-    const entry: CacheEntry = {
-        ...input,
-        status: 'pending',
-        url: null,
-        refs: 0,
-        listeners: new Set(),
-        promise: null,
-        releaseTimer: null,
-    };
-    cache.set(input.key, entry);
-    startLoad(entry);
-    emitStats();
-    return entry;
-}
-
-function releaseEntry(entry: CacheEntry) {
-    entry.refs = Math.max(0, entry.refs - 1);
-    if (entry.refs > 0 || entry.releaseTimer) return;
-
-    entry.releaseTimer = setTimeout(() => {
-        entry.releaseTimer = null;
-        if (entry.refs > 0) return;
-
-        maybeRevokeObjectUrl(entry.url);
-        cache.delete(entry.key);
-        emitStats();
-    }, RELEASE_DELAY_MS);
-}
-
-export function retainImagePreview(input: ImagePreviewKey, onChange: () => void) {
-    const entry = getOrCreateEntry(input);
-    retainCount += 1;
-    entry.refs += 1;
-    entry.listeners.add(onChange);
-    emitStats();
-
-    return {
-        getSnapshot: () => snapshot(entry),
-        release: () => {
-            entry.listeners.delete(onChange);
-            releaseEntry(entry);
-            emitStats();
-        },
-    };
-}
-
-export function resetImagePreviewCacheForTest() {
-    for (const entry of cache.values()) {
-        if (entry.releaseTimer) {
-            clearTimeout(entry.releaseTimer);
-        }
-        maybeRevokeObjectUrl(entry.url);
-    }
-    cache.clear();
-    retainCount = 0;
-    loadCount = 0;
-    hitCount = 0;
-    emitStats();
+export function registerImagePreviewQueryCacheCleanup(queryCache: QueryCache): () => void {
+    const trackedUrls = new Map<string, string>();
+    return queryCache.subscribe((event) => updateTrackedUrl(trackedUrls, event));
 }

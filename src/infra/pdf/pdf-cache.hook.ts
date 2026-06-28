@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 
 import type { QuarterTurn, SourceFile } from '@/shared/domain';
+import type { GetPdfDocument } from './pdf-cache/pdf-cache.documents';
 
 export type PdfRenderVariant = 'thumb' | 'preview';
 
@@ -28,39 +29,17 @@ export type PdfRenderRequest = {
 
 export type PdfCacheContextType = {
     requestRenders: (file: SourceFile, requests: PdfRenderRequest[]) => void;
-    getRender: (fileId: string, request: PdfRenderRequest) => string | undefined;
-    subscribeRender: (
-        fileId: string,
-        request: PdfRenderRequest,
-        listener: () => void,
-    ) => () => void;
     getPageAspectRatio: (
         fileId: string,
         pageNum: number,
         quarterTurns: QuarterTurn,
     ) => number | undefined;
+    getPdfDocument: GetPdfDocument;
     setPdfPassword: (fileId: string, password: string) => void;
     releaseFile: (fileId: string) => void;
 };
 
 export const PdfCacheContext = createContext<PdfCacheContextType | null>(null);
-
-/** Stable cache key for a render request. Any change here must keep backward-compat with existing cache usage. */
-export function getPdfRenderCacheKey(request: PdfRenderRequest): string {
-    return [
-        request.variant,
-        request.pageNum,
-        request.quarterTurns,
-        request.width,
-        request.quality,
-        request.density ?? 1,
-    ].join(':');
-}
-
-/** Cache key for per-page aspect ratio values (rotation-aware). */
-export function getAspectRatioCacheKey(pageNum: number, quarterTurns: QuarterTurn): string {
-    return `${pageNum}:${quarterTurns}`;
-}
 
 /** Hook to access the shared PDF render cache. */
 export function usePdfCache(): PdfCacheContextType {

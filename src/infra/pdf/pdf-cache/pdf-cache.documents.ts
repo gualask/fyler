@@ -13,6 +13,8 @@ export type PdfDocumentCaches = {
     passwordsByFileId: Map<string, string>;
 };
 
+export type GetPdfDocument = (file: SourceFile) => Promise<PDFDocumentProxy>;
+
 /**
  * Returns the cached `PDFDocumentProxy` promise for `file`, or starts a new pdf.js loading task.
  *

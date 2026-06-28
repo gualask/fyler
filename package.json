@@ -36,6 +36,7 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
         "@tabler/icons-react": "^3.44.0",
+        "@tanstack/react-query": "^5.101.1",
         "@tauri-apps/api": "^2.11.1",
         "@tauri-apps/plugin-process": "^2.3.1",
         "@tauri-apps/plugin-store": "^2.4.3",

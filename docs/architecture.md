@@ -51,6 +51,12 @@ The store does not own side effects. Import dialogs, protected-PDF resolution,
 Tauri source release, PDF preview requests, and preview caches stay in hooks or
 `src/infra/` modules near the runtime boundary that performs the work.
 
+Async frontend resources use TanStack Query where the data is request-like.
+Imported image previews and PDF page render outputs are keyed queries under the
+app `QueryClientProvider`; those caches own request deduplication and `blob:`
+URL cleanup. The PDF provider still owns PDF.js document loading tasks,
+passwords, and explicit source release cleanup.
+
 Container-level workspace UI reads store slices through
 `useWorkspaceStoreSelector`; presentational components still receive explicit
 props. This keeps the store as the session source of truth without coupling leaf
