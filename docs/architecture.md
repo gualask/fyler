@@ -51,13 +51,14 @@ The goal of the structure is “feature-first” on the frontend, with a small a
 - release imported sources
 - export the merged PDF (emits `"merge-progress"` events)
 - compute single-image export preview layout
+- return imported image JPEG preview bytes
 - load/save persisted settings
 - open external URLs and expose basic app metadata
 
 ### Core modules
 
 - `src-tauri/src/models.rs` — Serializable request/response payloads shared with the frontend.
-- `src-tauri/src/source_registry/` — In-memory registry of imported sources (ID → path/name/kind), used by export so the frontend does not resend full metadata.
+- `src-tauri/src/source_registry/` — In-memory registry of imported sources (ID → path/name/kind) plus generated image preview bytes.
 - `src-tauri/src/export.rs` + `src-tauri/src/export/` — Export orchestration: compose pages, optionally optimize embedded images, then save.
 - `src-tauri/src/pdf_compose/` — PDF composition primitives (`PdfComposer`) for copying PDF pages and appending image pages.
 - `src-tauri/src/pdf_image/` — Image decoding + embedding policy for imported image files (flatten alpha, JPEG vs raw RGB).

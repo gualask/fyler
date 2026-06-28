@@ -103,6 +103,18 @@ This helps performance indirectly:
 That last point is both a correctness and performance win: it reduces memory and
 output-size blowups for common photo inputs.
 
+### Imported image display previews
+
+Imported images get an in-memory JPEG display preview during import. The backend
+stores preview bytes in `src-tauri/src/source_registry/` and returns only those
+bytes through `get_image_preview`; MIME type and dimensions are fixed by the
+preview pipeline rather than sent as JSON metadata.
+
+The preview generator keeps the hot path small: it converts decoded images to
+RGB, flattens alpha on white only when needed, downsizes oversized images with
+the optimized resize backend, and JPEG-encodes the result. Size and quality
+constants live in `src-tauri/src/source_registry/preview.rs`.
+
 ### Conservative save path
 
 The save path uses the compatibility-first writer described in
@@ -158,6 +170,13 @@ Important consequences:
 This is one of the main reasons the preview flow stays responsive even when the
 same source document is referenced in multiple UI areas.
 
+### Imported image preview cache
+
+Imported image UI surfaces request the backend-generated JPEG preview and turn
+the returned bytes into a `blob:` URL. The cache shares that URL across
+consumers, revokes it after release, and falls back to the original source URL
+only when no generated preview bytes are available.
+
 ### Lazy preview rendering
 
 Preview slots are gated by `IntersectionObserver`.
@@ -205,6 +224,7 @@ Today, Fyler gets most of its performance wins from:
 - avoiding unnecessary image rewrites
 - using layout-aware image optimization
 - using an optimized resize backend
+- using compact backend-generated previews for imported images
 - deduplicated PDF preview rendering
 - lazy rendering in the preview modal
 

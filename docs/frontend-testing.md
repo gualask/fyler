@@ -144,7 +144,7 @@ This section is the coverage map for frontend review. It does not track pass or 
 | Final document | Move to index from preview | Preview -> select `Move to` | `moveFinalPageToIndex`, list sync |
 | Final document | Rotate from preview | Preview -> rotate left/right | source edit update, related UI refresh |
 | Preview | Render real imported PDF | Open preview on PDF imported through app | PDF cache, worker, page render |
-| Preview | Render real imported image | Open preview on image imported through app | `convertFileSrc`, rotation, fit |
+| Preview | Render real imported image | Open preview on image imported through app | generated image preview bytes, rotation, fit |
 | Preview | Zoom / reset / close | Preview toolbar | local state, modal close |
 | Export | Cancel save dialog | `Export PDF` then cancel | `save_pdf_dialog`, loading cleanup |
 | Export | Successful export | Export with valid composition | `merge_pdfs`, progress events, success toast |
