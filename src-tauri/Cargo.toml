@@ -1,6 +1,6 @@
 [package]
 name = "fyler"
-version = "1.0.0"
+version = "1.1.0"
 description = "Desktop app for merging PDF files and images into a single PDF."
 authors = ["gualask"]
 license = "MIT"

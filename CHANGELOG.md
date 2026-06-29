@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.0 - 2026-06-29
+
+### Added
+
+- Support for importing password-protected PDF files.
+- Single-instance behavior for the desktop app.
+
+### Improved
+
+- Faster and more reliable preview caching.
+- Improved image preview pipeline.
+- Updated PDF, image, frontend, and Tauri-related dependencies.
+
+### Fixed
+
+- Fixed PDF preview issues.
+- Fixed image picker thumbnail controls.
+- Fixed release and CI workflow issues.
+
 ## 1.0.0 - 2026-05-02
 
 Initial public release of Fyler.
