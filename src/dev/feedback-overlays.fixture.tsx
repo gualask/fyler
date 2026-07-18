@@ -1,12 +1,19 @@
-import { ProgressModal, Toast } from '@/app/overlays';
+import { useEffect, useState } from 'react';
+import { ProgressModal, TimedProgressModal, Toast } from '@/app/overlays';
 
-type FeedbackView = 'progress' | 'progress-indeterminate' | 'toast-success' | 'toast-warning';
+type FeedbackView =
+    | 'progress'
+    | 'progress-compact'
+    | 'progress-indeterminate'
+    | 'toast-success'
+    | 'toast-warning';
 
 function getFeedbackView(search: string): FeedbackView {
     const view = new URLSearchParams(search).get('view');
 
     if (
         view === 'progress' ||
+        view === 'progress-compact' ||
         view === 'progress-indeterminate' ||
         view === 'toast-success' ||
         view === 'toast-warning'
@@ -15,6 +22,28 @@ function getFeedbackView(search: string): FeedbackView {
     }
 
     return 'progress';
+}
+
+function CompactProgressFixture() {
+    const completeAfterParam = new URLSearchParams(window.location.search).get('completeAfter');
+    const completeAfter = completeAfterParam === null ? null : Number(completeAfterParam);
+    const [message, setMessage] = useState<string | null>('Loading files');
+
+    useEffect(() => {
+        if (completeAfter === null || !Number.isFinite(completeAfter)) return;
+        const timeoutId = window.setTimeout(() => setMessage(null), completeAfter);
+        return () => window.clearTimeout(timeoutId);
+    }, [completeAfter]);
+
+    return (
+        <TimedProgressModal
+            message={message}
+            progress={43}
+            progressLabel="3 of 7"
+            elapsedTimeLabel="Elapsed time"
+            variant="compact"
+        />
+    );
 }
 
 export function FeedbackOverlaysFixturePage() {
@@ -34,6 +63,12 @@ export function FeedbackOverlaysFixturePage() {
                     <div className="flex flex-wrap gap-3 text-sm">
                         <a href="/?dev=feedback-overlays&amp;view=progress" className="btn-ghost">
                             Progress
+                        </a>
+                        <a
+                            href="/?dev=feedback-overlays&amp;view=progress-compact"
+                            className="btn-ghost"
+                        >
+                            Progress compact
                         </a>
                         <a
                             href="/?dev=feedback-overlays&amp;view=progress-indeterminate"
@@ -58,11 +93,16 @@ export function FeedbackOverlaysFixturePage() {
             </div>
 
             {view === 'progress' ? (
-                <ProgressModal message="Exporting fixture files" progress={72} />
+                <ProgressModal
+                    message="Exporting fixture files"
+                    progress={72}
+                    progressLabel="72%"
+                />
             ) : null}
             {view === 'progress-indeterminate' ? (
                 <ProgressModal message="Opening fixture files" />
             ) : null}
+            {view === 'progress-compact' ? <CompactProgressFixture /> : null}
             {view === 'toast-success' ? (
                 <Toast tone="success" message="Fixture success toast message" />
             ) : null}

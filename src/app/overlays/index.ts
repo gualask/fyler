@@ -1,2 +1,2 @@
-export { ProgressModal } from './ProgressModal';
+export { ProgressModal, TimedProgressModal } from './ProgressModal';
 export { Toast } from './Toast';

@@ -104,7 +104,7 @@ const DEV_FIXTURES: DevFixtureEntry[] = [
         key: 'feedback-overlays',
         title: 'Feedback overlays',
         description:
-            'Progress and toast overlays. Add &view=progress | progress-indeterminate | toast-success | toast-warning.',
+            'Progress and toast overlays. Add &view=progress | progress-compact | progress-indeterminate | toast-success | toast-warning.',
         Component: FeedbackOverlaysFixturePage,
     },
     {

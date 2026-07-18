@@ -5,7 +5,7 @@ import { TutorialOverlay } from '@/features/tutorial';
 import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import type { DiagnosticsSnapshot } from '@/shared/diagnostics';
 import type { FileEdits, FinalPage, ImageFit, SourceFile } from '@/shared/domain';
-import { ProgressModal } from './ProgressModal';
+import { type ProgressModalVariant, TimedProgressModal } from './ProgressModal';
 import { Toast } from './Toast';
 
 type SupportLike = {
@@ -45,6 +45,7 @@ export function AppOverlays({
     setShowFinalPreview,
     workspace,
     imageFit,
+    progressVariant,
 }: {
     notifications: AppNotificationsApi;
     support: SupportLike;
@@ -53,6 +54,7 @@ export function AppOverlays({
     setShowFinalPreview: (value: boolean) => void;
     workspace: WorkspaceLike;
     imageFit: ImageFit;
+    progressVariant: ProgressModalVariant;
 }) {
     return (
         <>
@@ -66,14 +68,17 @@ export function AppOverlays({
                 ) : null}
             </AnimatePresence>
 
-            <AnimatePresence>
-                {notifications.loadingMessage ? (
-                    <ProgressModal
-                        message={notifications.loadingMessage}
-                        progress={notifications.loadingProgress}
-                    />
-                ) : null}
-            </AnimatePresence>
+            <TimedProgressModal
+                message={
+                    notifications.loadingProgress === undefined
+                        ? null
+                        : notifications.loadingMessage
+                }
+                progress={notifications.loadingProgress}
+                progressLabel={notifications.loadingProgressLabel}
+                elapsedTimeLabel={notifications.loadingElapsedTimeLabel}
+                variant={progressVariant}
+            />
 
             <SupportDialog
                 open={support.isSupportDialogOpen}

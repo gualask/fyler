@@ -18,7 +18,7 @@ export function MainAppView({
     tutorialStart,
     canHelp,
     onQuickAdd,
-    isQuickAddTransitioning,
+    isQuickAddDisabled,
     canExport,
     canPreview,
     isDragOver,
@@ -36,7 +36,7 @@ export function MainAppView({
     tutorialStart: () => void;
     canHelp: boolean;
     onQuickAdd: () => void;
-    isQuickAddTransitioning: boolean;
+    isQuickAddDisabled: boolean;
     canExport: boolean;
     canPreview: boolean;
     isDragOver: boolean;
@@ -59,7 +59,7 @@ export function MainAppView({
                 onPreview={() => setShowFinalPreview(true)}
                 canPreview={canPreview}
                 onQuickAdd={onQuickAdd}
-                isQuickAddDisabled={isQuickAddTransitioning}
+                isQuickAddDisabled={isQuickAddDisabled}
                 onHelp={tutorialStart}
                 canHelp={canHelp}
                 onExport={() => void exportMerged()}

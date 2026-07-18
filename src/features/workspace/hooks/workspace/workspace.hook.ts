@@ -24,9 +24,13 @@ function useWorkspaceStore(): WorkspaceStoreApi {
 export function useWorkspace({
     onFilesAdded,
     onDropError,
+    onDropImportStart,
+    onDropImportReady,
 }: {
     onFilesAdded?: (event: WorkspaceFilesAddedEvent) => void;
     onDropError?: (error: unknown) => void;
+    onDropImportStart?: () => boolean;
+    onDropImportReady?: () => void;
 } = {}) {
     const store = useWorkspaceStore();
     const selectedId = useStore(store, (state) => state.ui.selectedId);
@@ -114,7 +118,10 @@ export function useWorkspace({
         [onDropError],
     );
 
-    const { isDragOver } = useFileDrop(acceptFiles, handleDropError);
+    const { isDragOver } = useFileDrop(acceptFiles, handleDropError, {
+        beginImport: onDropImportStart,
+        finishImport: onDropImportReady,
+    });
 
     return {
         store,

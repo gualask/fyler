@@ -1,18 +1,18 @@
 import { useTranslation } from '@/shared/i18n';
 
 interface QuickAddFooterProps {
-    isTransitioning: boolean;
+    disabled: boolean;
     onDone: () => void;
 }
 
-export function QuickAddFooter({ isTransitioning, onDone }: QuickAddFooterProps) {
+export function QuickAddFooter({ disabled, onDone }: QuickAddFooterProps) {
     const { t } = useTranslation();
 
     return (
         <div className="flex shrink-0 pt-0.5">
             <button
                 type="button"
-                disabled={isTransitioning}
+                disabled={disabled}
                 onClick={onDone}
                 className="btn-primary w-full justify-center"
             >

@@ -1,4 +1,3 @@
-import type { PageSpecError } from '../dto/page-spec.dto';
 import { uniqueSortedNumbers } from '../utils/number-list';
 
 const PAGE_RANGE_TOKEN_PATTERN = /^(\d+)(?:-(\d+))?$/;
@@ -9,41 +8,8 @@ interface PageRange {
     end: number;
 }
 
-type StrictPageRangeResult =
-    | { range: PageRange; error: null }
-    | { range: null; error: PageSpecError };
-
 function clampPage(pageNum: number, total: number): number {
     return Math.min(Math.max(pageNum, 1), Math.max(total, 1));
-}
-
-function parseStrictPageRange(rawToken: string, total: number): StrictPageRangeResult {
-    const token = rawToken.trim();
-    if (!token) {
-        return { range: null, error: { kind: 'empty-token' } };
-    }
-
-    const match = token.match(PAGE_RANGE_TOKEN_PATTERN);
-    if (!match) {
-        return { range: null, error: { kind: 'invalid-token', token } };
-    }
-
-    const start = Number.parseInt(match[1], 10);
-    const end = match[2] ? Number.parseInt(match[2], 10) : start;
-
-    if (start === 0 || end === 0) {
-        return { range: null, error: { kind: 'non-positive-page' } };
-    }
-
-    if (start > end) {
-        return { range: null, error: { kind: 'reversed-range', start, end } };
-    }
-
-    if (end > total) {
-        return { range: null, error: { kind: 'out-of-range', page: end, total } };
-    }
-
-    return { range: { start, end }, error: null };
 }
 
 function parseLoosePageRange(rawToken: string, total: number): PageRange | null {
@@ -91,46 +57,6 @@ function formatPageRange({ start, end }: PageRange): string {
 }
 
 export const PageSpecVO = {
-    /**
-     * Strict page-spec parser.
-     *
-     * Supported format:
-     * - Comma-separated tokens (`1,3,5-7`)
-     * - Ranges are inclusive and 1-based
-     * - Output is de-duplicated and sorted
-     *
-     * Empty/whitespace-only input selects all pages.
-     */
-    parseStrict(
-        spec: string,
-        total: number,
-    ): { pages: number[]; error: null } | { pages: null; error: PageSpecError } {
-        if (!spec.trim()) {
-            return {
-                pages: Array.from({ length: total }, (_, i) => i + 1),
-                error: null,
-            };
-        }
-
-        const pages = new Set<number>();
-
-        for (const rawToken of spec.split(',')) {
-            const parsed = parseStrictPageRange(rawToken, total);
-            if (parsed.error) {
-                return { pages: null, error: parsed.error };
-            }
-
-            for (let pageNum = parsed.range.start; pageNum <= parsed.range.end; pageNum += 1) {
-                pages.add(pageNum);
-            }
-        }
-
-        return {
-            pages: Array.from(pages).sort((a, b) => a - b),
-            error: null,
-        };
-    },
-
     /**
      * Permissive page-spec parser.
      *

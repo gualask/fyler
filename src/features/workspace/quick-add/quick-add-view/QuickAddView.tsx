@@ -8,7 +8,7 @@ import { QuickAddHeader } from './QuickAddHeader';
 interface Props {
     files: SourceFile[];
     quickAddFileOrder: readonly string[];
-    isTransitioning: boolean;
+    disabled: boolean;
     isDragOver: boolean;
     onRemove: (id: string) => void;
     onDiscardAndExit: () => void;
@@ -18,7 +18,7 @@ interface Props {
 export function QuickAddView({
     files,
     quickAddFileOrder,
-    isTransitioning,
+    disabled,
     isDragOver,
     onRemove,
     onDiscardAndExit,
@@ -33,18 +33,14 @@ export function QuickAddView({
     return (
         <div className="relative flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text">
             {isDragOver ? <DragOverlay /> : null}
-            <QuickAddHeader isTransitioning={isTransitioning} onDiscardAndExit={onDiscardAndExit} />
+            <QuickAddHeader disabled={disabled} onDiscardAndExit={onDiscardAndExit} />
 
             <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-3">
                 <QuickAddDropTarget hasAddedFiles={hasAddedFiles} />
                 {hasAddedFiles ? (
-                    <QuickAddFilesList
-                        files={addedFiles}
-                        isTransitioning={isTransitioning}
-                        onRemove={onRemove}
-                    />
+                    <QuickAddFilesList files={addedFiles} disabled={disabled} onRemove={onRemove} />
                 ) : null}
-                <QuickAddFooter isTransitioning={isTransitioning} onDone={onDone} />
+                <QuickAddFooter disabled={disabled} onDone={onDone} />
             </div>
         </div>
     );

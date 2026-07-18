@@ -5,11 +5,11 @@ import { formatByteSize } from '@/shared/ui/format/byte-size';
 
 interface QuickAddFilesListProps {
     files: SourceFile[];
-    isTransitioning: boolean;
+    disabled: boolean;
     onRemove: (id: string) => void;
 }
 
-export function QuickAddFilesList({ files, isTransitioning, onRemove }: QuickAddFilesListProps) {
+export function QuickAddFilesList({ files, disabled, onRemove }: QuickAddFilesListProps) {
     return (
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-ui-border bg-ui-surface shadow-sm">
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -17,7 +17,7 @@ export function QuickAddFilesList({ files, isTransitioning, onRemove }: QuickAdd
                     <QuickAddFileRow
                         key={file.id}
                         file={file}
-                        isTransitioning={isTransitioning}
+                        disabled={disabled}
                         onRemove={onRemove}
                     />
                 ))}
@@ -28,11 +28,11 @@ export function QuickAddFilesList({ files, isTransitioning, onRemove }: QuickAdd
 
 function QuickAddFileRow({
     file,
-    isTransitioning,
+    disabled,
     onRemove,
 }: {
     file: SourceFile;
-    isTransitioning: boolean;
+    disabled: boolean;
     onRemove: (id: string) => void;
 }) {
     const { locale, t } = useTranslation();
@@ -54,7 +54,7 @@ function QuickAddFileRow({
 
             <button
                 type="button"
-                disabled={isTransitioning}
+                disabled={disabled}
                 onClick={() => onRemove(file.id)}
                 className="btn-icon h-7 w-7 rounded-md transition-colors hover:text-ui-danger"
                 aria-label={t('quickAdd.remove')}

@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::OnceLock;
 
 use rayon::prelude::*;
@@ -21,6 +22,13 @@ pub struct FilesFromPathsResult {
     pub password_required: Vec<PasswordProtectedFile>,
     /// Files that were skipped, plus a reason suitable for UI messaging.
     pub skipped: Vec<SkippedFile>,
+}
+
+/// Progress for a filesystem import batch.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ImportProgress {
+    pub completed: usize,
+    pub total: usize,
 }
 
 static IMPORT_POOL: OnceLock<rayon::ThreadPool> = OnceLock::new();
@@ -209,20 +217,37 @@ fn collect_import_results(results: Vec<Result<ImportCandidate, SkippedFile>>) ->
     }
 }
 
-/// Imports sources from paths, registering them in `registry` and returning frontend models.
+/// Imports sources from paths and reports each completed candidate.
 ///
-/// Paths are deduplicated; already-registered paths are skipped.
-pub fn files_from_paths(
+/// The callback can run concurrently on the dedicated import pool. Every completed count is
+/// reported once and includes skipped and password-protected files; consumers should tolerate
+/// out-of-order delivery.
+pub fn files_from_paths_with_progress<F>(
     paths: impl IntoIterator<Item = String>,
     registry: &SourceRegistry,
-) -> anyhow::Result<FilesFromPathsResult> {
+    on_progress: F,
+) -> anyhow::Result<FilesFromPathsResult>
+where
+    F: Fn(ImportProgress) + Sync,
+{
     let reservations = ImportPathReservations::new(registry, paths);
+    let total = reservations.paths().len();
+    on_progress(ImportProgress {
+        completed: 0,
+        total,
+    });
+    let completed = AtomicUsize::new(0);
     let results = import_pool().install(|| {
         reservations
             .paths()
             .to_vec()
             .into_par_iter()
-            .map(registered_file_from_path)
+            .map(|path| {
+                let result = registered_file_from_path(path);
+                let completed = completed.fetch_add(1, Ordering::Relaxed) + 1;
+                on_progress(ImportProgress { completed, total });
+                result
+            })
             .collect::<Vec<_>>()
     });
     let ImportResults {
@@ -263,4 +288,15 @@ pub fn files_from_paths(
         password_required,
         skipped,
     })
+}
+
+/// Imports sources from paths, registering them in `registry` and returning frontend models.
+///
+/// Paths are deduplicated; already-registered paths are skipped.
+#[cfg(test)]
+pub fn files_from_paths(
+    paths: impl IntoIterator<Item = String>,
+    registry: &SourceRegistry,
+) -> anyhow::Result<FilesFromPathsResult> {
+    files_from_paths_with_progress(paths, registry, |_| {})
 }

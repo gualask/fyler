@@ -33,13 +33,16 @@ export function useExportAction({
     const { record } = useDiagnostics();
 
     const exportMerged = useCallback(async () => {
-        if (finalPages.length === 0) return;
+        if (finalPages.length === 0 || notifications.isBusy) return;
+        let mergeStarted = false;
         try {
             const outputPath = await savePDFDialog(
                 t('header.defaultExportFilename'),
                 t('dialogs.filters.pdf'),
             );
             if (!outputPath) return;
+            if (!notifications.beginMerge()) return;
+            mergeStarted = true;
             const req = buildMergeRequest(
                 finalPages,
                 editsByFile,
@@ -56,7 +59,6 @@ export function useExportAction({
                     imageFit: optimize.imageFit,
                 },
             });
-            notifications.showMergePreparing();
             const result = await mergePDFs(req);
             if (result.warnings?.length) {
                 record({
@@ -96,7 +98,7 @@ export function useExportAction({
             });
             notifications.showError(error);
         } finally {
-            notifications.clearLoading();
+            if (mergeStarted) notifications.finishMerge();
         }
     }, [
         editsByFile,

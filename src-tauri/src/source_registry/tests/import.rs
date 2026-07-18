@@ -1,8 +1,11 @@
 use std::fs;
+use std::sync::Mutex;
 
 use image::RgbImage;
 
-use super::super::{files_from_paths, SourceRegistry};
+use super::super::{
+    files_from_paths, files_from_paths_with_progress, ImportProgress, SourceRegistry,
+};
 use super::temp_path;
 use crate::vo::DocKind;
 
@@ -124,6 +127,65 @@ fn mixed_batch_keeps_valid_files_and_reports_only_real_skips() -> anyhow::Result
     registry.remove_many(&ids);
     let _ = fs::remove_file(existing_path);
     let _ = fs::remove_file(new_path);
+    let _ = fs::remove_file(unsupported_path);
+    Ok(())
+}
+
+#[test]
+fn reports_monotonic_progress_for_every_processed_file() -> anyhow::Result<()> {
+    let image_path = temp_path("progress-image", "png");
+    let unsupported_path = temp_path("progress-notes", "txt");
+    RgbImage::new(1, 1).save(&image_path)?;
+    fs::write(&unsupported_path, b"hello")?;
+
+    let registry = SourceRegistry::default();
+    let updates = Mutex::new(Vec::new());
+    let result = files_from_paths_with_progress(
+        vec![
+            image_path.to_string_lossy().to_string(),
+            unsupported_path.to_string_lossy().to_string(),
+        ],
+        &registry,
+        |progress| {
+            updates
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .push(progress);
+        },
+    )?;
+
+    let mut updates = updates
+        .into_inner()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    updates.sort_by_key(|progress| progress.completed);
+    assert_eq!(
+        updates,
+        vec![
+            ImportProgress {
+                completed: 0,
+                total: 2,
+            },
+            ImportProgress {
+                completed: 1,
+                total: 2,
+            },
+            ImportProgress {
+                completed: 2,
+                total: 2,
+            },
+        ]
+    );
+    assert_eq!(result.files.len(), 1);
+    assert_eq!(result.skipped.len(), 1);
+
+    registry.remove_many(
+        &result
+            .files
+            .iter()
+            .map(|file| file.id.clone())
+            .collect::<Vec<_>>(),
+    );
+    let _ = fs::remove_file(image_path);
     let _ = fs::remove_file(unsupported_path);
     Ok(())
 }

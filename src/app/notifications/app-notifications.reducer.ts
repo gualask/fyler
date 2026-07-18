@@ -8,7 +8,7 @@ export type StatusState =
     | { kind: 'import-warning'; payload: AppStatusPayload };
 
 export type LoadingState =
-    | { kind: 'opening-files' }
+    | { kind: 'opening-files'; completed?: number; total?: number }
     | { kind: 'merge-progress'; step: MergeProgressStep; progress: number };
 
 export interface AppNotificationsState {
@@ -20,10 +20,12 @@ export type AppNotificationsAction =
     | { type: 'clear-status' }
     | { type: 'show-error'; message: string }
     | { type: 'show-import-warning'; payload: AppStatusPayload }
+    | { type: 'show-import-progress'; completed: number; total: number }
     | { type: 'show-merge-progress'; step: MergeProgressStep; progress: number }
     | { type: 'show-opening-files' }
+    | { type: 'finish-opening-files' }
     | { type: 'show-merge-preparing' }
-    | { type: 'clear-loading' }
+    | { type: 'finish-merge' }
     | { type: 'show-export-completed' }
     | { type: 'show-export-completed-with-optimization-warning'; count: number }
     | { type: 'show-toast'; tone: 'success' | 'warning'; message: string };
@@ -55,34 +57,71 @@ function statusForAction(action: AppNotificationsAction): StatusState | null | u
     }
 }
 
-function loadingForAction(action: AppNotificationsAction): LoadingState | null | undefined {
-    switch (action.type) {
-        case 'show-merge-progress':
-            return {
-                kind: 'merge-progress',
-                step: action.step,
-                progress: action.progress,
-            };
-        case 'show-opening-files':
-            return { kind: 'opening-files' };
-        case 'show-merge-preparing':
-            return { kind: 'merge-progress', step: 'preparing-documents', progress: 0 };
-        case 'clear-loading':
-            return null;
-        default:
-            return undefined;
-    }
+function normalizedImportProgress(
+    loading: Extract<LoadingState, { kind: 'opening-files' }>,
+    completed: number,
+    total: number,
+): Extract<LoadingState, { kind: 'opening-files' }> {
+    const normalizedTotal = Math.max(0, Math.floor(total));
+    const normalizedCompleted = Math.min(normalizedTotal, Math.max(0, Math.floor(completed)));
+    const nextCompleted =
+        loading.total === normalizedTotal
+            ? Math.max(loading.completed ?? 0, normalizedCompleted)
+            : normalizedCompleted;
+
+    return {
+        kind: 'opening-files',
+        completed: nextCompleted,
+        total: normalizedTotal,
+    };
 }
 
 export function appNotificationsReducer(
     state: AppNotificationsState,
     action: AppNotificationsAction,
 ): AppNotificationsState {
+    if (action.type === 'show-opening-files') {
+        return state.loading === null ? { ...state, loading: { kind: 'opening-files' } } : state;
+    }
+
+    if (action.type === 'show-import-progress') {
+        if (state.loading?.kind !== 'opening-files') return state;
+        return {
+            ...state,
+            loading: normalizedImportProgress(state.loading, action.completed, action.total),
+        };
+    }
+
+    if (action.type === 'finish-opening-files') {
+        return state.loading?.kind === 'opening-files' ? { ...state, loading: null } : state;
+    }
+
+    if (action.type === 'show-merge-preparing') {
+        if (state.loading !== null) return state;
+        return {
+            ...state,
+            loading: { kind: 'merge-progress', step: 'preparing-documents', progress: 0 },
+        };
+    }
+
+    if (action.type === 'show-merge-progress') {
+        if (state.loading?.kind !== 'merge-progress') return state;
+        return {
+            ...state,
+            loading: {
+                kind: 'merge-progress',
+                step: action.step,
+                progress: action.progress,
+            },
+        };
+    }
+
+    if (action.type === 'finish-merge') {
+        return state.loading?.kind === 'merge-progress' ? { ...state, loading: null } : state;
+    }
+
     const status = statusForAction(action);
     if (status !== undefined) return { ...state, status };
-
-    const loading = loadingForAction(action);
-    if (loading !== undefined) return { ...state, loading };
 
     return state;
 }

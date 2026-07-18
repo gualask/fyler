@@ -2,11 +2,11 @@ import { IconX } from '@tabler/icons-react';
 import { useTranslation } from '@/shared/i18n';
 
 interface QuickAddHeaderProps {
-    isTransitioning: boolean;
+    disabled: boolean;
     onDiscardAndExit: () => void;
 }
 
-export function QuickAddHeader({ isTransitioning, onDiscardAndExit }: QuickAddHeaderProps) {
+export function QuickAddHeader({ disabled, onDiscardAndExit }: QuickAddHeaderProps) {
     const { t } = useTranslation();
 
     return (
@@ -17,7 +17,7 @@ export function QuickAddHeader({ isTransitioning, onDiscardAndExit }: QuickAddHe
             </div>
             <button
                 type="button"
-                disabled={isTransitioning}
+                disabled={disabled}
                 onClick={onDiscardAndExit}
                 className="btn-icon"
                 aria-label={t('quickAdd.close')}

@@ -14,10 +14,10 @@ export function useAddFilesAction({ workspace, notifications }: AddFilesActionDe
     const { record } = useDiagnostics();
 
     const handleAddFiles = useCallback(() => {
+        if (!notifications.beginOpeningFiles()) return;
         record({ category: 'files', severity: 'info', message: 'Open files dialog started' });
-        notifications.showOpeningFiles();
         void workspace
-            .addFiles({ onImportReady: notifications.clearLoading })
+            .addFiles({ onImportReady: notifications.finishOpeningFiles })
             .then(({ files: addedFiles, skippedErrors }) => {
                 const result = classifyAddFilesResult({
                     addedCount: addedFiles.length,
@@ -39,7 +39,7 @@ export function useAddFilesAction({ workspace, notifications }: AddFilesActionDe
                 });
                 notifications.showError(error);
             })
-            .finally(() => notifications.clearLoading());
+            .finally(() => notifications.finishOpeningFiles());
     }, [notifications, record, workspace]);
 
     return handleAddFiles;

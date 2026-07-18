@@ -13,12 +13,14 @@ use crate::export::export_pdf;
 use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile, SourceFile};
 use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{
-    files_from_paths, unlocked_pdf_source as build_unlocked_pdf_source, SourceRegistry,
+    files_from_paths_with_progress, unlocked_pdf_source as build_unlocked_pdf_source,
+    ImportProgress, SourceRegistry,
 };
 use crate::vo::DocKind;
 
 const SUPPORT_ISSUE_HOST: &str = "github.com";
 const SUPPORT_ISSUE_PATH: &str = "/gualask/fyler/issues/new";
+const MAX_IMPORT_PROGRESS_UPDATES: usize = 100;
 
 #[derive(Clone, Default)]
 /// One-shot output paths granted by the native save dialog.
@@ -53,6 +55,13 @@ struct ImportWarningPayload {
 
 #[derive(Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
+struct ImportProgressPayload {
+    completed: usize,
+    total: usize,
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 /// Minimal app metadata surfaced to the frontend for diagnostics/UI.
 pub struct AppMetadataPayload {
     app_name: String,
@@ -78,6 +87,24 @@ fn emit_import_warning(app: &tauri::AppHandle, skipped: &[SkippedFile]) {
     );
 }
 
+fn emit_import_progress(app: &tauri::AppHandle, progress: ImportProgress) {
+    let update_interval = progress.total.div_ceil(MAX_IMPORT_PROGRESS_UPDATES);
+    let should_emit = progress.completed == 0
+        || progress.completed == progress.total
+        || (update_interval > 0 && progress.completed.is_multiple_of(update_interval));
+    if !should_emit {
+        return;
+    }
+
+    let _ = app.emit(
+        "import-progress",
+        ImportProgressPayload {
+            completed: progress.completed,
+            total: progress.total,
+        },
+    );
+}
+
 fn finalize_import(
     app: &tauri::AppHandle,
     result: crate::source_registry::FilesFromPathsResult,
@@ -91,6 +118,24 @@ fn finalize_import(
         password_required: result.password_required,
         skipped_errors: skipped,
     }
+}
+
+async fn import_paths_with_progress(
+    app: &tauri::AppHandle,
+    paths: Vec<String>,
+    registry: SourceRegistry,
+    extra_skipped: Vec<SkippedFile>,
+) -> Result<OpenFilesResult, AppError> {
+    let progress_app = app.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        files_from_paths_with_progress(paths, &registry, |progress| {
+            emit_import_progress(&progress_app, progress);
+        })
+    })
+    .await
+    .map_err(anyhow::Error::from)??;
+
+    Ok(finalize_import(app, result, extra_skipped))
 }
 
 fn empty_open_files_result() -> OpenFilesResult {
@@ -218,12 +263,7 @@ pub async fn open_files_dialog(
         })
         .collect::<Vec<_>>();
 
-    let registry = registry.inner().clone();
-    let result = tauri::async_runtime::spawn_blocking(move || files_from_paths(paths, &registry))
-        .await
-        .map_err(anyhow::Error::from)??;
-    let import_result = finalize_import(&app, result, path_skipped);
-    Ok(import_result)
+    import_paths_with_progress(&app, paths, registry.inner().clone(), path_skipped).await
 }
 
 #[tauri::command]
@@ -234,12 +274,7 @@ pub async fn open_files_from_paths(
     registry: State<'_, SourceRegistry>,
 ) -> Result<OpenFilesResult, AppError> {
     let (paths, path_skipped) = authorized_drop_paths(&app, paths);
-    let registry = registry.inner().clone();
-    let result = tauri::async_runtime::spawn_blocking(move || files_from_paths(paths, &registry))
-        .await
-        .map_err(anyhow::Error::from)??;
-    let import_result = finalize_import(&app, result, path_skipped);
-    Ok(import_result)
+    import_paths_with_progress(&app, paths, registry.inner().clone(), path_skipped).await
 }
 
 #[tauri::command]

@@ -421,6 +421,9 @@ body {
     .dialog-backdrop-blur {
         backdrop-filter: blur(4px);
     }
+    .progress-backdrop-compact {
+        background: var(--ui-surface);
+    }
     .dialog-panel {
         @apply bg-ui-surface shadow-2xl;
     }

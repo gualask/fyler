@@ -40,23 +40,27 @@ function useQuickAddFileHandlers({
     quickAdd,
     workspace,
     handleExitQuickAdd,
+    isBusy,
 }: {
     quickAdd: QuickAddState;
     workspace: WorkspaceState;
     handleExitQuickAdd: () => void;
+    isBusy: boolean;
 }) {
     const { onFileRemoved, quickAddFileOrder } = quickAdd;
     const { removeFile, removeFiles } = workspace;
 
     const handleQuickAddFileRemove = useCallback(
         (id: string) => {
+            if (isBusy) return;
             onFileRemoved(id);
             removeFile(id);
         },
-        [onFileRemoved, removeFile],
+        [isBusy, onFileRemoved, removeFile],
     );
 
     const handleQuickAddDiscardAndExit = useCallback(() => {
+        if (isBusy) return;
         const quickAddIds = quickAddFileOrder;
 
         if (quickAddIds.length > 0) {
@@ -67,7 +71,7 @@ function useQuickAddFileHandlers({
         }
 
         handleExitQuickAdd();
-    }, [handleExitQuickAdd, onFileRemoved, quickAddFileOrder, removeFiles]);
+    }, [handleExitQuickAdd, isBusy, onFileRemoved, quickAddFileOrder, removeFiles]);
 
     return {
         handleQuickAddFileRemove,
@@ -78,11 +82,15 @@ function useQuickAddFileHandlers({
 export function AppContent() {
     const quickAdd = useQuickAdd();
     const notifications = useAppNotifications();
+    const isBusy = notifications.isBusy;
+    const isQuickAddDisabled = quickAdd.isTransitioning || isBusy;
     const tutorial = useTutorial();
     const onFilesAdded = useTutorialFilesAddedHandler({ quickAdd, tutorial });
     const workspace = useWorkspace({
         onFilesAdded,
         onDropError: notifications.showError,
+        onDropImportStart: notifications.beginOpeningFiles,
+        onDropImportReady: notifications.finishOpeningFiles,
     });
     const { isDark, toggleTheme, accent, setAccent } = useTheme();
     const optimize = useOptimize();
@@ -114,16 +122,17 @@ export function AppContent() {
         quickAdd,
         workspace,
         handleExitQuickAdd,
+        isBusy,
     });
 
     return (
-        <div className={rootClassName}>
+        <div className={rootClassName} aria-busy={isBusy}>
             <UpdateDialogSlot />
             {quickAdd.isQuickAdd ? (
                 <QuickAddView
                     files={workspace.files}
                     quickAddFileOrder={quickAdd.quickAddFileOrder}
-                    isTransitioning={quickAdd.isTransitioning}
+                    disabled={isQuickAddDisabled}
                     isDragOver={workspace.isDragOver}
                     onRemove={handleQuickAddFileRemove}
                     onDiscardAndExit={handleQuickAddDiscardAndExit}
@@ -137,11 +146,11 @@ export function AppContent() {
                     setAccent={setAccent}
                     openReportBug={support.openReportBug}
                     tutorialStart={tutorial.start}
-                    canHelp={workspace.files.length > 0}
+                    canHelp={!isBusy && workspace.files.length > 0}
                     onQuickAdd={handleEnterQuickAdd}
-                    isQuickAddTransitioning={quickAdd.isTransitioning}
-                    canExport={workspace.finalPages.length > 0}
-                    canPreview={workspace.finalPages.length > 0}
+                    isQuickAddDisabled={isQuickAddDisabled}
+                    canExport={!isBusy && workspace.finalPages.length > 0}
+                    canPreview={!isBusy && workspace.finalPages.length > 0}
                     isDragOver={workspace.isDragOver}
                     workspace={workspace}
                     handleAddFiles={handleAddFiles}
@@ -159,6 +168,7 @@ export function AppContent() {
                 setShowFinalPreview={setShowFinalPreview}
                 workspace={workspace}
                 imageFit={optimize.imageFit}
+                progressVariant={quickAdd.isQuickAdd ? 'compact' : 'standard'}
             />
             <ProtectedPdfPasswordDialog state={workspace.passwordDialog} />
         </div>

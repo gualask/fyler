@@ -7,12 +7,14 @@ import { useDiagnostics } from '@/shared/diagnostics';
 interface TauriNotificationCallbacks {
     onError: (message: string) => void;
     onImportWarning: (payload: AppStatusPayload) => void;
+    onImportProgress: (completed: number, total: number) => void;
     onMergeProgress: (step: MergeProgressStep, progress: number) => void;
 }
 
 export function useTauriNotificationEvents({
     onError,
     onImportWarning,
+    onImportProgress,
     onMergeProgress,
 }: TauriNotificationCallbacks) {
     const { record } = useDiagnostics();
@@ -38,6 +40,12 @@ export function useTauriNotificationEvents({
             onImportWarning(event.payload);
         });
     }, [onImportWarning, record]);
+
+    useEffect(() => {
+        return onTauriEvent<{ completed: number; total: number }>('import-progress', (event) => {
+            onImportProgress(event.payload.completed, event.payload.total);
+        });
+    }, [onImportProgress]);
 
     useEffect(() => {
         return onTauriEvent<{ step: MergeProgressStep; progress: number }>(

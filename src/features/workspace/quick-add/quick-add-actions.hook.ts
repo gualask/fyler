@@ -13,6 +13,7 @@ export function useQuickAddActions({ quickAdd, notifications }: QuickAddActionsD
     const { record } = useDiagnostics();
 
     const handleEnterQuickAdd = useCallback(() => {
+        if (notifications.isBusy) return;
         void quickAdd
             .enterQuickAdd()
             .then(({ started }) => {
@@ -34,6 +35,7 @@ export function useQuickAddActions({ quickAdd, notifications }: QuickAddActionsD
     }, [notifications, quickAdd, record]);
 
     const handleExitQuickAdd = useCallback(() => {
+        if (notifications.isBusy) return;
         void quickAdd
             .exitQuickAdd()
             .then(({ started }) => {
