@@ -42,7 +42,6 @@ export function useOptimize() {
     const optimizeOptions: OptimizeOptions = {
         jpegQuality,
         targetDpi,
-        imageFit,
     };
 
     return {

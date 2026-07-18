@@ -7,6 +7,7 @@ use super::super::{
     files_from_paths, files_from_paths_with_progress, ImportProgress, SourceRegistry,
 };
 use super::temp_path;
+use crate::models::SkippedFileReason;
 use crate::vo::DocKind;
 
 #[test]
@@ -29,7 +30,7 @@ fn invalid_pdfs_are_skipped_without_failing_the_batch() -> anyhow::Result<()> {
     assert!(result.password_required.is_empty());
     assert_eq!(result.skipped.len(), 1);
     assert!(result.skipped[0].name.contains("broken-pdf"));
-    assert_eq!(result.skipped[0].reason, "read_error");
+    assert_eq!(result.skipped[0].reason, SkippedFileReason::ReadError);
 
     let image = result
         .files
@@ -55,7 +56,10 @@ fn unsupported_files_are_reported_as_skipped_without_failing_the_batch() -> anyh
     assert!(result.password_required.is_empty());
     assert_eq!(result.skipped.len(), 1);
     assert!(result.skipped[0].name.contains("notes"));
-    assert_eq!(result.skipped[0].reason, "unsupported_format");
+    assert_eq!(
+        result.skipped[0].reason,
+        SkippedFileReason::UnsupportedFormat
+    );
 
     let _ = fs::remove_file(path);
     Ok(())
@@ -116,7 +120,10 @@ fn mixed_batch_keeps_valid_files_and_reports_only_real_skips() -> anyhow::Result
     );
     assert_eq!(result.skipped.len(), 1);
     assert!(result.skipped[0].name.contains("unsupported"));
-    assert_eq!(result.skipped[0].reason, "unsupported_format");
+    assert_eq!(
+        result.skipped[0].reason,
+        SkippedFileReason::UnsupportedFormat
+    );
 
     let mut ids = first
         .files

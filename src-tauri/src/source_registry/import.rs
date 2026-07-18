@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 
-use crate::models::{PasswordProtectedFile, SkippedFile, SourceFile};
+use crate::models::{PasswordProtectedFile, SkippedFile, SkippedFileReason, SourceFile};
 use crate::pdf::{count_pages, detect_kind_from_ext, is_password_required_error};
 use crate::vo::DocKind;
 
@@ -93,21 +93,25 @@ impl Drop for ImportPathReservations {
     }
 }
 
-fn skipped_file(name: String, reason: &'static str, detail: Option<String>) -> SkippedFile {
+fn skipped_file(name: String, reason: SkippedFileReason, detail: Option<String>) -> SkippedFile {
     SkippedFile {
         name,
-        reason: reason.into(),
+        reason,
         detail,
     }
 }
 
 fn read_error(name: &str, error: impl ToString) -> SkippedFile {
-    skipped_file(name.to_string(), "read_error", Some(error.to_string()))
+    skipped_file(
+        name.to_string(),
+        SkippedFileReason::ReadError,
+        Some(error.to_string()),
+    )
 }
 
 fn candidate_kind(path: &str, name: &str) -> Result<DocKind, SkippedFile> {
     detect_kind_from_ext(path)
-        .ok_or_else(|| skipped_file(name.to_string(), "unsupported_format", None))
+        .ok_or_else(|| skipped_file(name.to_string(), SkippedFileReason::UnsupportedFormat, None))
 }
 
 fn pdf_page_count_or_password(

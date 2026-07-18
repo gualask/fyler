@@ -1,9 +1,10 @@
 use super::image_export_preview_layout;
 use super::layout::compute_image_export_layout;
 
-use crate::error::UserFacingError;
+use crate::error::{UserFacingError, UserFacingErrorCode};
 use crate::models::OptimizeOptions;
 use crate::pdf_compose::PdfComposer;
+use crate::vo::{ImageFit, QuarterTurn};
 
 use anyhow::Context;
 use image::{RgbImage, RgbaImage};
@@ -142,7 +143,7 @@ fn composer_export_preserves_valid_page_tree_for_sample_fixture() -> anyhow::Res
     let mut memo = std::collections::HashMap::new();
     for page_num in 2..=last_page {
         composer
-            .push_pdf_page(&source_doc, &mut memo, page_num, 0)
+            .push_pdf_page(&source_doc, &mut memo, page_num, QuarterTurn::Identity)
             .with_context(|| format!("compose page {page_num}"))?;
     }
     let mut merged = composer.finish().context("finish composition")?;
@@ -175,13 +176,13 @@ fn composer_reports_out_of_range_pages_with_the_frontend_contract() -> anyhow::R
         let mut composer = PdfComposer::new();
         let mut memo = std::collections::HashMap::new();
         let error = composer
-            .push_pdf_page(&source_doc, &mut memo, page_num, 0)
+            .push_pdf_page(&source_doc, &mut memo, page_num, QuarterTurn::Identity)
             .expect_err("out-of-range page should fail");
         let user = error
             .downcast_ref::<UserFacingError>()
             .expect("expected page_out_of_range");
 
-        assert_eq!(user.code, "page_out_of_range");
+        assert_eq!(user.code, UserFacingErrorCode::PageOutOfRange);
         assert_eq!(
             user.meta.as_ref().and_then(|meta| meta.get("pageNum")),
             Some(&serde_json::json!(page_num))
@@ -206,7 +207,7 @@ fn composer_single_page_export_is_smaller_than_full_fixture() -> anyhow::Result<
 
     let mut composer = PdfComposer::new();
     let mut memo = std::collections::HashMap::new();
-    composer.push_pdf_page(&source_doc, &mut memo, 3, 0)?;
+    composer.push_pdf_page(&source_doc, &mut memo, 3, QuarterTurn::Identity)?;
     let mut merged = composer.finish().context("finish composition")?;
 
     let output = save_doc_classic_for_test(&mut merged, "sample-single-page")
@@ -241,9 +242,14 @@ fn composer_merge_image_and_single_pdf_page_stays_smaller_than_full_fixture() ->
         "sample fixture must have at least 3 pages"
     );
     let mut composer = PdfComposer::new();
-    composer.push_image_page(image_path.to_string_lossy().as_ref(), "contain", 0, None)?;
+    composer.push_image_page(
+        image_path.to_string_lossy().as_ref(),
+        ImageFit::Contain,
+        QuarterTurn::Identity,
+        None,
+    )?;
     let mut memo = std::collections::HashMap::new();
-    composer.push_pdf_page(&source_doc, &mut memo, 3, 0)?;
+    composer.push_pdf_page(&source_doc, &mut memo, 3, QuarterTurn::Identity)?;
     let mut merged = composer.finish().context("finish composition")?;
 
     let output = save_doc_classic_for_test(&mut merged, "image-plus-single-page")
@@ -271,7 +277,12 @@ fn original_jpeg_input_stays_dct_encoded() -> anyhow::Result<()> {
     RgbImage::from_pixel(1200, 800, image::Rgb([96, 132, 184])).save(&path)?;
 
     let mut composer = PdfComposer::new();
-    composer.push_image_page(path.to_string_lossy().as_ref(), "fit", 0, None)?;
+    composer.push_image_page(
+        path.to_string_lossy().as_ref(),
+        ImageFit::Fit,
+        QuarterTurn::Identity,
+        None,
+    )?;
     let doc = composer.finish()?;
     let filter = page_image_filter(&doc, 0)?;
 
@@ -288,7 +299,12 @@ fn original_jpeg_input_embeds_bytes_without_reencode() -> anyhow::Result<()> {
     let original_bytes = fs::read(&path)?;
 
     let mut composer = PdfComposer::new();
-    composer.push_image_page(path.to_string_lossy().as_ref(), "fit", 0, None)?;
+    composer.push_image_page(
+        path.to_string_lossy().as_ref(),
+        ImageFit::Fit,
+        QuarterTurn::Identity,
+        None,
+    )?;
     let doc = composer.finish()?;
     let embedded_bytes = page_image_stream_bytes(&doc, 0)?;
 
@@ -305,7 +321,12 @@ fn rotated_jpeg_input_embeds_bytes_without_reencode() -> anyhow::Result<()> {
     let original_bytes = fs::read(&path)?;
 
     let mut composer = PdfComposer::new();
-    composer.push_image_page(path.to_string_lossy().as_ref(), "fit", 1, None)?;
+    composer.push_image_page(
+        path.to_string_lossy().as_ref(),
+        ImageFit::Fit,
+        QuarterTurn::Clockwise90,
+        None,
+    )?;
     let doc = composer.finish()?;
     let embedded_bytes = page_image_stream_bytes(&doc, 0)?;
 
@@ -321,7 +342,12 @@ fn original_png_input_stays_unfiltered_raw() -> anyhow::Result<()> {
     RgbImage::from_pixel(1200, 800, image::Rgb([24, 48, 72])).save(&path)?;
 
     let mut composer = PdfComposer::new();
-    composer.push_image_page(path.to_string_lossy().as_ref(), "fit", 0, None)?;
+    composer.push_image_page(
+        path.to_string_lossy().as_ref(),
+        ImageFit::Fit,
+        QuarterTurn::Identity,
+        None,
+    )?;
     let doc = composer.finish()?;
     let filter = page_image_filter(&doc, 0)?;
 
@@ -339,12 +365,11 @@ fn balanced_png_input_uses_jpeg_encoding() -> anyhow::Result<()> {
     let mut composer = PdfComposer::new();
     composer.push_image_page(
         path.to_string_lossy().as_ref(),
-        "fit",
-        0,
+        ImageFit::Fit,
+        QuarterTurn::Identity,
         Some(&OptimizeOptions {
             jpeg_quality: None,
             target_dpi: Some(170),
-            image_fit: None,
         }),
     )?;
     let doc = composer.finish()?;
@@ -364,12 +389,11 @@ fn balanced_alpha_png_flattens_to_renderable_jpeg_page() -> anyhow::Result<()> {
     let mut composer = PdfComposer::new();
     composer.push_image_page(
         path.to_string_lossy().as_ref(),
-        "contain",
-        0,
+        ImageFit::Contain,
+        QuarterTurn::Identity,
         Some(&OptimizeOptions {
             jpeg_quality: None,
             target_dpi: Some(170),
-            image_fit: None,
         }),
     )?;
     let mut doc = composer.finish()?;
@@ -388,7 +412,7 @@ fn balanced_alpha_png_flattens_to_renderable_jpeg_page() -> anyhow::Result<()> {
 
 #[test]
 fn contain_layout_uses_a4_and_centers_image() {
-    let layout = compute_image_export_layout(1000, 500, "contain");
+    let layout = compute_image_export_layout(1000, 500, ImageFit::Contain);
     assert_eq!(layout.page_width_pt, 595.0);
     assert_eq!(layout.page_height_pt, 842.0);
     assert!(layout.draw_x_pt.abs() < 0.0001);
@@ -402,7 +426,11 @@ fn rotated_image_preview_layout_matches_swapped_dimensions() -> anyhow::Result<(
     let path = std::env::temp_dir().join("fyler-rotated-preview-layout.png");
     RgbImage::new(800, 400).save(&path)?;
 
-    let layout = image_export_preview_layout(path.to_string_lossy().as_ref(), "fit", 1)?;
+    let layout = image_export_preview_layout(
+        path.to_string_lossy().as_ref(),
+        ImageFit::Fit,
+        QuarterTurn::Clockwise90,
+    )?;
 
     assert_eq!(layout.page_width_pt, 300.0);
     assert_eq!(layout.page_height_pt, 600.0);

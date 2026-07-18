@@ -1,14 +1,12 @@
+import type { SkippedFile } from '@/shared/domain';
+
 export type MergeProgressStep =
     | 'preparing-documents'
     | 'merging-pages'
     | 'optimizing-images'
     | 'saving';
 
-export type ImportWarningSkippedFile = {
-    name: string;
-    reason: string;
-    detail?: string;
-};
+export type ImportWarningSkippedFile = SkippedFile;
 
 type ImportWarningStatus = {
     kind: 'import-warning';

@@ -7,25 +7,20 @@ use super::source_cache::{
     resolve_cached_source, PdfSourceCache, SourceCache,
 };
 
-use crate::error::UserFacingError;
+use crate::error::{UserFacingError, UserFacingErrorCode};
 use crate::models::{ExportItem, FileEdits, MergeRequest, OptimizeOptions};
-use crate::pdf::validate_quarter_turns;
 use crate::pdf_compose::PdfComposer;
 use crate::source_registry::{RegisteredSource, SourceRegistry};
-use crate::vo::DocKind;
+use crate::vo::{DocKind, ImageFit, QuarterTurn};
 
-fn quarter_turns_for_pdf_page(edits: Option<&FileEdits>, page_num: u32) -> anyhow::Result<u8> {
-    let turns = edits
+fn quarter_turns_for_pdf_page(edits: Option<&FileEdits>, page_num: u32) -> QuarterTurn {
+    edits
         .and_then(|value| value.page_rotations.get(&page_num).copied())
-        .unwrap_or(0);
-    validate_quarter_turns(turns)?;
-    Ok(turns)
+        .unwrap_or_default()
 }
 
-fn quarter_turns_for_image(edits: Option<&FileEdits>) -> anyhow::Result<u8> {
-    let turns = edits.map(|value| value.image_rotation).unwrap_or(0);
-    validate_quarter_turns(turns)?;
-    Ok(turns)
+fn quarter_turns_for_image(edits: Option<&FileEdits>) -> QuarterTurn {
+    edits.map(|value| value.image_rotation).unwrap_or_default()
 }
 
 fn invalid_export_item_kind_error(
@@ -34,7 +29,7 @@ fn invalid_export_item_kind_error(
     actual: DocKind,
 ) -> anyhow::Error {
     anyhow::Error::new(UserFacingError::with_meta(
-        "invalid_export_item_kind",
+        UserFacingErrorCode::InvalidExportItemKind,
         serde_json::json!({
             "fileId": file_id,
             "expected": expected.as_str(),
@@ -63,7 +58,7 @@ fn append_image_export_item(
     composer: &mut PdfComposer,
     source: &RegisteredSource,
     file_id: &str,
-    image_fit: &str,
+    image_fit: ImageFit,
     edits: Option<&FileEdits>,
     optimize: Option<&OptimizeOptions>,
 ) -> anyhow::Result<()> {
@@ -71,7 +66,7 @@ fn append_image_export_item(
     composer.push_image_page(
         &source.original_path,
         image_fit,
-        quarter_turns_for_image(edits)?,
+        quarter_turns_for_image(edits),
         optimize,
     )?;
     Ok(())
@@ -92,7 +87,7 @@ fn append_pdf_export_item(
         &entry.doc,
         &mut entry.memo,
         page_num,
-        quarter_turns_for_pdf_page(edits, page_num)?,
+        quarter_turns_for_pdf_page(edits, page_num),
     )?;
     Ok(())
 }
@@ -101,7 +96,6 @@ pub(super) fn compose_document(
     app: &AppHandle,
     registry: &SourceRegistry,
     req: &MergeRequest,
-    image_fit: &str,
 ) -> anyhow::Result<PdfDoc> {
     emit_progress(app, "preparing-documents", 0);
     let mut pdf_cache = PdfSourceCache::new();
@@ -126,7 +120,7 @@ pub(super) fn compose_document(
                     &mut composer,
                     source,
                     file_id,
-                    image_fit,
+                    req.image_fit,
                     edits,
                     req.optimize.as_ref(),
                 )?;

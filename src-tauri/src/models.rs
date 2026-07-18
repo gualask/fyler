@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::vo::DocKind;
+use crate::vo::{DocKind, ImageFit, QuarterTurn};
 
 /// A user-imported file tracked by the current session.
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -61,10 +61,10 @@ pub struct FileEdits {
     pub revision: u32,
     #[serde(rename = "pageRotations", default)]
     /// Sparse map of per-page rotations in quarter-turns (`0..=3`).
-    pub page_rotations: HashMap<u32, u8>,
+    pub page_rotations: HashMap<u32, QuarterTurn>,
     #[serde(rename = "imageRotation", default)]
     /// Image rotation in quarter-turns (`0..=3`).
-    pub image_rotation: u8,
+    pub image_rotation: QuarterTurn,
 }
 
 /// Optional export-time optimizations.
@@ -76,9 +76,6 @@ pub struct OptimizeOptions {
     #[serde(rename = "targetDpi")]
     /// Target raster DPI (used for resizing embedded images).
     pub target_dpi: Option<u16>,
-    #[serde(rename = "imageFit")]
-    /// Layout rule for single-image exports: `"fit" | "contain" | "cover"`.
-    pub image_fit: Option<String>, // "fit" | "contain" | "cover"
 }
 
 /// Export request emitted by the frontend.
@@ -92,6 +89,9 @@ pub struct MergeRequest {
     #[serde(rename = "outputPath")]
     /// Destination file path chosen by the user.
     pub output_path: String,
+    #[serde(rename = "imageFit", default)]
+    /// Layout rule applied when an imported image becomes a PDF page.
+    pub image_fit: ImageFit,
     /// Optional image optimization settings.
     pub optimize: Option<OptimizeOptions>,
 }
@@ -102,25 +102,23 @@ pub struct MergeResult {
     #[serde(rename = "optimizationFailedCount")]
     /// Number of images that failed optimization but did not abort the export.
     pub optimization_failed_count: usize,
-    /// Non-fatal issues encountered during export.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub warnings: Vec<MergeWarning>,
-}
-
-/// A non-fatal warning that should be recorded for diagnostics.
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct MergeWarning {
-    pub code: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub meta: Option<serde_json::Value>,
 }
 
 /// A single file that was skipped during import, plus a reason code for the UI.
+#[derive(serde::Serialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SkippedFileReason {
+    UnsupportedFormat,
+    ReadError,
+    PathError,
+}
+
+/// A single file that was skipped during import, plus a reason suitable for UI messaging.
 #[derive(serde::Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SkippedFile {
     pub name: String,
-    pub reason: String,
+    pub reason: SkippedFileReason,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
 }
@@ -133,4 +131,22 @@ pub struct OpenFilesResult {
     pub password_required: Vec<PasswordProtectedFile>,
     #[serde(rename = "skippedErrors")]
     pub skipped_errors: Vec<SkippedFile>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SkippedFileReason;
+
+    #[test]
+    fn skipped_file_reasons_keep_the_wire_contract() {
+        let cases = [
+            (SkippedFileReason::UnsupportedFormat, "unsupported_format"),
+            (SkippedFileReason::ReadError, "read_error"),
+            (SkippedFileReason::PathError, "path_error"),
+        ];
+
+        for (reason, expected) in cases {
+            assert_eq!(serde_json::to_value(reason).unwrap(), expected);
+        }
+    }
 }

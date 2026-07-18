@@ -193,7 +193,6 @@
     "errors.password_required_pdf": "PDF is password protected.",
     "errors.invalid_pdf_password": "Incorrect PDF password.",
     "errors.no_documents_to_merge": "No documents to merge.",
-    "errors.invalid_rotation": "Unsupported rotation.",
     "errors.page_missing_mediabox": "PDF page is missing dimensions.",
     "errors.invalid_export_item_kind": "A source has an unexpected file type.",
     "errors.external_url_not_allowed": "This external link is not allowed.",

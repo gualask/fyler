@@ -122,7 +122,6 @@ fn contains_object_stream(bytes: &[u8]) -> bool {
 fn has_optimization_work_detects_target_dpi_only() {
     assert!(super::has_optimization_work(&OptimizeOptions {
         jpeg_quality: None,
-        image_fit: None,
         target_dpi: Some(170),
     }));
 }
@@ -146,7 +145,6 @@ fn target_dpi_resizes_based_on_drawn_size() -> Result<()> {
         &mut doc,
         &OptimizeOptions {
             jpeg_quality: None,
-            image_fit: None,
             target_dpi: Some(150),
         },
     )?;
@@ -173,7 +171,6 @@ fn target_dpi_reencodes_large_raw_images_even_without_resize() -> Result<()> {
         &mut doc,
         &OptimizeOptions {
             jpeg_quality: None,
-            image_fit: None,
             target_dpi: Some(170),
         },
     )?;
@@ -212,7 +209,6 @@ fn optimizes_cmyk_jpeg_streams() -> Result<()> {
         &mut doc,
         &OptimizeOptions {
             jpeg_quality: Some(70),
-            image_fit: None,
             target_dpi: None,
         },
     )?;
@@ -338,7 +334,6 @@ fn optimized_cmyk_jpeg_roundtrip_stays_loadable() -> Result<()> {
         &mut doc,
         &OptimizeOptions {
             jpeg_quality: Some(70),
-            image_fit: None,
             target_dpi: None,
         },
     )?;

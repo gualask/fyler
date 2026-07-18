@@ -33,3 +33,7 @@ test('maps backend contract errors that previously fell back to unknown', () => 
         'Choose the PDF destination again.',
     );
 });
+
+test('falls back safely for unknown backend error codes', () => {
+    assert.equal(formatUserFacingError({ code: 'future_error_code' }, t), 'Something went wrong.');
+});

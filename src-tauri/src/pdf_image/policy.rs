@@ -171,7 +171,6 @@ mod tests {
                 Some(&OptimizeOptions {
                     jpeg_quality: None,
                     target_dpi: Some(220),
-                    image_fit: None,
                 }),
             ),
             ImageEmbedDecision {
@@ -189,7 +188,6 @@ mod tests {
                 Some(&OptimizeOptions {
                     jpeg_quality: None,
                     target_dpi: Some(170),
-                    image_fit: None,
                 }),
             ),
             ImageEmbedDecision {
@@ -207,7 +205,6 @@ mod tests {
                 Some(&OptimizeOptions {
                     jpeg_quality: Some(77),
                     target_dpi: Some(220),
-                    image_fit: None,
                 }),
             ),
             ImageEmbedDecision {

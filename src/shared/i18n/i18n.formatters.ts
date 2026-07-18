@@ -1,4 +1,5 @@
 import type { AppStatusPayload, ImportWarningSkippedFile } from '@/shared/diagnostics';
+import type { SkippedFileReason } from '@/shared/domain';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from './i18n.resources';
 
 type Translator = (key: TranslationKey, values?: InterpolationValues) => string;
@@ -8,21 +9,26 @@ type PluralTranslator = (
     values?: InterpolationValues,
 ) => string;
 
+const SKIPPED_FILE_ERROR_KEYS = {
+    unsupported_format: 'errors.skipped.unsupported_format',
+    read_error: 'errors.skipped.read_error',
+    path_error: 'errors.skipped.path_error',
+} as const satisfies Record<SkippedFileReason, TranslationKey>;
+
+const IMPORT_WARNING_KEYS = {
+    unsupported_format: 'status.importWarning.unsupportedFormat',
+    read_error: 'status.importWarning.readError',
+    path_error: 'status.importWarning.pathError',
+} as const satisfies Record<SkippedFileReason, PluralBaseKey>;
+
+function isSkippedFileReason(reason: string): reason is SkippedFileReason {
+    return Object.hasOwn(SKIPPED_FILE_ERROR_KEYS, reason);
+}
+
 export function formatSkippedFile(skipped: ImportWarningSkippedFile, t: Translator): string {
-    let key: TranslationKey;
-    switch (skipped.reason) {
-        case 'unsupported_format':
-            key = 'errors.skipped.unsupported_format';
-            break;
-        case 'read_error':
-            key = 'errors.skipped.read_error';
-            break;
-        case 'path_error':
-            key = 'errors.skipped.path_error';
-            break;
-        default:
-            key = 'errors.unknown';
-    }
+    const key = isSkippedFileReason(skipped.reason)
+        ? SKIPPED_FILE_ERROR_KEYS[skipped.reason]
+        : 'errors.unknown';
     return t(key, { name: skipped.name, detail: skipped.detail ?? '' });
 }
 
@@ -34,14 +40,8 @@ export function formatImportWarning(
     const reasons = new Set(payload.preview.map((skipped) => skipped.reason));
     if (reasons.size === 1) {
         const [reason] = reasons;
-        if (reason === 'unsupported_format') {
-            return tp('status.importWarning.unsupportedFormat', payload.skippedCount);
-        }
-        if (reason === 'read_error') {
-            return tp('status.importWarning.readError', payload.skippedCount);
-        }
-        if (reason === 'path_error') {
-            return tp('status.importWarning.pathError', payload.skippedCount);
+        if (reason && isSkippedFileReason(reason)) {
+            return tp(IMPORT_WARNING_KEYS[reason], payload.skippedCount);
         }
     }
 

@@ -193,7 +193,6 @@
     "errors.password_required_pdf": "Il PDF è protetto da password.",
     "errors.invalid_pdf_password": "Password PDF non corretta.",
     "errors.no_documents_to_merge": "Nessun documento da unire.",
-    "errors.invalid_rotation": "Rotazione non supportata.",
     "errors.page_missing_mediabox": "Una pagina PDF non ha dimensioni valide.",
     "errors.invalid_export_item_kind": "Una sorgente ha un tipo di file inatteso.",
     "errors.external_url_not_allowed": "Questo collegamento esterno non è consentito.",

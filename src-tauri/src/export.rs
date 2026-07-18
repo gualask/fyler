@@ -2,28 +2,44 @@ use lopdf::Document as PdfDoc;
 use tauri::AppHandle;
 
 mod compose;
-mod plan;
 mod progress;
 mod source_cache;
 
 use compose::compose_document;
-use plan::{prepare_export_plan, ExportPlan};
 use progress::emit_progress;
 
-#[cfg(debug_assertions)]
-use crate::models::ExportItem;
-use crate::models::{MergeRequest, MergeResult};
+use crate::error::{UserFacingError, UserFacingErrorCode};
+use crate::models::{ExportItem, MergeRequest, MergeResult, OptimizeOptions};
 use crate::optimize;
 use crate::source_registry::SourceRegistry;
+
+fn has_pdf_sources(pages: &[ExportItem]) -> bool {
+    pages
+        .iter()
+        .any(|page| matches!(page, ExportItem::Pdf { .. }))
+}
+
+fn should_optimize_images(pages: &[ExportItem], options: &OptimizeOptions) -> bool {
+    has_pdf_sources(pages) && optimize::has_optimization_work(options)
+}
+
+fn validate_export_request(req: &MergeRequest) -> anyhow::Result<()> {
+    if req.pages.is_empty() {
+        return Err(anyhow::Error::new(UserFacingError::new(
+            UserFacingErrorCode::NoDocumentsToMerge,
+        )));
+    }
+
+    Ok(())
+}
 
 fn maybe_optimize_document(
     app: &AppHandle,
     merged: &mut PdfDoc,
     req: &MergeRequest,
-    plan: &ExportPlan,
 ) -> anyhow::Result<usize> {
     if let Some(options) = &req.optimize {
-        if plan.should_optimize_images {
+        if should_optimize_images(&req.pages, options) {
             emit_progress(app, "optimizing-images", 80);
             return Ok(optimize::optimize_images(merged, options)?.failed_non_fatal);
         }
@@ -73,13 +89,12 @@ pub fn export_pdf(
         }
     }
 
-    let plan = prepare_export_plan(&req)?;
-    let mut merged = compose_document(app, registry, &req, plan.image_fit.as_str())?;
-    let optimization_failed_count = maybe_optimize_document(app, &mut merged, &req, &plan)?;
+    validate_export_request(&req)?;
+    let mut merged = compose_document(app, registry, &req)?;
+    let optimization_failed_count = maybe_optimize_document(app, &mut merged, &req)?;
     save_document(app, &mut merged, &req.output_path)?;
     Ok(MergeResult {
         optimization_failed_count,
-        warnings: plan.warnings,
     })
 }
 

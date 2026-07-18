@@ -47,6 +47,7 @@ export function useExportAction({
                 finalPages,
                 editsByFile,
                 outputPath,
+                optimize.imageFit,
                 optimize.optimizeOptions,
             );
             record({
@@ -60,17 +61,6 @@ export function useExportAction({
                 },
             });
             const result = await mergePDFs(req);
-            if (result.warnings?.length) {
-                record({
-                    category: 'export',
-                    severity: 'warn',
-                    message: 'PDF export completed with warnings',
-                    metadata: {
-                        warningCount: result.warnings.length,
-                        warningCodes: result.warnings.map((w) => w.code).join(','),
-                    },
-                });
-            }
             if (result.optimizationFailedCount > 0) {
                 record({
                     category: 'export',

@@ -71,7 +71,6 @@ export type ImageFit = 'fit' | 'contain' | 'cover';
 export type OptimizeOptions = {
     jpegQuality?: JpegQuality;
     targetDpi?: number;
-    imageFit?: ImageFit;
 };
 
 export type ImageExportPreviewLayout = {
@@ -89,22 +88,19 @@ export type MergeRequest = {
     pages: ExportItem[];
     edits: Record<string, FileEdits>;
     outputPath: string;
+    imageFit: ImageFit;
     optimize?: OptimizeOptions;
 };
 
 export type MergeResult = {
     optimizationFailedCount: number;
-    warnings?: MergeWarning[];
 };
 
-type MergeWarning = {
-    code: string;
-    meta?: Record<string, unknown>;
-};
+export type SkippedFileReason = 'unsupported_format' | 'read_error' | 'path_error';
 
-type SkippedFile = {
+export type SkippedFile = {
     name: string;
-    reason: string;
+    reason: SkippedFileReason;
     detail?: string;
 };
 

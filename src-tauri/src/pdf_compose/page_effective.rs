@@ -2,7 +2,8 @@ use anyhow::{Context, Result};
 use lopdf::{Dictionary, Document as PdfDoc, Object, ObjectId};
 use std::collections::HashSet;
 
-use crate::error::UserFacingError;
+use crate::error::{UserFacingError, UserFacingErrorCode};
+use crate::vo::QuarterTurn;
 
 use super::resources::merge_resources;
 
@@ -115,8 +116,11 @@ fn effective_resources(doc: &PdfDoc, page_id: ObjectId) -> Result<Dictionary> {
 }
 
 fn required_media_box(doc: &PdfDoc, page_id: ObjectId) -> Result<Object> {
-    inherited_value(doc, page_id, b"MediaBox")?
-        .ok_or_else(|| anyhow::Error::new(UserFacingError::new("page_missing_mediabox")))
+    inherited_value(doc, page_id, b"MediaBox")?.ok_or_else(|| {
+        anyhow::Error::new(UserFacingError::new(
+            UserFacingErrorCode::PageMissingMediabox,
+        ))
+    })
 }
 
 fn apply_inherited_page_boxes(doc: &PdfDoc, page_id: ObjectId, out: &mut Dictionary) -> Result<()> {
@@ -173,9 +177,9 @@ fn apply_rotation(out: &mut Dictionary, rotation_degrees: i64) {
 pub fn effective_page_dictionary(
     doc: &PdfDoc,
     page_id: ObjectId,
-    extra_quarter_turns: u8,
+    extra_quarter_turns: QuarterTurn,
 ) -> Result<Dictionary> {
-    let extra_degrees = crate::pdf::quarter_turns_to_degrees(extra_quarter_turns)? as i64;
+    let extra_degrees = i64::from(extra_quarter_turns.degrees());
 
     let mut out = doc.get_dictionary(page_id)?.clone();
 
@@ -246,7 +250,7 @@ mod tests {
     fn effective_page_dictionary_merges_inherited_resources_and_boxes() -> Result<()> {
         let (doc, page_id) = source_with_page_tree(90);
 
-        let page = effective_page_dictionary(&doc, page_id, 1)?;
+        let page = effective_page_dictionary(&doc, page_id, QuarterTurn::Clockwise90)?;
 
         assert!(page.get(b"Parent").is_err());
         assert_eq!(page.get(b"Rotate")?.as_i64()?, 180);
@@ -270,7 +274,7 @@ mod tests {
     fn effective_page_dictionary_removes_zero_rotation() -> Result<()> {
         let (doc, page_id) = source_with_page_tree(270);
 
-        let page = effective_page_dictionary(&doc, page_id, 1)?;
+        let page = effective_page_dictionary(&doc, page_id, QuarterTurn::Clockwise90)?;
 
         assert!(page.get(b"Rotate").is_err());
         Ok(())

@@ -13,7 +13,6 @@ pub use kind::{
     IMAGE_EXTENSIONS,
 };
 pub use layout::{image_export_preview_layout, ImageExportPreviewLayout};
-pub use rotate::{quarter_turns_to_degrees, validate_quarter_turns};
 
 #[cfg(test)]
 mod tests;

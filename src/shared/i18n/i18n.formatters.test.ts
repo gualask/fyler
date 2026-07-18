@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
+import type { ImportWarningSkippedFile } from '@/shared/diagnostics';
 import { formatImportWarning, formatSkippedFile } from './i18n.formatters.js';
 import { resources } from './i18n.resources.js';
 import { translate, translatePlural } from './i18n.translate.js';
@@ -8,14 +9,15 @@ const t = translate.bind(null, resources.en);
 const tp = translatePlural.bind(null, resources.en);
 
 test('maps skipped-file reasons explicitly and falls back for unknown values', () => {
+    const unknownReason = JSON.parse(
+        '{"name":"mystery.bin","reason":"unexpected_reason"}',
+    ) as ImportWarningSkippedFile;
+
     assert.equal(
         formatSkippedFile({ name: 'clip.mov', reason: 'unsupported_format' }, t),
         'Unsupported file format',
     );
-    assert.equal(
-        formatSkippedFile({ name: 'mystery.bin', reason: 'unexpected_reason' }, t),
-        'Something went wrong.',
-    );
+    assert.equal(formatSkippedFile(unknownReason, t), 'Something went wrong.');
 });
 
 test('formats unsupported-file import warnings as short toast messages', () => {

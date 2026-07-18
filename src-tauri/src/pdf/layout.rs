@@ -1,5 +1,7 @@
 use anyhow::Result;
 
+use crate::vo::{ImageFit, QuarterTurn};
+
 use super::rotate::rotated_dimensions;
 
 const A4_W: f64 = 595.0;
@@ -31,13 +33,13 @@ pub struct ImageExportPreviewLayout {
 pub(super) fn compute_image_export_layout(
     width_px: u32,
     height_px: u32,
-    image_fit: &str,
+    image_fit: ImageFit,
 ) -> ImageExportPreviewLayout {
     let w_pt = width_px as f64 * 72.0 / 96.0;
     let h_pt = height_px as f64 * 72.0 / 96.0;
 
     match image_fit {
-        "contain" => {
+        ImageFit::Contain => {
             let scale = (A4_W / w_pt).min(A4_H / h_pt);
             let sw = w_pt * scale;
             let sh = h_pt * scale;
@@ -52,7 +54,7 @@ pub(super) fn compute_image_export_layout(
                 fill_background: true,
             }
         }
-        "cover" => {
+        ImageFit::Cover => {
             let scale = (A4_W / w_pt).max(A4_H / h_pt);
             let sw = w_pt * scale;
             let sh = h_pt * scale;
@@ -67,7 +69,7 @@ pub(super) fn compute_image_export_layout(
                 fill_background: false,
             }
         }
-        _ => ImageExportPreviewLayout {
+        ImageFit::Fit => ImageExportPreviewLayout {
             page_width_pt: w_pt.ceil(),
             page_height_pt: h_pt.ceil(),
             draw_x_pt: 0.0,
@@ -85,12 +87,12 @@ pub(super) fn compute_image_export_layout(
 /// The image dimensions are read from disk and adjusted for `quarter_turns` before layout.
 pub fn image_export_preview_layout(
     path: &str,
-    image_fit: &str,
-    quarter_turns: u8,
+    image_fit: ImageFit,
+    quarter_turns: QuarterTurn,
 ) -> Result<ImageExportPreviewLayout> {
     let (width_px, height_px) = crate::pdf_image::source_image_dimensions(path)?;
     let (rotated_width_px, rotated_height_px) =
-        rotated_dimensions(width_px, height_px, quarter_turns)?;
+        rotated_dimensions(width_px, height_px, quarter_turns);
     Ok(compute_image_export_layout(
         rotated_width_px,
         rotated_height_px,

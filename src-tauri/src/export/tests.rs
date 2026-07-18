@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use super::plan::{prepare_export_plan, resolve_image_fit, should_optimize_images};
 use super::progress::merge_pages_progress;
-use crate::error::UserFacingError;
+use super::{should_optimize_images, validate_export_request};
+use crate::error::{UserFacingError, UserFacingErrorCode};
 use crate::models::{ExportItem, MergeRequest, OptimizeOptions};
 use crate::vo::ImageFit;
 
@@ -22,36 +22,50 @@ fn merge_pages_progress_clamps_empty_and_overflow_inputs() {
 }
 
 #[test]
-fn resolve_image_fit_warns_and_defaults_for_unknown_values() {
-    let (image_fit, warning) = resolve_image_fit(Some(&OptimizeOptions {
-        jpeg_quality: None,
-        image_fit: Some("sideways".to_string()),
-        target_dpi: None,
+fn merge_request_defaults_missing_image_fit_to_fit() {
+    let request: MergeRequest = serde_json::from_value(serde_json::json!({
+        "pages": [],
+        "edits": {},
+        "outputPath": "/tmp/fyler-test-output.pdf"
+    }))
+    .expect("missing imageFit should use the backend default");
+
+    assert_eq!(request.image_fit, ImageFit::Fit);
+}
+
+#[test]
+fn merge_request_rejects_unknown_image_fit() {
+    let result = serde_json::from_value::<MergeRequest>(serde_json::json!({
+        "pages": [],
+        "edits": {},
+        "outputPath": "/tmp/fyler-test-output.pdf",
+        "imageFit": "sideways"
     }));
 
-    assert_eq!(image_fit, ImageFit::Fit);
-    let warning = warning.expect("unknown value should add a warning");
-    assert_eq!(warning.code, "unknown_image_fit_defaulted");
-    assert_eq!(
-        warning
-            .meta
-            .as_ref()
-            .and_then(|meta| meta.get("value"))
-            .and_then(|value| value.as_str()),
-        Some("sideways"),
-    );
+    assert!(result.is_err());
+}
+
+#[test]
+fn merge_request_deserializes_known_image_fit() {
+    let request: MergeRequest = serde_json::from_value(serde_json::json!({
+        "pages": [],
+        "edits": {},
+        "outputPath": "/tmp/fyler-test-output.pdf",
+        "imageFit": "contain"
+    }))
+    .expect("known imageFit should deserialize");
+
+    assert_eq!(request.image_fit, ImageFit::Contain);
 }
 
 #[test]
 fn should_optimize_images_requires_pdf_sources_and_real_work() {
     let work_options = OptimizeOptions {
         jpeg_quality: Some(80),
-        image_fit: Some("cover".to_string()),
         target_dpi: None,
     };
-    let image_fit_only = OptimizeOptions {
+    let no_work_options = OptimizeOptions {
         jpeg_quality: None,
-        image_fit: Some("contain".to_string()),
         target_dpi: None,
     };
 
@@ -66,7 +80,7 @@ fn should_optimize_images_requires_pdf_sources_and_real_work() {
             file_id: "pdf-1".to_string(),
             page_num: 1,
         }],
-        &image_fit_only,
+        &no_work_options,
     ));
     assert!(should_optimize_images(
         &[ExportItem::Pdf {
@@ -78,8 +92,8 @@ fn should_optimize_images_requires_pdf_sources_and_real_work() {
 }
 
 #[test]
-fn prepare_export_plan_rejects_empty_requests() {
-    let err = match prepare_export_plan(&merge_request(vec![], None)) {
+fn validate_export_request_rejects_empty_requests() {
+    let err = match validate_export_request(&merge_request(vec![], None)) {
         Ok(_) => panic!("empty export should fail before composition"),
         Err(err) => err,
     };
@@ -87,7 +101,7 @@ fn prepare_export_plan_rejects_empty_requests() {
     let user = err
         .downcast_ref::<UserFacingError>()
         .expect("expected a user-facing error");
-    assert_eq!(user.code, "no_documents_to_merge");
+    assert_eq!(user.code, UserFacingErrorCode::NoDocumentsToMerge);
 }
 
 fn merge_request(pages: Vec<ExportItem>, optimize: Option<OptimizeOptions>) -> MergeRequest {
@@ -95,6 +109,7 @@ fn merge_request(pages: Vec<ExportItem>, optimize: Option<OptimizeOptions>) -> M
         pages,
         edits: HashMap::new(),
         output_path: "/tmp/fyler-test-output.pdf".to_string(),
+        image_fit: ImageFit::Fit,
         optimize,
     }
 }

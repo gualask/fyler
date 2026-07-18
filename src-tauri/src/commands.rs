@@ -8,15 +8,17 @@ use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
-use crate::error::{AppError, UserFacingError};
+use crate::error::{AppError, UserFacingError, UserFacingErrorCode};
 use crate::export::export_pdf;
-use crate::models::{MergeRequest, MergeResult, OpenFilesResult, SkippedFile, SourceFile};
+use crate::models::{
+    MergeRequest, MergeResult, OpenFilesResult, SkippedFile, SkippedFileReason, SourceFile,
+};
 use crate::pdf::{image_export_preview_layout, ImageExportPreviewLayout, IMAGE_EXTENSIONS};
 use crate::source_registry::{
     files_from_paths_with_progress, unlocked_pdf_source as build_unlocked_pdf_source,
     ImportProgress, SourceRegistry,
 };
-use crate::vo::DocKind;
+use crate::vo::{DocKind, ImageFit, QuarterTurn};
 
 const SUPPORT_ISSUE_HOST: &str = "github.com";
 const SUPPORT_ISSUE_PATH: &str = "/gualask/fyler/issues/new";
@@ -154,7 +156,7 @@ fn path_file_name(path: &Path) -> String {
 }
 
 fn source_not_found_error() -> anyhow::Error {
-    anyhow::Error::new(UserFacingError::new("source_not_found"))
+    anyhow::Error::new(UserFacingError::new(UserFacingErrorCode::SourceNotFound))
 }
 
 fn ensure_path_is_authorized(app: &tauri::AppHandle, path: &str) -> anyhow::Result<()> {
@@ -179,7 +181,7 @@ fn authorized_drop_paths(
         } else {
             skipped.push(SkippedFile {
                 name: path_file_name(Path::new(&path)),
-                reason: "path_error".into(),
+                reason: SkippedFileReason::PathError,
                 detail: None,
             });
         }
@@ -189,8 +191,8 @@ fn authorized_drop_paths(
 }
 
 fn validated_support_issue_url(raw_url: &str) -> anyhow::Result<url::Url> {
-    let parsed =
-        url::Url::parse(raw_url).map_err(|_| UserFacingError::new("external_url_not_allowed"))?;
+    let parsed = url::Url::parse(raw_url)
+        .map_err(|_| UserFacingError::new(UserFacingErrorCode::ExternalUrlNotAllowed))?;
     let is_allowed = parsed.scheme() == "https"
         && parsed.host_str() == Some(SUPPORT_ISSUE_HOST)
         && parsed.port().is_none()
@@ -203,7 +205,7 @@ fn validated_support_issue_url(raw_url: &str) -> anyhow::Result<url::Url> {
         Ok(parsed)
     } else {
         Err(anyhow::Error::new(UserFacingError::new(
-            "external_url_not_allowed",
+            UserFacingErrorCode::ExternalUrlNotAllowed,
         )))
     }
 }
@@ -245,7 +247,7 @@ pub async fn open_files_dialog(
                     eprintln!("[warn] Failed to authorize selected file: {error}");
                     path_skipped.push(SkippedFile {
                         name: path_file_name(&path),
-                        reason: "path_error".into(),
+                        reason: SkippedFileReason::PathError,
                         detail: None,
                     });
                     None
@@ -255,7 +257,7 @@ pub async fn open_files_dialog(
                 eprintln!("[warn] Failed to resolve file path: {e}");
                 path_skipped.push(SkippedFile {
                     name: String::new(),
-                    reason: "path_error".into(),
+                    reason: SkippedFileReason::PathError,
                     detail: Some(e.to_string()),
                 });
                 None
@@ -393,7 +395,10 @@ pub async fn merge_pdfs(
     req: MergeRequest,
 ) -> Result<MergeResult, AppError> {
     if !output_paths.consume(&req.output_path) {
-        return Err(anyhow::Error::new(UserFacingError::new("output_path_not_authorized")).into());
+        return Err(anyhow::Error::new(UserFacingError::new(
+            UserFacingErrorCode::OutputPathNotAuthorized,
+        ))
+        .into());
     }
 
     let app = app.clone();
@@ -433,18 +438,21 @@ pub fn open_external_url(app: tauri::AppHandle, url: String) -> Result<(), AppEr
 /// This is used by the frontend to show an accurate export preview without duplicating layout math.
 pub async fn get_image_export_preview_layout(
     file_id: String,
-    image_fit: String,
-    quarter_turns: u8,
+    image_fit: ImageFit,
+    quarter_turns: QuarterTurn,
     registry: State<'_, SourceRegistry>,
 ) -> Result<ImageExportPreviewLayout, AppError> {
     let source = registry.get(&file_id).ok_or_else(source_not_found_error)?;
     if source.kind != DocKind::Image {
-        return Err(anyhow::Error::new(UserFacingError::new("invalid_export_item_kind")).into());
+        return Err(anyhow::Error::new(UserFacingError::new(
+            UserFacingErrorCode::InvalidExportItemKind,
+        ))
+        .into());
     }
 
     let path = source.original_path;
     tauri::async_runtime::spawn_blocking(move || {
-        image_export_preview_layout(&path, &image_fit, quarter_turns)
+        image_export_preview_layout(&path, image_fit, quarter_turns)
     })
     .await
     .map_err(anyhow::Error::from)?

@@ -1,8 +1,9 @@
 use anyhow::{Context, Result};
 use lopdf::{Document as PdfDoc, Object, ObjectId};
 
-use crate::error::UserFacingError;
+use crate::error::{UserFacingError, UserFacingErrorCode};
 use crate::models::OptimizeOptions;
+use crate::vo::{ImageFit, QuarterTurn};
 
 use super::object_copier::ObjectCopier;
 use super::page_effective::effective_page_dictionary;
@@ -28,8 +29,8 @@ impl PdfComposer {
     pub fn push_image_page(
         &mut self,
         path: &str,
-        image_fit: &str,
-        quarter_turns: u8,
+        image_fit: ImageFit,
+        quarter_turns: QuarterTurn,
         optimize: Option<&OptimizeOptions>,
     ) -> Result<()> {
         let page_id = crate::pdf::append_image_as_page(
@@ -52,12 +53,12 @@ impl PdfComposer {
         source: &PdfDoc,
         memo: &mut std::collections::HashMap<ObjectId, ObjectId>,
         page_num: u32,
-        quarter_turns: u8,
+        quarter_turns: QuarterTurn,
     ) -> Result<()> {
         let pages = source.get_pages();
         let Some(source_page_id) = pages.get(&page_num).copied() else {
             return Err(anyhow::Error::new(UserFacingError::with_meta(
-                "page_out_of_range",
+                UserFacingErrorCode::PageOutOfRange,
                 serde_json::json!({ "pageNum": page_num, "total": pages.len() }),
             )));
         };

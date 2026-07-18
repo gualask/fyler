@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::error::UserFacingError;
+use crate::error::{UserFacingError, UserFacingErrorCode};
 use crate::models::SourceFile;
 use crate::pdf::{count_pages_with_password, is_password_required_error};
 use crate::vo::DocKind;
@@ -71,9 +71,11 @@ pub(super) fn registered_source_entry(
 
 fn unlock_error(error: anyhow::Error) -> anyhow::Error {
     if is_password_required_error(&error) {
-        anyhow::Error::new(UserFacingError::new("invalid_pdf_password"))
+        anyhow::Error::new(UserFacingError::new(
+            UserFacingErrorCode::InvalidPdfPassword,
+        ))
     } else {
-        anyhow::Error::new(UserFacingError::new("open_pdf_failed"))
+        anyhow::Error::new(UserFacingError::new(UserFacingErrorCode::OpenPdfFailed))
     }
 }
 

@@ -12,6 +12,8 @@ export type {
     PasswordProtectedFile,
     QuarterTurn,
     RotationDirection,
+    SkippedFile,
+    SkippedFileReason,
     SourceFile,
     SourceTarget,
 } from './dto';

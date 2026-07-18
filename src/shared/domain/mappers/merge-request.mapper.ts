@@ -2,6 +2,7 @@ import type {
     ExportItem,
     FileEdits,
     FinalPage,
+    ImageFit,
     MergeRequest,
     OptimizeOptions,
 } from '../dto/core.dto';
@@ -11,6 +12,7 @@ export function buildMergeRequest(
     finalPages: FinalPage[],
     edits: Record<string, FileEdits>,
     outputPath: string,
+    imageFit: ImageFit,
     optimize?: OptimizeOptions,
 ): MergeRequest {
     const pages: ExportItem[] = finalPages.map((page) =>
@@ -22,6 +24,7 @@ export function buildMergeRequest(
         pages,
         edits,
         outputPath,
+        imageFit,
         optimize,
     };
 }

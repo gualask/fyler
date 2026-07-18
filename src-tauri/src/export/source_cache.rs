@@ -1,6 +1,6 @@
 use lopdf::Document as PdfDoc;
 
-use crate::error::UserFacingError;
+use crate::error::{UserFacingError, UserFacingErrorCode};
 use crate::models::ExportItem;
 use crate::source_registry::{RegisteredSource, SourceRegistry};
 
@@ -37,7 +37,7 @@ fn resolve_source(
 ) -> anyhow::Result<crate::source_registry::RegisteredSource> {
     registry.get(file_id).ok_or_else(|| {
         anyhow::Error::new(UserFacingError::with_meta(
-            "source_not_found",
+            UserFacingErrorCode::SourceNotFound,
             serde_json::json!({ "fileId": file_id }),
         ))
     })
@@ -65,7 +65,9 @@ pub(super) fn load_cached_pdf_source<'a>(
             Some(password) => PdfDoc::load_with_password(&source.original_path, password),
             None => PdfDoc::load(&source.original_path),
         }
-        .map_err(|_| anyhow::Error::new(UserFacingError::new("open_pdf_failed")))?;
+        .map_err(|_| {
+            anyhow::Error::new(UserFacingError::new(UserFacingErrorCode::OpenPdfFailed))
+        })?;
         cache.insert(
             file_id.to_owned(),
             CachedPdfSource {

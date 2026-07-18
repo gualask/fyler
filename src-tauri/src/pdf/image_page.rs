@@ -6,6 +6,7 @@ use std::io::BufReader;
 
 use crate::models::OptimizeOptions;
 use crate::pdf_image::{decide_image_embed, prepare_pdf_image, with_source_image};
+use crate::vo::{ImageFit, QuarterTurn};
 
 use super::layout::compute_image_export_layout;
 use super::rotate::{rotate_dynamic_image, rotated_dimensions};
@@ -34,10 +35,10 @@ struct JpegPassthroughInfo {
 
 fn build_image_content_stream(
     layout: super::layout::ImageExportPreviewLayout,
-    quarter_turns: u8,
-) -> Result<String> {
-    let (a, b, c, d, e, f) = match crate::pdf::quarter_turns_to_degrees(quarter_turns)? {
-        0 => (
+    quarter_turns: QuarterTurn,
+) -> String {
+    let (a, b, c, d, e, f) = match quarter_turns {
+        QuarterTurn::Identity => (
             layout.draw_width_pt,
             0.0,
             0.0,
@@ -45,7 +46,7 @@ fn build_image_content_stream(
             layout.draw_x_pt,
             layout.draw_y_pt,
         ),
-        90 => (
+        QuarterTurn::Clockwise90 => (
             0.0,
             -layout.draw_height_pt,
             layout.draw_width_pt,
@@ -53,7 +54,7 @@ fn build_image_content_stream(
             layout.draw_x_pt,
             layout.draw_y_pt + layout.draw_height_pt,
         ),
-        180 => (
+        QuarterTurn::HalfTurn => (
             -layout.draw_width_pt,
             0.0,
             0.0,
@@ -61,7 +62,7 @@ fn build_image_content_stream(
             layout.draw_x_pt + layout.draw_width_pt,
             layout.draw_y_pt + layout.draw_height_pt,
         ),
-        270 => (
+        QuarterTurn::Clockwise270 => (
             0.0,
             layout.draw_height_pt,
             -layout.draw_width_pt,
@@ -69,10 +70,9 @@ fn build_image_content_stream(
             layout.draw_x_pt + layout.draw_width_pt,
             layout.draw_y_pt,
         ),
-        _ => unreachable!(),
     };
 
-    Ok(if layout.clip_to_page {
+    if layout.clip_to_page {
         format!(
             "q 0 0 {} {} re W n {:.4} {:.4} {:.4} {:.4} {:.4} {:.4} cm /Im0 Do Q\n",
             layout.page_width_pt, layout.page_height_pt, a, b, c, d, e, f,
@@ -87,20 +87,20 @@ fn build_image_content_stream(
             "q {:.4} {:.4} {:.4} {:.4} {:.4} {:.4} cm /Im0 Do Q\n",
             a, b, c, d, e, f,
         )
-    })
+    }
 }
 
 fn append_image_xobject_as_page(
     doc: &mut PdfDoc,
     layout: super::layout::ImageExportPreviewLayout,
-    quarter_turns: u8,
+    quarter_turns: QuarterTurn,
     xobject: EmbeddedImageXObject,
-) -> Result<ObjectId> {
+) -> ObjectId {
     use lopdf::{Dictionary, Stream};
 
     let page_w = layout.page_width_pt as i64;
     let page_h = layout.page_height_pt as i64;
-    let content = build_image_content_stream(layout, quarter_turns)?;
+    let content = build_image_content_stream(layout, quarter_turns);
 
     let mut img_dict = Dictionary::new();
     img_dict.set("Type", name(b"XObject"));
@@ -131,8 +131,7 @@ fn append_image_xobject_as_page(
     );
     page_dict.set("Resources", Object::Dictionary(resources));
     page_dict.set("Contents", Object::Reference(content_id));
-    let page_id = doc.add_object(Object::Dictionary(page_dict));
-    Ok(page_id)
+    doc.add_object(Object::Dictionary(page_dict))
 }
 
 /// Appends an image file as a new PDF page.
@@ -142,18 +141,18 @@ fn append_image_xobject_as_page(
 pub fn append_image_as_page(
     doc: &mut PdfDoc,
     path: &str,
-    image_fit: &str,
-    quarter_turns: u8,
+    image_fit: ImageFit,
+    quarter_turns: QuarterTurn,
     optimize: Option<&OptimizeOptions>,
 ) -> Result<ObjectId> {
     if let Some(page_id) =
-        try_append_jpeg_as_page_without_decode(doc, path, image_fit, quarter_turns, optimize)?
+        try_append_jpeg_as_page_without_decode(doc, path, image_fit, quarter_turns, optimize)
     {
         return Ok(page_id);
     }
 
     with_source_image(path, |img, descriptor| {
-        let img = rotate_dynamic_image(img, quarter_turns)?;
+        let img = rotate_dynamic_image(img, quarter_turns);
 
         let (source_width_px, source_height_px) = img.dimensions();
         let layout = compute_image_export_layout(source_width_px, source_height_px, image_fit);
@@ -161,10 +160,10 @@ pub fn append_image_as_page(
 
         let decision = decide_image_embed(&descriptor, optimize);
         let prepared = prepare_pdf_image(img, decision, resize_to)?;
-        append_image_xobject_as_page(
+        Ok(append_image_xobject_as_page(
             doc,
             layout,
-            0,
+            QuarterTurn::Identity,
             EmbeddedImageXObject {
                 width_px: prepared.width,
                 height_px: prepared.height,
@@ -172,41 +171,39 @@ pub fn append_image_as_page(
                 filter: prepared.filter,
                 data: prepared.data,
             },
-        )
+        ))
     })
 }
 
 fn try_append_jpeg_as_page_without_decode(
     doc: &mut PdfDoc,
     path: &str,
-    image_fit: &str,
-    quarter_turns: u8,
+    image_fit: ImageFit,
+    quarter_turns: QuarterTurn,
     optimize: Option<&OptimizeOptions>,
-) -> Result<Option<ObjectId>> {
+) -> Option<ObjectId> {
     if !can_embed_original_jpeg(path, optimize) {
-        return Ok(None);
+        return None;
     }
 
     // Apply the same dimension and encoded-file limits used by decoded source images.
     if crate::pdf_image::source_image_dimensions(path).is_err() {
-        return Ok(None);
+        return None;
     }
 
-    let Some(info) = read_jpeg_passthrough_info(path) else {
-        return Ok(None);
-    };
+    let info = read_jpeg_passthrough_info(path)?;
 
     let (rotated_width_px, rotated_height_px) =
-        rotated_dimensions(info.width_px, info.height_px, quarter_turns)?;
+        rotated_dimensions(info.width_px, info.height_px, quarter_turns);
     let layout = compute_image_export_layout(rotated_width_px, rotated_height_px, image_fit);
     let resize_to = resize_to_target_dpi(rotated_width_px, rotated_height_px, optimize, &layout);
     if resize_to.is_some() {
-        return Ok(None);
+        return None;
     }
 
     let bytes = match std::fs::read(path) {
         Ok(bytes) => bytes,
-        Err(_) => return Ok(None),
+        Err(_) => return None,
     };
 
     let page_id = append_image_xobject_as_page(
@@ -220,8 +217,8 @@ fn try_append_jpeg_as_page_without_decode(
             filter: Some(b"DCTDecode"),
             data: bytes,
         },
-    )?;
-    Ok(Some(page_id))
+    );
+    Some(page_id)
 }
 
 fn can_embed_original_jpeg(path: &str, optimize: Option<&OptimizeOptions>) -> bool {
