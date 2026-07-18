@@ -6,5 +6,4 @@ export { usePdfRenderSrc } from './pdf-render-src.hook';
 export {
     buildPreviewRenderRequest,
     buildThumbnailRenderRequest,
-    buildThumbnailRenderRequests,
 } from './render-profiles';

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { discardPendingSources } from '@/infra/platform';
 import type {
     FinishPendingPasswordImport,
     ShowNextPasswordImportOrFinish,
@@ -36,8 +37,8 @@ export function useProtectedPdfSkipActions({
             category: 'files',
             severity: 'info',
             message: 'Password-protected PDF skipped during import',
-            metadata: { name: activeImport.current.name },
         });
+        void discardPendingSources([activeImport.current.originalPath]);
         skipCurrentPasswordFile(activeImport.pending);
         showNextOrFinish(activeImport.pending);
     }, [isChecking, pendingRef, record, showNextOrFinish, unlockInFlightRef]);
@@ -51,6 +52,7 @@ export function useProtectedPdfSkipActions({
             message: 'Remaining password-protected PDFs skipped during import',
             metadata: { count: pending.queue.length },
         });
+        void discardPendingSources(pending.queue.map((file) => file.originalPath));
         pending.queue = [];
         finishPending();
     }, [finishPending, isChecking, pendingRef, record, unlockInFlightRef]);

@@ -1,7 +1,7 @@
 export const toolbarFloatingRailClassName =
     'absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-start gap-3 px-5 py-4 pointer-events-none';
 
-export const toolbarPanelClassName =
+const toolbarPanelClassName =
     'pointer-events-auto flex h-11 items-center rounded-xl border border-[color:var(--ui-overlay-border)] bg-[color:var(--ui-overlay-control-strong)] text-[var(--ui-overlay-text)] shadow-[0_12px_32px_var(--ui-overlay-shadow)] backdrop-blur-md';
 
 export const toolbarPanelGroupClassName = `${toolbarPanelClassName} gap-0.5 px-1`;

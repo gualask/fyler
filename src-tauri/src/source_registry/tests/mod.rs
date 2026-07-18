@@ -4,6 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod import;
 mod preview;
 mod protected_pdf;
+mod registry;
 
 fn temp_path(name: &str, ext: &str) -> PathBuf {
     let millis = SystemTime::now()

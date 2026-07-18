@@ -1,8 +1,4 @@
-import type {
-    BasicOptimizationPreset,
-    ImageOptimizationPreset,
-    OptimizationSettings,
-} from '../dto/optimization.dto';
+import type { BasicOptimizationPreset, OptimizationSettings } from '../dto/optimization.dto';
 
 /** Default preset used for new sessions. */
 export const DEFAULT_OPTIMIZATION_PRESET: BasicOptimizationPreset = 'light';
@@ -12,6 +8,7 @@ type OptimizationPresetDefinition = OptimizationSettings & {
 };
 
 type NumericOptionDefinition = {
+    id: string;
     value: number | undefined;
 };
 
@@ -33,35 +30,43 @@ export const OPTIMIZATION_PRESETS: OptimizationPresetDefinition[] = [
     },
 ];
 
-export const JPEG_QUALITY_OPTIONS: NumericOptionDefinition[] = [
+export const JPEG_QUALITY_OPTIONS = [
     {
+        id: 'off',
         value: undefined,
     },
     {
+        id: '95',
         value: 95,
     },
     {
+        id: '90',
         value: 90,
     },
     {
+        id: '85',
         value: 85,
     },
-];
+] as const satisfies readonly NumericOptionDefinition[];
 
-export const TARGET_DPI_OPTIONS: NumericOptionDefinition[] = [
+export const TARGET_DPI_OPTIONS = [
     {
+        id: 'off',
         value: undefined,
     },
     {
+        id: '220',
         value: 220,
     },
     {
+        id: '170',
         value: 170,
     },
     {
+        id: '120',
         value: 120,
     },
-];
+] as const satisfies readonly NumericOptionDefinition[];
 
 /**
  * Maps a preset to concrete optimization settings.
@@ -77,19 +82,4 @@ export function getOptimizationSettings(preset: BasicOptimizationPreset): Optimi
         jpegQuality: found.jpegQuality,
         targetDpi: found.targetDpi,
     };
-}
-
-/**
- * Derives the matching preset for the provided settings.
- *
- * Returns `'custom'` when the pair does not exactly match a known preset.
- */
-export function deriveOptimizationPreset(
-    jpegQuality: number | undefined,
-    targetDpi: number | undefined,
-): ImageOptimizationPreset {
-    const matched = OPTIMIZATION_PRESETS.find(
-        (preset) => preset.jpegQuality === jpegQuality && preset.targetDpi === targetDpi,
-    );
-    return matched?.value ?? 'custom';
 }

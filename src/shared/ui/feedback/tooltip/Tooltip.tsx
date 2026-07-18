@@ -6,9 +6,9 @@ import type { TooltipPlacement } from './tooltip-placement';
 
 import './tooltip.css';
 
-export type { TooltipAlign, TooltipSide } from './tooltip-placement';
+export type { TooltipAlign } from './tooltip-placement';
 
-export type TooltipTriggerRenderProps = {
+type TooltipTriggerRenderProps = {
     open: boolean;
     tooltipId?: string;
     ariaDescribedBy?: string;

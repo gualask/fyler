@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::OnceLock;
 
 use rayon::prelude::*;
@@ -45,6 +44,45 @@ struct ImportResults {
     entries: Vec<ReadyImport>,
     password_required: Vec<PasswordProtectedFile>,
     skipped: Vec<SkippedFile>,
+}
+
+struct ImportPathReservations {
+    registry: SourceRegistry,
+    paths: Vec<String>,
+    finished: bool,
+}
+
+impl ImportPathReservations {
+    fn new(registry: &SourceRegistry, paths: impl IntoIterator<Item = String>) -> Self {
+        Self {
+            registry: registry.clone(),
+            paths: registry.reserve_import_paths(paths),
+            finished: false,
+        }
+    }
+
+    fn paths(&self) -> &[String] {
+        &self.paths
+    }
+
+    fn finish(
+        mut self,
+        entries: Vec<(String, super::registry::RegisteredSource)>,
+        previews: Vec<(String, ImagePreviewBytes)>,
+        password_required_paths: &[String],
+    ) {
+        self.registry
+            .finish_import_batch(&self.paths, entries, previews, password_required_paths);
+        self.finished = true;
+    }
+}
+
+impl Drop for ImportPathReservations {
+    fn drop(&mut self) {
+        if !self.finished {
+            self.registry.cancel_import_paths(&self.paths);
+        }
+    }
 }
 
 fn skipped_file(name: String, reason: &'static str, detail: Option<String>) -> SkippedFile {
@@ -140,26 +178,6 @@ fn registered_file_from_path(path: String) -> Result<ImportCandidate, SkippedFil
     )))
 }
 
-fn accepted_import_paths(
-    paths: impl IntoIterator<Item = String>,
-    registry: &SourceRegistry,
-) -> Vec<String> {
-    let mut accepted_paths = Vec::new();
-    let mut seen_paths = HashSet::new();
-
-    for path in paths {
-        if !seen_paths.insert(path.clone()) {
-            continue;
-        }
-        if registry.contains_original_path(&path) {
-            continue;
-        }
-        accepted_paths.push(path);
-    }
-
-    accepted_paths
-}
-
 fn import_pool() -> &'static rayon::ThreadPool {
     IMPORT_POOL.get_or_init(|| {
         // Keep a small dedicated pool to avoid oversubscribing the system during import.
@@ -191,21 +209,6 @@ fn collect_import_results(results: Vec<Result<ImportCandidate, SkippedFile>>) ->
     }
 }
 
-fn register_ready_imports(registry: &SourceRegistry, entries: &[ReadyImport]) {
-    registry.insert_many(entries.iter().map(|entry| {
-        (
-            entry.entry.source_id().to_string(),
-            entry.entry.registered().clone(),
-        )
-    }));
-    registry.insert_image_previews(entries.iter().filter_map(|entry| {
-        entry
-            .preview
-            .as_ref()
-            .map(|preview| (entry.entry.source_id().to_string(), preview.clone()))
-    }));
-}
-
 /// Imports sources from paths, registering them in `registry` and returning frontend models.
 ///
 /// Paths are deduplicated; already-registered paths are skipped.
@@ -213,9 +216,11 @@ pub fn files_from_paths(
     paths: impl IntoIterator<Item = String>,
     registry: &SourceRegistry,
 ) -> anyhow::Result<FilesFromPathsResult> {
-    let accepted_paths = accepted_import_paths(paths, registry);
+    let reservations = ImportPathReservations::new(registry, paths);
     let results = import_pool().install(|| {
-        accepted_paths
+        reservations
+            .paths()
+            .to_vec()
             .into_par_iter()
             .map(registered_file_from_path)
             .collect::<Vec<_>>()
@@ -226,7 +231,30 @@ pub fn files_from_paths(
         skipped,
     } = collect_import_results(results);
 
-    register_ready_imports(registry, &entries);
+    let registrations = entries
+        .iter()
+        .map(|entry| {
+            (
+                entry.entry.source_id().to_string(),
+                entry.entry.registered().clone(),
+            )
+        })
+        .collect();
+    let previews = entries
+        .iter()
+        .filter_map(|entry| {
+            entry
+                .preview
+                .as_ref()
+                .map(|preview| (entry.entry.source_id().to_string(), preview.clone()))
+        })
+        .collect();
+    let pending_paths = password_required
+        .iter()
+        .map(|file| file.original_path.clone())
+        .collect::<Vec<_>>();
+    reservations.finish(registrations, previews, &pending_paths);
+
     Ok(FilesFromPathsResult {
         files: entries
             .into_iter()

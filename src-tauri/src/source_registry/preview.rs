@@ -3,7 +3,7 @@ use fast_image_resize::{images::Image, FilterType, PixelType, ResizeAlg, ResizeO
 use image::codecs::jpeg::JpegEncoder;
 use image::{DynamicImage, ExtendedColorType, Rgb, RgbImage};
 
-use crate::pdf_image::load_source_image;
+use crate::pdf_image::with_source_image;
 
 const IMAGE_PREVIEW_LONG_SIDE: u32 = 1600;
 const IMAGE_PREVIEW_JPEG_QUALITY: u8 = 86;
@@ -29,10 +29,10 @@ fn preview_dimensions(width: u32, height: u32) -> Option<(u32, u32)> {
 
 fn flatten_on_white(image: DynamicImage) -> RgbImage {
     if !image.color().has_alpha() {
-        return image.to_rgb8();
+        return image.into_rgb8();
     }
 
-    let rgba = image.to_rgba8();
+    let rgba = image.into_rgba8();
     let (width, height) = rgba.dimensions();
     let mut rgb = RgbImage::new(width, height);
 
@@ -75,13 +75,14 @@ fn encode_jpeg(rgb: RgbImage) -> Result<ImagePreviewBytes> {
 }
 
 pub fn make_image_preview(path: &str) -> Result<ImagePreviewBytes> {
-    let (image, descriptor) =
-        load_source_image(path).with_context(|| format!("read image preview: {path}"))?;
-    let mut rgb = flatten_on_white(image);
+    with_source_image(path, |image, descriptor| {
+        let mut rgb = flatten_on_white(image);
 
-    if let Some((width, height)) = preview_dimensions(descriptor.width, descriptor.height) {
-        rgb = resize_rgb_for_preview(rgb, width, height)?;
-    }
+        if let Some((width, height)) = preview_dimensions(descriptor.width, descriptor.height) {
+            rgb = resize_rgb_for_preview(rgb, width, height)?;
+        }
 
-    encode_jpeg(rgb)
+        encode_jpeg(rgb)
+    })
+    .context("read image preview")
 }

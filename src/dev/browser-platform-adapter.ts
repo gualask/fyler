@@ -92,6 +92,7 @@ export const browserPlatformAdapter: PlatformAdapter = {
     },
     openFilesFromPaths: async () => ({ files: [], passwordRequired: [], skippedErrors: [] }),
     unlockPdfSource: () => unsupportedInBrowser('unlockPdfSource'),
+    discardPendingSources: async () => undefined,
     releaseSources: async () => undefined,
     getImageExportPreviewLayout: async (): Promise<ImageExportPreviewLayout> =>
         unsupportedInBrowser('getImageExportPreviewLayout'),

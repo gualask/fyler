@@ -4,6 +4,10 @@ import { useState } from 'react';
 import type { ImageFit, ImageOptimizationPreset } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
 import { OptimizationSection } from './output-panel/OptimizationSection';
+import {
+    IMAGE_FIT_TRANSLATION_KEYS,
+    OPTIMIZATION_PRESET_TRANSLATION_KEYS,
+} from './output-panel/output-panel.options';
 import { PageFitSection } from './output-panel/PageFitSection';
 
 import './output-panel/output-panel.css';
@@ -35,8 +39,8 @@ export function OutputPanel({
     const presetLabel =
         optimizationPreset === 'custom'
             ? t('outputPanel.customLong')
-            : t(`outputPanel.presets.${optimizationPreset}.label`);
-    const fitLabel = t(`outputPanel.imageFitOptions.${imageFit}`);
+            : t(OPTIMIZATION_PRESET_TRANSLATION_KEYS[optimizationPreset].label);
+    const fitLabel = t(IMAGE_FIT_TRANSLATION_KEYS[imageFit]);
     const collapsedTitle = t('outputPanel.footerCollapsedTitle', {
         compression: presetLabel,
         fit: fitLabel,

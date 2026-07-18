@@ -22,7 +22,7 @@ type GetPageAspectRatio = ReturnType<typeof usePdfCache>['getPageAspectRatio'];
 interface ImagePreviewState {
     isImage: boolean;
     src: string | undefined;
-    originalPath: string | undefined;
+    fileId: string | undefined;
     quarterTurns: QuarterTurn;
     rotation: number;
     useA4Container: boolean;
@@ -47,7 +47,7 @@ function imagePreviewState(
     return {
         isImage,
         src: isImage ? (imageSrc ?? undefined) : undefined,
-        originalPath: isImage ? file.originalPath : undefined,
+        fileId: isImage ? file.id : undefined,
         quarterTurns,
         rotation,
         useA4Container: isImage && (imageFit === 'contain' || imageFit === 'cover'),
@@ -140,7 +140,7 @@ export function useSlotState(page: SlotPage, context: SlotContext) {
 
     const { exportMatchedImageSrc, isExportMatchedImagePending } = useExportMatchedImage(
         imagePreview.src,
-        imagePreview.originalPath,
+        imagePreview.fileId,
         imageFit,
         imagePreview.quarterTurns,
         matchExportedImagesActive,

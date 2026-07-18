@@ -5,7 +5,7 @@ export type FinalDocumentLayout = 'columns-2' | 'columns-1';
 
 export const ACCENT_COLORS: AccentColor[] = ['indigo', 'teal', 'blue'];
 export const DEFAULT_ACCENT_COLOR: AccentColor = 'indigo';
-export const FINAL_DOCUMENT_LAYOUTS: FinalDocumentLayout[] = ['columns-2', 'columns-1'];
+const FINAL_DOCUMENT_LAYOUTS: FinalDocumentLayout[] = ['columns-2', 'columns-1'];
 export const DEFAULT_FINAL_DOCUMENT_LAYOUT: FinalDocumentLayout = 'columns-2';
 
 export function isAccentColor(value: unknown): value is AccentColor {

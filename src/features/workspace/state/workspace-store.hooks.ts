@@ -3,7 +3,7 @@ import { useStore } from 'zustand';
 import type { WorkspaceStore, WorkspaceStoreApi } from './workspace.store';
 import { WorkspaceStoreContext } from './workspace-store.context';
 
-export function useWorkspaceStoreApi(): WorkspaceStoreApi {
+function useWorkspaceStoreApi(): WorkspaceStoreApi {
     const store = useContext(WorkspaceStoreContext);
     if (!store) throw new Error('useWorkspaceStoreApi must be used within WorkspaceStoreProvider');
     return store;

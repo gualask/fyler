@@ -8,8 +8,6 @@ import { useProtectedPdfSkipActions } from './protected-pdf-skip-actions.hook';
 import { useProtectedPdfSubmit } from './protected-pdf-submit.hook';
 import { useProtectedPdfUnlock } from './protected-pdf-unlock.hook';
 
-export type { ProtectedPdfPasswordDialogState } from './protected-pdf-dialog-state';
-
 export function useProtectedPdfImportResolver() {
     const { record } = useDiagnostics();
     const pendingRef = useRef<PendingPasswordImport | null>(null);

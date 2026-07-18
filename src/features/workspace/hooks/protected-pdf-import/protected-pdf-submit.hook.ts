@@ -1,5 +1,4 @@
 import { type Dispatch, type SetStateAction, useCallback } from 'react';
-import type { PasswordProtectedFile } from '@/shared/domain';
 import type { ShowNextPasswordImportOrFinish } from './protected-pdf-dialog-controller.hook';
 import type { ProtectedPdfPasswordDialogData } from './protected-pdf-dialog-state';
 import {
@@ -57,14 +56,13 @@ export function useProtectedPdfSubmit({
     );
 
     const failCurrentUnlock = useCallback(
-        (current: PasswordProtectedFile, error: unknown) => {
+        (error: unknown) => {
             const dialogError = passwordDialogError(error);
             unlockInFlightRef.current = false;
             record({
                 category: 'files',
                 severity: dialogError === 'invalid-password' ? 'warn' : 'error',
                 message: 'Password-protected PDF unlock failed',
-                metadata: { name: current.name },
             });
             setDialog((state) => ({
                 ...state,
@@ -89,7 +87,7 @@ export function useProtectedPdfSubmit({
         unlockInFlightRef.current = true;
         setDialog((state) => ({ ...state, error: null, isChecking: true }));
         void submitPassword(passwordSubmission).catch((error) => {
-            failCurrentUnlock(passwordSubmission.current, error);
+            failCurrentUnlock(error);
         });
     }, [
         failCurrentUnlock,

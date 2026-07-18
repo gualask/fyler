@@ -19,9 +19,10 @@ export interface PlatformAdapter {
     openExternalUrl(url: string): Promise<void>;
     openFilesFromPaths(paths: string[]): Promise<OpenFilesResult>;
     unlockPdfSource(path: string, password: string): Promise<OpenFilesResult['files'][number]>;
+    discardPendingSources(paths: string[]): Promise<void>;
     releaseSources(fileIds: string[]): Promise<void>;
     getImageExportPreviewLayout(
-        path: string,
+        fileId: string,
         imageFit: ImageFit,
         quarterTurns: QuarterTurn,
     ): Promise<ImageExportPreviewLayout>;

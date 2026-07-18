@@ -1,5 +1,5 @@
 /** Source document kind supported by the app. */
-export type DocKind = 'pdf' | 'image';
+type DocKind = 'pdf' | 'image';
 
 /** A specific “thing” within a source file that the user can target (focus/rotate/export). */
 export type SourceTarget = { kind: 'pdf'; pageNum: number } | { kind: 'image' };
@@ -65,7 +65,7 @@ export type ExportItem =
     | { kind: 'pdf'; fileId: string; pageNum: number }
     | { kind: 'image'; fileId: string };
 
-export type JpegQuality = number;
+type JpegQuality = number;
 export type ImageFit = 'fit' | 'contain' | 'cover';
 
 export type OptimizeOptions = {
@@ -97,12 +97,12 @@ export type MergeResult = {
     warnings?: MergeWarning[];
 };
 
-export type MergeWarning = {
+type MergeWarning = {
     code: string;
     meta?: Record<string, unknown>;
 };
 
-export type SkippedFile = {
+type SkippedFile = {
     name: string;
     reason: string;
     detail?: string;

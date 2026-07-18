@@ -9,9 +9,6 @@ export { formatDiagnosticsReport } from './diagnostics.report';
 export { toDiagnosticMessage } from './diagnostics.sanitize';
 export type {
     AppMetadata,
-    DiagnosticCategory,
     DiagnosticEntry,
-    DiagnosticMetadataValue,
-    DiagnosticSeverity,
     DiagnosticsSnapshot,
 } from './diagnostics.types';

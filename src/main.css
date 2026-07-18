@@ -427,18 +427,6 @@ body {
     .dialog-panel-bordered {
         @apply border border-ui-border;
     }
-    .panel-surface {
-        @apply rounded-xl border border-ui-border p-4;
-    }
-    .panel-surface-subtle {
-        @apply bg-ui-bg/60;
-    }
-    .panel-surface-raised {
-        @apply bg-ui-surface shadow-sm;
-    }
-    .panel-title {
-        @apply mb-2 text-sm font-semibold text-ui-text;
-    }
     .workspace-layout-grid {
         display: grid;
         min-height: 0;

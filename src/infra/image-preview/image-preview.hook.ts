@@ -2,11 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { getSourceUrl } from '@/infra/platform';
 import type { SourceFile } from '@/shared/domain';
-import {
-    type ImagePreviewSnapshot,
-    type ImagePreviewStatus,
-    imagePreviewQueryOptions,
-} from './image-preview.cache';
+import { type ImagePreviewSnapshot, imagePreviewQueryOptions } from './image-preview.cache';
 
 type ImagePreviewFile = Pick<SourceFile, 'id' | 'kind' | 'originalPath'>;
 
@@ -42,5 +38,3 @@ export function useImagePreview(file: ImagePreviewFile | undefined) {
 
     return { src: null, status: 'pending' };
 }
-
-export type { ImagePreviewStatus };

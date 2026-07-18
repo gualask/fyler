@@ -7,7 +7,7 @@ import {
 import { getImagePreview } from '@/infra/platform';
 import type { ImagePreviewBytes } from '@/infra/platform/platform-adapter';
 
-export type ImagePreviewStatus = 'idle' | 'pending' | 'ready' | 'fallback' | 'failed';
+type ImagePreviewStatus = 'idle' | 'pending' | 'ready' | 'fallback' | 'failed';
 
 export type ImagePreviewSnapshot = {
     src: string | null;
@@ -66,7 +66,7 @@ function getImagePreviewObjectUrl(data: unknown): string | null {
     return typeof objectUrl === 'string' ? objectUrl : null;
 }
 
-export function imagePreviewQueryKey(input: ImagePreviewQueryInput): ImagePreviewQueryKey {
+function imagePreviewQueryKey(input: ImagePreviewQueryInput): ImagePreviewQueryKey {
     return [IMAGE_PREVIEW_QUERY_ROOT, input.fileId, input.originalPath];
 }
 
@@ -79,7 +79,7 @@ function isImagePreviewQueryKey(queryKey: QueryKey): queryKey is ImagePreviewQue
     );
 }
 
-export async function loadImagePreviewData(fileId: string): Promise<ImagePreviewQueryData> {
+async function loadImagePreviewData(fileId: string): Promise<ImagePreviewQueryData> {
     const preview = await getImagePreview(fileId);
     const objectUrl = preview ? objectUrlFromBytes(preview) : null;
     return objectUrl ? { objectUrl, status: 'ready' } : { objectUrl: null, status: 'fallback' };

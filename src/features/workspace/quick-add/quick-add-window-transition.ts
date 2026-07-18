@@ -14,7 +14,7 @@ export interface QuickAddWindowOps {
 
 export const QUICK_ADD_WINDOW_SIZE = { width: 380, height: 520 } as const;
 export const NORMAL_WINDOW_MIN_SIZE = { width: 1100, height: 600 } as const;
-export const FALLBACK_RESTORE_SIZE = { width: 1100, height: 700 } as const;
+const FALLBACK_RESTORE_SIZE = { width: 1100, height: 700 } as const;
 
 export async function captureQuickAddRestoreSize(
     ops: QuickAddWindowOps,

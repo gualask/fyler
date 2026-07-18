@@ -24,12 +24,7 @@ export function OptimizationSection({
 }: Props) {
     const { t } = useTranslation();
     const presetOptions: SelectOption<ImageOptimizationPreset>[] = buildPresetSelectOptions(
-        {
-            original: t('outputPanel.presets.original.label'),
-            light: t('outputPanel.presets.light.label'),
-            balanced: t('outputPanel.presets.balanced.label'),
-            compact: t('outputPanel.presets.compact.label'),
-        },
+        t,
         t('outputPanel.customLong'),
     );
 

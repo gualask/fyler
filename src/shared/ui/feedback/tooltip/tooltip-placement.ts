@@ -1,5 +1,5 @@
 export type TooltipAlign = 'start' | 'center' | 'end';
-export type TooltipSide = 'top' | 'bottom';
+type TooltipSide = 'top' | 'bottom';
 export type TooltipPlacement = {
     align: TooltipAlign;
     side: TooltipSide;

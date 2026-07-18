@@ -38,13 +38,16 @@ export const openFilesFromPaths = (paths: string[]) =>
 export const unlockPdfSource = (path: string, password: string) =>
     currentPlatformAdapter.unlockPdfSource(path, password);
 
+export const discardPendingSources = (paths: string[]) =>
+    currentPlatformAdapter.discardPendingSources(paths);
+
 export const releaseSources = (fileIds: string[]) => currentPlatformAdapter.releaseSources(fileIds);
 
 export const getImageExportPreviewLayout = (
-    path: string,
+    fileId: string,
     imageFit: Parameters<PlatformAdapter['getImageExportPreviewLayout']>[1],
     quarterTurns: Parameters<PlatformAdapter['getImageExportPreviewLayout']>[2],
-) => currentPlatformAdapter.getImageExportPreviewLayout(path, imageFit, quarterTurns);
+) => currentPlatformAdapter.getImageExportPreviewLayout(fileId, imageFit, quarterTurns);
 
 export const getImagePreview = (fileId: string) => currentPlatformAdapter.getImagePreview(fileId);
 

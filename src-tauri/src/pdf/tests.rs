@@ -1,6 +1,7 @@
 use super::image_export_preview_layout;
 use super::layout::compute_image_export_layout;
 
+use crate::error::UserFacingError;
 use crate::models::OptimizeOptions;
 use crate::pdf_compose::PdfComposer;
 
@@ -141,7 +142,7 @@ fn composer_export_preserves_valid_page_tree_for_sample_fixture() -> anyhow::Res
     let mut memo = std::collections::HashMap::new();
     for page_num in 2..=last_page {
         composer
-            .push_pdf_page(&source_doc, &mut memo, "sample-document.pdf", page_num, 0)
+            .push_pdf_page(&source_doc, &mut memo, page_num, 0)
             .with_context(|| format!("compose page {page_num}"))?;
     }
     let mut merged = composer.finish().context("finish composition")?;
@@ -166,6 +167,34 @@ fn composer_export_preserves_valid_page_tree_for_sample_fixture() -> anyhow::Res
 }
 
 #[test]
+fn composer_reports_out_of_range_pages_with_the_frontend_contract() -> anyhow::Result<()> {
+    let source_doc = PdfDoc::load(public_fixture("sample-document.pdf"))?;
+    let total = source_doc.get_pages().len();
+
+    for page_num in [0, total as u32 + 1] {
+        let mut composer = PdfComposer::new();
+        let mut memo = std::collections::HashMap::new();
+        let error = composer
+            .push_pdf_page(&source_doc, &mut memo, page_num, 0)
+            .expect_err("out-of-range page should fail");
+        let user = error
+            .downcast_ref::<UserFacingError>()
+            .expect("expected page_out_of_range");
+
+        assert_eq!(user.code, "page_out_of_range");
+        assert_eq!(
+            user.meta.as_ref().and_then(|meta| meta.get("pageNum")),
+            Some(&serde_json::json!(page_num))
+        );
+        assert_eq!(
+            user.meta.as_ref().and_then(|meta| meta.get("total")),
+            Some(&serde_json::json!(total))
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn composer_single_page_export_is_smaller_than_full_fixture() -> anyhow::Result<()> {
     let fixture = public_fixture("sample-document.pdf");
     let input_size = fs::metadata(&fixture)?.len();
@@ -177,7 +206,7 @@ fn composer_single_page_export_is_smaller_than_full_fixture() -> anyhow::Result<
 
     let mut composer = PdfComposer::new();
     let mut memo = std::collections::HashMap::new();
-    composer.push_pdf_page(&source_doc, &mut memo, "sample-document.pdf", 3, 0)?;
+    composer.push_pdf_page(&source_doc, &mut memo, 3, 0)?;
     let mut merged = composer.finish().context("finish composition")?;
 
     let output = save_doc_classic_for_test(&mut merged, "sample-single-page")
@@ -214,7 +243,7 @@ fn composer_merge_image_and_single_pdf_page_stays_smaller_than_full_fixture() ->
     let mut composer = PdfComposer::new();
     composer.push_image_page(image_path.to_string_lossy().as_ref(), "contain", 0, None)?;
     let mut memo = std::collections::HashMap::new();
-    composer.push_pdf_page(&source_doc, &mut memo, "sample-document.pdf", 3, 0)?;
+    composer.push_pdf_page(&source_doc, &mut memo, 3, 0)?;
     let mut merged = composer.finish().context("finish composition")?;
 
     let output = save_doc_classic_for_test(&mut merged, "image-plus-single-page")

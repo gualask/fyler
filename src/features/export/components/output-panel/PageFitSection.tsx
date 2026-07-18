@@ -11,9 +11,7 @@ interface Props {
 
 export function PageFitSection({ imageFit, onImageFitChange }: Props) {
     const { t } = useTranslation();
-    const imageFitOptions: SelectOption<ImageFit>[] = buildImageFitOptions((fit) =>
-        t(`outputPanel.imageFitOptions.${fit}`),
-    );
+    const imageFitOptions: SelectOption<ImageFit>[] = buildImageFitOptions(t);
 
     return (
         <fieldset className="output-panel-group output-panel-page-fit">

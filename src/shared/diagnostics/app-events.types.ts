@@ -10,7 +10,7 @@ export type ImportWarningSkippedFile = {
     detail?: string;
 };
 
-export type ImportWarningStatus = {
+type ImportWarningStatus = {
     kind: 'import-warning';
     skippedCount: number;
     preview: ImportWarningSkippedFile[];

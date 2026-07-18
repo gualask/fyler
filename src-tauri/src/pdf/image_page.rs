@@ -5,7 +5,7 @@ use lopdf::{Document as PdfDoc, Object, ObjectId};
 use std::io::BufReader;
 
 use crate::models::OptimizeOptions;
-use crate::pdf_image::{decide_image_embed, load_source_image, prepare_pdf_image};
+use crate::pdf_image::{decide_image_embed, prepare_pdf_image, with_source_image};
 
 use super::layout::compute_image_export_layout;
 use super::rotate::{rotate_dynamic_image, rotated_dimensions};
@@ -152,29 +152,28 @@ pub fn append_image_as_page(
         return Ok(page_id);
     }
 
-    let (img, descriptor) = load_source_image(path)?;
-    let img = rotate_dynamic_image(img, quarter_turns)?;
+    with_source_image(path, |img, descriptor| {
+        let img = rotate_dynamic_image(img, quarter_turns)?;
 
-    let (source_width_px, source_height_px) = img.dimensions();
-    let layout = compute_image_export_layout(source_width_px, source_height_px, image_fit);
-    let resize_to = resize_to_target_dpi(source_width_px, source_height_px, optimize, &layout);
+        let (source_width_px, source_height_px) = img.dimensions();
+        let layout = compute_image_export_layout(source_width_px, source_height_px, image_fit);
+        let resize_to = resize_to_target_dpi(source_width_px, source_height_px, optimize, &layout);
 
-    let decision = decide_image_embed(&descriptor, optimize);
-    let prepared = prepare_pdf_image(img, decision, resize_to)?;
-    let page_id = append_image_xobject_as_page(
-        doc,
-        layout,
-        0,
-        EmbeddedImageXObject {
-            width_px: prepared.width,
-            height_px: prepared.height,
-            color_space: b"DeviceRGB",
-            filter: prepared.filter,
-            data: prepared.data,
-        },
-    )?;
-
-    Ok(page_id)
+        let decision = decide_image_embed(&descriptor, optimize);
+        let prepared = prepare_pdf_image(img, decision, resize_to)?;
+        append_image_xobject_as_page(
+            doc,
+            layout,
+            0,
+            EmbeddedImageXObject {
+                width_px: prepared.width,
+                height_px: prepared.height,
+                color_space: b"DeviceRGB",
+                filter: prepared.filter,
+                data: prepared.data,
+            },
+        )
+    })
 }
 
 fn try_append_jpeg_as_page_without_decode(
@@ -185,6 +184,11 @@ fn try_append_jpeg_as_page_without_decode(
     optimize: Option<&OptimizeOptions>,
 ) -> Result<Option<ObjectId>> {
     if !can_embed_original_jpeg(path, optimize) {
+        return Ok(None);
+    }
+
+    // Apply the same dimension and encoded-file limits used by decoded source images.
+    if crate::pdf_image::source_image_dimensions(path).is_err() {
         return Ok(None);
     }
 

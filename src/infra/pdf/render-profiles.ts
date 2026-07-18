@@ -32,14 +32,6 @@ export function buildThumbnailRenderRequest(
     });
 }
 
-/** Convenience helper for batch thumbnail prefetching. */
-export function buildThumbnailRenderRequests(
-    pageNums: number[],
-    edits: FileEdits | undefined,
-): PdfRenderRequest[] {
-    return pageNums.map((pageNum) => buildThumbnailRenderRequest(pageNum, edits));
-}
-
 /** Render profile for the main page preview. */
 export function buildPreviewRenderRequest(
     pageNum: number,

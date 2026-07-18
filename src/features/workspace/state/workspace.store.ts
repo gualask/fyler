@@ -7,7 +7,7 @@ import { resolveSelectionAfterAdd, type SelectionAfterAddIntent } from './worksp
 
 export type FocusFlashTarget = 'picker' | 'final';
 
-export type SourceSessionState = {
+type SourceSessionState = {
     files: SourceFile[];
     editsByFile: Record<string, FileEdits>;
 };
@@ -18,7 +18,7 @@ export type CompositionState = {
     pageOrder: string[];
 };
 
-export type WorkspaceUiState = {
+type WorkspaceUiState = {
     selectedId: string | null;
     selectedFileScrollKey?: number;
     focusedSource: {
@@ -41,13 +41,13 @@ type RotationResult = {
     edits: FileEdits;
 };
 
-export type WorkspaceStoreState = {
+type WorkspaceStoreState = {
     source: SourceSessionState;
     composition: CompositionState;
     ui: WorkspaceUiState;
 };
 
-export type WorkspaceStoreActions = {
+type WorkspaceStoreActions = {
     addSourceFiles: (files: SourceFile[]) => SourceFile[];
     removeSourceFiles: (fileIds: readonly string[]) => RemovedSourceFilesResult;
     clearSourceFiles: () => SourceFile[];

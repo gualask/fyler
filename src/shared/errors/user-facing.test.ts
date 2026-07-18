@@ -18,3 +18,18 @@ test('formats PDF open errors as short toast messages', () => {
         "Couldn't open PDF.",
     );
 });
+
+test('maps backend contract errors that previously fell back to unknown', () => {
+    assert.equal(
+        formatUserFacingError({ code: 'invalid_export_item_kind' }, t),
+        'A source has an unexpected file type.',
+    );
+    assert.equal(
+        formatUserFacingError({ code: 'external_url_not_allowed' }, t),
+        'This external link is not allowed.',
+    );
+    assert.equal(
+        formatUserFacingError({ code: 'output_path_not_authorized' }, t),
+        'Choose the PDF destination again.',
+    );
+});

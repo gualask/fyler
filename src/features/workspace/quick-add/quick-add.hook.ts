@@ -22,8 +22,6 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const TRANSITION_MS = 400;
 const PAINT_MS = 30;
 
-export { prependRecentQuickAddIds, removeQuickAddId } from './quick-add.reducer';
-
 const quickAddWindowOps: QuickAddWindowOps = {
     getLogicalSize: windowGetLogicalSize,
     setSize: windowSetSize,

@@ -15,7 +15,6 @@ export function useProtectedPdfUnlock(record: RecordDiagnostic) {
                 category: 'files',
                 severity: 'info',
                 message: 'Password-protected PDF unlocked',
-                metadata: { name: file.name },
             });
             return source;
         },

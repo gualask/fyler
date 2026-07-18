@@ -1,5 +1,4 @@
 import type { AppStatusPayload, ImportWarningSkippedFile } from '@/shared/diagnostics';
-import type { PageSpecError } from '@/shared/domain';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from './i18n.resources';
 
 type Translator = (key: TranslationKey, values?: InterpolationValues) => string;
@@ -10,7 +9,20 @@ type PluralTranslator = (
 ) => string;
 
 export function formatSkippedFile(skipped: ImportWarningSkippedFile, t: Translator): string {
-    const key = `errors.skipped.${skipped.reason}` as TranslationKey;
+    let key: TranslationKey;
+    switch (skipped.reason) {
+        case 'unsupported_format':
+            key = 'errors.skipped.unsupported_format';
+            break;
+        case 'read_error':
+            key = 'errors.skipped.read_error';
+            break;
+        case 'path_error':
+            key = 'errors.skipped.path_error';
+            break;
+        default:
+            key = 'errors.unknown';
+    }
     return t(key, { name: skipped.name, detail: skipped.detail ?? '' });
 }
 
@@ -34,19 +46,4 @@ export function formatImportWarning(
     }
 
     return tp('status.importWarning.generic', payload.skippedCount);
-}
-
-export function formatPageSpecError(error: PageSpecError, t: Translator): string {
-    switch (error.kind) {
-        case 'empty-token':
-            return t('pageSpec.emptyToken');
-        case 'invalid-token':
-            return t('pageSpec.invalidToken', { token: error.token });
-        case 'non-positive-page':
-            return t('pageSpec.pageMustBeGreaterThanZero');
-        case 'reversed-range':
-            return t('pageSpec.reversedRange', { start: error.start, end: error.end });
-        case 'out-of-range':
-            return t('pageSpec.outOfRange', { page: error.page, total: error.total });
-    }
 }

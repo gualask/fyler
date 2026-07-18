@@ -7,6 +7,11 @@ import {
 import { useTranslation } from '@/shared/i18n';
 
 import { TooltipContent } from './InfoTooltip';
+import {
+    JPEG_QUALITY_DESCRIPTION_KEYS,
+    OPTIMIZATION_PRESET_TRANSLATION_KEYS,
+    TARGET_DPI_DESCRIPTION_KEYS,
+} from './output-panel.options';
 
 export function FitPreview({ mode }: { mode: ImageFit }) {
     return (
@@ -26,8 +31,8 @@ export function OptimizationTooltip() {
         <TooltipContent
             title={t('tooltips.optimizationTitle')}
             items={OPTIMIZATION_PRESETS.map(({ value }) => ({
-                title: t(`outputPanel.presets.${value}.label`),
-                description: t(`outputPanel.presets.${value}.description`),
+                title: t(OPTIMIZATION_PRESET_TRANSLATION_KEYS[value].label),
+                description: t(OPTIMIZATION_PRESET_TRANSLATION_KEYS[value].description),
             }))}
         />
     );
@@ -39,14 +44,10 @@ export function JpegTooltip() {
     return (
         <TooltipContent
             title={t('tooltips.jpegTitle')}
-            items={JPEG_QUALITY_OPTIONS.map(({ value }) => {
-                const key: 'off' | '95' | '90' | '85' =
-                    value === undefined ? 'off' : (String(value) as '95' | '90' | '85');
-                return {
-                    title: value === undefined ? t('outputPanel.auto') : String(value),
-                    description: t(`tooltips.jpegDescriptions.${key}`),
-                };
-            })}
+            items={JPEG_QUALITY_OPTIONS.map(({ id, value }) => ({
+                title: value === undefined ? t('outputPanel.auto') : String(value),
+                description: t(JPEG_QUALITY_DESCRIPTION_KEYS[id]),
+            }))}
         />
     );
 }
@@ -57,14 +58,10 @@ export function DpiTooltip() {
     return (
         <TooltipContent
             title={t('tooltips.dpiTitle')}
-            items={TARGET_DPI_OPTIONS.map(({ value }) => {
-                const key: 'off' | '220' | '170' | '120' =
-                    value === undefined ? 'off' : (String(value) as '220' | '170' | '120');
-                return {
-                    title: value === undefined ? t('outputPanel.off') : `${value} DPI`,
-                    description: t(`tooltips.dpiDescriptions.${key}`),
-                };
-            })}
+            items={TARGET_DPI_OPTIONS.map(({ id, value }) => ({
+                title: value === undefined ? t('outputPanel.off') : `${value} DPI`,
+                description: t(TARGET_DPI_DESCRIPTION_KEYS[id]),
+            }))}
         />
     );
 }

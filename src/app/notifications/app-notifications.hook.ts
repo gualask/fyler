@@ -7,7 +7,7 @@ import type {
 } from '@/shared/contracts/app-notifications.api';
 import type { AppStatusPayload, MergeProgressStep } from '@/shared/diagnostics';
 import { formatUserFacingError } from '@/shared/errors';
-import { formatImportWarning, useTranslation } from '@/shared/i18n';
+import { formatImportWarning, type TranslationKey, useTranslation } from '@/shared/i18n';
 
 import {
     type AppNotificationsAction,
@@ -22,6 +22,13 @@ import { useTauriNotificationEvents } from './tauri-notification-events.hook';
 type AppNotificationsDispatch = Dispatch<AppNotificationsAction>;
 type Translate = ReturnType<typeof useTranslation>['t'];
 type TranslatePlural = ReturnType<typeof useTranslation>['tp'];
+
+const MERGE_PROGRESS_TRANSLATION_KEYS = {
+    'preparing-documents': 'progress.steps.preparing-documents',
+    'merging-pages': 'progress.steps.merging-pages',
+    'optimizing-images': 'progress.steps.optimizing-images',
+    saving: 'progress.steps.saving',
+} as const satisfies Record<MergeProgressStep, TranslationKey>;
 
 function useStatusAutoClear(status: StatusState | null, dispatch: AppNotificationsDispatch) {
     useEffect(() => {
@@ -145,7 +152,7 @@ function loadingMessageFor(loading: LoadingState | null, t: Translate): string |
     if (!loading) return null;
     return loading.kind === 'opening-files'
         ? t('progress.openingFiles')
-        : t(`progress.steps.${loading.step}`);
+        : t(MERGE_PROGRESS_TRANSLATION_KEYS[loading.step]);
 }
 
 export function useAppNotifications(): AppNotificationsApi {

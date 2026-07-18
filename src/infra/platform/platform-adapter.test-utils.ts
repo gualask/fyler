@@ -22,6 +22,7 @@ export function createStubPlatformAdapter(
         unlockPdfSource: async () => {
             throw new Error('not implemented');
         },
+        discardPendingSources: async () => undefined,
         releaseSources: async () => undefined,
         getImageExportPreviewLayout: async () => {
             throw new Error('not implemented');

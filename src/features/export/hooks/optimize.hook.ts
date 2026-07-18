@@ -1,17 +1,12 @@
 import { useState } from 'react';
 
-import type {
-    BasicOptimizationPreset,
-    ImageFit,
-    ImageOptimizationPreset,
-    OptimizeOptions,
-} from '@/shared/domain';
+import type { ImageFit, ImageOptimizationPreset, OptimizeOptions } from '@/shared/domain';
 import {
     DEFAULT_OPTIMIZATION_PRESET,
     getOptimizationSettings,
 } from '@/shared/domain/value-objects/optimization-presets.vo';
 
-export type { BasicOptimizationPreset, ImageFit };
+export type { ImageFit };
 
 export function useOptimize() {
     const defaultSettings = getOptimizationSettings(DEFAULT_OPTIMIZATION_PRESET);

@@ -5,7 +5,6 @@ import { useWorkspaceSourcePageCountEvents } from './workspace-source-page-count
 
 export { applyResolvedPageCount, handleSourcePageCount } from './page-count-events';
 export { createWorkspaceFilesAddedEvent } from './workspace-files-added-event';
-export type { WorkspaceFilesAddedEvent } from './workspace-source-events.types';
 
 export function useWorkspaceSourceEvents({
     files,

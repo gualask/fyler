@@ -24,7 +24,7 @@ pub fn prepare_pdf_image(
     let mut rgb = if decision.flatten_alpha {
         flatten_to_white_rgb(img)
     } else {
-        img.to_rgb8()
+        img.into_rgb8()
     };
 
     if let Some((width, height)) = resize_to {
@@ -74,10 +74,10 @@ fn resize_rgb(rgb: RgbImage, width: u32, height: u32) -> Result<RgbImage> {
 
 fn flatten_to_white_rgb(img: DynamicImage) -> RgbImage {
     if !img.color().has_alpha() {
-        return img.to_rgb8();
+        return img.into_rgb8();
     }
 
-    let rgba: RgbaImage = img.to_rgba8();
+    let rgba: RgbaImage = img.into_rgba8();
     let (width, height) = rgba.dimensions();
     let mut rgb = RgbImage::new(width, height);
 

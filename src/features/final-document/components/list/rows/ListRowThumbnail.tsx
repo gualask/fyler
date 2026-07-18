@@ -32,10 +32,6 @@ function isImageItem(item: ListItem): boolean {
     return item.file?.kind === 'image';
 }
 
-function imageOriginalPath(item: ListItem): string | undefined {
-    return item.file?.kind === 'image' ? item.file.originalPath : undefined;
-}
-
 function imageFile(item: ListItem) {
     return item.file?.kind === 'image' ? item.file : undefined;
 }
@@ -181,13 +177,13 @@ export function ListRowThumbnail({
         thumbRequest,
         scrollRoot,
     );
-    const originalPath = imageOriginalPath(item);
-    const { src: imageUrl } = useImagePreview(imageFile(item));
+    const image = imageFile(item);
+    const { src: imageUrl } = useImagePreview(image);
     const quarterTurns = imageQuarterTurns(item);
     const rotation = imageRotationDegrees(item);
     const { exportMatchedImageSrc } = useExportMatchedImage(
         imageUrl ?? undefined,
-        originalPath,
+        image?.id,
         imageFit,
         quarterTurns,
         isImage,

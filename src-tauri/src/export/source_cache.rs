@@ -65,12 +65,7 @@ pub(super) fn load_cached_pdf_source<'a>(
             Some(password) => PdfDoc::load_with_password(&source.original_path, password),
             None => PdfDoc::load(&source.original_path),
         }
-        .map_err(|_| {
-            anyhow::Error::new(UserFacingError::with_meta(
-                "open_pdf_failed",
-                serde_json::json!({ "name": source.name }),
-            ))
-        })?;
+        .map_err(|_| anyhow::Error::new(UserFacingError::new("open_pdf_failed")))?;
         cache.insert(
             file_id.to_owned(),
             CachedPdfSource {

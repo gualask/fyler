@@ -114,22 +114,13 @@ fn effective_resources(doc: &PdfDoc, page_id: ObjectId) -> Result<Dictionary> {
     Ok(merged)
 }
 
-fn required_media_box(doc: &PdfDoc, page_id: ObjectId, source_name: &str) -> Result<Object> {
-    inherited_value(doc, page_id, b"MediaBox")?.ok_or_else(|| {
-        anyhow::Error::new(UserFacingError::with_meta(
-            "page_missing_mediabox",
-            serde_json::json!({ "name": source_name }),
-        ))
-    })
+fn required_media_box(doc: &PdfDoc, page_id: ObjectId) -> Result<Object> {
+    inherited_value(doc, page_id, b"MediaBox")?
+        .ok_or_else(|| anyhow::Error::new(UserFacingError::new("page_missing_mediabox")))
 }
 
-fn apply_inherited_page_boxes(
-    doc: &PdfDoc,
-    page_id: ObjectId,
-    source_name: &str,
-    out: &mut Dictionary,
-) -> Result<()> {
-    out.set("MediaBox", required_media_box(doc, page_id, source_name)?);
+fn apply_inherited_page_boxes(doc: &PdfDoc, page_id: ObjectId, out: &mut Dictionary) -> Result<()> {
+    out.set("MediaBox", required_media_box(doc, page_id)?);
 
     for key in ["CropBox", "BleedBox", "TrimBox", "ArtBox"] {
         if let Some(value) = inherited_value(doc, page_id, key.as_bytes())? {
@@ -182,7 +173,6 @@ fn apply_rotation(out: &mut Dictionary, rotation_degrees: i64) {
 pub fn effective_page_dictionary(
     doc: &PdfDoc,
     page_id: ObjectId,
-    source_name: &str,
     extra_quarter_turns: u8,
 ) -> Result<Dictionary> {
     let extra_degrees = crate::pdf::quarter_turns_to_degrees(extra_quarter_turns)? as i64;
@@ -191,7 +181,7 @@ pub fn effective_page_dictionary(
 
     out.remove(b"Parent");
 
-    apply_inherited_page_boxes(doc, page_id, source_name, &mut out)?;
+    apply_inherited_page_boxes(doc, page_id, &mut out)?;
     let resources = effective_resources(doc, page_id)?;
     out.set("Resources", Object::Dictionary(resources));
 
@@ -256,7 +246,7 @@ mod tests {
     fn effective_page_dictionary_merges_inherited_resources_and_boxes() -> Result<()> {
         let (doc, page_id) = source_with_page_tree(90);
 
-        let page = effective_page_dictionary(&doc, page_id, "fixture.pdf", 1)?;
+        let page = effective_page_dictionary(&doc, page_id, 1)?;
 
         assert!(page.get(b"Parent").is_err());
         assert_eq!(page.get(b"Rotate")?.as_i64()?, 180);
@@ -280,7 +270,7 @@ mod tests {
     fn effective_page_dictionary_removes_zero_rotation() -> Result<()> {
         let (doc, page_id) = source_with_page_tree(270);
 
-        let page = effective_page_dictionary(&doc, page_id, "fixture.pdf", 1)?;
+        let page = effective_page_dictionary(&doc, page_id, 1)?;
 
         assert!(page.get(b"Rotate").is_err());
         Ok(())

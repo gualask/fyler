@@ -1,5 +1,5 @@
-export type DiagnosticSeverity = 'info' | 'warn' | 'error';
-export type DiagnosticCategory = 'app' | 'files' | 'export' | 'quick-add' | 'support' | 'update';
+type DiagnosticSeverity = 'info' | 'warn' | 'error';
+type DiagnosticCategory = 'app' | 'files' | 'export' | 'quick-add' | 'support' | 'update';
 
 export type DiagnosticMetadataValue = string | number | boolean | null;
 

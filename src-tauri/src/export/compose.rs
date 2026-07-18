@@ -59,17 +59,6 @@ fn validate_source_kind(
     ))
 }
 
-fn validate_pdf_page_num(file_id: &str, page_num: u32) -> anyhow::Result<()> {
-    if page_num >= 1 {
-        return Ok(());
-    }
-
-    Err(anyhow::Error::new(UserFacingError::with_meta(
-        "invalid_page_num",
-        serde_json::json!({ "fileId": file_id, "pageNum": page_num }),
-    )))
-}
-
 fn append_image_export_item(
     composer: &mut PdfComposer,
     source: &RegisteredSource,
@@ -97,13 +86,11 @@ fn append_pdf_export_item(
     edits: Option<&FileEdits>,
 ) -> anyhow::Result<()> {
     validate_source_kind(source, file_id, DocKind::Pdf)?;
-    validate_pdf_page_num(file_id, page_num)?;
 
     let entry = load_cached_pdf_source(pdf_cache, file_id, source)?;
     composer.push_pdf_page(
         &entry.doc,
         &mut entry.memo,
-        &source.name,
         page_num,
         quarter_turns_for_pdf_page(edits, page_num)?,
     )?;

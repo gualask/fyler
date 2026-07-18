@@ -83,7 +83,7 @@ test('skips the current protected file and resolves imported files in order', ()
 test('unlocks remaining protected files with a reused password and keeps failures queued', async () => {
     const pending = pendingPasswordImport({ queue: [protectedFile('locked-a')] });
     const remaining = [protectedFile('locked-b'), protectedFile('locked-c')];
-    const diagnostics: string[] = [];
+    const diagnostics: Array<{ severity: string; metadata: unknown }> = [];
 
     const stillLocked = await unlockRemainingWithPassword(
         pending,
@@ -97,7 +97,7 @@ test('unlocks remaining protected files with a reused password and keeps failure
             return sourceFile(file.name.replace('.pdf', ''));
         },
         (entry) => {
-            diagnostics.push(`${entry.severity}:${entry.metadata?.name}`);
+            diagnostics.push({ severity: entry.severity, metadata: entry.metadata });
         },
     );
 
@@ -109,7 +109,7 @@ test('unlocks remaining protected files with a reused password and keeps failure
         stillLocked.map((file) => file.name),
         ['locked-c.pdf'],
     );
-    assert.deepEqual(diagnostics, ['warn:locked-c.pdf']);
+    assert.deepEqual(diagnostics, [{ severity: 'warn', metadata: undefined }]);
 });
 
 test('classifies invalid password payloads separately from generic unlock failures', () => {

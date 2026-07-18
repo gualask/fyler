@@ -48,6 +48,7 @@ pub fn run() {
 
     builder
         .manage(source_registry::SourceRegistry::default())
+        .manage(commands::OutputPathAuthorizations::default())
         .setup(|app| {
             let handle = app.handle().clone();
             std::panic::set_hook(Box::new(move |info| {
@@ -59,6 +60,7 @@ pub fn run() {
             commands::open_files_dialog,
             commands::open_files_from_paths,
             commands::unlock_pdf_source,
+            commands::discard_pending_sources,
             commands::release_sources,
             commands::get_image_preview,
             commands::save_pdf_dialog,

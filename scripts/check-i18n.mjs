@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 
-import { createRequire } from 'node:module';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-
-const require = createRequire(import.meta.url);
-const ts = require('typescript');
+import { parseSync } from 'vite';
 
 const ROOT_DIR = process.cwd();
 const MESSAGES_DIR = path.join(ROOT_DIR, 'src/shared/i18n/messages');
@@ -93,50 +90,27 @@ async function collectSourceFiles(dir) {
     return files;
 }
 
-function getTemplateParts(node) {
-    const parts = [node.head.text];
-    for (const span of node.templateSpans) {
-        parts.push(span.literal.text);
-    }
-    return parts;
-}
-
-function escapeRegExp(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function buildTemplatePattern(parts) {
-    if (!parts.some((part) => part.length >= 3)) return null;
-    return new RegExp(`^${parts.map(escapeRegExp).join('.+')}$`);
-}
-
 function unwrapExpression(node) {
     let current = node;
-    while (ts.isAsExpression(current) || ts.isTypeAssertionExpression(current)) {
+    while (
+        current?.type === 'TSAsExpression' ||
+        current?.type === 'TSTypeAssertion' ||
+        current?.type === 'ParenthesizedExpression' ||
+        current?.type === 'ChainExpression'
+    ) {
         current = current.expression;
     }
     return current;
 }
 
-function getIdentifierName(node) {
-    if (ts.isIdentifier(node)) return node.text;
-    if (ts.isPropertyAccessExpression(node)) return node.name.text;
-    return null;
-}
-
 function getTranslationArgumentIndex(callExpression) {
-    const callee = getIdentifierName(callExpression.expression);
-    if (callee === 't' || callee === 'tp') return 0;
-    if (callee === 'translate' || callee === 'translatePlural') return 1;
-    return null;
-}
+    const callee = callExpression.callee;
+    if (callee?.type !== 'Identifier') return null;
 
-function isTranslationKeyAssertion(node, sourceFile) {
-    return (
-        ts.isAsExpression(node.parent) &&
-        node.parent.expression === node &&
-        node.parent.type.getText(sourceFile).includes('TranslationKey')
-    );
+    const { name } = callee;
+    if (name === 't' || name === 'tp') return 0;
+    if (name === 'translate' || name === 'translatePlural') return 1;
+    return null;
 }
 
 function markUsedKey(value, context) {
@@ -151,52 +125,133 @@ function markUsedKey(value, context) {
     }
 }
 
-function markPattern(pattern, context) {
-    for (const key of context.keys) {
-        if (pattern.test(key)) context.used.add(key);
-    }
-
-    for (const [baseKey, pluralKeys] of context.pluralKeysByBase.entries()) {
-        if (!pattern.test(baseKey)) continue;
-        for (const key of pluralKeys) context.used.add(key);
-    }
-}
-
-function markNodeAsTranslationReference(node, context) {
+function getStaticString(node) {
     const expression = unwrapExpression(node);
-
-    if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) {
-        markUsedKey(expression.text, context);
-        return;
+    if (expression?.type === 'Literal' && typeof expression.value === 'string') {
+        return expression.value;
     }
-
-    if (ts.isTemplateExpression(expression)) {
-        const pattern = buildTemplatePattern(getTemplateParts(expression));
-        if (pattern) markPattern(pattern, context);
-    }
+    if (expression?.type !== 'TemplateLiteral' || expression.expressions.length > 0) return null;
+    return expression.quasis[0]?.value.cooked ?? expression.quasis[0]?.value.raw ?? '';
 }
 
-function scanSourceFile(sourceFile, context) {
-    function visit(node) {
-        if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
-            markUsedKey(node.text, context);
-        }
+function isTypeOnlyLiteral(ancestors) {
+    return ancestors.at(-1)?.type === 'TSLiteralType';
+}
 
-        if (ts.isTemplateExpression(node) && isTranslationKeyAssertion(node, sourceFile)) {
-            markNodeAsTranslationReference(node, context);
-        }
+function getContainingTranslationCall(node, ancestors) {
+    for (let index = ancestors.length - 1; index >= 0; index -= 1) {
+        const ancestor = ancestors[index];
+        if (ancestor.type !== 'CallExpression') continue;
 
-        if (ts.isCallExpression(node)) {
-            const keyArgumentIndex = getTranslationArgumentIndex(node);
-            if (keyArgumentIndex !== null && node.arguments[keyArgumentIndex]) {
-                markNodeAsTranslationReference(node.arguments[keyArgumentIndex], context);
-            }
-        }
+        const argumentIndex = getTranslationArgumentIndex(ancestor);
+        if (argumentIndex === null) continue;
 
-        ts.forEachChild(node, visit);
+        const argument = ancestor.arguments[argumentIndex];
+        if (!argument || argument.start > node.start || argument.end < node.end) continue;
+
+        return ancestor;
+    }
+    return null;
+}
+
+function hasTranslationKeyAssertion(node, ancestors, sourceText) {
+    for (let index = ancestors.length - 1; index >= 0; index -= 1) {
+        const ancestor = ancestors[index];
+        if (ancestor.type !== 'TSAsExpression' && ancestor.type !== 'TSTypeAssertion') continue;
+        if (ancestor.start > node.start || ancestor.end < node.end) continue;
+
+        const typeText = sourceText.slice(
+            ancestor.typeAnnotation.start,
+            ancestor.typeAnnotation.end,
+        );
+        if (/\bTranslationKey\b/.test(typeText)) return true;
+    }
+    return false;
+}
+
+function isAllowedPluralComposition(filePath, callExpression, hasAssertion) {
+    return (
+        toRelative(filePath) === 'src/shared/i18n/i18n.translate.ts' &&
+        callExpression?.callee?.type === 'Identifier' &&
+        callExpression.callee.name === 'translate' &&
+        hasAssertion
+    );
+}
+
+function sourceLanguage(filePath) {
+    const extension = path.extname(filePath);
+    if (extension === '.tsx') return 'tsx';
+    if (extension === '.jsx') return 'jsx';
+    if (extension === '.ts' || extension === '.mts' || extension === '.cts') return 'ts';
+    return 'js';
+}
+
+function parseSourceFile(filePath, sourceText) {
+    const result = parseSync(filePath, sourceText, {
+        astType: 'ts',
+        lang: sourceLanguage(filePath),
+        sourceType: 'unambiguous',
+    });
+
+    if (result.errors.length > 0) {
+        const details = result.errors.map((error) => error.message).join('\n');
+        throw new Error(`Impossibile analizzare ${toRelative(filePath)}:\n${details}`);
     }
 
-    visit(sourceFile);
+    return result.program;
+}
+
+function walkAst(node, ancestors, visit) {
+    if (!node || typeof node !== 'object' || typeof node.type !== 'string') return;
+
+    visit(node, ancestors);
+    ancestors.push(node);
+
+    for (const [key, child] of Object.entries(node)) {
+        if (key === 'loc' || key === 'range' || key === 'comments' || key === 'tokens') continue;
+
+        if (Array.isArray(child)) {
+            for (const item of child) walkAst(item, ancestors, visit);
+            continue;
+        }
+
+        walkAst(child, ancestors, visit);
+    }
+
+    ancestors.pop();
+}
+
+function lineNumberAt(sourceText, offset) {
+    let line = 1;
+    for (let index = 0; index < offset; index += 1) {
+        if (sourceText.charCodeAt(index) === 10) line += 1;
+    }
+    return line;
+}
+
+function scanSourceFile(filePath, sourceText, program, context) {
+    walkAst(program, [], (node, ancestors) => {
+        if (node.type === 'Literal' && typeof node.value === 'string' && !isTypeOnlyLiteral(ancestors)) {
+            markUsedKey(node.value, context);
+        }
+
+        if (node.type !== 'TemplateLiteral') return;
+
+        const staticValue = getStaticString(node);
+        if (staticValue !== null) {
+            markUsedKey(staticValue, context);
+            return;
+        }
+
+        const callExpression = getContainingTranslationCall(node, ancestors);
+        const hasAssertion = hasTranslationKeyAssertion(node, ancestors, sourceText);
+        if (!callExpression && !hasAssertion) return;
+        if (isAllowedPluralComposition(filePath, callExpression, hasAssertion)) return;
+
+        const line = lineNumberAt(sourceText, node.start);
+        const expression = sourceText.slice(node.start, node.end).replaceAll('\n', ' ');
+        context.dynamicReferences.push(`${toRelative(filePath)}:${line} ${expression}`);
+    });
 }
 
 async function findUnusedKeys(baseMessages) {
@@ -213,23 +268,19 @@ async function findUnusedKeys(baseMessages) {
         pluralKeysByBase.set(baseKey, current);
     }
 
-    const context = { keys, pluralKeysByBase, used: new Set() };
+    const context = { dynamicReferences: [], keys, pluralKeysByBase, used: new Set() };
     const sourceFiles = await collectSourceFiles(SOURCE_DIR);
 
     for (const filePath of sourceFiles) {
         const sourceText = await fs.readFile(filePath, 'utf8');
-        const sourceFile = ts.createSourceFile(
-            filePath,
-            sourceText,
-            ts.ScriptTarget.Latest,
-            true,
-            filePath.endsWith('.tsx') || filePath.endsWith('.jsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-        );
-
-        scanSourceFile(sourceFile, context);
+        const program = parseSourceFile(filePath, sourceText);
+        scanSourceFile(filePath, sourceText, program, context);
     }
 
-    return [...keys].filter((key) => !context.used.has(key)).sort();
+    return {
+        dynamicReferences: context.dynamicReferences.sort(),
+        unusedKeys: [...keys].filter((key) => !context.used.has(key)).sort(),
+    };
 }
 
 function printList(title, values) {
@@ -286,12 +337,16 @@ async function main() {
         );
     }
 
-    const unusedKeys = await findUnusedKeys(baseMessages);
+    const { dynamicReferences, unusedKeys } = await findUnusedKeys(baseMessages);
     const missingOrExtraCount = keySetProblems.reduce(
         (count, problem) => count + problem.missing.length + problem.extra.length,
         0,
     );
-    const problemCount = missingOrExtraCount + placeholderProblems.length + unusedKeys.length;
+    const problemCount =
+        missingOrExtraCount +
+        placeholderProblems.length +
+        unusedKeys.length +
+        dynamicReferences.length;
 
     if (problemCount > 0) {
         for (const problem of keySetProblems) {
@@ -301,6 +356,7 @@ async function main() {
 
         printPlaceholderMismatches(placeholderProblems);
         printList(`Chiavi non usate nel codice (${BASE_LOCALE})`, unusedKeys);
+        printList('Riferimenti i18n dinamici non supportati', dynamicReferences);
         process.exitCode = 1;
         return;
     }

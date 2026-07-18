@@ -10,6 +10,9 @@ const APP_ERROR_CODE_TO_I18N_KEY: Record<string, TranslationKey> = {
     no_documents_to_merge: 'errors.no_documents_to_merge',
     invalid_rotation: 'errors.invalid_rotation',
     page_missing_mediabox: 'errors.page_missing_mediabox',
+    invalid_export_item_kind: 'errors.invalid_export_item_kind',
+    external_url_not_allowed: 'errors.external_url_not_allowed',
+    output_path_not_authorized: 'errors.output_path_not_authorized',
 };
 
 export function formatUserFacingError(

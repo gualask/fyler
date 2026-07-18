@@ -13,7 +13,7 @@ type SetExportMatchedImage = Dispatch<SetStateAction<ExportMatchedImageState>>;
 interface ExportMatchedImageRequest {
     key: string;
     imageSrc: string;
-    imageOriginalPath: string;
+    imageFileId: string;
     imageFit: ImageFit;
     imageQuarterTurns: QuarterTurn;
     previewWidth: number;
@@ -27,25 +27,25 @@ function maybeRevokeObjectUrl(url: string | null | undefined) {
 
 function createExportMatchedImageRequest({
     imageSrc,
-    imageOriginalPath,
+    imageFileId,
     imageFit,
     imageQuarterTurns,
     matchExportedImages,
     previewWidth,
 }: {
     imageSrc: string | undefined;
-    imageOriginalPath: string | undefined;
+    imageFileId: string | undefined;
     imageFit: ImageFit;
     imageQuarterTurns: QuarterTurn;
     matchExportedImages: boolean;
     previewWidth: number;
 }): ExportMatchedImageRequest | null {
-    if (!matchExportedImages || !imageSrc || !imageOriginalPath) return null;
+    if (!matchExportedImages || !imageSrc || !imageFileId) return null;
 
     return {
-        key: `${imageOriginalPath}:${imageFit}:${imageQuarterTurns}:${previewWidth}`,
+        key: `${imageFileId}:${imageFit}:${imageQuarterTurns}:${previewWidth}`,
         imageSrc,
-        imageOriginalPath,
+        imageFileId,
         imageFit,
         imageQuarterTurns,
         previewWidth,
@@ -54,7 +54,7 @@ function createExportMatchedImageRequest({
 
 async function renderExportMatchedImageRequest(request: ExportMatchedImageRequest) {
     const layout = await getImageExportPreviewLayout(
-        request.imageOriginalPath,
+        request.imageFileId,
         request.imageFit,
         request.imageQuarterTurns,
     );
@@ -141,7 +141,7 @@ function useExportMatchedImageState(request: ExportMatchedImageRequest | null) {
 
 export function useExportMatchedImage(
     imageSrc: string | undefined,
-    imageOriginalPath: string | undefined,
+    imageFileId: string | undefined,
     imageFit: ImageFit,
     imageQuarterTurns: QuarterTurn,
     matchExportedImages: boolean,
@@ -151,20 +151,13 @@ export function useExportMatchedImage(
         () =>
             createExportMatchedImageRequest({
                 imageSrc,
-                imageOriginalPath,
+                imageFileId,
                 imageFit,
                 imageQuarterTurns,
                 matchExportedImages,
                 previewWidth,
             }),
-        [
-            imageFit,
-            imageOriginalPath,
-            imageQuarterTurns,
-            imageSrc,
-            matchExportedImages,
-            previewWidth,
-        ],
+        [imageFit, imageFileId, imageQuarterTurns, imageSrc, matchExportedImages, previewWidth],
     );
     const exportMatchedImage = useExportMatchedImageState(request);
     const exportPreviewKey = request?.key ?? null;

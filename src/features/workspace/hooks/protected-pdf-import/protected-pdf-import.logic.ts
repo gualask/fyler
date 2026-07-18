@@ -74,16 +74,11 @@ export function skipCurrentPasswordFile(pending: PendingPasswordImport) {
     pending.queue = pending.queue.slice(1);
 }
 
-function recordSavedPasswordFailure(
-    record: RecordDiagnostic,
-    file: PasswordProtectedFile,
-    error: unknown,
-) {
+function recordSavedPasswordFailure(record: RecordDiagnostic, error: unknown) {
     record({
         category: 'files',
         severity: passwordDialogError(error) === 'invalid-password' ? 'warn' : 'error',
         message: 'Saved PDF password did not unlock protected PDF',
-        metadata: { name: file.name },
     });
 }
 
@@ -101,7 +96,7 @@ export async function unlockRemainingWithPassword(
             appendUnlockedFile(pending, await unlockOne(file, password));
         } catch (error) {
             stillLocked.push(file);
-            recordSavedPasswordFailure(record, file, error);
+            recordSavedPasswordFailure(record, error);
         }
     }
 

@@ -1,1 +1,1 @@
-export { type ImagePreviewStatus, useImagePreview } from './image-preview.hook';
+export { useImagePreview } from './image-preview.hook';

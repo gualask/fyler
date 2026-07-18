@@ -45,19 +45,6 @@ These classes define the common shell for overlays and modal surfaces:
 
 Use them for confirmation dialogs, support/update overlays, tutorial cards, and progress overlays. Keep feature-specific layout, sizing, and semantics in the consuming component.
 
-### Panel primitives
-
-These classes define repeated bordered surfaces used for grouped information:
-
-- `panel-surface`
-- `panel-surface-subtle`
-- `panel-surface-raised`
-- `panel-title`
-
-For React consumers, prefer `PanelSurface` from `src/shared/ui/layout/PanelSurface.tsx` when a repeated bordered section needs a shared shell with either a simple title or a custom header.
-
-Use `tone="subtle"` for inset informational sections and `tone="raised"` for more prominent surfaces.
-
 ### Action primitives
 
 Buttons continue to live in `src/main.css` as semantic class primitives:

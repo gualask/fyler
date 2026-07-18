@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use lopdf::{Document as PdfDoc, Object, ObjectId};
 
+use crate::error::UserFacingError;
 use crate::models::OptimizeOptions;
 
 use super::object_copier::ObjectCopier;
@@ -38,7 +39,7 @@ impl PdfComposer {
             quarter_turns,
             optimize,
         )
-        .with_context(|| format!("append image page: {}", path))?;
+        .context("append image page")?;
         self.page_ids.push(page_id);
         Ok(())
     }
@@ -50,20 +51,19 @@ impl PdfComposer {
         &mut self,
         source: &PdfDoc,
         memo: &mut std::collections::HashMap<ObjectId, ObjectId>,
-        source_name: &str,
         page_num: u32,
         quarter_turns: u8,
     ) -> Result<()> {
-        let source_page_id = *source
-            .get_pages()
-            .get(&page_num)
-            .with_context(|| format!("missing page {page_num} in {source_name}"))?;
+        let pages = source.get_pages();
+        let Some(source_page_id) = pages.get(&page_num).copied() else {
+            return Err(anyhow::Error::new(UserFacingError::with_meta(
+                "page_out_of_range",
+                serde_json::json!({ "pageNum": page_num, "total": pages.len() }),
+            )));
+        };
 
-        let effective =
-            effective_page_dictionary(source, source_page_id, source_name, quarter_turns)
-                .with_context(|| {
-                    format!("build effective page dict for {source_name}:{page_num}")
-                })?;
+        let effective = effective_page_dictionary(source, source_page_id, quarter_turns)
+            .context("build effective page dictionary")?;
 
         let mut copier = ObjectCopier::new(&mut self.doc, source, memo);
         let rewritten = copier.rewrite_dictionary(&effective)?;

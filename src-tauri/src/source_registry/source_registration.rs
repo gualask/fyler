@@ -62,7 +62,6 @@ pub(super) fn registered_source_entry(
     };
     let registered = RegisteredSource {
         original_path: path,
-        name,
         kind,
         password,
     };
@@ -70,17 +69,11 @@ pub(super) fn registered_source_entry(
     RegisteredSourceEntry { source, registered }
 }
 
-fn unlock_error(error: anyhow::Error, name: &str) -> anyhow::Error {
+fn unlock_error(error: anyhow::Error) -> anyhow::Error {
     if is_password_required_error(&error) {
-        anyhow::Error::new(UserFacingError::with_meta(
-            "invalid_pdf_password",
-            serde_json::json!({ "name": name }),
-        ))
+        anyhow::Error::new(UserFacingError::new("invalid_pdf_password"))
     } else {
-        anyhow::Error::new(UserFacingError::with_meta(
-            "open_pdf_failed",
-            serde_json::json!({ "name": name }),
-        ))
+        anyhow::Error::new(UserFacingError::new("open_pdf_failed"))
     }
 }
 
@@ -90,8 +83,7 @@ pub(crate) fn unlocked_pdf_source(
 ) -> anyhow::Result<RegisteredSourceEntry> {
     let name = source_file_name(&path);
     let byte_size = source_byte_size(&path);
-    let page_count = count_pages_with_password(&path, Some(&password))
-        .map_err(|error| unlock_error(error, &name))?;
+    let page_count = count_pages_with_password(&path, Some(&password)).map_err(unlock_error)?;
 
     Ok(registered_source_entry(
         path,

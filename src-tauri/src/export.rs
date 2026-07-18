@@ -40,7 +40,7 @@ fn save_document(app: &AppHandle, merged: &mut PdfDoc, output_path: &str) -> any
     optimize::cleanup_document(merged);
     let mut file = std::fs::File::create(output_path)?;
     optimize::save_document(merged, &mut file)?;
-    emit_progress(app, "done", 100);
+    emit_progress(app, "saving", 100);
     Ok(())
 }
 
