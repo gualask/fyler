@@ -5,7 +5,7 @@ import type {
     ImageFit,
     MergeRequest,
     OptimizeOptions,
-} from '../dto/core.dto';
+} from '@/shared/domain/dto/core.dto';
 
 /** Builds the backend export request from the current composition state. */
 export function buildMergeRequest(

@@ -1,4 +1,4 @@
-import type { AppStatusPayload, MergeProgressStep } from '@/shared/diagnostics';
+import type { AppStatusPayload, MergeProgressStep } from './app-events.types';
 
 export type StatusState =
     | { kind: 'error'; message: string }

@@ -1,9 +1,8 @@
 import { useEffect, useMemo } from 'react';
-import { useImagePreview } from '@/infra/image-preview';
+import { useExportMatchedImage, useImagePreview } from '@/infra/image-preview';
 import {
     buildPreviewRenderRequest,
     type PdfRenderRequest,
-    useExportMatchedImage,
     usePdfCache,
     usePdfRenderSrc,
 } from '@/infra/pdf';

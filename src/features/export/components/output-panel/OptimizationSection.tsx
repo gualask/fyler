@@ -1,5 +1,5 @@
-import type { ImageOptimizationPreset } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
+import type { ImageOptimizationPreset } from '../../optimization.types';
 import { OptimizationAdvancedPanel } from './OptimizationAdvancedPanel';
 import { buildPresetSelectOptions } from './output-panel.options';
 import { SelectControl, type SelectOption } from './SelectControl';

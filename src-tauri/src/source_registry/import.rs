@@ -5,11 +5,12 @@ use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 
 use crate::models::{PasswordProtectedFile, SkippedFile, SkippedFileReason, SourceFile};
-use crate::pdf::{count_pages, detect_kind_from_ext, is_password_required_error};
+use crate::pdf::{count_pages, is_password_required_error};
 use crate::vo::DocKind;
 
 use super::preview::{make_image_preview, ImagePreviewBytes};
 use super::registry::SourceRegistry;
+use super::source_format::detect_kind_from_ext;
 use super::source_registration::{
     registered_source_entry, source_byte_size, source_file_name, RegisteredSourceEntry,
 };

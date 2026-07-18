@@ -4,8 +4,8 @@ import { mergePDFs, savePDFDialog } from '@/infra/platform';
 import type { AppNotificationsApi } from '@/shared/contracts/app-notifications.api';
 import { toDiagnosticMessage, useDiagnostics } from '@/shared/diagnostics';
 import type { FileEdits, FinalPage } from '@/shared/domain';
-import { buildMergeRequest } from '@/shared/domain/mappers/merge-request.mapper';
 import { useTranslation } from '@/shared/i18n';
+import { buildMergeRequest } from './merge-request.mapper';
 import type { useOptimize } from './optimize.hook';
 
 interface ExportActionDeps {

@@ -1,10 +1,10 @@
 import type { ImageFit } from '@/shared/domain';
+import { useTranslation } from '@/shared/i18n';
 import {
     JPEG_QUALITY_OPTIONS,
     OPTIMIZATION_PRESETS,
     TARGET_DPI_OPTIONS,
-} from '@/shared/domain/value-objects/optimization-presets.vo';
-import { useTranslation } from '@/shared/i18n';
+} from '../../optimization-presets';
 
 import { TooltipContent } from './InfoTooltip';
 import {

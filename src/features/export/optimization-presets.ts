@@ -1,4 +1,4 @@
-import type { BasicOptimizationPreset, OptimizationSettings } from '../dto/optimization.dto';
+import type { BasicOptimizationPreset, OptimizationSettings } from './optimization.types';
 
 /** Default preset used for new sessions. */
 export const DEFAULT_OPTIMIZATION_PRESET: BasicOptimizationPreset = 'light';

@@ -1,8 +1,8 @@
 import { IconFileTypePdf, IconPhoto } from '@tabler/icons-react';
 import type { CSSProperties } from 'react';
 import { useMemo } from 'react';
-import { useImagePreview } from '@/infra/image-preview';
-import { buildThumbnailRenderRequest, useExportMatchedImage, useLazyPdfRender } from '@/infra/pdf';
+import { useExportMatchedImage, useImagePreview } from '@/infra/image-preview';
+import { buildThumbnailRenderRequest, useLazyPdfRender } from '@/infra/pdf';
 import type { ImageFit, QuarterTurn } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import { useTranslation } from '@/shared/i18n';

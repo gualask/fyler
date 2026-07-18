@@ -15,4 +15,3 @@ export type {
     SourceFile,
     SourceTarget,
 } from './core.dto';
-export type { BasicOptimizationPreset, ImageOptimizationPreset } from './optimization.dto';

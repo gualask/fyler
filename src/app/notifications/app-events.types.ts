@@ -6,13 +6,9 @@ export type MergeProgressStep =
     | 'optimizing-images'
     | 'saving';
 
-export type ImportWarningSkippedFile = SkippedFile;
-
-type ImportWarningStatus = {
+export type AppStatusPayload = {
     kind: 'import-warning';
     skippedCount: number;
-    preview: ImportWarningSkippedFile[];
+    preview: SkippedFile[];
     hasMore: boolean;
 };
-
-export type AppStatusPayload = ImportWarningStatus;

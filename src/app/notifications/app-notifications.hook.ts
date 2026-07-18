@@ -12,10 +12,9 @@ import type {
     AppStatusTone,
     AppToastTone,
 } from '@/shared/contracts/app-notifications.api';
-import type { AppStatusPayload, MergeProgressStep } from '@/shared/diagnostics';
-import { formatUserFacingError } from '@/shared/errors';
-import { formatImportWarning, type TranslationKey, useTranslation } from '@/shared/i18n';
+import { type TranslationKey, useTranslation } from '@/shared/i18n';
 
+import type { AppStatusPayload, MergeProgressStep } from './app-events.types';
 import {
     type AppNotificationsAction,
     appNotificationsReducer,
@@ -24,6 +23,7 @@ import {
     type StatusState,
 } from './app-notifications.reducer';
 import { useGlobalErrorHandlers } from './global-error-handlers.hook';
+import { formatImportWarning, formatUserFacingError } from './notification-messages';
 import { useTauriNotificationEvents } from './tauri-notification-events.hook';
 
 type AppNotificationsDispatch = Dispatch<AppNotificationsAction>;
@@ -176,7 +176,7 @@ function statusMessageFor(
         case 'export-completed-with-optimization-warning':
             return tp('status.optimizationWarning', status.count);
         case 'import-warning':
-            return formatImportWarning(status.payload, t, tp);
+            return formatImportWarning(status.payload, tp);
     }
 }
 

@@ -1,10 +1,8 @@
 export type {
-    BasicOptimizationPreset,
     FileEdits,
     FinalPage,
     ImageExportPreviewLayout,
     ImageFit,
-    ImageOptimizationPreset,
     MergeRequest,
     MergeResult,
     OpenFilesResult,

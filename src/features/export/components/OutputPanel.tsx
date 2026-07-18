@@ -1,8 +1,9 @@
 import { IconArrowsMinimize, IconChevronDown, IconPhoto } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
-import type { ImageFit, ImageOptimizationPreset } from '@/shared/domain';
+import type { ImageFit } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
+import type { ImageOptimizationPreset } from '../optimization.types';
 import { OptimizationSection } from './output-panel/OptimizationSection';
 import {
     IMAGE_FIT_TRANSLATION_KEYS,

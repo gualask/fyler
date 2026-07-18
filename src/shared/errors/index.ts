@@ -1,5 +1,5 @@
 export {
     getErrorMessage,
     parseAppErrorPayload,
+    toInterpolationValues,
 } from './app-error';
-export { formatUserFacingError } from './user-facing';

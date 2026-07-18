@@ -1,10 +1,11 @@
-import type { BasicOptimizationPreset, ImageFit, ImageOptimizationPreset } from '@/shared/domain';
+import type { ImageFit } from '@/shared/domain';
+import type { TranslationKey } from '@/shared/i18n';
+import type { BasicOptimizationPreset, ImageOptimizationPreset } from '../../optimization.types';
 import {
     type JPEG_QUALITY_OPTIONS,
     OPTIMIZATION_PRESETS,
     type TARGET_DPI_OPTIONS,
-} from '@/shared/domain/value-objects/optimization-presets.vo';
-import type { TranslationKey } from '@/shared/i18n';
+} from '../../optimization-presets';
 import type { SelectOption } from './SelectControl';
 
 type PresetTranslationKeys = {

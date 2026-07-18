@@ -48,7 +48,7 @@ pub fn run() {
 
     builder
         .manage(source_registry::SourceRegistry::default())
-        .manage(commands::OutputPathAuthorizations::default())
+        .manage(commands::export::OutputPathAuthorizations::default())
         .setup(|app| {
             let handle = app.handle().clone();
             std::panic::set_hook(Box::new(move |info| {
@@ -57,18 +57,18 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::open_files_dialog,
-            commands::open_files_from_paths,
-            commands::unlock_pdf_source,
-            commands::discard_pending_sources,
-            commands::release_sources,
-            commands::get_image_preview,
-            commands::save_pdf_dialog,
-            commands::save_text_file,
-            commands::merge_pdfs,
-            commands::get_app_metadata,
-            commands::open_external_url,
-            commands::get_image_export_preview_layout,
+            commands::sources::open_files_dialog,
+            commands::sources::open_files_from_paths,
+            commands::sources::unlock_pdf_source,
+            commands::sources::discard_pending_sources,
+            commands::sources::release_sources,
+            commands::sources::get_image_preview,
+            commands::export::save_pdf_dialog,
+            commands::support::save_text_file,
+            commands::export::merge_pdfs,
+            commands::support::get_app_metadata,
+            commands::support::open_external_url,
+            commands::export::get_image_export_preview_layout,
             settings::load_settings,
             settings::save_settings,
         ])

@@ -1,8 +1,5 @@
-import {
-    JPEG_QUALITY_OPTIONS,
-    TARGET_DPI_OPTIONS,
-} from '@/shared/domain/value-objects/optimization-presets.vo';
 import { useTranslation } from '@/shared/i18n';
+import { JPEG_QUALITY_OPTIONS, TARGET_DPI_OPTIONS } from '../../optimization-presets';
 import { SelectControl, type SelectOption } from './SelectControl';
 import { DpiTooltip, JpegTooltip } from './Tooltips';
 

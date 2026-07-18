@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 
 import { onTauriEvent } from '@/infra/platform/events';
-import type { AppStatusPayload, MergeProgressStep } from '@/shared/diagnostics';
 import { useDiagnostics } from '@/shared/diagnostics';
+
+import type { AppStatusPayload, MergeProgressStep } from './app-events.types';
 
 interface TauriNotificationCallbacks {
     onError: (message: string) => void;
