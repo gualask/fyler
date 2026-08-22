@@ -1,12 +1,20 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 - 2026-08-22
+
+### Added
+
+- Added progress feedback while importing files.
 
 ### Improved
 
 - Migrated final-document drag and drop to Motion for smoother page reordering.
 - Added screen-reader announcements after drag-and-drop reordering.
 - Updated frontend, PDF, build-tooling, and Rust dependencies.
+
+### Fixed
+
+- Made image inclusion reversible without removing loaded source files.
 
 ## 1.1.0 - 2026-06-29
 
