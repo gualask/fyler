@@ -72,7 +72,7 @@ export function PagePicker({
             focusFlashKey={focusFlashKey}
             onRotate={(direction) => onRotateTarget(file.id, { kind: 'image' }, direction)}
             isIncluded={finalPages.some((page) => page.fileId === file.id && page.kind === 'image')}
-            onInclude={() => onSetImageIncluded(file.id, true)}
+            onSetIncluded={(included) => onSetImageIncluded(file.id, included)}
             onFocus={() => onFocusTarget(file.id, { kind: 'image' })}
             onPreview={() => onPreviewTarget(file, { kind: 'image' })}
         />

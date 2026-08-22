@@ -15,7 +15,7 @@ interface Props {
     focusFlashKey?: number;
     onRotate: (direction: RotationDirection) => Promise<void>;
     isIncluded: boolean;
-    onInclude: () => void;
+    onSetIncluded: (included: boolean) => void;
     onFocus: () => void;
     onPreview: () => void;
 }
@@ -27,7 +27,7 @@ export function ImagePanel({
     focusFlashKey,
     onRotate,
     isIncluded,
-    onInclude,
+    onSetIncluded,
     onFocus,
     onPreview,
 }: Props) {
@@ -40,18 +40,21 @@ export function ImagePanel({
     const rotation = FileEditsVO.getImageRotationDegrees(editsByFile[file.id]);
     const geometry = imagePanelGeometry(imageStageSize, imageNaturalSize, quarterTurns);
 
-    const handleImageClick = () => {
-        if (!isIncluded) onInclude();
-        onFocus();
-    };
-
     return (
         <div className="flex h-full flex-col overflow-hidden">
             <SectionHeader
                 title={t('pagePicker.sectionTitle', { count: 1 })}
                 className="border-b-0"
             >
-                <span className="section-toolbar-note">{t('pagePicker.singleImage')}</span>
+                <label className="inline-flex h-8 cursor-pointer items-center gap-2 text-xs font-medium text-ui-text-secondary">
+                    <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={(event) => onSetIncluded(event.target.checked)}
+                        className="h-4 w-4 rounded border-ui-border accent-ui-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface"
+                    />
+                    <span>{t('pagePicker.includeImage')}</span>
+                </label>
             </SectionHeader>
             <div className="section-body flex min-h-0 flex-1 flex-col px-5 py-4">
                 <div className="page-picker-image-stack mx-auto flex h-full w-full max-w-4xl min-h-0 flex-col items-center">
@@ -66,7 +69,7 @@ export function ImagePanel({
                             isFocused={isFocused}
                             focusFlashKey={focusFlashKey}
                             geometry={geometry}
-                            onClick={handleImageClick}
+                            onClick={onFocus}
                             onImageLoad={setImageNaturalSize}
                         />
 
