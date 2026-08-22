@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
-import type { ListItem } from './list-item.types';
+import type { ListItem } from '../list-item.types';
 
 type UseFinalDocumentItemsArgs = {
     finalPages: FinalPage[];

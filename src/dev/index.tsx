@@ -110,7 +110,7 @@ const DEV_FIXTURES: DevFixtureEntry[] = [
     {
         key: 'final-document',
         title: 'Final document',
-        description: 'Populated final-document list fixture.',
+        description: 'Populated final-document list fixture. Add &count=1..500 for stress testing.',
         Component: FinalDocumentFixturePage,
     },
     {

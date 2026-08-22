@@ -17,6 +17,10 @@ export const CardRow = memo(function CardRow({
     flashKey,
     onMoveTo,
     totalItems,
+    isDragging,
+    onDragStart,
+    onDragEnd,
+    onDragCancel,
 }: FinalDocumentRowProps) {
     return (
         <FinalDocumentRowShell
@@ -34,6 +38,10 @@ export const CardRow = memo(function CardRow({
             indexControlsSize="lg"
             onMoveTo={onMoveTo}
             totalItems={totalItems}
+            isDragging={isDragging}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragCancel={onDragCancel}
         >
             <ListRowThumbnail
                 size="lg"

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Improved
+
+- Migrated final-document drag and drop to Motion for smoother page reordering.
+- Added screen-reader announcements after drag-and-drop reordering.
+- Updated frontend, PDF, build-tooling, and Rust dependencies.
+
 ## 1.1.0 - 2026-06-29
 
 ### Added

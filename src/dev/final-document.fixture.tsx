@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { FinalDocument } from '@/features/final-document';
 import { PreviewModal } from '@/features/preview';
 import { PdfCacheProvider } from '@/infra/pdf';
-import type { FileEdits, FinalPage, SourceTarget } from '@/shared/domain';
+import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
 import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
 import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
 import {
@@ -10,6 +10,52 @@ import {
     createSampleFinalPages,
     createSampleFixtureFiles,
 } from './sample-assets.fixture-data';
+
+type FinalDocumentFixtureData = {
+    files: SourceFile[];
+    finalPages: FinalPage[];
+    editsByFile: Record<string, FileEdits>;
+};
+
+function requestedStressPageCount(): number | null {
+    const requested = Number.parseInt(
+        new URLSearchParams(window.location.search).get('count') ?? '',
+        10,
+    );
+    return Number.isNaN(requested) ? null : Math.min(Math.max(requested, 1), 500);
+}
+
+function createFinalDocumentFixtureData(): FinalDocumentFixtureData {
+    const count = requestedStressPageCount();
+    if (count === null) {
+        return {
+            files: createSampleFixtureFiles(),
+            finalPages: createSampleFinalPages(),
+            editsByFile: createSampleEditsByFile(),
+        };
+    }
+
+    const imageTemplate = createSampleFixtureFiles().find((file) => file.kind === 'image');
+    if (!imageTemplate) throw new Error('Final document fixture requires a sample image');
+
+    const files = Array.from({ length: count }, (_, index): SourceFile => {
+        const position = index + 1;
+        return {
+            ...imageTemplate,
+            id: `stress-image-${position}`,
+            name: `page-${String(position).padStart(3, '0')}.jpg`,
+        };
+    });
+    const finalPages = files.map(
+        (file): FinalPage => ({
+            id: toFinalPageId(file.id, { kind: 'image' }),
+            fileId: file.id,
+            kind: 'image',
+        }),
+    );
+
+    return { files, finalPages, editsByFile: {} };
+}
 
 function reorderFinalPages(finalPages: FinalPage[], fromId: string, toId: string): FinalPage[] {
     const fromIndex = finalPages.findIndex((page) => page.id === fromId);
@@ -48,11 +94,11 @@ function moveFinalPageToIndex(
 }
 
 export function FinalDocumentFixturePage() {
-    const files = useMemo(() => createSampleFixtureFiles(), []);
-    const [finalPages, setFinalPages] = useState(createSampleFinalPages);
+    const fixture = useMemo(createFinalDocumentFixtureData, []);
+    const files = fixture.files;
+    const [finalPages, setFinalPages] = useState(fixture.finalPages);
     const [selectedPageId, setSelectedPageId] = useState<string | null>(finalPages[0]?.id ?? null);
-    const [editsByFile, setEditsByFile] =
-        useState<Record<string, FileEdits>>(createSampleEditsByFile);
+    const [editsByFile, setEditsByFile] = useState<Record<string, FileEdits>>(fixture.editsByFile);
     const [previewTargetId, setPreviewTargetId] = useState<string | null>(null);
     const previewTarget = previewTargetId
         ? (finalPages.find((page) => page.id === previewTargetId) ?? null)

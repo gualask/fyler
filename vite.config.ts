@@ -97,7 +97,6 @@ function pdfJsAssets(): Plugin {
 function vendorChunkName(moduleId: string): string | null {
     const id = moduleId.replaceAll('\\', '/');
     if (!id.includes('/node_modules/')) return null;
-    if (id.includes('/node_modules/@dnd-kit/')) return 'dnd-vendor';
     if (id.includes('/node_modules/@tabler/')) return 'icons-vendor';
     if (id.includes('/node_modules/motion/')) return 'motion-vendor';
     if (id.includes('/node_modules/pdfjs-dist/')) return 'pdf-vendor';

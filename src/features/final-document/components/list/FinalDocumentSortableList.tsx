@@ -1,38 +1,19 @@
-import {
-    closestCenter,
-    DndContext,
-    type DragEndEvent,
-    PointerSensor,
-    useSensor,
-    useSensors,
-} from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { IconFile } from '@tabler/icons-react';
+import { Reorder } from 'motion/react';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { FileEdits, FinalPage, ImageFit, SourceFile, SourceTarget } from '@/shared/domain';
 import { finalPageToTarget } from '@/shared/domain/utils/final-page-id';
 import { useTranslation } from '@/shared/i18n';
 import { scrollIntoViewByDataAttr } from '@/shared/ui/scroll/scroll-into-view';
 import type { ListItem } from './list-item.types';
-import { useFinalDocumentItems } from './use-final-document-items.hook';
+import { type FinalDocumentRowProps, FinalDocumentRows } from './sortable-list/FinalDocumentRows';
+import { orderListItems } from './sortable-list/motion-reorder-session';
+import { useFinalDocumentItems } from './sortable-list/use-final-document-items.hook';
+import { useMotionReorderSession } from './sortable-list/use-motion-reorder-session.hook';
 
-export interface FinalDocumentRowProps {
-    item: ListItem;
-    imageFit: ImageFit;
-    isFirst: boolean;
-    isLast: boolean;
-    scrollRoot: HTMLDivElement | null;
-    onMoveUp: () => void;
-    onMoveDown: () => void;
-    onRemove: (id: string) => void;
-    onSelect: () => void;
-    onPreview: () => void;
-    flashKey?: number;
-    onMoveTo?: (targetIndex: number) => void;
-    totalItems?: number;
-}
+export type { FinalDocumentRowProps } from './sortable-list/FinalDocumentRows';
 
 interface Props {
     finalPages: FinalPage[];
@@ -57,20 +38,6 @@ type MoveFinalPageOptions = {
     scrollRoot: HTMLDivElement | null;
     onReorder: (fromId: string, toId: string) => void;
     onSelectPage: (fileId: string, target: SourceTarget) => void;
-};
-
-type FinalDocumentRowsProps = {
-    items: ListItem[];
-    imageFit: ImageFit;
-    selectedPageId: string | null;
-    selectedPageScrollKey?: number;
-    scrollRoot: HTMLDivElement | null;
-    Row: (props: FinalDocumentRowProps) => ReactNode;
-    onMove: (item: ListItem, toId: string | null) => void;
-    onRemove: (id: string) => void;
-    onSelectPage: (fileId: string, target: SourceTarget) => void;
-    onPreviewPage: (id: string) => void;
-    onMovePageToIndex?: (id: string, targetIndex: number) => void;
 };
 
 const FINAL_PAGE_ATTR = 'data-final-page-id';
@@ -140,73 +107,6 @@ function useMoveFinalPage({
     );
 }
 
-function useDragEndReorder(onReorder: (fromId: string, toId: string) => void) {
-    return useCallback(
-        (event: DragEndEvent) => {
-            const { active, over } = event;
-            if (over && active.id !== over.id) {
-                onReorder(String(active.id), String(over.id));
-            }
-        },
-        [onReorder],
-    );
-}
-
-function rowFlashKey(
-    item: ListItem,
-    selectedPageId: string | null,
-    selectedPageScrollKey: number | undefined,
-): number | undefined {
-    return item.page.id === selectedPageId ? selectedPageScrollKey : undefined;
-}
-
-function moveToIndexHandler(
-    item: ListItem,
-    onMovePageToIndex: ((id: string, targetIndex: number) => void) | undefined,
-) {
-    return onMovePageToIndex
-        ? (targetIndex: number) => onMovePageToIndex(item.page.id, targetIndex)
-        : undefined;
-}
-
-function FinalDocumentRows({
-    items,
-    imageFit,
-    selectedPageId,
-    selectedPageScrollKey,
-    scrollRoot,
-    Row,
-    onMove,
-    onRemove,
-    onSelectPage,
-    onPreviewPage,
-    onMovePageToIndex,
-}: FinalDocumentRowsProps) {
-    return items.map((item, index) => {
-        const previousId = items[index - 1]?.page.id ?? null;
-        const nextId = items[index + 1]?.page.id ?? null;
-
-        return (
-            <Row
-                key={item.page.id}
-                item={item}
-                imageFit={imageFit}
-                isFirst={index === 0}
-                isLast={index === items.length - 1}
-                scrollRoot={scrollRoot}
-                onMoveUp={() => onMove(item, previousId)}
-                onMoveDown={() => onMove(item, nextId)}
-                onRemove={onRemove}
-                onSelect={() => onSelectPage(item.page.fileId, finalPageToTarget(item.page))}
-                onPreview={() => onPreviewPage(item.page.id)}
-                flashKey={rowFlashKey(item, selectedPageId, selectedPageScrollKey)}
-                onMoveTo={moveToIndexHandler(item, onMovePageToIndex)}
-                totalItems={onMovePageToIndex ? items.length : undefined}
-            />
-        );
-    });
-}
-
 export function FinalDocumentSortableList({
     finalPages,
     files,
@@ -231,10 +131,25 @@ export function FinalDocumentSortableList({
         selectedPageId,
         editsByFile,
     });
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+    const [reorderAnnouncement, setReorderAnnouncement] = useState('');
 
     const move = useMoveFinalPage({ selectedPageId, scrollRoot, onReorder, onSelectPage });
-    const handleDragEnd = useDragEndReorder(onReorder);
+    const announceCommit = useCallback(
+        (position: number) =>
+            setReorderAnnouncement(t('finalDocument.reorderedToPosition', { position })),
+        [t],
+    );
+    const clearAnnouncement = useCallback(() => setReorderAnnouncement(''), []);
+    const reorderSession = useMotionReorderSession({
+        sourceOrder: sortableItems,
+        onCommit: onReorder,
+        onCommitted: announceCommit,
+        onStarted: clearAnnouncement,
+    });
+    const orderedItems = useMemo(
+        () => orderListItems(items, reorderSession.order),
+        [items, reorderSession.order],
+    );
     useSelectedPageScroll(scrollRoot, selectedPageId, selectedPageScrollKey);
 
     if (items.length === 0) {
@@ -242,26 +157,35 @@ export function FinalDocumentSortableList({
     }
 
     return (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
-                <div className={listClassName('mx-auto w-full', stackClassName)}>
-                    <div className={listClassName('flex flex-col', gapClassName)}>
-                        <FinalDocumentRows
-                            items={items}
-                            imageFit={imageFit}
-                            selectedPageId={selectedPageId}
-                            selectedPageScrollKey={selectedPageScrollKey}
-                            scrollRoot={scrollRoot}
-                            Row={Row}
-                            onMove={move}
-                            onRemove={onRemove}
-                            onSelectPage={onSelectPage}
-                            onPreviewPage={onPreviewPage}
-                            onMovePageToIndex={onMovePageToIndex}
-                        />
-                    </div>
-                </div>
-            </SortableContext>
-        </DndContext>
+        <div className={listClassName('mx-auto w-full', stackClassName)}>
+            <Reorder.Group
+                as="div"
+                axis="y"
+                values={reorderSession.order}
+                onReorder={reorderSession.update}
+                className={listClassName('flex flex-col', gapClassName)}
+            >
+                <FinalDocumentRows
+                    items={orderedItems}
+                    imageFit={imageFit}
+                    selectedPageId={selectedPageId}
+                    selectedPageScrollKey={selectedPageScrollKey}
+                    scrollRoot={scrollRoot}
+                    Row={Row}
+                    onMove={move}
+                    onRemove={onRemove}
+                    onSelectPage={onSelectPage}
+                    onPreviewPage={onPreviewPage}
+                    onMovePageToIndex={onMovePageToIndex}
+                    activeDragId={reorderSession.activeId}
+                    onDragStart={reorderSession.start}
+                    onDragEnd={reorderSession.finish}
+                    onDragCancel={reorderSession.cancel}
+                />
+            </Reorder.Group>
+            <p className="sr-only" aria-live="polite" aria-atomic="true">
+                {reorderAnnouncement}
+            </p>
+        </div>
     );
 }

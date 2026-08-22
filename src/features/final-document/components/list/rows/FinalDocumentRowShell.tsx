@@ -1,10 +1,7 @@
-import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { IconGripVertical, IconX } from '@tabler/icons-react';
-import { motion } from 'motion/react';
-import type { CSSProperties, ReactNode } from 'react';
-import { createContext, useContext } from 'react';
+import { Reorder, useDragControls } from 'motion/react';
+import type { KeyboardEvent, ReactNode, PointerEvent as ReactPointerEvent } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 
 import { useTranslation } from '@/shared/i18n';
 import { FocusFlashOverlay } from '@/shared/ui/feedback/FocusFlashOverlay';
@@ -12,9 +9,9 @@ import type { ListItem } from '../list-item.types';
 import { ListRowIndexControls } from './ListRowIndexControls';
 
 type DragHandleContextValue = {
-    attributes: DraggableAttributes;
-    listeners: DraggableSyntheticListeners;
-    setActivatorNodeRef: (element: HTMLElement | null) => void;
+    isDragging: boolean;
+    start: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+    cancel: () => void;
 };
 
 const FinalDocumentDragHandleContext = createContext<DragHandleContextValue | null>(null);
@@ -34,14 +31,22 @@ export function FinalDocumentDragHandle({
     const dragHandle = useFinalDocumentDragHandle();
     if (!dragHandle) return null;
 
+    const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+        if (event.key !== 'Escape' || !dragHandle.isDragging) return;
+        event.preventDefault();
+        dragHandle.cancel();
+    };
+
     return (
         <button
             type="button"
-            ref={dragHandle.setActivatorNodeRef}
-            {...dragHandle.attributes}
-            {...dragHandle.listeners}
+            onPointerDown={(event) => {
+                event.stopPropagation();
+                dragHandle.start(event);
+            }}
+            onKeyDown={handleKeyDown}
             onClick={(e) => e.stopPropagation()}
-            className={className}
+            className={`${className} touch-none select-none`}
             aria-label={t('finalDocument.dragHandle')}
             title={t('finalDocument.dragHandle')}
         >
@@ -66,6 +71,10 @@ interface Props {
     children: ReactNode;
     onMoveTo?: (targetIndex: number) => void;
     totalItems?: number;
+    isDragging: boolean;
+    onDragStart: () => void;
+    onDragEnd: () => void;
+    onDragCancel: () => void;
 }
 
 export function FinalDocumentRowShell({
@@ -84,35 +93,40 @@ export function FinalDocumentRowShell({
     children,
     onMoveTo,
     totalItems,
+    isDragging,
+    onDragStart,
+    onDragEnd,
+    onDragCancel,
 }: Props) {
     const { t } = useTranslation();
-    const {
-        attributes,
-        listeners,
-        setActivatorNodeRef,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({
-        id: item.page.id,
-    });
-
-    const style: CSSProperties = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 10 : undefined,
-    };
+    const dragControls = useDragControls();
+    const startDrag = useCallback(
+        (event: ReactPointerEvent<HTMLButtonElement>) => {
+            dragControls.start(event, { distanceThreshold: 6 });
+        },
+        [dragControls],
+    );
+    const cancelDrag = useCallback(() => {
+        dragControls.cancel();
+        onDragCancel();
+    }, [dragControls, onDragCancel]);
+    const dragHandle = useMemo<DragHandleContextValue>(
+        () => ({ isDragging, start: startDrag, cancel: cancelDrag }),
+        [cancelDrag, isDragging, startDrag],
+    );
 
     return (
-        <motion.div
-            ref={setNodeRef}
-            style={style}
+        <Reorder.Item
+            as="div"
+            value={item.page.id}
+            dragListener={false}
+            dragControls={dragControls}
+            dragMomentum={false}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
             data-final-page-id={item.page.id}
-            className={['flex min-w-0 items-stretch gap-4', isDragging ? 'opacity-50' : ''].join(
-                ' ',
-            )}
-            layout={!isDragging}
+            className="relative flex min-w-0 items-stretch gap-4"
+            whileDrag={{ opacity: 0.55 }}
             transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
             <ListRowIndexControls
@@ -131,9 +145,7 @@ export function FinalDocumentRowShell({
                     <FocusFlashOverlay flashKey={flashKey} className={flashOverlayClassName} />
                 ) : null}
 
-                <FinalDocumentDragHandleContext.Provider
-                    value={{ attributes, listeners, setActivatorNodeRef }}
-                >
+                <FinalDocumentDragHandleContext.Provider value={dragHandle}>
                     {!hideDefaultDragHandle ? (
                         <FinalDocumentDragHandle className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md cursor-grab text-ui-text-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-text active:cursor-grabbing" />
                     ) : null}
@@ -154,6 +166,6 @@ export function FinalDocumentRowShell({
                     <IconX className="h-3.5 w-3.5" />
                 </button>
             </div>
-        </motion.div>
+        </Reorder.Item>
     );
 }

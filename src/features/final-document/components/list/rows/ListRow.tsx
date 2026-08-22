@@ -18,6 +18,10 @@ export const ListRow = memo(function ListRow({
     flashKey,
     onMoveTo,
     totalItems,
+    isDragging,
+    onDragStart,
+    onDragEnd,
+    onDragCancel,
 }: FinalDocumentRowProps) {
     const { t } = useTranslation();
     const detailLabel =
@@ -44,6 +48,10 @@ export const ListRow = memo(function ListRow({
             ].join(' ')}
             onMoveTo={onMoveTo}
             totalItems={totalItems}
+            isDragging={isDragging}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragCancel={onDragCancel}
         >
             <ListRowThumbnail
                 item={item}

@@ -122,6 +122,7 @@
     "finalDocument.movePageDown": "Sposta la pagina in basso",
     "finalDocument.removePage": "Rimuovi pagina",
     "finalDocument.moveToIndex": "Sposta alla posizione",
+    "finalDocument.reorderedToPosition": "Pagina spostata alla posizione {position}",
     "preview.zoomOut": "Riduci (Ctrl+scroll giù)",
     "preview.zoomIn": "Ingrandisci (Ctrl+scroll su)",
     "preview.resetZoom": "Ripristina zoom (100%)",

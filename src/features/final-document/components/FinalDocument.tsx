@@ -1,4 +1,5 @@
 import { IconColumns1, IconColumns2 } from '@tabler/icons-react';
+import { motion } from 'motion/react';
 import { useState } from 'react';
 import type { FileEdits, FinalPage, ImageFit, SourceFile, SourceTarget } from '@/shared/domain';
 import { useTranslation } from '@/shared/i18n';
@@ -69,8 +70,9 @@ export function FinalDocument({
                 />
             </SectionHeader>
 
-            <div
+            <motion.div
                 ref={setScrollRoot}
+                layoutScroll
                 className="min-h-0 flex-1 overflow-y-auto px-5 py-4 md:px-6 md:py-5"
             >
                 {finalDocumentLayout === 'columns-2' ? (
@@ -104,7 +106,7 @@ export function FinalDocument({
                         onPreviewPage={onPreviewPage}
                     />
                 )}
-            </div>
+            </motion.div>
         </div>
     );
 }
