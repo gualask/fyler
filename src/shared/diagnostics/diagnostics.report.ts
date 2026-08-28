@@ -19,7 +19,7 @@ export function formatDiagnosticsReport(snapshot: DiagnosticsSnapshot): string {
         `- Theme: ${snapshot.preferences.theme}`,
         '',
         'Session',
-        `- Quick Add: ${snapshot.session.quickAdd ? 'on' : 'off'}`,
+        `- Always on top: ${snapshot.session.alwaysOnTop ? 'on' : 'off'}`,
         `- Files loaded: ${snapshot.session.fileCount}`,
         `- Final pages: ${snapshot.session.finalPageCount}`,
         `- Optimization preset: ${snapshot.session.optimizationPreset}`,

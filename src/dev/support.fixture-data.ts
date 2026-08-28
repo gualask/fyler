@@ -14,7 +14,7 @@ export const SUPPORT_DIALOG_FIXTURE_SNAPSHOT: DiagnosticsSnapshot = {
         theme: 'light',
     },
     session: {
-        quickAdd: false,
+        alwaysOnTop: false,
         fileCount: 5,
         finalPageCount: 18,
         optimizationPreset: 'light',

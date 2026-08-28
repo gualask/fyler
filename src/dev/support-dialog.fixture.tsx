@@ -1,4 +1,4 @@
-import { SupportDialog } from '@/features/support';
+import { SupportDialog } from '@/modules/support';
 import { SUPPORT_DIALOG_FIXTURE_SNAPSHOT } from './support.fixture-data';
 
 export function SupportDialogFixturePage() {

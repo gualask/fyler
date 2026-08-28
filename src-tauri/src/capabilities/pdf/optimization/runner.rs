@@ -1,0 +1,263 @@
+use std::collections::HashMap;
+
+use lopdf::{Document as PdfDoc, Object, ObjectId, Stream};
+use rayon::prelude::*;
+
+use super::analysis::{analyze_image_usages, ImageUsage};
+use super::candidate::{discover_candidate, CandidateSkipReason, ImageCandidate};
+use super::plan::{
+    build_passthrough_plan, build_plan, should_keep_original, usages_for, OptimizationPlan,
+};
+use super::raster::decode_raster;
+use super::rewrite::rewrite_stream;
+use super::{OptimizationOptions, OptimizationSummary};
+
+const MAX_BATCH_TASKS: usize = 64;
+const MAX_BATCH_ESTIMATED_BYTES: usize = 256 * 1024 * 1024;
+
+enum CandidateDecision {
+    Optimize(ImageCandidate),
+    Skip(CandidateSkipReason),
+}
+
+fn classify_object(
+    object_id: ObjectId,
+    obj: &Object,
+    skip_fyler_imported: bool,
+) -> Option<CandidateDecision> {
+    discover_candidate(object_id, obj, skip_fyler_imported).map(|result| match result {
+        Ok(candidate) => CandidateDecision::Optimize(candidate),
+        Err(reason) => CandidateDecision::Skip(reason),
+    })
+}
+
+#[derive(Clone)]
+struct CandidateTask {
+    object_id: ObjectId,
+    candidate: ImageCandidate,
+    plan: OptimizationPlan,
+    stream: Stream,
+}
+
+impl CandidateTask {
+    fn estimated_bytes(&self) -> usize {
+        let decoded_bytes = (self.candidate.width as usize)
+            .saturating_mul(self.candidate.height as usize)
+            .saturating_mul(self.candidate.color_space.components());
+        self.stream.content.len().max(decoded_bytes)
+    }
+}
+
+#[derive(Default)]
+struct CandidateTaskBatch {
+    tasks: Vec<CandidateTask>,
+    estimated_bytes: usize,
+}
+
+impl CandidateTaskBatch {
+    fn would_exceed_limit(&self, task: &CandidateTask) -> bool {
+        !self.tasks.is_empty()
+            && (self.tasks.len() >= MAX_BATCH_TASKS
+                || self.estimated_bytes.saturating_add(task.estimated_bytes())
+                    > MAX_BATCH_ESTIMATED_BYTES)
+    }
+
+    fn push(&mut self, task: CandidateTask) {
+        self.estimated_bytes = self.estimated_bytes.saturating_add(task.estimated_bytes());
+        self.tasks.push(task);
+    }
+
+    fn flush_if_full(&mut self, doc: &mut PdfDoc, summary: &mut OptimizationSummary) {
+        if should_flush_batch(&self.tasks, self.estimated_bytes) {
+            self.flush(doc, summary);
+        }
+    }
+
+    fn flush(&mut self, doc: &mut PdfDoc, summary: &mut OptimizationSummary) {
+        if self.tasks.is_empty() {
+            return;
+        }
+
+        let batch = std::mem::take(&mut self.tasks);
+        self.estimated_bytes = 0;
+        let results: Vec<anyhow::Result<Option<(ObjectId, Stream)>>> =
+            batch.into_par_iter().map(process_task).collect();
+        for result in results {
+            apply_result(doc, result, summary);
+        }
+    }
+}
+
+fn build_task(
+    object_id: ObjectId,
+    obj: &Object,
+    candidate: &ImageCandidate,
+    usages: &HashMap<ObjectId, Vec<ImageUsage>>,
+    opts: &OptimizationOptions,
+) -> anyhow::Result<Option<CandidateTask>> {
+    let usage_slice = usages_for(usages, candidate);
+    let plan = build_plan(candidate, usage_slice, opts)
+        .or_else(|| build_passthrough_plan(candidate, opts));
+    let Some(plan) = plan else {
+        return Ok(None);
+    };
+
+    let stream = obj.as_stream()?.clone();
+    Ok(Some(CandidateTask {
+        object_id,
+        candidate: *candidate,
+        plan,
+        stream,
+    }))
+}
+
+fn process_task(task: CandidateTask) -> anyhow::Result<Option<(ObjectId, Stream)>> {
+    let raster = decode_raster(&task.stream, &task.candidate, task.plan.resize_to)?;
+    let raster = raster.resize(task.plan.resize_to)?;
+    let mut stream = task.stream;
+    let rewritten_size = rewrite_stream(&mut stream, raster, task.plan.output_encoding)?;
+
+    let kept_original = should_keep_original(task.candidate.original_size, rewritten_size);
+    if kept_original {
+        return Ok(None);
+    }
+
+    Ok(Some((task.object_id, stream)))
+}
+
+fn apply_result(
+    doc: &mut PdfDoc,
+    result: anyhow::Result<Option<(ObjectId, Stream)>>,
+    summary: &mut OptimizationSummary,
+) {
+    match result {
+        Ok(Some((object_id, stream))) => {
+            let Some(obj) = doc.objects.get_mut(&object_id) else {
+                summary.failed_non_fatal += 1;
+                return;
+            };
+            *obj = Object::Stream(stream);
+            summary.optimized += 1;
+        }
+        Ok(None) => {}
+        Err(_) => summary.failed_non_fatal += 1,
+    }
+}
+
+fn should_flush_batch(tasks: &[CandidateTask], estimated_bytes: usize) -> bool {
+    tasks.len() >= MAX_BATCH_TASKS || estimated_bytes >= MAX_BATCH_ESTIMATED_BYTES
+}
+
+fn image_usages_for_options(
+    doc: &PdfDoc,
+    opts: &OptimizationOptions,
+) -> HashMap<ObjectId, Vec<ImageUsage>> {
+    if opts.target_dpi.is_some() {
+        analyze_image_usages(doc)
+    } else {
+        HashMap::new()
+    }
+}
+
+fn object_decision(
+    doc: &PdfDoc,
+    object_id: ObjectId,
+    skip_fyler_imported: bool,
+) -> Option<CandidateDecision> {
+    doc.objects
+        .get(&object_id)
+        .and_then(|obj| classify_object(object_id, obj, skip_fyler_imported))
+}
+
+struct OptimizationRun<'a> {
+    doc: &'a mut PdfDoc,
+    usages: &'a HashMap<ObjectId, Vec<ImageUsage>>,
+    opts: &'a OptimizationOptions,
+    skip_fyler_imported: bool,
+    batch: CandidateTaskBatch,
+    summary: OptimizationSummary,
+}
+
+impl<'a> OptimizationRun<'a> {
+    fn new(
+        doc: &'a mut PdfDoc,
+        usages: &'a HashMap<ObjectId, Vec<ImageUsage>>,
+        opts: &'a OptimizationOptions,
+        skip_fyler_imported: bool,
+    ) -> Self {
+        Self {
+            doc,
+            usages,
+            opts,
+            skip_fyler_imported,
+            batch: CandidateTaskBatch::default(),
+            summary: OptimizationSummary::default(),
+        }
+    }
+
+    fn collect_candidate_work(&mut self, object_id: ObjectId, decision: CandidateDecision) {
+        match decision {
+            CandidateDecision::Skip(CandidateSkipReason::Unsupported) => {
+                self.summary.skipped_unsupported += 1;
+            }
+            CandidateDecision::Skip(CandidateSkipReason::Risky) => {
+                self.summary.skipped_risky += 1;
+            }
+            CandidateDecision::Optimize(candidate) => {
+                self.queue_candidate_task(object_id, candidate);
+            }
+        }
+    }
+
+    fn queue_candidate_task(&mut self, object_id: ObjectId, candidate: ImageCandidate) {
+        let task = match self.doc.objects.get(&object_id) {
+            Some(obj) => build_task(object_id, obj, &candidate, self.usages, self.opts),
+            None => {
+                self.summary.failed_non_fatal += 1;
+                return;
+            }
+        };
+
+        match task {
+            Ok(Some(task)) => {
+                if self.batch.would_exceed_limit(&task) {
+                    self.batch.flush(self.doc, &mut self.summary);
+                }
+                self.batch.push(task);
+                self.batch.flush_if_full(self.doc, &mut self.summary);
+            }
+            Ok(None) => {}
+            Err(_) => self.summary.failed_non_fatal += 1,
+        }
+    }
+
+    fn scan_object(&mut self, object_id: ObjectId) {
+        let Some(decision) = object_decision(self.doc, object_id, self.skip_fyler_imported) else {
+            return;
+        };
+
+        self.summary.scanned += 1;
+        self.collect_candidate_work(object_id, decision);
+    }
+
+    fn finish(mut self) -> OptimizationSummary {
+        self.batch.flush(self.doc, &mut self.summary);
+        self.summary
+    }
+}
+
+pub(super) fn optimize_images(
+    doc: &mut PdfDoc,
+    opts: &OptimizationOptions,
+    skip_fyler_imported: bool,
+) -> anyhow::Result<OptimizationSummary> {
+    let usages = image_usages_for_options(doc, opts);
+    let object_ids: Vec<_> = doc.objects.keys().copied().collect();
+    let mut run = OptimizationRun::new(doc, &usages, opts, skip_fyler_imported);
+
+    for object_id in object_ids {
+        run.scan_object(object_id);
+    }
+
+    Ok(run.finish())
+}

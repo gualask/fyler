@@ -1,11 +1,9 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useMemo } from 'react';
-import type { WorkspaceApi } from '@/features/workspace';
-import {
-    type CompositionState,
-    createWorkspaceStore,
-} from '@/features/workspace/state/workspace.store';
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
+import type { SourceFile } from '@/capabilities/document-sources';
+import type { WorkspaceApi } from '@/modules/merge/application';
+import type { FileEdits, FinalPage } from '@/modules/merge/model';
+import { type CompositionState, createWorkspaceStore } from '@/modules/merge/model/workspace.store';
 import { useWorkspaceFixtureFileActions } from './workspace-fixture-file-actions.hook';
 import { useWorkspaceFixturePageActions } from './workspace-fixture-page-actions.hook';
 

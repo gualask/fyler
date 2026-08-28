@@ -1,16 +1,18 @@
 # Design System Notes
 
-Fyler uses a lightweight shared UI layer built from semantic theme tokens in `src/main.css` and reusable primitives in `src/shared/ui/`.
+Fyler uses a lightweight shared UI layer built from semantic theme tokens and reusable primitives in `src/shared/ui/`. `src/main.css` imports those owners as the application stylesheet entry point.
 
 The current extraction baseline is intentionally small. The goal is to consolidate patterns that already repeat across the app, not to introduce a large component framework.
 
 ## Design context
 
-Fyler is a desktop app for merging PDF files and images into a single PDF. It is meant for a very broad audience: people with low confidence using computers, casual home users, office workers, freelancers, students, and also more experienced users who want fast, precise control over document assembly.
+[Product](../PRODUCT.md) owns Fyler's audience, purpose, boundaries, and brand personality. The UI
+layer translates that direction into a simple, precise, and quietly capable desktop experience.
 
-The product should feel simple, precise, and quietly capable.
-
-The UI must reduce anxiety for less technical users without becoming toy-like or vague. At the same time, it must communicate enough rigor and control that more experienced users trust it for real document work. The core workflow should feel obvious within seconds: add files, review what is included, make a few confident adjustments, and export.
+Each task should be understandable within seconds: choose a workflow, add its sources, review the
+result, adjust only what is necessary, and export. The interface must reduce anxiety for less
+technical users without becoming toy-like or vague, while preserving enough rigor for experienced
+users to trust it with real document work.
 
 Visually, Fyler should stay primarily clean and editorial, with a light premium layer. That means:
 
@@ -47,7 +49,7 @@ Use them for confirmation dialogs, support/update overlays, tutorial cards, and 
 
 ### Action primitives
 
-Buttons continue to live in `src/main.css` as semantic class primitives:
+Buttons live in `src/shared/ui/primitives.css` as semantic class primitives:
 
 - `btn-primary`
 - `btn-ghost`

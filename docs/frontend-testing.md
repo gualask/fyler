@@ -27,17 +27,34 @@ Use `pnpm tauri:dev` when you need native windowing, OS integrations, or plugin-
 | `?dev=fixtures` | You want the fixture index and quick navigation during UI work. |
 | `?dev=<fixture>` | You need deterministic, isolated inspection of a specific component or state. |
 | `?dev=runtime-app` | You want the real app shell in the browser without the Tauri runtime. |
+| `?dev=workflow-create-pdf` | You want a deterministic populated Create a PDF workflow. |
+| `?dev=workflow-front-back` | You want deterministic populated, empty, or horizontal front/back states. |
+| `?dev=workflow-compress-files` | You want deterministic batch lifecycle and result states. |
 | `?dev=workspace-shell` | You only need the static workspace frame, not a representative session. |
 | `?dev=workspace-preview` | You want realistic workspace proportions and selectable sample content. |
 | `pnpm tauri:dev` | You need native Tauri behavior, OS dialogs, updater flows, or platform integration checks. |
 
-The dev surface treats the browser viewport as the Fyler window: a fixture
-fills the viewport, so a browser or Playwright `resize` maps 1:1 to the rendered
-size and screenshots stay faithful. It clamps to the minimum size of the window
-that fixture represents — the normal window for most fixtures, the compact Quick
-Add window for `?dev=quick-add` — and shows a warning banner below it, since
-those layouts are not representative of production. See
-`src/dev/DevModeShell.tsx`.
+The dev surface treats the browser viewport as the Fyler window: a fixture fills the viewport, so
+a browser or Playwright `resize` maps 1:1 to the rendered size and screenshots stay faithful. It
+clamps to the normal window minimum and shows a warning banner below it, since smaller layouts are
+not representative of production. See `src/dev/DevModeShell.tsx`.
+
+## LLM verification contract
+
+Prefer the `workflow-*` routes for repeatable inspection and `?dev=runtime-app` when navigation or
+the browser-safe application adapter is part of the check. Workflow fixtures use repository-owned
+assets and do not open system dialogs.
+
+Every dev route exposes:
+
+- `[data-fyler-fixture-root][data-fyler-fixture-ready="true"]` when the fixture is mounted
+- `window.__FYLER_DEV_FIXTURE__` with its key, kind, expected assertions, known limitations, and
+  variant URLs
+- `data-fixture-last-action` on interactive workflow fixtures after a fixture-controlled action
+
+Read the route contract before making assertions. Use accessible roles and labels for interaction;
+use fixture data attributes only for readiness and action completion. The fixture catalog at
+`?dev=fixtures` is the authoritative list of routes and variants.
 
 ## Fixture conventions
 
@@ -53,11 +70,13 @@ those layouts are not representative of production. See
 | --- | --- |
 | `?dev=fixtures` | Opens the fixture index. |
 | `?dev=runtime-app` | Mounts the real app shell with the dev browser-safe platform adapter. |
+| `?dev=workflow-create-pdf` | Opens the populated Create a PDF workflow. Use `&selected=image` for the image source and `&tutorialStep=0..6` for tutorial states. |
+| `?dev=workflow-front-back` | Opens the populated front/back workflow. Use `&state=empty` or `&layout=horizontal` for alternate states. |
+| `?dev=workflow-compress-files` | Opens batch compression. Use `&state=ready`, `running`, `completed`, `issues`, or `empty`. |
 | `?dev=workspace-shell` | Opens the technical browser-safe workspace shell baseline. |
 | `?dev=workspace-preview` | Opens a realistic working-session shell with sample PDF/image assets. Use `&selected=image` to start on the image picker. |
 | `?dev=workspace-empty` | Opens the empty-state workspace fixture. |
 | `?dev=preview-modal` | Opens the browser-safe preview modal fixture. Use `&pages=1` for the single-page variant. |
-| `?dev=quick-add` | Opens the browser-safe quick-add fixture. |
 | `?dev=support-dialog` | Opens the support dialog fixture. |
 | `?dev=tutorial-overlay` | Opens the tutorial overlay fixture. Use `&step=0..6` to inspect targets. |
 | `?dev=feedback-overlays` | Opens feedback overlay fixtures. Use `&view=progress`, `progress-indeterminate`, `toast-success`, or `toast-warning`. |
@@ -65,6 +84,9 @@ those layouts are not representative of production. See
 | `?dev=page-picker` | Opens the PDF page-picker fixture. Use `&mode=image` for the image panel. |
 | `?dev=update-dialog` | Opens the update dialog fixture. Use `&view=installing` or `error` for alternate states. |
 | `?dev=error-boundary` | Opens the app error boundary fallback fixture. Use `&message=...` to override the crash text. |
+
+The workflow fixtures cover browser-visible state and local interaction only. Native file dialogs,
+window integration, codecs, and exported-file correctness still require `pnpm tauri:dev`.
 
 ## Repo hygiene
 
@@ -89,6 +111,7 @@ This section is the coverage map for frontend review. It does not track pass or 
 | Area | Section/Component | Access |
 | --- | --- | --- |
 | Dev fixtures | Index fixture | `?dev=fixtures` |
+| Task home | Workflow selection | Normal app, `?dev=runtime-app` |
 | Workspace | Main shell | Normal app, `?dev=runtime-app` |
 | Workspace | Technical shell baseline | `?dev=workspace-shell` |
 | Workspace | Empty state | Normal app with empty session, `?dev=runtime-app`, `?dev=workspace-empty` |
@@ -96,7 +119,7 @@ This section is the coverage map for frontend review. It does not track pass or 
 | Header | Settings menu | Toolbar -> `Settings`, `?dev=runtime-app`, `?dev=workspace-shell` |
 | Header | Theme submenu | `Settings` -> `Theme`, `?dev=runtime-app`, `?dev=workspace-shell` |
 | Header | Language submenu | `Settings` -> `Language`, `?dev=runtime-app`, `?dev=workspace-shell` |
-| Quick Add | Quick Add view | Toolbar -> `Quick Add`, `?dev=runtime-app`, `?dev=quick-add` |
+| Header | Always-on-top pin | Normal app, `?dev=runtime-app` |
 | Preview | Preview modal | `Open preview`, `?dev=preview-modal` |
 | Preview | Toolbar preview | Preview modal -> toolbar, `?dev=preview-modal` |
 | Support | Support dialog | `Settings` -> `Report a bug`, `?dev=runtime-app`, `?dev=support-dialog` |
@@ -114,6 +137,10 @@ This section is the coverage map for frontend review. It does not track pass or 
 | Overlay | Toast | Toast success / warning / error, `?dev=feedback-overlays&view=toast-warning` |
 | Updates | Update dialog | Available update or fixture, `?dev=update-dialog`, `?dev=update-dialog&view=installing` |
 | Error handling | Error boundary UI | Unhandled error in the app, `?dev=error-boundary` |
+| Front/back | Composition workspace | Normal app, `?dev=runtime-app`, `?dev=workflow-front-back` |
+| Front/back | A4 preview and output settings | Normal app, `?dev=runtime-app`, `?dev=workflow-front-back` |
+| Batch compression | Source list and settings | Normal app, `?dev=runtime-app`, `?dev=workflow-compress-files&state=ready` |
+| Batch compression | Progress and per-file results | Normal app, `?dev=runtime-app`, `?dev=workflow-compress-files&state=running`, `completed`, or `issues` |
 
 ### Runtime Flows
 
@@ -124,9 +151,9 @@ This section is the coverage map for frontend review. It does not track pass or 
 | Workspace | Remove single file | File list -> `Remove file` | `release_sources` for removed file |
 | Workspace | Clear full session | File list -> `Clear all` | release all sources, reset selections and composition |
 | Workspace | Reorder source files | Drag within source file list | local reorder, focus, selection |
-| Quick Add | Enter Quick Add mode | Toolbar -> `Quick Add` | window resize, always-on-top, quick add state |
-| Quick Add | Exit Quick Add mode | `Done` / close quick add | restore window state and workspace state |
-| Quick Add | Remove file in Quick Add | Quick add list -> `Remove` | session mutation, count consistency |
+| Navigation | Open each workflow | Task home -> workflow card | active window profile and workflow-owned state |
+| Navigation | Return to task home | Workflow header -> back | discard confirmation when required, source release, always-on-top reset |
+| Window | Toggle always on top | Workflow header -> `Keep on top` | native `setAlwaysOnTop`, pressed state shared across workflows and cleared on return to task selection |
 | Settings | Toggle theme | `Settings` -> `Theme` | theme preference persistence |
 | Settings | Change accent color | `Settings` -> accent | accent persistence |
 | Settings | Change language | `Settings` -> `Language` | locale persistence, text refresh |
@@ -150,6 +177,15 @@ This section is the coverage map for frontend review. It does not track pass or 
 | Export | Successful export | Export with valid composition | `merge_pdfs`, progress events, success toast |
 | Export | Export with optimization warning | Export with image that triggers warning | diagnostics warning, warning toast |
 | Export | Export error path | Merge / write error path | `showError`, clear loading, diagnostics |
+| Front/back | Add image source | Front or back region -> choose/drop image | source registration and composition update |
+| Front/back | Select a PDF page | Front or back region -> choose PDF | PDF page picker, raster registration, source ownership |
+| Front/back | Adjust composition | Rotate, swap, or change orientation | authoritative A4 preview geometry refresh |
+| Front/back | Export PDF | Output format -> PDF -> export | page-composition progress and atomic PDF write |
+| Front/back | Export JPEG | Output format -> JPEG -> export | raster export and selected quality settings |
+| Batch compression | Add mixed sources | Choose/drop PDFs and images | source inspection, duplicate filtering, preview loading |
+| Batch compression | Choose destination | Destination -> choose folder | destination authorization |
+| Batch compression | Run batch | Compression settings -> Compress | bounded parallel processing and per-file completion events |
+| Batch compression | Review mixed outcomes | Completed run | compressed, already optimized, skipped, and failed result states |
 | Support | Copy diagnostics | Support dialog -> `Copy diagnostics` | real clipboard |
 | Support | Save diagnostics | Support dialog -> `Save diagnostics...` | `save_text_file` |
 | Support | Open prefilled GitHub issue | Support dialog -> `Open GitHub issue` | `open_external_url` with prefilled URL |

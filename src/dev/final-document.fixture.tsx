@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import { FinalDocument } from '@/features/final-document';
-import { PreviewModal } from '@/features/preview';
-import { PdfCacheProvider } from '@/infra/pdf';
-import type { FileEdits, FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
-import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
-import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
+import type { SourceFile, SourceTarget } from '@/capabilities/document-sources';
+import { PdfCacheProvider } from '@/infrastructure/pdfjs';
+import type { FileEdits, FinalPage } from '@/modules/merge/model';
+import { FileEditsVO, toFinalPageId } from '@/modules/merge/model';
+import { FinalDocument } from '@/modules/merge/ui/final-document';
+import { PreviewModal } from '@/modules/merge/ui/preview';
 import {
     createSampleEditsByFile,
     createSampleFinalPages,

@@ -1,9 +1,9 @@
-import type { SourceFile } from '@/shared/domain';
+import type { SourceFile } from '@/capabilities/document-sources';
 
 const WORKSPACE_SHELL_FIXTURE_FILES: SourceFile[] = [
     {
         id: 'fixture-pdf-contract',
-        originalPath: '/fixtures/contract-draft.pdf',
+        originalPath: '/fixtures/sample-document.pdf',
         name: 'contract-draft.pdf',
         byteSize: 2_450_000,
         pageCount: 12,
@@ -11,7 +11,7 @@ const WORKSPACE_SHELL_FIXTURE_FILES: SourceFile[] = [
     },
     {
         id: 'fixture-pdf-invoice',
-        originalPath: '/fixtures/invoice-042.pdf',
+        originalPath: '/fixtures/sample-document.pdf',
         name: 'invoice-042.pdf',
         byteSize: 840_000,
         pageCount: 3,
@@ -19,7 +19,7 @@ const WORKSPACE_SHELL_FIXTURE_FILES: SourceFile[] = [
     },
     {
         id: 'fixture-image-receipt',
-        originalPath: '/fixtures/receipt.jpg',
+        originalPath: '/fixtures/sample-image.jpg',
         name: 'receipt.jpg',
         byteSize: 480_000,
         pageCount: 1,
@@ -27,7 +27,7 @@ const WORKSPACE_SHELL_FIXTURE_FILES: SourceFile[] = [
     },
     {
         id: 'fixture-image-scan',
-        originalPath: '/fixtures/notes-scan.png',
+        originalPath: '/fixtures/landscape.jpg',
         name: 'notes-scan.png',
         byteSize: 1_120_000,
         pageCount: 1,
@@ -35,7 +35,7 @@ const WORKSPACE_SHELL_FIXTURE_FILES: SourceFile[] = [
     },
     {
         id: 'fixture-pdf-report',
-        originalPath: '/fixtures/monthly-report.pdf',
+        originalPath: '/fixtures/sample-document.pdf',
         name: 'monthly-report.pdf',
         byteSize: 5_600_000,
         pageCount: 28,

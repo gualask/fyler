@@ -1,5 +1,5 @@
-import type { FinalPage } from '@/shared/domain';
-import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
+import type { FinalPage } from '@/modules/merge/model';
+import { toFinalPageId } from '@/modules/merge/model';
 import {
     createSampleEditsByFile,
     createSampleFixtureFiles,

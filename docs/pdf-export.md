@@ -1,6 +1,17 @@
 # PDF export and optimization
 
-This note documents the current export strategy in Fyler and the reasoning behind it.
+This reference documents Fyler's current document-output behavior and the reasoning behind its PDF
+and raster optimization policies.
+
+## Scope
+
+Fyler has three output paths:
+
+- **Create a PDF** composes selected PDF pages and imported images into one PDF.
+- **Front/back documents** positions two image sources on one A4 page and writes PDF or JPEG.
+- **Batch compression** optimizes each supported PDF or raster image independently.
+
+The sections below describe shared policy first and then the behavior specific to each path.
 
 ## Goal
 
@@ -17,7 +28,7 @@ The implementation is intentionally split into small responsibilities:
 This separation keeps the flow understandable and reduces the risk of hidden
 coupling between unrelated steps.
 
-## Export path
+## Create-a-PDF export path
 
 Fyler builds the exported PDF in a single pass with an incremental composer:
 
@@ -52,7 +63,7 @@ attempt to preserve interactive structures (forms/outlines) from input PDFs.
 Imported image files become pages directly inside the final document:
 
 - JPEG images can use a fast path that embeds the source bitstream directly when
-  no resize or explicit JPEG quality is requested
+  no resize, explicit JPEG quality, or metadata orientation transform is required
 - other imported images are decoded, optionally rotated, then encoded according
   to the selected export preset
 - the page geometry is derived from the chosen fit mode (`fit`, `contain`,
@@ -97,17 +108,10 @@ This lives outside the PDF composition module on purpose.
 
 ### Source inspection
 
-Fyler classifies the source image into a simple compression class:
-
-- `Lossy`
-- `LosslessOrUnknown`
-
-Examples:
-
-- JPEG is treated as lossy
-- WebP is treated as lossy (it is transcoded for PDF embedding)
-- PNG, TIFF, BMP, GIF, ICO, QOI and similar formats are treated as
-  lossless-or-unknown
+Fyler inspects a workflow-neutral source descriptor containing the detected
+format, dimensions, and alpha information. The embedding policy uses that
+descriptor directly: JPEG and WebP take the lossy path, while PNG, BMP, and
+other decoded formats take the conservative lossless-or-unknown path.
 
 The policy does not try to preserve original bytes. It preserves the **content
 class** of the source whenever the preset asks for conservative behavior.
@@ -124,16 +128,16 @@ Current preset policy for imported image pages:
   - JPEG sources are embedded as-is when no resize is required
   - lossless or unknown sources are not forced into JPEG (except WebP)
 - `Balanced`
-  - imported image pages default to JPEG
+  - imported image pages default to JPEG quality 92 at a 170 DPI target
 - `Compact`
-  - imported image pages default to JPEG with more aggressive quality
+  - imported image pages default to JPEG quality 92 at a 120 DPI target
 
 WebP semantic note:
 
 - PDFs cannot embed WebP directly.
 - To avoid huge raw RGB streams (and expensive container compression work),
-  WebP sources are always encoded as JPEG for the final PDF (quality depends on
-  the selected preset).
+  WebP sources are encoded as JPEG quality 92 for the final PDF. Presets differ
+  in their target DPI, not their automatic JPEG quality.
 
 Important semantic note:
 
@@ -145,15 +149,16 @@ huge raw RGB stream inside the final PDF.
 
 ### JPEG fast path
 
-When the source image is a JPEG and no downscale is required (no effective `targetDpi` resize),
-Fyler embeds the original JPEG bitstream directly in the PDF image XObject (`DCTDecode`).
+When the source image is a JPEG and no downscale, explicit quality, or metadata orientation
+transform is required, Fyler embeds the original JPEG bitstream directly in the PDF image XObject
+(`DCTDecode`).
 
 This avoids:
 
 - unnecessary decode / re-encode work
 - generational quality loss
 
-When `jpegQuality` is explicitly set or a downscale is required, Fyler decodes and re-encodes.
+When any of those transformations is required, Fyler decodes and re-encodes.
 
 ### Alpha handling
 
@@ -243,6 +248,33 @@ It can:
 This last rule is important. Compression work that does not materially reduce
 size is discarded instead of replacing the source stream for no reason.
 
+## Front/back document output
+
+The front/back workflow requires both A4 regions to contain either an imported image or one selected
+PDF page. A selected PDF page is first rendered to a bounded JPEG raster and registered as a
+temporary source. The backend owns the authoritative portrait or landscape A4 geometry and applies
+the same compression settings to both regions.
+
+PDF output uses the positioned-image composer and the compatibility-first atomic save path. JPEG
+output renders the same layout directly to one raster file. Both formats support quarter-turn source
+rotation; the preview uses the same backend geometry as export.
+
+## Batch compression
+
+Batch compression allocates collision-safe output names before starting work and processes at most
+two sources concurrently. Every source produces an independent `compressed`, `already optimized`,
+`skipped`, or `failed` result.
+
+For PDFs, the standalone optimizer applies the selected image-optimization policy, removes
+unreferenced objects, renumbers the remaining object graph, and compresses eligible unfiltered
+streams without changing page order. It keeps the original file unless the candidate is at least 5%
+smaller. Password-protected and digitally signed PDFs are skipped.
+
+For raster images, JPEG, PNG, static WebP, and BMP are supported. Images may keep their supported
+source format or convert to JPEG; conversion flattens transparency onto the selected background.
+Animated WebP is skipped. When keeping the source format, Fyler retains the original bytes if the
+encoded candidate would not be meaningfully smaller.
+
 ## Presets
 
 User-facing presets remain simple:
@@ -252,7 +284,8 @@ User-facing presets remain simple:
 - `Balanced`
 - `Compact`
 
-The current default is `Light`.
+Create-a-PDF and front/back workflows default to `Light`. Batch compression defaults to `Balanced`
+and does not offer `Original`, because a batch run must have an active compression policy.
 
 Reasoning:
 

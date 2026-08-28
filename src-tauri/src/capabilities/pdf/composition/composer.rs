@@ -1,0 +1,123 @@
+use anyhow::{Context, Result};
+use lopdf::{Document as PdfDoc, Object, ObjectId};
+
+use crate::capabilities::pdf::image_embedding::{
+    append_image_as_page, append_positioned_images_as_page, ImageEmbeddingOptions, ImageFit,
+    PositionedImage, QuarterTurn as ImageQuarterTurn,
+};
+use crate::shared::error::{UserFacingError, UserFacingErrorCode};
+
+use super::object_copier::ObjectCopier;
+use super::page_effective::effective_page_dictionary;
+
+/// Incrementally composes a new PDF document from PDF pages and images.
+///
+/// Call `push_*` methods in the desired output order, then `finish()` to obtain a `lopdf::Document`.
+pub struct PdfComposer {
+    doc: PdfDoc,
+    page_ids: Vec<ObjectId>,
+}
+
+impl PdfComposer {
+    /// Creates a new empty composer.
+    pub fn new() -> Self {
+        Self {
+            doc: PdfDoc::with_version("1.5"),
+            page_ids: Vec::new(),
+        }
+    }
+
+    /// Appends an image as a new page in the output document.
+    pub fn push_image_page(
+        &mut self,
+        path: &str,
+        image_fit: ImageFit,
+        quarter_turns: ImageQuarterTurn,
+        optimize: Option<&ImageEmbeddingOptions>,
+    ) -> Result<()> {
+        let page_id = append_image_as_page(&mut self.doc, path, image_fit, quarter_turns, optimize)
+            .context("append image page")?;
+        self.page_ids.push(page_id);
+        Ok(())
+    }
+
+    /// Appends a page whose image positions were resolved by the owning workflow.
+    pub fn push_positioned_image_page(
+        &mut self,
+        page_width: f64,
+        page_height: f64,
+        images: &[PositionedImage<'_>],
+    ) -> Result<()> {
+        let page_id =
+            append_positioned_images_as_page(&mut self.doc, page_width, page_height, images)
+                .context("append positioned image page")?;
+        self.page_ids.push(page_id);
+        Ok(())
+    }
+
+    /// Appends a page from an existing PDF into the output document.
+    ///
+    /// `memo` is used to avoid copying the same indirect objects multiple times.
+    pub fn push_pdf_page(
+        &mut self,
+        source: &PdfDoc,
+        memo: &mut std::collections::HashMap<ObjectId, ObjectId>,
+        page_num: u32,
+        quarter_turns: ImageQuarterTurn,
+    ) -> Result<()> {
+        let pages = source.get_pages();
+        let Some(source_page_id) = pages.get(&page_num).copied() else {
+            return Err(anyhow::Error::new(UserFacingError::with_meta(
+                UserFacingErrorCode::PageOutOfRange,
+                serde_json::json!({ "pageNum": page_num, "total": pages.len() }),
+            )));
+        };
+
+        let effective = effective_page_dictionary(source, source_page_id, quarter_turns)
+            .context("build effective page dictionary")?;
+
+        let mut copier = ObjectCopier::new(&mut self.doc, source, memo);
+        let rewritten = copier.rewrite_dictionary(&effective)?;
+
+        let page_id = self.doc.add_object(Object::Dictionary(rewritten));
+        self.page_ids.push(page_id);
+        Ok(())
+    }
+
+    /// Finalizes the PDF by writing the page tree and catalog.
+    pub fn finish(mut self) -> Result<PdfDoc> {
+        let pages_id = self.doc.new_object_id();
+
+        for page_id in &self.page_ids {
+            let object = self
+                .doc
+                .objects
+                .get_mut(page_id)
+                .with_context(|| format!("missing composed page object {:?}", page_id))?;
+            let dict = object.as_dict_mut().context("page is not a dictionary")?;
+            dict.set("Parent", Object::Reference(pages_id));
+            dict.set("Type", Object::Name(b"Page".to_vec()));
+        }
+
+        let kids = self
+            .page_ids
+            .iter()
+            .copied()
+            .map(Object::Reference)
+            .collect::<Vec<_>>();
+
+        let mut pages = lopdf::Dictionary::new();
+        pages.set("Type", Object::Name(b"Pages".to_vec()));
+        pages.set("Kids", Object::Array(kids));
+        pages.set("Count", Object::Integer(self.page_ids.len() as i64));
+        self.doc.objects.insert(pages_id, Object::Dictionary(pages));
+
+        let mut catalog = lopdf::Dictionary::new();
+        catalog.set("Type", Object::Name(b"Catalog".to_vec()));
+        catalog.set("Pages", Object::Reference(pages_id));
+        let catalog_id = self.doc.add_object(Object::Dictionary(catalog));
+        self.doc.trailer.set("Root", Object::Reference(catalog_id));
+
+        Ok(self.doc)
+    }
+}

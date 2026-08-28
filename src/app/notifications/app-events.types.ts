@@ -1,10 +1,4 @@
-import type { SkippedFile } from '@/shared/domain';
-
-export type MergeProgressStep =
-    | 'preparing-documents'
-    | 'merging-pages'
-    | 'optimizing-images'
-    | 'saving';
+import type { SkippedFile } from '@/capabilities/document-sources';
 
 export type AppStatusPayload = {
     kind: 'import-warning';

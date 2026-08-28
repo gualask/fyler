@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
-import type { AvailableUpdate } from '@/infra/platform/updater';
+import type { AvailableUpdate } from '@/infrastructure/platform/updater';
 import { appUpdaterReducer, initialAppUpdaterState } from './app-updater.reducer.js';
 
 const UPDATE = {

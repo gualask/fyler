@@ -1,11 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { OptimizeState } from '@/app/shell/main-app.types';
-import type { ImageOptimizationPreset } from '@/features/export/optimization.types';
-import {
-    DEFAULT_OPTIMIZATION_PRESET,
-    getOptimizationSettings,
-} from '@/features/export/optimization-presets';
-import type { ImageFit } from '@/shared/domain';
+import type { ImageFit, ImageOptimizationPreset } from '@/modules/merge/model';
+import { DEFAULT_OPTIMIZATION_PRESET, getOptimizationSettings } from '@/modules/merge/model';
+import type { OptimizeState } from '@/modules/merge/ui/workspace/main-app.types';
 
 export function useWorkspaceFixtureOptimization(): OptimizeState {
     const [imageFit, setImageFit] = useState<ImageFit>('contain');

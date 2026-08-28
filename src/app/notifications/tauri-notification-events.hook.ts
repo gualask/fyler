@@ -1,22 +1,31 @@
 import { useEffect } from 'react';
 
-import { onTauriEvent } from '@/infra/platform/events';
+import { onTauriEvent } from '@/infrastructure/platform/events';
+import {
+    isMergeOperationProgressPayload,
+    isPageCompositionOperationProgressPayload,
+    type MergeOperationProgressPayload,
+    OPERATION_PROGRESS_EVENT,
+    type PageCompositionOperationProgressPayload,
+} from '@/shared/contracts/operation-progress';
 import { useDiagnostics } from '@/shared/diagnostics';
 
-import type { AppStatusPayload, MergeProgressStep } from './app-events.types';
+import type { AppStatusPayload } from './app-events.types';
 
 interface TauriNotificationCallbacks {
     onError: (message: string) => void;
     onImportWarning: (payload: AppStatusPayload) => void;
     onImportProgress: (completed: number, total: number) => void;
-    onMergeProgress: (step: MergeProgressStep, progress: number) => void;
+    onOperationProgress: (
+        payload: MergeOperationProgressPayload | PageCompositionOperationProgressPayload,
+    ) => void;
 }
 
 export function useTauriNotificationEvents({
     onError,
     onImportWarning,
     onImportProgress,
-    onMergeProgress,
+    onOperationProgress,
 }: TauriNotificationCallbacks) {
     const { record } = useDiagnostics();
 
@@ -49,11 +58,13 @@ export function useTauriNotificationEvents({
     }, [onImportProgress]);
 
     useEffect(() => {
-        return onTauriEvent<{ step: MergeProgressStep; progress: number }>(
-            'merge-progress',
-            (event) => {
-                onMergeProgress(event.payload.step, event.payload.progress);
-            },
-        );
-    }, [onMergeProgress]);
+        return onTauriEvent<unknown>(OPERATION_PROGRESS_EVENT, (event) => {
+            if (
+                isMergeOperationProgressPayload(event.payload) ||
+                isPageCompositionOperationProgressPayload(event.payload)
+            ) {
+                onOperationProgress(event.payload);
+            }
+        });
+    }, [onOperationProgress]);
 }

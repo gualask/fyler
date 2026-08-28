@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useMemo } from 'react';
-import type { FinalPage, SourceFile } from '@/shared/domain';
+import type { SourceFile } from '@/capabilities/document-sources';
+import type { FinalPage } from '@/modules/merge/model';
 import {
     finalPagesForFile,
     finalPagesForPdfPages,

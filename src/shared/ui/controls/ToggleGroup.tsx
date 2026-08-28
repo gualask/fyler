@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { type ReactNode, useId } from 'react';
 
 export type ToggleOption<T extends string> = {
@@ -11,12 +11,14 @@ export type ToggleOption<T extends string> = {
 };
 
 export function ToggleGroup<T extends string>({
+    ariaLabel,
     className,
     options,
     variant = 'default',
     value,
     onChange,
 }: {
+    ariaLabel?: string;
     className?: string;
     options: ToggleOption<T>[];
     variant?: 'default' | 'swatch';
@@ -24,9 +26,11 @@ export function ToggleGroup<T extends string>({
     onChange: (v: T) => void;
 }) {
     const indicatorId = useId();
+    const reduceMotion = useReducedMotion();
 
     return (
-        <div
+        <fieldset
+            aria-label={ariaLabel}
             className={[
                 'toggle-group__buttons relative',
                 variant === 'swatch' ? 'toggle-group__buttons--swatch' : '',
@@ -57,10 +61,14 @@ export function ToggleGroup<T extends string>({
                 >
                     {value === opt.value ? (
                         <motion.span
-                            layoutId={indicatorId}
+                            layoutId={reduceMotion ? undefined : indicatorId}
                             initial={false}
                             aria-hidden
-                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                            transition={
+                                reduceMotion
+                                    ? { duration: 0 }
+                                    : { duration: 0.25, ease: [0.16, 1, 0.3, 1] }
+                            }
                             className={[
                                 'toggle-group__indicator absolute inset-0 pointer-events-none shadow-sm',
                                 variant === 'swatch'
@@ -74,6 +82,6 @@ export function ToggleGroup<T extends string>({
                     </span>
                 </button>
             ))}
-        </div>
+        </fieldset>
     );
 }

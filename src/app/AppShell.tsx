@@ -1,4 +1,3 @@
-import { PdfCacheProvider } from '@/infra/pdf';
 import { useDiagnostics } from '@/shared/diagnostics';
 import { useTranslation } from '@/shared/i18n';
 
@@ -18,9 +17,7 @@ export function AppShell() {
                 record(toReactBoundaryDiagnostic(error));
             }}
         >
-            <PdfCacheProvider>
-                <AppContent />
-            </PdfCacheProvider>
+            <AppContent />
         </AppErrorBoundary>
     );
 }

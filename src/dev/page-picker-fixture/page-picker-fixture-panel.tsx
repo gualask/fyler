@@ -1,4 +1,4 @@
-import { PagePicker } from '@/features/page-picker';
+import { PagePicker } from '@/modules/merge/ui/page-picker';
 import type { PagePickerFixtureState } from './page-picker-fixture-state.hook';
 
 export function PagePickerFixturePanel({ fixture }: { fixture: PagePickerFixtureState }) {

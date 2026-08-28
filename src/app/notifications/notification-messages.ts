@@ -1,4 +1,4 @@
-import type { SkippedFileReason } from '@/shared/domain';
+import type { SkippedFileReason } from '@/capabilities/document-sources';
 import { getErrorMessage, parseAppErrorPayload, toInterpolationValues } from '@/shared/errors';
 import type { InterpolationValues, PluralBaseKey, TranslationKey } from '@/shared/i18n';
 

@@ -1,12 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import type {
-    FileEdits,
-    FinalPage,
-    RotationDirection,
-    SourceFile,
-    SourceTarget,
-} from '@/shared/domain';
-import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
+import type { SourceFile, SourceTarget } from '@/capabilities/document-sources';
+import type { FileEdits, FinalPage } from '@/modules/merge/model';
+import { FileEditsVO } from '@/modules/merge/model';
+import type { RotationDirection } from '@/shared/domain';
 import { createSampleEditsByFile, createSampleFixtureFiles } from '../sample-assets.fixture-data';
 import { getPagePickerFixtureMode } from './page-picker-fixture-mode';
 import {

@@ -1,5 +1,6 @@
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
-import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
+import type { SourceFile } from '@/capabilities/document-sources';
+import type { FileEdits, FinalPage } from '@/modules/merge/model';
+import { toFinalPageId } from '@/modules/merge/model';
 
 export const SAMPLE_PDF_FILE: SourceFile = {
     id: 'sample-pdf-file',

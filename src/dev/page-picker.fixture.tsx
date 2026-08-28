@@ -1,4 +1,4 @@
-import { PdfCacheProvider } from '@/infra/pdf';
+import { PdfCacheProvider } from '@/infrastructure/pdfjs';
 import { PagePickerFixtureLayout } from './page-picker-fixture/page-picker-fixture-layout';
 import { PagePickerFixturePanel } from './page-picker-fixture/page-picker-fixture-panel';
 import { PagePickerFixturePreview } from './page-picker-fixture/page-picker-fixture-preview';

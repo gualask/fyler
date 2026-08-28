@@ -1,4 +1,4 @@
-import type { AvailableUpdate } from '@/infra/platform/updater';
+import type { AvailableUpdate } from '@/infrastructure/platform/updater';
 
 export interface AppUpdaterState {
     update: AvailableUpdate | null;

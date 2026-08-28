@@ -1,14 +1,10 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useMemo } from 'react';
-import type { WorkspaceApi } from '@/features/workspace';
-import type {
-    FileEdits,
-    FinalPage,
-    RotationDirection,
-    SourceFile,
-    SourceTarget,
-} from '@/shared/domain';
-import { FileEditsVO } from '@/shared/domain/value-objects/file-edits.vo';
+import type { SourceFile, SourceTarget } from '@/capabilities/document-sources';
+import type { WorkspaceApi } from '@/modules/merge/application';
+import type { FileEdits, FinalPage } from '@/modules/merge/model';
+import { FileEditsVO } from '@/modules/merge/model';
+import type { RotationDirection } from '@/shared/domain';
 
 const CLOSED_PASSWORD_DIALOG = {
     open: false,

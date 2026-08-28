@@ -1,0 +1,138 @@
+@layer components {
+    .btn-primary {
+        @apply flex min-h-10 items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold shadow-md transition-[colors,transform] active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-40 disabled:active:scale-100;
+        background-color: var(--ui-accent-solid);
+        color: var(--ui-accent-on-solid);
+    }
+    .btn-primary-lg {
+        @apply flex items-center gap-2 rounded-lg px-6 py-3 text-base font-semibold shadow-md transition-[colors,transform] active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-40 disabled:active:scale-100;
+        background-color: var(--ui-accent-solid);
+        color: var(--ui-accent-on-solid);
+    }
+    .btn-primary:hover:not(:disabled),
+    .btn-primary-lg:hover:not(:disabled) {
+        background-color: var(--ui-accent-solid-hover);
+    }
+    .btn-ghost {
+        @apply flex min-h-10 items-center gap-2 rounded-lg bg-ui-surface-hover px-4 py-2 text-sm font-medium text-ui-text-secondary transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
+    }
+    .btn-ghost-sm {
+        @apply flex min-h-9 items-center gap-1 rounded-md bg-ui-surface-hover px-3 py-1.5 text-sm font-medium text-ui-text-secondary transition-[colors,transform] hover:bg-ui-accent-soft hover:text-ui-accent-on-soft active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-ui-surface-hover disabled:hover:text-ui-text-secondary;
+    }
+    .btn-icon {
+        @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg p-1.5 text-ui-text-muted transition-[colors,transform] hover:bg-ui-surface-hover hover:text-ui-text-secondary active:scale-[0.93] motion-reduce:transform-none motion-reduce:transition-none;
+    }
+    .btn-danger {
+        @apply flex min-h-10 items-center gap-2 rounded-lg bg-ui-danger px-5 py-2 text-sm font-semibold text-white shadow-md transition-[colors,transform] hover:bg-ui-danger-hover active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-40 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-danger/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface disabled:cursor-not-allowed;
+    }
+    .btn-primary,
+    .btn-primary-lg,
+    .btn-ghost,
+    .btn-ghost-sm,
+    .btn-icon {
+        @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent-muted focus-visible:ring-offset-2 focus-visible:ring-offset-ui-surface disabled:cursor-not-allowed;
+    }
+    .btn-toolbar {
+        @apply h-10;
+    }
+    .btn-icon-active {
+        @apply bg-ui-accent-soft text-ui-accent-on-soft;
+    }
+    .toggle-on {
+        color: var(--ui-accent-on-solid);
+        background-color: var(--ui-accent-solid);
+        border-color: var(--ui-accent-solid);
+    }
+    .toggle-off {
+        @apply border-ui-border text-ui-text-secondary hover:border-ui-accent/30 hover:bg-ui-accent-soft hover:text-ui-accent-on-soft;
+    }
+    .toggle-group__buttons {
+        @apply flex h-8 min-w-0 gap-0.5 rounded-lg bg-ui-surface-hover p-1;
+    }
+    .toggle-group__buttons--swatch {
+        @apply gap-0.5 rounded-full border border-ui-border bg-ui-bg/55 p-0.5;
+    }
+    .toggle-group__button {
+        @apply rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap transition-[background-color,color,box-shadow] disabled:cursor-default disabled:opacity-55;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1 1 0;
+        min-width: 4rem;
+    }
+    .toggle-group__button--swatch {
+        @apply h-7 w-7 min-w-0 flex-none rounded-full px-0;
+    }
+    .toggle-group__button:focus-visible {
+        outline: 2px solid var(--ui-accent-muted);
+        outline-offset: 2px;
+    }
+    .toggle-group__button-active {
+        color: var(--ui-accent-on-solid);
+        background-color: transparent;
+    }
+    .toggle-group__button-active.toggle-group__button--swatch {
+        background-color: transparent;
+    }
+    .toggle-group__indicator--default {
+        background-color: var(--ui-accent-solid);
+    }
+    .toggle-group__indicator--swatch {
+        background-color: var(--ui-accent-soft);
+    }
+    .toggle-group__button-inactive {
+        @apply text-ui-text-secondary hover:bg-ui-accent-soft-hover hover:text-ui-accent-on-soft;
+    }
+    .input-base,
+    .select-base {
+        @apply h-8 w-full rounded-lg border border-ui-border bg-ui-bg px-3 text-sm text-ui-text outline-none transition-colors focus:ring-1 focus:ring-ui-accent;
+    }
+    .select-base {
+        cursor: pointer;
+    }
+    .label-caps {
+        @apply text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
+    }
+    .section-header {
+        @apply flex h-10 shrink-0 items-center justify-between gap-3 bg-ui-surface-subtle py-1 pl-4 pr-4 box-border;
+    }
+    .section-header-title {
+        @apply min-w-0 shrink-0 truncate text-[10px] font-bold uppercase tracking-widest text-ui-text-muted;
+    }
+    .section-toolbar {
+        @apply flex min-w-0 items-center justify-end gap-2;
+    }
+    .section-toolbar-label {
+        @apply shrink-0 text-[10px] font-bold uppercase tracking-wide text-ui-text-muted;
+    }
+    .section-toolbar-note {
+        @apply inline-flex h-8 items-center text-xs font-medium text-ui-text-muted;
+    }
+    .section-toolbar-stat {
+        @apply inline-flex h-8 items-center rounded-lg bg-ui-surface-hover px-3 text-sm font-semibold text-ui-text-secondary;
+    }
+    .section-body {
+        @apply bg-ui-output;
+    }
+    .panel-header {
+        @apply flex shrink-0 items-center justify-between border-b border-ui-border px-4 py-3;
+    }
+    .dialog-backdrop {
+        @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40;
+    }
+    .dialog-backdrop-padded {
+        @apply px-4;
+    }
+    .dialog-backdrop-strong {
+        @apply bg-black/50;
+    }
+    .dialog-backdrop-blur {
+        backdrop-filter: blur(4px);
+    }
+    .dialog-panel {
+        @apply bg-ui-surface shadow-2xl;
+    }
+    .dialog-panel-bordered {
+        @apply border border-ui-border;
+    }
+}

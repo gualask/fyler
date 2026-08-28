@@ -1,5 +1,6 @@
-import type { FinalPage, SourceFile, SourceTarget } from '@/shared/domain';
-import { toFinalPageId } from '@/shared/domain/utils/final-page-id';
+import type { SourceFile, SourceTarget } from '@/capabilities/document-sources';
+import type { FinalPage } from '@/modules/merge/model';
+import { toFinalPageId } from '@/modules/merge/model';
 import { SAMPLE_IMAGE_FILE, SAMPLE_PDF_FILE } from '../sample-assets.fixture-data';
 
 function imageFinalPage(fileId: string): FinalPage {

@@ -1,0 +1,104 @@
+import type { PasswordProtectedFile, SourceFile } from '@/capabilities/document-sources';
+import type { DiagnosticEntry } from '@/shared/diagnostics';
+import { parseAppErrorPayload } from '@/shared/errors';
+
+export type PasswordDialogError = 'invalid-password' | 'previous-password-failed' | 'unlock-failed';
+
+export type PendingPasswordImport = {
+    baseFiles: SourceFile[];
+    completedCount: number;
+    queue: PasswordProtectedFile[];
+    unlockedFiles: SourceFile[];
+    resolve: (files: SourceFile[]) => void;
+};
+
+export type ActivePasswordImport = {
+    pending: PendingPasswordImport;
+    current: PasswordProtectedFile;
+};
+
+export type RecordDiagnostic = (entry: Omit<DiagnosticEntry, 'id' | 'timestamp'>) => void;
+
+export type UnlockProtectedPdf = (
+    file: PasswordProtectedFile,
+    password: string,
+) => Promise<SourceFile>;
+
+export type PasswordSubmission = {
+    pending: PendingPasswordImport;
+    current: PasswordProtectedFile;
+    password: string;
+    tryForRemaining: boolean;
+};
+
+export function passwordDialogError(
+    error: unknown,
+): Exclude<PasswordDialogError, 'previous-password-failed'> {
+    return parseAppErrorPayload(error)?.code === 'invalid_pdf_password'
+        ? 'invalid-password'
+        : 'unlock-failed';
+}
+
+export function appendUnlockedFile(pending: PendingPasswordImport, source: SourceFile) {
+    pending.unlockedFiles.push(source);
+    pending.completedCount += 1;
+}
+
+export function resolvedImportFiles(pending: PendingPasswordImport): SourceFile[] {
+    return [...pending.baseFiles, ...pending.unlockedFiles];
+}
+
+export function currentPasswordImport(
+    pending: PendingPasswordImport | null,
+): ActivePasswordImport | null {
+    const current = pending?.queue[0];
+    return pending && current ? { pending, current } : null;
+}
+
+export function passwordSubmissionFromDialog(
+    activeImport: ActivePasswordImport,
+    password: string,
+    tryForRemaining: boolean,
+): PasswordSubmission | null {
+    if (!password) return null;
+
+    return {
+        ...activeImport,
+        password,
+        tryForRemaining,
+    };
+}
+
+export function skipCurrentPasswordFile(pending: PendingPasswordImport) {
+    pending.completedCount += 1;
+    pending.queue = pending.queue.slice(1);
+}
+
+function recordSavedPasswordFailure(record: RecordDiagnostic, error: unknown) {
+    record({
+        category: 'files',
+        severity: passwordDialogError(error) === 'invalid-password' ? 'warn' : 'error',
+        message: 'Saved PDF password did not unlock protected PDF',
+    });
+}
+
+export async function unlockRemainingWithPassword(
+    pending: PendingPasswordImport,
+    remaining: PasswordProtectedFile[],
+    password: string,
+    unlockOne: UnlockProtectedPdf,
+    record: RecordDiagnostic,
+): Promise<PasswordProtectedFile[]> {
+    const stillLocked: PasswordProtectedFile[] = [];
+
+    for (const file of remaining) {
+        try {
+            appendUnlockedFile(pending, await unlockOne(file, password));
+        } catch (error) {
+            stillLocked.push(file);
+            recordSavedPasswordFailure(record, error);
+        }
+    }
+
+    return stillLocked;
+}

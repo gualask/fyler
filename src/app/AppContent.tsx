@@ -1,30 +1,27 @@
-import { lazy, Suspense, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 import { useAppNotifications } from '@/app/notifications';
-import { useExportAction, useOptimize } from '@/features/export';
-import { useTutorial, useTutorialFilesAddedHandler } from '@/features/tutorial';
+import { useApplicationWindowPort } from '@/capabilities/application-window';
+import { BatchCompressionWorkflow } from '@/modules/batch-compression';
+import { MergeWorkflow } from '@/modules/merge/ui';
+import { PageCompositionWorkflow } from '@/modules/page-composition';
+import { useSupportDiagnostics } from '@/modules/support';
+import { TaskHome } from '@/modules/task-home';
 import {
-    ProtectedPdfPasswordDialog,
-    QuickAddView,
-    useAddFilesAction,
-    useQuickAdd,
-    useQuickAddActions,
-    useWorkspace,
-} from '@/features/workspace';
+    EMPTY_MERGE_DIAGNOSTICS,
+    type MergeDiagnosticsSnapshot,
+} from '@/shared/contracts/merge-diagnostics';
 import { useTheme } from '@/shared/preferences';
-
+import { type AppWindowProfile, applyAppWindowProfile } from './app-window-profile';
 import { AppOverlays } from './overlays/AppOverlays';
-import { useAppOverlayState } from './overlays/use-app-overlay-state.hook';
-import { MainAppView } from './shell/MainAppView';
-import { useAppContentViewState } from './use-app-content-view-state.hook';
+import { TimedProgressModal } from './overlays/ProgressModal';
+import { AlwaysOnTopButton, useAlwaysOnTop } from './shell/always-on-top';
+import { AppSettingsMenu } from './shell/settings-menu/AppSettingsMenu';
 
 const UpdateDialog =
     import.meta.env.MODE === 'standalone'
         ? null
         : lazy(() => import('./updates').then((module) => ({ default: module.UpdateDialog })));
-
-type QuickAddState = ReturnType<typeof useQuickAdd>;
-type WorkspaceState = ReturnType<typeof useWorkspace>;
 
 function UpdateDialogSlot() {
     if (!UpdateDialog) return null;
@@ -36,141 +33,110 @@ function UpdateDialogSlot() {
     );
 }
 
-function useQuickAddFileHandlers({
-    quickAdd,
-    workspace,
-    handleExitQuickAdd,
-    isBusy,
-}: {
-    quickAdd: QuickAddState;
-    workspace: WorkspaceState;
-    handleExitQuickAdd: () => void;
-    isBusy: boolean;
-}) {
-    const { onFileRemoved, quickAddFileOrder } = quickAdd;
-    const { removeFile, removeFiles } = workspace;
+export function AppContent() {
+    const notifications = useAppNotifications();
+    const applicationWindow = useApplicationWindowPort();
+    const { isDark, toggleTheme, accent, setAccent } = useTheme();
+    const [mergeDiagnostics, setMergeDiagnostics] =
+        useState<MergeDiagnosticsSnapshot>(EMPTY_MERGE_DIAGNOSTICS);
+    const alwaysOnTop = useAlwaysOnTop(applicationWindow, notifications.showError);
+    const support = useSupportDiagnostics({
+        isDark,
+        isAlwaysOnTop: alwaysOnTop.isAlwaysOnTop,
+        ...mergeDiagnostics,
+    });
+    const [operation, setOperation] = useState<AppWindowProfile>('home');
 
-    const handleQuickAddFileRemove = useCallback(
-        (id: string) => {
-            if (isBusy) return;
-            onFileRemoved(id);
-            removeFile(id);
-        },
-        [isBusy, onFileRemoved, removeFile],
+    useEffect(() => {
+        if (operation !== 'merge') setMergeDiagnostics(EMPTY_MERGE_DIAGNOSTICS);
+    }, [operation]);
+
+    useEffect(() => {
+        let active = true;
+        void applyAppWindowProfile(applicationWindow, operation, () => active).catch(
+            () => undefined,
+        );
+        return () => {
+            active = false;
+        };
+    }, [applicationWindow, operation]);
+
+    const settingsMenu = (onReportBug = support.openReportBug) => (
+        <AppSettingsMenu
+            isDark={isDark}
+            accent={accent}
+            onToggleTheme={toggleTheme}
+            onSetAccent={setAccent}
+            onReportBug={onReportBug}
+        />
     );
 
-    const handleQuickAddDiscardAndExit = useCallback(() => {
-        if (isBusy) return;
-        const quickAddIds = quickAddFileOrder;
-
-        if (quickAddIds.length > 0) {
-            for (const id of quickAddIds) {
-                onFileRemoved(id);
+    const progressOverlay = () => (
+        <TimedProgressModal
+            message={
+                notifications.loadingProgress === undefined ? null : notifications.loadingMessage
             }
-            removeFiles(quickAddIds);
-        }
+            progress={notifications.loadingProgress}
+            progressLabel={notifications.loadingProgressLabel}
+            elapsedTimeLabel={notifications.loadingElapsedTimeLabel}
+        />
+    );
 
-        handleExitQuickAdd();
-    }, [handleExitQuickAdd, isBusy, onFileRemoved, quickAddFileOrder, removeFiles]);
+    const alwaysOnTopControl = () => (
+        <AlwaysOnTopButton
+            active={alwaysOnTop.isAlwaysOnTop}
+            disabled={alwaysOnTop.isChangingAlwaysOnTop}
+            onToggle={alwaysOnTop.toggle}
+        />
+    );
 
-    return {
-        handleQuickAddFileRemove,
-        handleQuickAddDiscardAndExit,
+    const returnHome = () => {
+        void alwaysOnTop.disable().then((didDisable) => {
+            if (didDisable) setOperation('home');
+        });
     };
-}
-
-export function AppContent() {
-    const quickAdd = useQuickAdd();
-    const notifications = useAppNotifications();
-    const isBusy = notifications.isBusy;
-    const isQuickAddDisabled = quickAdd.isTransitioning || isBusy;
-    const tutorial = useTutorial();
-    const onFilesAdded = useTutorialFilesAddedHandler({ quickAdd, tutorial });
-    const workspace = useWorkspace({
-        onFilesAdded,
-        onDropError: notifications.showError,
-        onDropImportStart: notifications.beginOpeningFiles,
-        onDropImportReady: notifications.finishOpeningFiles,
-    });
-    const { isDark, toggleTheme, accent, setAccent } = useTheme();
-    const optimize = useOptimize();
-
-    const { rootClassName } = useAppContentViewState({
-        quickAdd,
-        tutorial,
-        workspace,
-    });
-    const { support, showFinalPreview, setShowFinalPreview } = useAppOverlayState({
-        isDark,
-        quickAdd,
-        workspace,
-        optimize,
-    });
-
-    const exportMerged = useExportAction({
-        finalPages: workspace.finalPages,
-        editsByFile: workspace.editsByFile,
-        notifications,
-        optimize,
-    });
-    const handleAddFiles = useAddFilesAction({ workspace, notifications });
-    const { handleEnterQuickAdd, handleExitQuickAdd } = useQuickAddActions({
-        quickAdd,
-        notifications,
-    });
-    const { handleQuickAddFileRemove, handleQuickAddDiscardAndExit } = useQuickAddFileHandlers({
-        quickAdd,
-        workspace,
-        handleExitQuickAdd,
-        isBusy,
-    });
 
     return (
-        <div className={rootClassName} aria-busy={isBusy}>
+        <>
             <UpdateDialogSlot />
-            {quickAdd.isQuickAdd ? (
-                <QuickAddView
-                    files={workspace.files}
-                    quickAddFileOrder={quickAdd.quickAddFileOrder}
-                    disabled={isQuickAddDisabled}
-                    isDragOver={workspace.isDragOver}
-                    onRemove={handleQuickAddFileRemove}
-                    onDiscardAndExit={handleQuickAddDiscardAndExit}
-                    onDone={handleExitQuickAdd}
+            <AppOverlays notifications={notifications} support={support} />
+            {operation === 'home' ? (
+                <TaskHome
+                    onOpenMerge={() => setOperation('merge')}
+                    onOpenPageComposition={() => setOperation('page-composition')}
+                    onOpenBatchCompression={() => setOperation('batch-compression')}
+                    renderSettingsMenu={() => settingsMenu()}
                 />
-            ) : (
-                <MainAppView
-                    isDark={isDark}
-                    accent={accent}
-                    toggleTheme={toggleTheme}
-                    setAccent={setAccent}
-                    openReportBug={support.openReportBug}
-                    tutorialStart={tutorial.start}
-                    canHelp={!isBusy && workspace.files.length > 0}
-                    onQuickAdd={handleEnterQuickAdd}
-                    isQuickAddDisabled={isQuickAddDisabled}
-                    canExport={!isBusy && workspace.finalPages.length > 0}
-                    canPreview={!isBusy && workspace.finalPages.length > 0}
-                    isDragOver={workspace.isDragOver}
-                    workspace={workspace}
-                    handleAddFiles={handleAddFiles}
-                    optimize={optimize}
-                    exportMerged={exportMerged}
-                    setShowFinalPreview={setShowFinalPreview}
+            ) : null}
+            {operation === 'merge' ? (
+                <MergeWorkflow
+                    notifications={notifications}
+                    onReportBug={support.openReportBug}
+                    onDiagnosticsChange={setMergeDiagnostics}
+                    onExit={returnHome}
+                    settings={{ renderSettingsMenu: settingsMenu }}
+                    renderAlwaysOnTopControl={alwaysOnTopControl}
+                    renderProgressOverlay={progressOverlay}
                 />
-            )}
-
-            <AppOverlays
-                notifications={notifications}
-                support={support}
-                tutorial={tutorial}
-                showFinalPreview={showFinalPreview}
-                setShowFinalPreview={setShowFinalPreview}
-                workspace={workspace}
-                imageFit={optimize.imageFit}
-                progressVariant={quickAdd.isQuickAdd ? 'compact' : 'standard'}
-            />
-            <ProtectedPdfPasswordDialog state={workspace.passwordDialog} />
-        </div>
+            ) : null}
+            {operation === 'page-composition' ? (
+                <PageCompositionWorkflow
+                    notifications={notifications}
+                    onExit={returnHome}
+                    renderSettingsMenu={() => settingsMenu()}
+                    renderAlwaysOnTopControl={alwaysOnTopControl}
+                    renderProgressOverlay={progressOverlay}
+                />
+            ) : null}
+            {operation === 'batch-compression' ? (
+                <BatchCompressionWorkflow
+                    notifications={notifications}
+                    onExit={returnHome}
+                    renderSettingsMenu={() => settingsMenu()}
+                    renderAlwaysOnTopControl={alwaysOnTopControl}
+                    renderProgressOverlay={progressOverlay}
+                />
+            ) : null}
+        </>
     );
 }

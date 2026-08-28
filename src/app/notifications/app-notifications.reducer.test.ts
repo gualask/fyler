@@ -7,22 +7,57 @@ import {
 
 test('stores merge progress in loading state', () => {
     const preparing = appNotificationsReducer(initialAppNotificationsState, {
-        type: 'show-merge-preparing',
+        type: 'show-operation-preparing',
+        operation: 'merge',
     });
     const state = appNotificationsReducer(preparing, {
-        type: 'show-merge-progress',
-        step: 'merging-pages',
-        progress: 42,
+        type: 'show-operation-progress',
+        payload: {
+            version: 1,
+            operation: 'merge',
+            phase: 'merging-pages',
+            percentage: 42,
+        },
     });
 
     assert.deepEqual(state, {
         status: null,
         loading: {
-            kind: 'merge-progress',
-            step: 'merging-pages',
-            progress: 42,
+            kind: 'operation-progress',
+            operation: 'merge',
+            phase: 'merging-pages',
+            percentage: 42,
         },
     });
+});
+
+test('stores and finishes page-composition progress independently', () => {
+    const preparing = appNotificationsReducer(initialAppNotificationsState, {
+        type: 'show-operation-preparing',
+        operation: 'page-composition',
+    });
+    const composing = appNotificationsReducer(preparing, {
+        type: 'show-operation-progress',
+        payload: {
+            version: 1,
+            operation: 'page-composition',
+            phase: 'composing',
+            percentage: 60,
+        },
+    });
+    assert.deepEqual(composing.loading, {
+        kind: 'operation-progress',
+        operation: 'page-composition',
+        phase: 'composing',
+        percentage: 60,
+    });
+    assert.equal(
+        appNotificationsReducer(composing, {
+            type: 'finish-operation',
+            operation: 'page-composition',
+        }).loading,
+        null,
+    );
 });
 
 test('stores monotonic file progress while an import is active', () => {
@@ -61,9 +96,10 @@ test('finishes only the file import loader', () => {
     const mergeState = {
         status: null,
         loading: {
-            kind: 'merge-progress' as const,
-            step: 'saving' as const,
-            progress: 90,
+            kind: 'operation-progress' as const,
+            operation: 'merge' as const,
+            phase: 'saving' as const,
+            percentage: 90,
         },
     };
 
@@ -75,12 +111,17 @@ test('does not replace an active import with merge progress', () => {
         type: 'show-opening-files',
     });
     const preparing = appNotificationsReducer(opening, {
-        type: 'show-merge-preparing',
+        type: 'show-operation-preparing',
+        operation: 'merge',
     });
     const progressed = appNotificationsReducer(opening, {
-        type: 'show-merge-progress',
-        step: 'merging-pages',
-        progress: 42,
+        type: 'show-operation-progress',
+        payload: {
+            version: 1,
+            operation: 'merge',
+            phase: 'merging-pages',
+            percentage: 42,
+        },
     });
 
     assert.equal(preparing, opening);
@@ -89,7 +130,8 @@ test('does not replace an active import with merge progress', () => {
 
 test('does not replace an active merge with a file import', () => {
     const merging = appNotificationsReducer(initialAppNotificationsState, {
-        type: 'show-merge-preparing',
+        type: 'show-operation-preparing',
+        operation: 'merge',
     });
 
     assert.equal(appNotificationsReducer(merging, { type: 'show-opening-files' }), merging);
@@ -100,7 +142,10 @@ test('finishes only the merge loader', () => {
         type: 'show-opening-files',
     });
 
-    assert.equal(appNotificationsReducer(opening, { type: 'finish-merge' }), opening);
+    assert.equal(
+        appNotificationsReducer(opening, { type: 'finish-operation', operation: 'merge' }),
+        opening,
+    );
 });
 
 test('shows an error status message', () => {
@@ -134,9 +179,14 @@ test('finishes merge loading without touching status', () => {
     const state = appNotificationsReducer(
         {
             status: { kind: 'export-completed' },
-            loading: { kind: 'merge-progress', step: 'merging-pages', progress: 88 },
+            loading: {
+                kind: 'operation-progress',
+                operation: 'merge',
+                phase: 'merging-pages',
+                percentage: 88,
+            },
         },
-        { type: 'finish-merge' },
+        { type: 'finish-operation', operation: 'merge' },
     );
 
     assert.deepEqual(state, {

@@ -1,4 +1,8 @@
-import { TUTORIAL_TARGETS, TutorialOverlay, tutorialTargetProps } from '@/features/tutorial';
+import {
+    TUTORIAL_TARGETS,
+    TutorialOverlay,
+    tutorialTargetProps,
+} from '@/modules/merge/ui/tutorial';
 
 const TOTAL_STEPS = 7;
 
@@ -78,9 +82,9 @@ export function TutorialOverlayFixturePage() {
                             tutorialTarget={TUTORIAL_TARGETS.outputPanel}
                         />
                         <FixturePanel
-                            title="Quick Add"
-                            description="Fixture target for the optional Quick Add tutorial step."
-                            tutorialTarget={TUTORIAL_TARGETS.quickAdd}
+                            title="Always on top"
+                            description="Fixture target for the optional always-on-top tutorial step."
+                            tutorialTarget={TUTORIAL_TARGETS.alwaysOnTop}
                         />
                         <FixturePanel
                             title="Settings"

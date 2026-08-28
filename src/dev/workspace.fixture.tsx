@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
 
-import { MainAppView } from '@/app/shell/MainAppView';
-import { PreviewModal } from '@/features/preview';
-import { TutorialOverlay } from '@/features/tutorial';
-import { PdfCacheProvider } from '@/infra/pdf';
-import type { FileEdits, FinalPage, SourceFile } from '@/shared/domain';
+import { AppSettingsMenu } from '@/app/shell/settings-menu/AppSettingsMenu';
+import type { SourceFile } from '@/capabilities/document-sources';
+import { PdfCacheProvider } from '@/infrastructure/pdfjs';
+import type { FileEdits, FinalPage } from '@/modules/merge/model';
+import { WorkspaceStoreProvider } from '@/modules/merge/model';
+import { PreviewModal } from '@/modules/merge/ui/preview';
+import { TutorialOverlay } from '@/modules/merge/ui/tutorial';
+import { MainAppView } from '@/modules/merge/ui/workspace/MainAppView';
 import { useTheme } from '@/shared/preferences';
 import { useWorkspaceFixtureOptimization } from './workspace-fixture/workspace-fixture-optimization.hook';
 import { getTutorialStep } from './workspace-fixture/workspace-fixture-route';
@@ -57,35 +60,44 @@ export function WorkspaceFixturePage({
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-ui-bg text-ui-text">
             <PdfCacheProvider>
-                <MainAppView
-                    isDark={isDark}
-                    accent={accent}
-                    toggleTheme={toggleTheme}
-                    setAccent={setAccent}
-                    openReportBug={() => undefined}
-                    tutorialStart={() => undefined}
-                    canHelp={files.length > 0}
-                    onQuickAdd={() => undefined}
-                    isQuickAddDisabled={false}
-                    canExport={finalPages.length > 0}
-                    canPreview={finalPages.length > 0}
-                    isDragOver={false}
-                    workspace={workspace}
-                    handleAddFiles={() => undefined}
-                    optimize={optimize}
-                    exportMerged={async () => undefined}
-                    setShowFinalPreview={setShowFinalPreview}
-                />
-                {showFinalPreview ? (
-                    <PreviewModal
-                        finalPages={finalPages}
-                        files={files}
-                        editsByFile={editsByFile}
-                        imageFit={optimize.imageFit}
-                        matchExportedImages
-                        onClose={() => setShowFinalPreview(false)}
+                <WorkspaceStoreProvider store={workspace.store}>
+                    <MainAppView
+                        renderSettingsMenu={(onReportBug) => (
+                            <AppSettingsMenu
+                                isDark={isDark}
+                                accent={accent}
+                                onToggleTheme={toggleTheme}
+                                onSetAccent={setAccent}
+                                onReportBug={onReportBug}
+                            />
+                        )}
+                        openReportBug={() => undefined}
+                        tutorialStart={() => undefined}
+                        canHelp={files.length > 0}
+                        renderAlwaysOnTopControl={() => (
+                            <button type="button" className="btn-icon" aria-label="Always on top" />
+                        )}
+                        canExport={finalPages.length > 0}
+                        canPreview={finalPages.length > 0}
+                        isDragOver={false}
+                        workspace={workspace}
+                        handleAddFiles={() => undefined}
+                        optimize={optimize}
+                        exportMerged={async () => undefined}
+                        setShowFinalPreview={setShowFinalPreview}
+                        onExit={() => undefined}
                     />
-                ) : null}
+                    {showFinalPreview ? (
+                        <PreviewModal
+                            finalPages={finalPages}
+                            files={files}
+                            editsByFile={editsByFile}
+                            imageFit={optimize.imageFit}
+                            matchExportedImages
+                            onClose={() => setShowFinalPreview(false)}
+                        />
+                    ) : null}
+                </WorkspaceStoreProvider>
             </PdfCacheProvider>
             {tutorialStep !== null ? (
                 <TutorialOverlay

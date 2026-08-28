@@ -1,4 +1,9 @@
-import type { AppStatusPayload, MergeProgressStep } from './app-events.types';
+import type {
+    MergeOperationProgressPayload,
+    PageCompositionOperationProgressPayload,
+} from '@/shared/contracts/operation-progress';
+
+import type { AppStatusPayload } from './app-events.types';
 
 export type StatusState =
     | { kind: 'error'; message: string }
@@ -9,7 +14,14 @@ export type StatusState =
 
 export type LoadingState =
     | { kind: 'opening-files'; completed?: number; total?: number }
-    | { kind: 'merge-progress'; step: MergeProgressStep; progress: number };
+    | {
+          kind: 'operation-progress';
+          operation: 'merge' | 'page-composition';
+          phase:
+              | MergeOperationProgressPayload['phase']
+              | PageCompositionOperationProgressPayload['phase'];
+          percentage: number;
+      };
 
 export interface AppNotificationsState {
     status: StatusState | null;
@@ -21,11 +33,14 @@ export type AppNotificationsAction =
     | { type: 'show-error'; message: string }
     | { type: 'show-import-warning'; payload: AppStatusPayload }
     | { type: 'show-import-progress'; completed: number; total: number }
-    | { type: 'show-merge-progress'; step: MergeProgressStep; progress: number }
     | { type: 'show-opening-files' }
     | { type: 'finish-opening-files' }
-    | { type: 'show-merge-preparing' }
-    | { type: 'finish-merge' }
+    | { type: 'show-operation-preparing'; operation: 'merge' | 'page-composition' }
+    | {
+          type: 'show-operation-progress';
+          payload: MergeOperationProgressPayload | PageCompositionOperationProgressPayload;
+      }
+    | { type: 'finish-operation'; operation: 'merge' | 'page-composition' }
     | { type: 'show-export-completed' }
     | { type: 'show-export-completed-with-optimization-warning'; count: number }
     | { type: 'show-toast'; tone: 'success' | 'warning'; message: string };
@@ -96,28 +111,41 @@ export function appNotificationsReducer(
         return state.loading?.kind === 'opening-files' ? { ...state, loading: null } : state;
     }
 
-    if (action.type === 'show-merge-preparing') {
+    if (action.type === 'show-operation-preparing') {
         if (state.loading !== null) return state;
         return {
             ...state,
-            loading: { kind: 'merge-progress', step: 'preparing-documents', progress: 0 },
-        };
-    }
-
-    if (action.type === 'show-merge-progress') {
-        if (state.loading?.kind !== 'merge-progress') return state;
-        return {
-            ...state,
             loading: {
-                kind: 'merge-progress',
-                step: action.step,
-                progress: action.progress,
+                kind: 'operation-progress',
+                operation: action.operation,
+                phase: action.operation === 'merge' ? 'preparing-documents' : 'validating',
+                percentage: 0,
             },
         };
     }
 
-    if (action.type === 'finish-merge') {
-        return state.loading?.kind === 'merge-progress' ? { ...state, loading: null } : state;
+    if (action.type === 'show-operation-progress') {
+        if (
+            state.loading?.kind !== 'operation-progress' ||
+            state.loading.operation !== action.payload.operation
+        )
+            return state;
+        return {
+            ...state,
+            loading: {
+                kind: 'operation-progress',
+                operation: action.payload.operation,
+                phase: action.payload.phase,
+                percentage: action.payload.percentage,
+            },
+        };
+    }
+
+    if (action.type === 'finish-operation') {
+        return state.loading?.kind === 'operation-progress' &&
+            state.loading.operation === action.operation
+            ? { ...state, loading: null }
+            : state;
     }
 
     const status = statusForAction(action);

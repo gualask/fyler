@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { PreviewModal } from '@/features/preview';
-import { PdfCacheProvider } from '@/infra/pdf';
-import type { FinalPage } from '@/shared/domain';
+import { PdfCacheProvider } from '@/infrastructure/pdfjs';
+import type { FinalPage } from '@/modules/merge/model';
+import { PreviewModal } from '@/modules/merge/ui/preview';
 import { SAMPLE_PDF_FILE } from './sample-assets.fixture-data';
 
 const DEFAULT_PAGE_COUNT = 3;

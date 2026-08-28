@@ -1,4 +1,4 @@
-import { PreviewModal } from '@/features/preview';
+import { PreviewModal } from '@/modules/merge/ui/preview';
 import type { PagePickerFixtureState } from './page-picker-fixture-state.hook';
 
 export function PagePickerFixturePreview({ fixture }: { fixture: PagePickerFixtureState }) {

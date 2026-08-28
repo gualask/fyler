@@ -8,13 +8,14 @@ import {
 } from 'react';
 
 import type {
-    AppNotificationsApi,
-    AppStatusTone,
-    AppToastTone,
-} from '@/shared/contracts/app-notifications.api';
+    MergeOperationProgressPayload,
+    MergeProgressPhase,
+    PageCompositionOperationProgressPayload,
+    PageCompositionProgressPhase,
+} from '@/shared/contracts/operation-progress';
 import { type TranslationKey, useTranslation } from '@/shared/i18n';
 
-import type { AppStatusPayload, MergeProgressStep } from './app-events.types';
+import type { AppStatusPayload } from './app-events.types';
 import {
     type AppNotificationsAction,
     appNotificationsReducer,
@@ -22,6 +23,7 @@ import {
     type LoadingState,
     type StatusState,
 } from './app-notifications.reducer';
+import type { AppStatusTone, AppToastTone, NotificationsApi } from './app-notifications.types';
 import { useGlobalErrorHandlers } from './global-error-handlers.hook';
 import { formatImportWarning, formatUserFacingError } from './notification-messages';
 import { useTauriNotificationEvents } from './tauri-notification-events.hook';
@@ -36,7 +38,13 @@ const MERGE_PROGRESS_TRANSLATION_KEYS = {
     'merging-pages': 'progress.steps.merging-pages',
     'optimizing-images': 'progress.steps.optimizing-images',
     saving: 'progress.steps.saving',
-} as const satisfies Record<MergeProgressStep, TranslationKey>;
+} as const satisfies Record<MergeProgressPhase, TranslationKey>;
+
+const PAGE_COMPOSITION_PROGRESS_TRANSLATION_KEYS = {
+    validating: 'pageComposition.progress.validating',
+    composing: 'pageComposition.progress.composing',
+    saving: 'pageComposition.progress.saving',
+} as const satisfies Record<PageCompositionProgressPhase, TranslationKey>;
 
 function useStatusAutoClear(status: StatusState | null, dispatch: AppNotificationsDispatch) {
     useEffect(() => {
@@ -64,10 +72,10 @@ function useNotificationEventHandlers(
         [dispatch],
     );
 
-    const handleMergeProgress = useCallback(
-        (step: MergeProgressStep, progress: number) => {
-            if (loadingOwnerRef.current !== 'merge-progress') return;
-            dispatch({ type: 'show-merge-progress', step, progress });
+    const handleOperationProgress = useCallback(
+        (payload: MergeOperationProgressPayload | PageCompositionOperationProgressPayload) => {
+            if (loadingOwnerRef.current !== 'operation-progress') return;
+            dispatch({ type: 'show-operation-progress', payload });
         },
         [dispatch, loadingOwnerRef],
     );
@@ -85,7 +93,7 @@ function useNotificationEventHandlers(
         onError: handleError,
         onImportWarning: handleImportWarning,
         onImportProgress: handleImportProgress,
-        onMergeProgress: handleMergeProgress,
+        onOperationProgress: handleOperationProgress,
     });
 }
 
@@ -107,17 +115,38 @@ function useNotificationActions(
         dispatch({ type: 'finish-opening-files' });
     }, [dispatch, loadingOwnerRef]);
 
+    const updateOpeningFilesProgress = useCallback(
+        (completed: number, total: number) => {
+            if (loadingOwnerRef.current !== 'opening-files') return;
+            dispatch({ type: 'show-import-progress', completed, total });
+        },
+        [dispatch, loadingOwnerRef],
+    );
+
     const beginMerge = useCallback(() => {
         if (loadingOwnerRef.current !== null) return false;
-        loadingOwnerRef.current = 'merge-progress';
-        dispatch({ type: 'show-merge-preparing' });
+        loadingOwnerRef.current = 'operation-progress';
+        dispatch({ type: 'show-operation-preparing', operation: 'merge' });
         return true;
     }, [dispatch, loadingOwnerRef]);
 
     const finishMerge = useCallback(() => {
-        if (loadingOwnerRef.current !== 'merge-progress') return;
+        if (loadingOwnerRef.current !== 'operation-progress') return;
         loadingOwnerRef.current = null;
-        dispatch({ type: 'finish-merge' });
+        dispatch({ type: 'finish-operation', operation: 'merge' });
+    }, [dispatch, loadingOwnerRef]);
+
+    const beginPageComposition = useCallback(() => {
+        if (loadingOwnerRef.current !== null) return false;
+        loadingOwnerRef.current = 'operation-progress';
+        dispatch({ type: 'show-operation-preparing', operation: 'page-composition' });
+        return true;
+    }, [dispatch, loadingOwnerRef]);
+
+    const finishPageComposition = useCallback(() => {
+        if (loadingOwnerRef.current !== 'operation-progress') return;
+        loadingOwnerRef.current = null;
+        dispatch({ type: 'finish-operation', operation: 'page-composition' });
     }, [dispatch, loadingOwnerRef]);
 
     const showExportCompleted = useCallback(() => {
@@ -150,9 +179,12 @@ function useNotificationActions(
 
     return {
         beginOpeningFiles,
+        updateOpeningFilesProgress,
         finishOpeningFiles,
         beginMerge,
         finishMerge,
+        beginPageComposition,
+        finishPageComposition,
         showExportCompleted,
         showExportCompletedWithOptimizationWarning,
         showError,
@@ -190,21 +222,27 @@ function statusToneFor(status: StatusState | null): AppStatusTone | null {
 
 function loadingMessageFor(loading: LoadingState | null, t: Translate): string | null {
     if (!loading) return null;
-    return loading.kind === 'opening-files'
-        ? t('progress.openingFiles')
-        : t(MERGE_PROGRESS_TRANSLATION_KEYS[loading.step]);
+    if (loading.kind === 'opening-files') return t('progress.openingFiles');
+    if (loading.operation === 'page-composition') {
+        return t(
+            PAGE_COMPOSITION_PROGRESS_TRANSLATION_KEYS[
+                loading.phase as PageCompositionProgressPhase
+            ],
+        );
+    }
+    return t(MERGE_PROGRESS_TRANSLATION_KEYS[loading.phase as MergeProgressPhase]);
 }
 
 function loadingProgressFor(loading: LoadingState | null): number | undefined {
     if (!loading) return undefined;
-    if (loading.kind === 'merge-progress') return loading.progress;
+    if (loading.kind === 'operation-progress') return loading.percentage;
     if (!loading.total) return undefined;
     return Math.round(((loading.completed ?? 0) / loading.total) * 100);
 }
 
 function loadingProgressLabelFor(loading: LoadingState | null, t: Translate): string | undefined {
     if (!loading) return undefined;
-    if (loading.kind === 'merge-progress') return `${loading.progress}%`;
+    if (loading.kind === 'operation-progress') return `${loading.percentage}%`;
     if (!loading.total) return undefined;
     return t('progress.filesProcessed', {
         completed: loading.completed ?? 0,
@@ -212,7 +250,7 @@ function loadingProgressLabelFor(loading: LoadingState | null, t: Translate): st
     });
 }
 
-export function useAppNotifications(): AppNotificationsApi {
+export function useAppNotifications(): NotificationsApi {
     const { t, tp } = useTranslation();
     const [state, dispatch] = useReducer(appNotificationsReducer, initialAppNotificationsState);
     const { status, loading } = state;

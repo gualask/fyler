@@ -1,4 +1,4 @@
-import { configurePdfJsWorker, PDFJS_DOCUMENT_OPTIONS } from '@/infra/pdf/pdfjs-assets';
+import { configurePdfJsWorker, PDFJS_DOCUMENT_OPTIONS } from '@/infrastructure/pdfjs/pdfjs-assets';
 
 async function loadPdfJs() {
     if (typeof DOMMatrix === 'function') {

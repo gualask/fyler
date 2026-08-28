@@ -1,0 +1,73 @@
+@layer components {
+    .page-picker-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    @media (min-width: 900px) {
+        .page-picker-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+    .thumb-card {
+        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.25);
+    }
+    .thumb-card-idle:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    .thumb-card-focused {
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+    }
+    .page-picker-thumb-toggle {
+        @apply absolute right-2 top-2 z-30 flex items-center justify-center rounded-md shadow-md transition-colors motion-reduce:transition-none;
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+    .page-picker-thumb-toggle-selected {
+        background-color: var(--ui-accent-solid);
+        color: var(--ui-accent-on-solid);
+    }
+    .page-picker-thumb-label {
+        margin-top: 0.5rem;
+    }
+    .page-picker-image-stack {
+        gap: 1rem;
+    }
+    :is(.dark, .dark *) .thumb-card {
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.1),
+            0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+    :is(.dark, .dark *) .thumb-card-idle:hover {
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.2),
+            0 6px 18px rgba(0, 0, 0, 0.7);
+    }
+    :is(.dark, .dark *) .thumb-card-focused {
+        box-shadow:
+            0 0 0 1px var(--ui-accent-muted),
+            0 6px 18px rgba(0, 0, 0, 0.7);
+    }
+    @media (max-height: 720px) {
+        .pdf-panel-scroller {
+            padding-inline: 0.875rem;
+            padding-top: 0.625rem;
+            padding-bottom: 0.75rem;
+        }
+        .page-picker-grid {
+            gap: 0.625rem;
+        }
+        .page-picker-thumb-toggle {
+            top: 0.375rem;
+            right: 0.375rem;
+            width: 2rem;
+            height: 2rem;
+        }
+        .page-picker-thumb-label {
+            margin-top: 0.375rem;
+        }
+        .page-picker-image-stack {
+            gap: 0.75rem;
+        }
+    }
+}

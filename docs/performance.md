@@ -72,7 +72,7 @@ The plan step decides whether an image should be:
 This keeps expensive decode/resize/rewrite work off images that do not have a
 meaningful optimization path.
 
-Concrete thresholds live in `src-tauri/src/optimize/plan.rs`; this document only
+Concrete thresholds live in `src-tauri/src/capabilities/pdf/optimization/plan.rs`; this document only
 owns the policy: skip resize/rewrite work unless the planner can make the output
 meaningfully smaller without reducing already layout-appropriate images.
 
@@ -105,15 +105,28 @@ output-size blowups for common photo inputs.
 
 ### Imported image display previews
 
-Imported images get an in-memory JPEG display preview during import. The backend
-stores preview bytes in `src-tauri/src/source_registry/` and returns only those
-bytes through `get_image_preview`; MIME type and dimensions are fixed by the
-preview pipeline rather than sent as JSON metadata.
+Imported images get an in-memory JPEG display preview during import. The backend stores those
+bytes in `src-tauri/src/infrastructure/source_registry/`. For an authorized image path that is not
+retained as an imported source, `get_image_preview` generates a bounded preview on demand. Both
+paths return JPEG bytes directly; MIME type and dimensions are fixed by the preview pipeline rather
+than sent as JSON metadata.
 
-The preview generator keeps the hot path small: it converts decoded images to
-RGB, flattens alpha on white only when needed, downsizes oversized images with
-the optimized resize backend, and JPEG-encodes the result. Size and quality
-constants live in `src-tauri/src/source_registry/preview.rs`.
+The shared generator lives in
+`src-tauri/src/capabilities/raster_compression/preview.rs`. JPEG uses the
+decoder's native reduction before the exact resize, while WebP decodes directly
+to the requested size. Other formats use the generic bounded decoder. Every
+path produces an RGB JPEG preview, flattening transparency on white when needed.
+
+### Batch compression
+
+Batch compression uses a dedicated two-thread Rayon pool. This bounds CPU and memory pressure while
+still allowing independent files to progress concurrently. Output paths are planned before parallel
+work begins, and one completion event is emitted per source so the UI can update without polling or
+waiting for the entire batch.
+
+Raster compression also compares a source-format candidate with the original bytes. If rewriting
+would not produce a meaningful reduction, the original is retained and reported as already
+optimized.
 
 ### Conservative save path
 
@@ -133,9 +146,10 @@ intermediate one-page documents.
 
 Beyond the resize gating thresholds in [Plan gating](#plan-gating), a large raw
 image is auto-encoded to JPEG when it is at least 128 KiB and at least 256 px on
-its long side. The default quality scales with how much the image is downscaled
-(more downscale → slightly lower quality) and stays higher for already-JPEG
-sources.
+its long side. Automatic lossy encoding uses quality 92 across presets; preset
+size differences come from their spatial downscale targets, not progressively
+lower JPEG quality. An explicit manual quality still overrides the automatic
+value where that control is available.
 
 ## Frontend
 
@@ -245,6 +259,7 @@ Today, Fyler gets most of its performance wins from:
 - using layout-aware image optimization
 - using an optimized resize backend
 - using compact backend-generated previews for imported images
+- bounded parallel batch compression with incremental result updates
 - deduplicated PDF preview rendering
 - lazy rendering in the preview modal
 

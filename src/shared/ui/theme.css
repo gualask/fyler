@@ -1,0 +1,188 @@
+/* Semantic UI tokens. Theme changes belong here. */
+:root {
+    --ui-bg: #f5f7fa;
+    --ui-surface: #ffffff;
+    --ui-surface-subtle: #f8fafc;
+    --ui-surface-hover: #f1f5f9;
+    --ui-source: #f5f7fa;
+    --ui-output: #f0f2f5;
+    --ui-border: #e2e8f0;
+    --ui-border-hover: #cbd5e1;
+    --ui-text: #0f172a;
+    --ui-text-secondary: #334155;
+    --ui-text-dim: #475569;
+    --ui-text-muted: #5b677a;
+    --ui-accent: #6366f1;
+    --ui-accent-hover: #4f46e5;
+    --ui-accent-text: #4f46e5;
+    --ui-accent-muted: #6366f1;
+    --ui-accent-soft: #eef2ff;
+    --ui-accent-soft-hover: #e0e7ff;
+    --ui-accent-on-soft: #4338ca;
+    --ui-accent-solid: #4f46e5;
+    --ui-accent-solid-hover: #4338ca;
+    --ui-accent-on-solid: #ffffff;
+    --ui-swatch-indigo: #6366f1;
+    --ui-swatch-teal: #14b8a6;
+    --ui-swatch-blue: #3b82f6;
+    --ui-danger: #ef4444;
+    --ui-danger-hover: #dc2626;
+    --ui-danger-soft: #fef2f2;
+    --ui-danger-soft-text: #991b1b;
+    --ui-danger-border: #fecaca;
+    --ui-success: #059669;
+    --ui-success-soft: #d1fae5;
+    --ui-success-soft-text: #064e3b;
+    --ui-success-border: #6ee7b7;
+    --ui-warning: #d97706;
+    --ui-warning-soft: #fffbeb;
+    --ui-warning-soft-text: #92400e;
+    --ui-warning-border: #fde68a;
+    --ui-kind-pdf: #be123c;
+    --ui-kind-image: #0369a1;
+    --ui-overlay-border: rgba(255, 255, 255, 0.08);
+    --ui-overlay-control-hover: rgba(255, 255, 255, 0.2);
+    --ui-overlay-control-strong: rgba(15, 23, 42, 0.78);
+    --ui-overlay-control-strong-hover: rgba(15, 23, 42, 0.92);
+    --ui-overlay-text: rgba(255, 255, 255, 0.95);
+    --ui-overlay-text-muted: rgba(255, 255, 255, 0.78);
+    --ui-overlay-scrim: rgba(0, 0, 0, 0.15);
+    --ui-overlay-shadow: rgba(15, 23, 42, 0.28);
+    --ui-overlay-shadow-muted: rgba(15, 23, 42, 0.24);
+    --ui-fit-preview-page: var(--ui-surface);
+    --ui-fit-preview-page-shadow: rgba(15, 23, 42, 0.08);
+    --ui-fit-preview-media-highlight: color-mix(in srgb, var(--ui-surface) 22%, transparent);
+    --ui-fit-preview-media-end: color-mix(in srgb, var(--ui-accent) 58%, var(--ui-accent-muted));
+    --ui-fit-preview-media-shadow: color-mix(in srgb, var(--ui-accent) 22%, transparent);
+    --ui-fit-preview-frame-border: color-mix(in srgb, var(--ui-surface) 55%, transparent);
+    --ui-scrollbar-thumb: color-mix(in srgb, var(--ui-border-hover) 82%, transparent);
+    --ui-scrollbar-thumb-hover: color-mix(in srgb, var(--ui-border-hover) 98%, transparent);
+    --ui-shadow-panel: rgba(15, 23, 42, 0.16);
+    --ui-shadow-float: rgba(15, 23, 42, 0.18);
+    --ui-shadow-soft: rgba(15, 23, 42, 0.12);
+}
+
+.dark {
+    --ui-bg: #323541;
+    --ui-surface: #3c404c;
+    --ui-surface-subtle: #414551;
+    --ui-surface-hover: #494d5a;
+    --ui-source: #373b47;
+    --ui-output: #30333d;
+    --ui-border: rgba(255, 255, 255, 0.12);
+    --ui-border-hover: rgba(255, 255, 255, 0.2);
+    --ui-text: #f4f6fb;
+    --ui-text-secondary: #dde3ee;
+    --ui-text-dim: #b1bacb;
+    --ui-text-muted: #b7c0d0;
+    --ui-accent-text: #a5b4fc;
+    --ui-accent-muted: #a5b4fc;
+    --ui-accent-soft: rgba(99, 102, 241, 0.15);
+    --ui-accent-soft-hover: rgba(99, 102, 241, 0.25);
+    --ui-accent-on-soft: #c7d2fe;
+    --ui-danger: #f87171;
+    --ui-danger-hover: #ef4444;
+    --ui-danger-soft: rgba(127, 29, 29, 0.6);
+    --ui-danger-soft-text: #fecaca;
+    --ui-danger-border: rgba(153, 27, 27, 0.4);
+    --ui-success: #34d399;
+    --ui-success-soft: rgba(2, 44, 34, 0.6);
+    --ui-success-soft-text: #a7f3d0;
+    --ui-success-border: rgba(6, 95, 70, 0.4);
+    --ui-warning: #fbbf24;
+    --ui-warning-soft: rgba(69, 26, 3, 0.6);
+    --ui-warning-soft-text: #fde68a;
+    --ui-warning-border: rgba(146, 64, 14, 0.4);
+    --ui-kind-pdf: #fda4af;
+    --ui-kind-image: #7dd3fc;
+    --ui-fit-preview-page: color-mix(in srgb, var(--ui-surface) 92%, var(--ui-bg));
+    --ui-fit-preview-page-shadow: rgba(2, 6, 23, 0.34);
+    --ui-fit-preview-media-highlight: color-mix(in srgb, var(--ui-surface) 16%, transparent);
+    --ui-fit-preview-media-end: color-mix(in srgb, var(--ui-accent) 50%, var(--ui-accent-muted));
+    --ui-fit-preview-media-shadow: color-mix(in srgb, var(--ui-accent) 24%, transparent);
+    --ui-fit-preview-frame-border: color-mix(in srgb, var(--ui-surface) 42%, transparent);
+    --ui-scrollbar-thumb: color-mix(in srgb, var(--ui-border-hover) 78%, transparent);
+    --ui-scrollbar-thumb-hover: color-mix(in srgb, var(--ui-border-hover) 96%, transparent);
+    --ui-shadow-panel: rgba(2, 6, 23, 0.48);
+    --ui-shadow-float: rgba(2, 6, 23, 0.58);
+    --ui-shadow-soft: rgba(2, 6, 23, 0.34);
+}
+
+.accent-teal {
+    --ui-accent: #14b8a6;
+    --ui-accent-hover: #0d9488;
+    --ui-accent-text: #0f766e;
+    --ui-accent-muted: #0d9488;
+    --ui-accent-soft: #f0fdfa;
+    --ui-accent-soft-hover: #ccfbf1;
+    --ui-accent-on-soft: #0f766e;
+    --ui-accent-solid: #0f766e;
+    --ui-accent-solid-hover: #115e59;
+}
+
+.dark.accent-teal,
+.dark .accent-teal {
+    --ui-accent-text: #5eead4;
+    --ui-accent-muted: #5eead4;
+    --ui-accent-soft: rgba(20, 184, 166, 0.15);
+    --ui-accent-soft-hover: rgba(20, 184, 166, 0.25);
+    --ui-accent-on-soft: #5eead4;
+}
+
+.accent-blue {
+    --ui-accent: #3b82f6;
+    --ui-accent-hover: #2563eb;
+    --ui-accent-text: #1d4ed8;
+    --ui-accent-muted: #3b82f6;
+    --ui-accent-soft: #eff6ff;
+    --ui-accent-soft-hover: #dbeafe;
+    --ui-accent-on-soft: #1d4ed8;
+    --ui-accent-solid: #2563eb;
+    --ui-accent-solid-hover: #1d4ed8;
+}
+
+.dark.accent-blue,
+.dark .accent-blue {
+    --ui-accent-text: #93c5fd;
+    --ui-accent-muted: #93c5fd;
+    --ui-accent-soft: rgba(59, 130, 246, 0.15);
+    --ui-accent-soft-hover: rgba(59, 130, 246, 0.25);
+    --ui-accent-on-soft: #bfdbfe;
+}
+
+@theme inline {
+    --color-ui-bg: var(--ui-bg);
+    --color-ui-surface: var(--ui-surface);
+    --color-ui-surface-subtle: var(--ui-surface-subtle);
+    --color-ui-surface-hover: var(--ui-surface-hover);
+    --color-ui-source: var(--ui-source);
+    --color-ui-output: var(--ui-output);
+    --color-ui-border: var(--ui-border);
+    --color-ui-border-hover: var(--ui-border-hover);
+    --color-ui-text: var(--ui-text);
+    --color-ui-text-secondary: var(--ui-text-secondary);
+    --color-ui-text-dim: var(--ui-text-dim);
+    --color-ui-text-muted: var(--ui-text-muted);
+    --color-ui-accent: var(--ui-accent);
+    --color-ui-accent-hover: var(--ui-accent-hover);
+    --color-ui-accent-text: var(--ui-accent-text);
+    --color-ui-accent-muted: var(--ui-accent-muted);
+    --color-ui-accent-soft: var(--ui-accent-soft);
+    --color-ui-accent-soft-hover: var(--ui-accent-soft-hover);
+    --color-ui-accent-on-soft: var(--ui-accent-on-soft);
+    --color-ui-danger: var(--ui-danger);
+    --color-ui-danger-hover: var(--ui-danger-hover);
+    --color-ui-danger-soft: var(--ui-danger-soft);
+    --color-ui-danger-soft-text: var(--ui-danger-soft-text);
+    --color-ui-danger-border: var(--ui-danger-border);
+    --color-ui-success: var(--ui-success);
+    --color-ui-success-soft: var(--ui-success-soft);
+    --color-ui-success-soft-text: var(--ui-success-soft-text);
+    --color-ui-success-border: var(--ui-success-border);
+    --color-ui-warning: var(--ui-warning);
+    --color-ui-warning-soft: var(--ui-warning-soft);
+    --color-ui-warning-soft-text: var(--ui-warning-soft-text);
+    --color-ui-warning-border: var(--ui-warning-border);
+    --color-ui-kind-pdf: var(--ui-kind-pdf);
+    --color-ui-kind-image: var(--ui-kind-image);
+}

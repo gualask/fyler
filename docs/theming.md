@@ -3,7 +3,7 @@
 ## Concept
 
 Fyler avoids hard-coded component colors and local `dark:` color variants for normal UI.
-Most styling flows from semantic tokens defined in `src/main.css`, then consumed through:
+Most styling flows from semantic tokens defined in `src/shared/ui/theme.css`, then consumed through:
 
 - semantic Tailwind utilities such as `bg-ui-surface`, `text-ui-text-muted`, `border-ui-border`
 - shared primitives in `src/shared/ui/`
@@ -13,7 +13,7 @@ The rule of thumb is:
 
 - general app UI should use semantic `ui-*` utilities
 - specialized rendering layers may consume dedicated token families directly
-- changing the theme should primarily mean changing token values in `src/main.css`
+- changing the theme should primarily mean changing token values in `src/shared/ui/theme.css`
 
 ## Architecture
 
@@ -219,7 +219,8 @@ Also note:
 
 ## Where the System Lives
 
-- `src/main.css` defines token values, dark overrides, accent palette overrides, and the Tailwind mapping
+- `src/shared/ui/theme.css` defines token values, dark overrides, accent palette overrides, and the Tailwind mapping
+- `src/main.css` is the application stylesheet entry point and imports the shared and workflow-owned CSS
 - `src/shared/ui/` contains shared primitives that consume the semantic utilities
-- `src/features/**/components/` consume the utilities directly or use feature-scoped CSS backed by `var(--ui-...)`
+- `src/modules/**/` components consume the utilities directly or use workflow-scoped CSS backed by `var(--ui-...)`
 - `src/shared/preferences/` owns persisted theme preferences and toggles the root `.dark` class

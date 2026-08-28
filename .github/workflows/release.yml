@@ -92,8 +92,28 @@ jobs:
           uploadPlainBinary: true
           assetNamePattern: Fyler_[version]_windows_standalone[ext]
 
-  publish:
+  checksums:
     needs: [create-release, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir release-assets
+
+      - name: Generate SHA-256 checksums
+        working-directory: release-assets
+        run: sha256sum -- * > ../SHA256SUMS.txt
+
+      - name: Upload SHA-256 checksums
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY"
+
+  publish:
+    needs: [create-release, checksums]
     runs-on: ubuntu-latest
     permissions:
       contents: write

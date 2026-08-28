@@ -1,5 +1,5 @@
 type DiagnosticSeverity = 'info' | 'warn' | 'error';
-type DiagnosticCategory = 'app' | 'files' | 'export' | 'quick-add' | 'support' | 'update';
+type DiagnosticCategory = 'app' | 'files' | 'export' | 'support' | 'update';
 
 export type DiagnosticMetadataValue = string | number | boolean | null;
 
@@ -28,7 +28,7 @@ export interface DiagnosticsSnapshot {
         theme: 'light' | 'dark';
     };
     session: {
-        quickAdd: boolean;
+        alwaysOnTop: boolean;
         fileCount: number;
         finalPageCount: number;
         optimizationPreset: string;

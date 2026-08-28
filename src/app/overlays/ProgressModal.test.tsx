@@ -45,20 +45,6 @@ test('renders file count progress without a focus outline', () => {
     assert.doesNotMatch(markup, /animate-spin/);
 });
 
-test('uses the compact full-window treatment for Quick Add', () => {
-    const markup = renderToStaticMarkup(
-        createElement(ProgressModal, {
-            message: 'Loading files',
-            variant: 'compact',
-        }),
-    );
-
-    assert.match(markup, /progress-backdrop-compact/);
-    assert.match(markup, /max-w-xs/);
-    assert.doesNotMatch(markup, /dialog-panel flex/);
-    assert.doesNotMatch(markup, /aria-valuenow=/);
-});
-
 test('separates elapsed time from the file-count progress', () => {
     const markup = renderToStaticMarkup(
         createElement(ProgressModal, {

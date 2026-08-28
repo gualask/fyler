@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react';
 
-import { checkForUpdate, relaunchApp } from '@/infra/platform/updater';
+import { checkForUpdate, relaunchApp } from '@/infrastructure/platform/updater';
 import { useDiagnostics } from '@/shared/diagnostics';
 import { getErrorMessage } from '@/shared/errors';
 import { appUpdaterReducer, initialAppUpdaterState } from './app-updater.reducer';

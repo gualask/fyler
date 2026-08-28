@@ -4,15 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useModalFocus } from '@/shared/ui';
 import { createProgressModalTimingController } from './progress-modal-timing';
 
-export type ProgressModalVariant = 'standard' | 'compact';
-
 interface Props {
     message: string;
     progress?: number; // 0-100, undefined = indeterminato
     progressLabel?: string;
     elapsedTimeLabel?: string;
     elapsedStartedAt?: number;
-    variant?: ProgressModalVariant;
 }
 
 function elapsedSecondsSince(startedAt: number): number {
@@ -63,24 +60,17 @@ export function ProgressModal({
     progressLabel,
     elapsedTimeLabel,
     elapsedStartedAt,
-    variant = 'standard',
 }: Props) {
     const dialogRef = useRef<HTMLDivElement | null>(null);
     const normalizedProgress =
         progress === undefined ? undefined : Math.min(100, Math.max(0, progress));
-    const isCompact = variant === 'compact';
-
     useModalFocus({
         containerRef: dialogRef,
     });
 
     return (
         <motion.div
-            className={
-                isCompact
-                    ? 'dialog-backdrop progress-backdrop-compact'
-                    : 'dialog-backdrop dialog-backdrop-strong dialog-backdrop-blur'
-            }
+            className="dialog-backdrop dialog-backdrop-strong dialog-backdrop-blur"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -93,11 +83,7 @@ export function ProgressModal({
                 aria-label={message}
                 aria-busy="true"
                 tabIndex={-1}
-                className={
-                    isCompact
-                        ? 'flex w-full max-w-xs flex-col gap-3 px-5 outline-none focus:outline-none'
-                        : 'dialog-panel flex w-72 flex-col gap-3 rounded-xl p-6 outline-none focus:outline-none'
-                }
+                className="dialog-panel flex w-72 flex-col gap-3 rounded-xl p-6 outline-none focus:outline-none"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -160,7 +146,6 @@ function useTimedProgressModal({
     progress,
     progressLabel,
     elapsedTimeLabel,
-    variant,
 }: TimedProgressModalProps): Props | null {
     const [isVisible, setIsVisible] = useState(false);
     const [processingStartedAt, setProcessingStartedAt] = useState<number | null>(null);
@@ -193,7 +178,6 @@ function useTimedProgressModal({
                   elapsedTimeLabel && processingStartedAt !== null
                       ? processingStartedAt
                       : undefined,
-              variant,
           }
         : null;
 

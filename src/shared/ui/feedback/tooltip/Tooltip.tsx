@@ -21,6 +21,7 @@ type TooltipTriggerRenderProps = {
 type TooltipProps = {
     align?: TooltipPlacement['align'];
     side?: TooltipPlacement['side'];
+    openOnClick?: boolean;
     className?: string;
     panelClassName?: string;
     renderTrigger: (props: TooltipTriggerRenderProps) => ReactNode;
@@ -59,6 +60,7 @@ function tooltipDisclosureHandlers(
 export function Tooltip({
     align = 'start',
     side = 'top',
+    openOnClick = true,
     className,
     panelClassName,
     renderTrigger,
@@ -97,6 +99,7 @@ export function Tooltip({
             className={['tooltip', className].filter(Boolean).join(' ')}
             onMouseEnter={openTooltip}
             onMouseLeave={closeTooltip}
+            onClick={openOnClick ? undefined : closeTooltip}
         >
             {renderTrigger({
                 open,
@@ -105,7 +108,7 @@ export function Tooltip({
                 ariaExpanded: open,
                 onFocus: openTooltip,
                 onBlur: closeTooltip,
-                onClick: toggleTooltip,
+                onClick: openOnClick ? toggleTooltip : closeTooltip,
             })}
 
             <TooltipPanelPortal
